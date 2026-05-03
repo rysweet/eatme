@@ -1,0 +1,70 @@
+schema_version: eatme.scenario/v1
+id: real-alice-launch-smoke
+title: Real Alice launch smoke
+resource_basis:
+  - name: Alice 3 setup/download guidance
+    url: https://www.alice.org/get-alice/alice-3/
+  - name: Alice 3 source
+    url: https://github.com/TheAliceProject/alice3
+purpose: >-
+  Prove that the harness can package and launch the real Alice desktop
+  application under Xvfb, then capture deterministic evidence before any
+  agentic classroom behavior is trusted.
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: discover-alice
+    command: >-
+      cargo run -q -p eatme-cli -- alice discover
+      --alice-home ${ALICE_HOME}
+      --json
+    evidence:
+      - stdout JSON has alice_ide_jar_exists=true
+      - stdout JSON has target_lib_exists=true
+      - stdout JSON has starter_project_exists=true
+  - id: launch-smoke
+    command: >-
+      cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 120
+      --json
+      --no-memory
+      --offline-package
+    evidence:
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - screenshot exists and is non-empty
+      - log exists and is non-empty
+timeouts:
+  scenario_seconds: 300
+  launch_seconds: 120
+artifacts:
+  manifest: runs/real-alice-launch-smoke/${RUN_ID}/manifest.json
+  screenshot: runs/real-alice-launch-smoke/${RUN_ID}/screenshots/startup.png
+  log: runs/real-alice-launch-smoke/${RUN_ID}/alice.log
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, or Maven prerequisites are missing, fail
+  loudly with a missing_dependency category. Do not silently skip.

@@ -1,0 +1,122 @@
+name: "Eatme Real Alice Launch Smoke"
+description: |
+  Gadugi-compatible CLI scenario that treats eatme as the system under test.
+  Desktop/Swing/Xvfb behavior remains owned by eatme; gadugi only runs CLI
+  commands and asserts manifest-level evidence.
+version: "1.0.0"
+
+config:
+  timeout: 300000
+  retries: 0
+  parallel: false
+
+environment:
+  requires:
+    - ALICE_HOME
+  optional:
+    - RUN_ID
+
+agents:
+  - name: "eatme-cli-agent"
+    type: "system"
+    config:
+      shell: "bash"
+      cwd: "/home/azureuser/src/eatme"
+      timeout: 300000
+      capture_output: true
+
+steps:
+  - name: "Validate editable Alice user assets"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cargo run -q -p eatme-cli -- assets validate --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"passed": true'
+        - '"creative_scenario_count": 10'
+    timeout: 60000
+
+  - name: "Check desktop launch dependencies"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cargo run -q -p eatme-cli -- deps check --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"all_required_available": true'
+    timeout: 60000
+
+  - name: "Discover packaged Alice fork"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"alice_ide_jar_exists": true'
+        - '"starter_project_exists": true'
+    timeout: 60000
+
+  - name: "Launch real Alice under Xvfb"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: |
+        export RUN_ID="${RUN_ID:-gadugi-real-alice-launch-smoke}"
+        cargo run -q -p eatme-cli -- alice launch-smoke \
+          --alice-home "${ALICE_HOME}" \
+          --run-id "${RUN_ID}" \
+          --runs-dir runs \
+          --timeout 120 \
+          --json \
+          --no-memory \
+          --offline-package
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"failure_category": null'
+        - '"startup_screenshot": {'
+        - '"passed": true'
+    timeout: 240000
+
+assertions:
+  - name: "Assets Validate"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Validate editable Alice user assets"
+
+  - name: "Dependencies Available"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Check desktop launch dependencies"
+      required_strings:
+        - '"all_required_available": true'
+
+  - name: "Alice Discoverable"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Discover packaged Alice fork"
+
+  - name: "Real Alice Launches"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch real Alice under Xvfb"
+
+metadata:
+  tags:
+    - "alice"
+    - "eatme"
+    - "desktop"
+    - "xvfb"
+    - "outside-in"
+  priority: "critical"
+  author: "eatme"
+  test_type: "launch-smoke"
