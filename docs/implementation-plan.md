@@ -4,153 +4,227 @@
 
 `eatme` is the private agentic QA harness for Alice. It builds editable instructor/student personas and outside-in scenarios from Alice.org resources, then exercises the real `alice3-modernization` fork through observable desktop sessions.
 
-The first priority is not a full classroom simulator. The first priority is a repeatable vertical slice:
+The plan is intentionally staged. The first milestone is not a classroom simulator and not an agentic lesson. The first milestone is a deterministic real-Alice launch smoke that proves the harness can run the actual desktop application and capture trustworthy evidence.
 
-1. Build/package real Alice from `/home/azureuser/src/alice3-modernization`.
-2. Start Alice under Xvfb with isolated user state.
-3. Capture deterministic evidence: process status, logs, screenshot, run manifest.
-4. Evaluate one editable lesson/scenario with a student persona and deterministic pass/fail probes.
-5. Store results for later review and memory.
-
-## Design constraints
+## Hard constraints
 
 - Keep assets editable by non-coders.
 - Keep Rust modules under 500 lines.
 - Target at least 70% line coverage for the Rust workspace.
 - Keep Alice itself Java/Maven; Rust orchestrates, validates, observes, records, and reports.
-- Prefer agentic observations and high-level intents over brittle UI selectors.
-- Keep deterministic evidence around every agentic judgment.
-- Namespace generated memory/todos/artifacts under `alice.eatme`.
+- Use deterministic process/X/log/screenshot evidence as the first test oracle.
+- Demote agentic judgment until deterministic evidence is stable.
+- Keep memory and generated artifacts namespaced under `alice.eatme`.
+- Real Alice tests stay gated behind `EATME_REAL_ALICE=1`.
 
-## Repository structure
+## Milestone 0: deterministic real-Alice launch smoke
+
+### Scope
+
+Milestone 0 is deliberately small:
+
+1. Detect host dependencies.
+2. Package real Alice.
+3. Start long-lived Xvfb.
+4. Launch Alice via direct Java.
+5. Isolate user state and temp/cache state.
+6. Capture process status, window/display information, logs, screenshot, and manifest.
+7. Emit deterministic pass/fail.
+
+No gadugi dependency. No personas. No lesson evaluation. No parallel GUI execution.
+
+### Rust crates for Milestone 0
 
 ```text
-eatme/
-├── Cargo.toml
-├── assets/
-│   ├── alice/
-│   ├── lessons/
-│   ├── personas/
-│   ├── prompts/
-│   ├── rubrics/
-│   └── scenarios/
-├── crates/
-│   ├── eatme-cli/
-│   ├── eatme-core/
-│   ├── eatme-assets/
-│   ├── eatme-alice/
-│   ├── eatme-gadugi/
-│   ├── eatme-memory/
-│   ├── eatme-report/
-│   └── eatme-test-support/
-├── docs/
-├── runs/
-└── tests/
+crates/
+├── eatme-cli/
+├── eatme-core/
+├── eatme-alice/
+└── eatme-test-support/
 ```
 
-## Phase 1: foundation
-
-### Rust workspace
-
-Create a minimal Rust workspace with:
-
-- `eatme-cli`: CLI command routing.
-- `eatme-core`: typed config, errors, run manifests, `CommandRunner` trait.
-- `eatme-assets`: YAML asset loading and validation.
-- `eatme-alice`: Alice build/run command construction and Xvfb session orchestration.
-- `eatme-gadugi`: adapter for gadugi-agentic-test invocation.
-- `eatme-memory`: `MemoryStore` trait with `NoopMemoryStore` and JSONL fallback.
-- `eatme-report`: markdown/json report summaries.
-- `eatme-test-support`: fake command runner and fixtures.
-
-### Editable assets
-
-Add:
-
-- `assets/personas/alice-user-crew.yaml` (already present).
-- `assets/alice/forks.yaml` for Alice source locations and build profiles.
-- `assets/lessons/real-alice-launch-smoke.yaml` for the first vertical slice.
-- `assets/scenarios/gadugi/real-alice-launch-smoke.yaml` for gadugi-compatible execution.
-- `assets/rubrics/real-alice-launch-smoke.yaml` for deterministic evidence criteria.
+Additional crates (`eatme-assets`, `eatme-gadugi`, `eatme-memory`, `eatme-report`) come after launch smoke passes.
 
 ### CLI commands
 
-Initial commands:
-
 ```bash
-eatme assets validate
-eatme alice discover --alice-home /home/azureuser/src/alice3-modernization
-eatme alice package --alice-home /home/azureuser/src/alice3-modernization --offline
-eatme alice launch-smoke --alice-home /home/azureuser/src/alice3-modernization
-eatme report summarize --run runs/<id>
+eatme deps check --json
+eatme alice discover --alice-home /home/azureuser/src/alice3-modernization --json
+eatme alice package --alice-home /home/azureuser/src/alice3-modernization --offline --json
+eatme alice launch-smoke \
+  --alice-home /home/azureuser/src/alice3-modernization \
+  --run-id local-real-alice-launch-smoke \
+  --runs-dir runs \
+  --timeout 120 \
+  --json \
+  --no-memory
 ```
 
-## Phase 2: real Alice vertical slice
+### Required host dependencies
 
-### Host dependencies
-
-Install or detect:
-
-- `xvfb`
-- `xauth`
-- `x11-utils`
-- `x11-apps`
-- `imagemagick` or `scrot`
+- `Xvfb`
+- `xdpyinfo`
 - `xdotool`
 - `wmctrl`
-- Mesa software rendering libraries
+- `import` or `scrot`
+- `glxinfo`
+- Mesa software rendering/GLX libraries
+- Java 21
+- Maven
 
-The harness should fail loudly with actionable missing-dependency messages.
+Dependency checks must fail loudly with actionable messages.
 
-### Alice launch model
+### Xvfb contract
 
-Use direct Java after packaging, not `mvn exec:java`, because direct launch avoids Maven dependency noise during UI tests.
+- Use long-lived Xvfb, not one-shot `xvfb-run`.
+- Enable GLX: `+extension GLX +render -noreset`.
+- Validate display with `xdpyinfo`.
+- Default to serial execution.
+- Later parallel execution must allocate unique display/workspace/user home/prefs root per run.
 
-Required observations:
+### Direct Java launch contract
 
-- Alice process alive.
-- X display responds.
-- Screenshot captured.
-- Alice log captured.
-- No fatal `Unable to open DISPLAY`, `SEVERE`, or uncaught Java exception dominates the run.
+Direct Java launch must include:
 
-### Evidence output
+- JavaFX `--module-path`
+- `--add-modules javafx.graphics,javafx.media`
+- `alice-ide/target/alice-ide-9.1.0-SNAPSHOT.jar`
+- `alice-ide/target/lib/*`
+- `org.alice.stageide.EntryPoint`
+- starter project path, initially `core/resources/target/distribution/application/starter-projects/africa.a3p`
+- `-Dorg.alice.ide.rootDirectory=./core/resources/target/distribution`
+- isolated `-Duser.home`
+- isolated `-Djava.util.prefs.userRoot`
+- isolated `-Djava.io.tmpdir`
+- `-Djogamp.gluegen.UseTempJarCache=false`
+- `LIBGL_ALWAYS_SOFTWARE=1`
+
+### Manifest contract
 
 Each run writes:
 
 ```text
-runs/<scenario>/<timestamp>/
+runs/real-alice-launch-smoke/<run-id>/
 ├── manifest.json
 ├── alice.log
-├── screenshots/
-│   └── startup.png
 ├── commands.jsonl
-└── report.md
+├── window-list.txt
+└── screenshots/
+    └── startup.png
 ```
 
-## Phase 3: instructor/student agentic scenarios
+Required `manifest.json` fields:
 
-Start with one instructor and one student:
+- `schema_version`
+- `scenario_id`
+- `run_id`
+- `alice_home`
+- `alice_git_commit`
+- `eatme_git_commit`
+- `java_version`
+- `maven_version`
+- `dependency_checks`
+- `build_command`
+- `build_exit_status`
+- `launch_command`
+- `display`
+- `xvfb_pid`
+- `alice_pid`
+- `timeouts`
+- `screenshot.path`
+- `screenshot.size_bytes`
+- `screenshot.sha256`
+- `log.path`
+- `log.size_bytes`
+- `log.sha256`
+- `fatal_log_scan`
+- `assertions`
+- `failure_category`
+
+### Milestone 0 assertions
+
+Pass/fail must come from deterministic evidence:
+
+- dependency checks passed
+- Alice package command succeeded
+- X display responsive
+- Alice process started
+- screenshot exists and is non-empty
+- log exists and is non-empty
+- fatal DISPLAY/OpenGL/Java exception patterns are absent
+
+Agentic annotations may be attached later, but they do not decide pass/fail in Milestone 0.
+
+## Milestone 1: canonical assets and first lesson smoke
+
+After Milestone 0 passes locally:
+
+- Add `eatme-assets`.
+- Validate editable YAML/Markdown assets.
+- Add canonical scenarios under `assets/scenarios/eatme/`.
+- Split launch smoke from lesson smoke.
+
+First lesson smoke is Alice.org resource-specific:
+
+- `building-a-scene-first-world`
+- resource basis: Building a Scene + Scene Editor Overview
+- expected learner-visible evidence:
+  - at least two objects
+  - one object positioned/oriented/scaled
+  - camera view/marker language
+  - saved project/world
+  - learner explanation/reflection
+
+## Milestone 2: gadugi boundary
+
+Gadugi should orchestrate `eatme` as a CLI/system harness. It should not own Swing/Xvfb/Desktop behavior yet.
+
+Boundary:
+
+- `eatme` owns Alice packaging, Xvfb/display allocation, window manager, Java process lifecycle, screenshots, logs, manifests, rubrics, persona assets, and memory namespace.
+- `gadugi` owns running `eatme` CLI commands, collecting stdout/stderr/result JSON, and evaluating manifest-level pass/fail evidence.
+- `eatme-gadugi` owns compiling/adapting `eatme` scenarios into gadugi-compatible CLI/MIXED scenarios.
+
+Add:
+
+```bash
+eatme gadugi compile --scenario real-alice-launch-smoke --out assets/scenarios/gadugi/real-alice-launch-smoke.yaml
+```
+
+Canonical scenarios live in `assets/scenarios/eatme/`. Generated/adapted gadugi scenarios live in `assets/scenarios/gadugi/`.
+
+## Milestone 3: personas and resource-grounded scenarios
+
+Start with:
 
 - Instructor: `concept-cartographer`
 - Student: `curious-novice`
 
-First scenario:
+Then add Alice.org core path scenarios:
 
-- Resource basis: Alice.org "Building a Scene" and setup/download docs.
-- Goal: teacher assigns a minimal first-world setup; student launches Alice, sees a starter project or editor, and records what is visible.
-- Deterministic probes: screenshot exists, process alive, no fatal log, run manifest complete.
+1. `building-a-scene-first-world`
+2. `code-editor-first-run`
+3. `control-structures-visible-change`
+4. `introduction-to-events-first-binding`
+5. `design-process-thin-slice`
 
-Then add:
+Defer export/player and collision/proximity game scenarios until after the core path.
 
-- `programming-in-alice-first-run`
-- `control-structures-visible-change`
-- `events-binding-smoke`
-- `export-player-smoke`
+Every scenario must include:
 
-## Phase 4: memory and review
+- `schema_version`
+- `resource_basis`
+- `capabilities.required`
+- `capabilities.optional`
+- `adapter.targets`
+- `steps[].id`
+- `timeouts`
+- `artifacts`
+- `unsupported_policy`
 
-Memory starts as local JSONL:
+## Milestone 4: memory and reporting
+
+Memory starts local and simple:
 
 ```text
 .eatme/memory/events.jsonl
@@ -159,33 +233,38 @@ Memory starts as local JSONL:
 Store:
 
 - scenario outcomes
-- recurring Alice launch failures
+- Alice launch failures
 - missing dependencies
 - persona/scenario coverage
 - successful recovery actions
 
-Add optional integration with the local Rust `amplihack-memory` crate after the JSONL flow is stable.
+Only after JSONL memory is stable should we add an optional adapter to the local Rust `amplihack-memory` crate.
 
-## Phase 5: scale-out
+## Milestone 5: controlled parallelism
 
-Only after the vertical slice passes locally and in CI-like conditions:
+Default execution is serial.
 
-- Add more personas.
-- Add the 11 resource-grounded core scenarios.
-- Add the 10 creative teaching/learning scenarios.
-- Add parallel run isolation by display/workspace allocation.
-- Propose a gadugi `DESKTOP`/`SWING` agent upstream if the eatme-specific harness proves useful.
+No parallel GUI runs until display allocation, workspace isolation, port/display locking, and cleanup are tested.
 
-## Second-pass review targets
+Parallel GUI runs require unique:
 
-The plan needs focused review from:
+- `DISPLAY`
+- workspace
+- user home
+- prefs root
+- temp/cache directory
+- cleanup guard
 
-- harness reviewer: Xvfb/Alice launch feasibility and missing host risks
-- gadugi reviewer: scenario adapter boundaries and upstream feature candidates
-- curriculum reviewer: whether scenarios reflect Alice.org resources accurately
-- crusty reviewer: whether scope is still too broad or sequencing is wrong
+## Governance boundaries
 
-## Initial validation commands
+- Agents may read lessons, scenarios, and artifacts.
+- Agents may not modify Alice source.
+- Agents may not modify `eatme` source during test execution.
+- All commands must be logged.
+- Memory writes stay under `.eatme/memory` or `alice.eatme`.
+- No silent repo mutation.
+
+## Validation commands
 
 ```bash
 cargo fmt --check
