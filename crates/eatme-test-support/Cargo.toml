@@ -1,0 +1,10 @@
+[package]
+name = "eatme-test-support"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+eatme-core = { path = "../eatme-core" }
