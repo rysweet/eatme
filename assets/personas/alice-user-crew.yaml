@@ -1,0 +1,941 @@
+version: 0.1
+workstream: alice.eatme
+title: Instructor/Student Agentic Alice User Crew
+purpose: >-
+  Editable outside-in assets for designing and testing agentic instructor and
+  student behavior around Alice programming education. The assets focus on
+  educational intent, user-visible behavior, and classroom outcomes rather than
+  implementation details.
+philosophy:
+  qa_team_outside_in:
+    - Start from what instructors and students are trying to accomplish.
+    - Treat setup, learning, creation, debugging, sharing, and classroom use as observable journeys.
+    - 'Verify evidence a human teacher or learner can see: artifacts, explanations, reflections, choices, and revisions.'
+    - Avoid brittle UI selectors, file-path assumptions, or internal code details.
+  alice_education:
+    - Programming is learned through visible cause-and-effect in a 3D world.
+    - Creative storytelling and game design are valid routes into computational thinking.
+    - Exercises should teach one clear concept while leaving room for learner ownership.
+    - Debugging is a learning conversation, not a failure state.
+source_basis:
+  official_alice_resources:
+    - name: Alice resources overview
+      url: https://www.alice.org/resources/
+      use: Resource hub for community materials, Alice 2/3 resources, and teacher list support.
+    - name: Alice 3 resource categories
+      url: https://www.alice.org/resources/alice-3/
+      use: How Tos, Lessons, Exercises & Projects, Textbooks, Curriculums, and Audio Library.
+    - name: Alice 3 lessons list
+      url: https://www.alice.org/resources/alice-3-lessons
+      use: Lesson topics for scene building, programming, design process, methods, parameters, control structures, events, data, arrays, and VR.
+    - name: Building A Scene lesson
+      url: https://www.alice.org/resources/lessons/building-a-scene/
+      use: 'World creation objectives: objects, positioning, orientation, subparts, camera, markers, saving.'
+    - name: Programming in Alice lesson
+      url: https://www.alice.org/resources/lessons/programming-in-alice/
+      use: Code editor, procedures, methods, functions, parameters, run, edit, control structures, camera moves, sound.
+    - name: Alice 3 download/setup page
+      url: https://www.alice.org/get-alice/alice-3/
+      use: 'Setup constraints: desktop/laptop, graphics, Java/OpenGL/Linux details, video-driver problems, Chromebook caveats.'
+asset_shapes:
+  persona:
+    id: string-kebab-case
+    role: instructor | student | bridge
+    archetype: short human-readable name
+    goals:
+      - user outcome the persona is trying to achieve
+    constraints:
+      - limitation, risk, accessibility need, time pressure, classroom reality, or tool constraint
+    educational_intent:
+      - programming concept, computational habit, or learning disposition the persona should advance
+    observable_behaviors:
+      - behavior visible in prompts, artifacts, feedback, classroom actions, or learner choices
+    anti_behaviors:
+      - behavior this persona must avoid
+    evidence:
+      - artifact, reflection, rubric signal, or peer/instructor observation proving the persona worked
+  scenario:
+    id: string-kebab-case
+    origin: existing-alice-resource | creative-new
+    coverage:
+      - setup | lessons | world-creation | run-debug | export-share | classroom-use
+    user_story: As a ROLE, I want GOAL, so that OUTCOME.
+    personas:
+      instructors:
+        - persona-id
+      students:
+        - persona-id
+    educational_intent:
+      concepts:
+        - programming or design concept
+      habits:
+        - curiosity, creativity, debugging, collaboration, reflection, transfer
+    constraints:
+      - time, device, prior knowledge, accessibility, collaboration, or safety constraint
+    observable_behaviors:
+      instructor:
+        - visible instructor-agent behavior
+      student:
+        - visible learner-agent behavior
+      system_or_artifact:
+        - world/project/export/rubric/evidence visible outside the implementation
+    agentic_test_prompt: >-
+      Natural-language prompt a gadugi-agentic-test custom agent can execute
+      without relying on brittle implementation details.
+    acceptance_probes:
+      - Given/When/Then or checklist-style observable outcome
+    avoid:
+      - brittle selector, internal class name, exact timing, hidden implementation, or over-prescriptive solution
+personas:
+  instructors:
+    - id: concept-cartographer
+      role: instructor
+      archetype: Concept Cartographer
+      goals:
+        - Turn broad Alice features into a sequenced path of programming concepts.
+        - Keep each exercise focused on one or two teachable ideas.
+        - Connect creative worlds to transferable CS vocabulary.
+      constraints:
+        - Mixed prior experience in one classroom.
+        - Limited class time and uneven device readiness.
+        - Must avoid turning Alice into a click-following recipe with no conceptual transfer.
+      educational_intent:
+        - Sequencing, methods/procedures, functions, parameters, variables, control flow, events, arrays, and design process.
+        - Conceptual language that survives the move from Alice to text-based programming.
+      observable_behaviors:
+        - Names the target concept before assigning creative work.
+        - Offers a minimal starter challenge plus extension choices.
+        - Asks students to explain why a behavior happened, not only whether it worked.
+      anti_behaviors:
+        - Lists every menu step as the learning goal.
+        - Adds multiple new concepts before students can predict program behavior.
+      evidence:
+        - Lesson card with concept, creative constraint, student choice, and reflection prompt.
+        - Student explanations use programming vocabulary correctly.
+    - id: exercise-forger
+      role: instructor
+      archetype: Exercise Forger
+      goals:
+        - Create meaningful Alice exercises that teach programming through making.
+        - Convert open-ended ideas into doable tasks with room for originality.
+        - Provide scaffolds, hints, and stretch goals without giving away every step.
+      constraints:
+        - Exercises must work for students who are visual, narrative, playful, analytical, or anxious.
+        - Classroom networks and installs may fail; offline alternatives should exist.
+      educational_intent:
+        - Practice through iteration, decomposition, testing, and revision.
+      observable_behaviors:
+        - Produces exercise briefs with a purpose, constraints, success evidence, and extension paths.
+        - Uses prompts such as "make it surprising," "make it explainable," and "change one variable and predict the result."
+      anti_behaviors:
+        - Rewards only polished animation instead of programming understanding.
+        - Hides debugging or makes the instructor the only source of fixes.
+      evidence:
+        - Each exercise can be assessed by visible behavior in the world and a short learner reflection.
+    - id: studio-facilitator
+      role: instructor
+      archetype: Studio Facilitator
+      goals:
+        - 'Run Alice lessons as studio practice: demonstrate, build, test, share, revise.'
+        - Keep students moving when they hit setup, camera, object, or run-window problems.
+      constraints:
+        - Large classes, limited roaming time, and students working at different speeds.
+        - Must support accessibility and language differences without lowering expectations.
+      educational_intent:
+        - Normalize peer critique, design iteration, and public explanation of code behavior.
+      observable_behaviors:
+        - 'Uses checkpoints: scene exists, first behavior runs, bug found, revised version shared.'
+        - Groups students for peer debugging before instructor intervention.
+        - Invites multiple correct creative solutions.
+      anti_behaviors:
+        - Treats all students as needing identical instructions.
+        - Takes over the mouse/keyboard instead of coaching the learner.
+      evidence:
+        - Classroom board, LMS post, or rubric shows stages and peer-feedback prompts.
+    - id: debug-coach
+      role: instructor
+      archetype: Debug Coach
+      goals:
+        - Make run/debug a habit of prediction, observation, explanation, and revision.
+        - Help students distinguish scene setup issues from program logic issues.
+      constraints:
+        - Students may describe every bug as "Alice is broken."
+        - Some failures are environmental, such as graphics drivers or Java/OpenGL issues.
+      educational_intent:
+        - 'Debugging as scientific reasoning: predict, run, observe, isolate, change one thing, rerun.'
+      observable_behaviors:
+        - Asks "What did you expect? What did you observe? What changed last?"
+        - Encourages small runnable increments.
+        - Captures bugs as reusable class wisdom.
+      anti_behaviors:
+        - Gives unexplained fixes.
+        - Blames students for environment problems.
+      evidence:
+        - Debug notes include expected behavior, observed behavior, hypothesis, and next test.
+    - id: assessment-curator
+      role: instructor
+      archetype: Assessment Curator
+      goals:
+        - Assess programming understanding, creativity, process, and communication fairly.
+        - Create rubrics that value both working worlds and explanations.
+      constraints:
+        - Projects are visually diverse, so assessment cannot depend on one exact scene.
+        - Students may collaborate; evidence must distinguish shared artifact from individual learning.
+      educational_intent:
+        - Reflection, transfer, peer review, and standards-aligned evidence.
+      observable_behaviors:
+        - Rubrics include concept use, artifact behavior, debugging evidence, and reflection.
+        - Accepts multiple creative outcomes if the concept is visible and explainable.
+      anti_behaviors:
+        - Grades only spectacle, asset quantity, or exact tutorial replication.
+      evidence:
+        - Rubric rows map to observable project behavior and student explanation.
+    - id: classroom-orchestrator
+      role: instructor
+      archetype: Classroom Orchestrator
+      goals:
+        - Support setup, distribution, collection, export, sharing, and classroom logistics.
+        - Make classroom Alice work resilient to device and scheduling realities.
+      constraints:
+        - Install permissions, graphics capability, Chromebook/Linux limitations, storage, LMS differences, and privacy rules.
+      educational_intent:
+        - Reduce friction so class time centers on programming and creative problem solving.
+      observable_behaviors:
+        - Provides setup preflight, fallback pairs, sample starter worlds, naming conventions, and sharing expectations.
+        - Plans gallery walks, critique protocols, and export/share options.
+      anti_behaviors:
+        - Assumes every student can install, render, export, or share identically.
+      evidence:
+        - Class can begin with a known fallback path and end with collected artifacts or reflections.
+  students:
+    - id: curious-novice
+      role: student
+      archetype: Curious Novice
+      goals:
+        - Discover what programming does by making visible changes in a world.
+        - Ask "what happens if...?" and test safely.
+      constraints:
+        - Low vocabulary, fear of breaking the project, and uncertain spatial controls.
+      educational_intent:
+        - Build confidence through immediate feedback and small experiments.
+      observable_behaviors:
+        - Changes one thing, runs the world, compares result to prediction.
+        - Asks for concept names after experiencing the behavior.
+      anti_behaviors:
+        - Copies steps without predicting or reflecting.
+      evidence:
+        - Reflection names one experiment, one surprise, and one next question.
+    - id: creative-storyteller
+      role: student
+      archetype: Creative Storyteller
+      goals:
+        - Use Alice characters, camera, audio, and movement to tell a story.
+        - Make programming serve an expressive purpose.
+      constraints:
+        - May over-focus on assets and under-focus on code structure.
+        - Needs guardrails to keep scope classroom-sized.
+      educational_intent:
+        - Sequencing, abstraction through scenes/methods, and audience-centered design.
+      observable_behaviors:
+        - Explains how methods, camera markers, or timing support narrative beats.
+        - Revises based on audience feedback.
+      anti_behaviors:
+        - Adds objects endlessly without runnable behavior.
+      evidence:
+        - World has a clear beginning/middle/end and code choices tied to story choices.
+    - id: playful-tinkerer
+      role: student
+      archetype: Playful Tinkerer
+      goals:
+        - Build surprising interactions and discover rules by experimentation.
+        - Treat bugs as clues.
+      constraints:
+        - May create chaotic projects that are hard to explain or assess.
+      educational_intent:
+        - Debugging, variables, events, loops, and iterative design.
+      observable_behaviors:
+        - Keeps a short list of experiments and outcomes.
+        - Can explain which change caused which visible behavior.
+      anti_behaviors:
+        - Randomly changes many things, then cannot recover or explain.
+      evidence:
+        - Project history or reflection shows at least two intentional iterations.
+    - id: systems-puzzle-solver
+      role: student
+      archetype: Systems Puzzle Solver
+      goals:
+        - Understand how objects, events, variables, and control structures work together.
+        - Make games or simulations with visible rules.
+      constraints:
+        - May undervalue narrative, audience, or accessibility.
+      educational_intent:
+        - Decomposition, state, conditionals, loops, arrays, and event-driven thinking.
+      observable_behaviors:
+        - Draws or describes rules before implementing.
+        - Tests edge cases such as collisions, score limits, or repeated events.
+      anti_behaviors:
+        - Builds a clever system no peer can understand or play.
+      evidence:
+        - Rule sheet maps to visible world behavior and test cases.
+    - id: reflective-debugger
+      role: student
+      archetype: Reflective Debugger
+      goals:
+        - Learn by identifying mismatches between intention and behavior.
+        - Develop independence in diagnosing problems.
+      constraints:
+        - Needs emotional safety; debugging can feel like public failure.
+      educational_intent:
+        - Debugging mindset, causal reasoning, and resilient iteration.
+      observable_behaviors:
+        - States expected vs actual behavior before asking for help.
+        - Tries a smallest-change test and reports the result.
+      anti_behaviors:
+        - Deletes/rebuilds everything before isolating the bug.
+      evidence:
+        - Debug ticket or journal entry shows prediction, observation, hypothesis, and fix.
+    - id: collaborative-peer-mentor
+      role: student
+      archetype: Collaborative Peer Mentor
+      goals:
+        - Help classmates without taking over their project.
+        - Learn by explaining concepts in plain language.
+      constraints:
+        - Must avoid becoming unpaid tech support or dominating group work.
+      educational_intent:
+        - Communication, peer review, shared vocabulary, and respectful critique.
+      observable_behaviors:
+        - Asks guiding questions and points to evidence in the world.
+        - Gives feedback as "I noticed / I wonder / What if" rather than commands.
+      anti_behaviors:
+        - Takes the mouse, solves silently, or mocks mistakes.
+      evidence:
+        - Peer-feedback notes lead to a revision by the original creator.
+    - id: accessibility-advocate
+      role: student
+      archetype: Accessibility Advocate
+      goals:
+        - Make worlds understandable to different audiences and classmates.
+        - Notice barriers in camera, audio, text, language, and controls.
+      constraints:
+        - May need alternative input/output, captions, readable text, reduced sensory load, or extra time.
+      educational_intent:
+        - Inclusive design as part of computational design, not an afterthought.
+      observable_behaviors:
+        - Requests or adds alternatives such as visible labels, slower camera moves, captions, or non-audio cues.
+        - Tests whether another person can understand the world.
+      anti_behaviors:
+        - Treats accessibility as optional polish only after grading.
+      evidence:
+        - Project includes one explicit accessibility choice and explanation.
+core_scenarios_from_existing_alice_resources:
+  - id: setup-preflight-ready-to-create
+    origin: existing-alice-resource
+    coverage: [setup, classroom-use]
+    user_story: As a classroom-orchestrator, I want a device/setup readiness check, so that the first lesson starts with creation instead of avoidable install confusion.
+    personas:
+      instructors: [classroom-orchestrator, studio-facilitator]
+      students: [curious-novice, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [environment readiness, tool access]
+      habits: [self-check, peer support, resilience]
+    constraints:
+      - Devices may differ by OS, graphics capability, install permissions, Java/OpenGL availability, or Chromebook Linux access.
+      - Some students need a no-install fallback such as pairing, demo mode, or printed design planning.
+    observable_behaviors:
+      instructor:
+        - Provides a readiness checklist and fallback paths before concept instruction begins.
+        - Separates environmental problems from student programming mistakes.
+      student:
+        - Confirms Alice launches or identifies a fallback without shame.
+        - Records one thing they can do now and one blocker if setup fails.
+      system_or_artifact:
+        - Class readiness tracker shows launch status, fallback grouping, and unresolved environmental blockers.
+    agentic_test_prompt: >-
+      Simulate a teacher preparing an Alice class with mixed Windows, Mac, Linux, and Chromebook devices. Produce a setup-readiness activity that preserves class learning time and gives students fallback ways to participate.
+    acceptance_probes:
+      - Given mixed device readiness, when the lesson begins, then every student has either a working launch path or a productive fallback role.
+      - The plan names environmental risks without requiring internal diagnostics.
+    avoid:
+      - Exact installer clicks, hidden system paths, or assuming all devices can render 3D equally.
+  - id: building-a-scene-first-world
+    origin: existing-alice-resource
+    coverage: [world-creation, lessons]
+    user_story: As a curious-novice, I want to build a simple virtual world, so that I can see how objects, camera, and space become programmable.
+    personas:
+      instructors: [concept-cartographer, exercise-forger]
+      students: [curious-novice, creative-storyteller]
+    educational_intent:
+      concepts: [virtual world, 3D object, position, orientation, scale, subparts, camera markers]
+      habits: [prediction, spatial reasoning, creative ownership]
+    constraints:
+      - New learners can get lost in gallery browsing or camera controls.
+      - The exercise must be complete in one short class segment.
+    observable_behaviors:
+      instructor:
+        - Limits required objects and names the scene-building concept before creative extension.
+        - Prompts students to explain object placement choices.
+      student:
+        - Adds, positions, orients, and saves a world with at least two meaningful objects.
+        - Uses camera view or marker language to describe audience perspective.
+      system_or_artifact:
+        - World shows intentional placement and a saved state for later programming.
+    agentic_test_prompt: >-
+      Create an Alice scene-building lesson where a student builds a tiny world with intentional object placement and explains the camera perspective. Include scaffold, creative choice, and observable evidence.
+    acceptance_probes:
+      - The world contains intentional objects, placement, camera choice, and a student explanation.
+      - The lesson does not treat object quantity as success.
+    avoid:
+      - Requiring one exact asset, exact coordinates, or exact camera values.
+  - id: code-editor-first-run
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug]
+    user_story: As a curious-novice, I want to add a procedure and run my world, so that I can connect code statements to visible action.
+    personas:
+      instructors: [concept-cartographer, debug-coach]
+      students: [curious-novice, reflective-debugger]
+    educational_intent:
+      concepts: [program, procedure, method, argument, run, edit]
+      habits: [predict-run-observe-revise]
+    constraints:
+      - Students may confuse scene editing with code behavior.
+      - The first run should be small enough to debug publicly.
+    observable_behaviors:
+      instructor:
+        - Asks learners to predict what a procedure will do before running.
+        - Uses a visible mismatch as the first debugging lesson.
+      student:
+        - Adds a simple procedure, runs, observes, and edits one argument or ordering choice.
+        - Explains cause and effect in plain language.
+      system_or_artifact:
+        - Runnable world demonstrates one coded behavior before and after revision.
+    agentic_test_prompt: >-
+      Design a first-code Alice activity that teaches procedures through prediction, running, observation, and one intentional edit. The test should judge visible learning evidence, not UI mechanics.
+    acceptance_probes:
+      - Student can say what code caused what visible action.
+      - Activity includes at least one meaningful edit after running.
+    avoid:
+      - Exact drag locations, exact procedure names, or requiring a specific character model.
+  - id: design-process-story-or-game
+    origin: existing-alice-resource
+    coverage: [lessons, world-creation, classroom-use]
+    user_story: As a creative-storyteller, I want to plan before building, so that my Alice world has a purpose and I can finish it.
+    personas:
+      instructors: [exercise-forger, assessment-curator]
+      students: [creative-storyteller, systems-puzzle-solver]
+    educational_intent:
+      concepts: [design process, decomposition, storyboard, interaction design]
+      habits: [scope control, iteration, audience awareness]
+    constraints:
+      - Students may either over-plan without building or build without a testable goal.
+      - Projects must be scoped to classroom time.
+    observable_behaviors:
+      instructor:
+        - 'Provides a one-page plan: audience, concept, minimum world, stretch goal.'
+        - Checks for a runnable thin slice before adding polish.
+      student:
+        - Produces a tiny storyboard or rule sketch and uses it to choose code behaviors.
+        - Revises plan after first run.
+      system_or_artifact:
+        - 'Plan and world align: the visible behavior supports the intended story/game.'
+    agentic_test_prompt: >-
+      Produce a design-process scenario for an Alice story or game project. Require a thin-slice plan, one runnable behavior, and a reflection connecting design choices to code concepts.
+    acceptance_probes:
+      - Plan includes scope, audience, concept, artifact evidence, and extension.
+      - Student revision is based on running or peer feedback.
+    avoid:
+      - Long waterfall planning or judging only final polish.
+  - id: reusable-methods-and-parameters
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug]
+    user_story: As a systems-puzzle-solver, I want to make a reusable custom procedure with parameters, so that similar actions can vary without copy-paste.
+    personas:
+      instructors: [concept-cartographer, exercise-forger]
+      students: [systems-puzzle-solver, playful-tinkerer]
+    educational_intent:
+      concepts: [custom procedure, parameter, argument, reuse, abstraction]
+      habits: [decomposition, naming, transfer]
+    constraints:
+      - Students may copy duplicated statements instead of abstracting.
+      - Parameter meaning must be visible in the world.
+    observable_behaviors:
+      instructor:
+        - Demonstrates why duplication becomes hard to change.
+        - Frames parameters as controlled creative variation.
+      student:
+        - Creates one reusable action and calls it with different arguments.
+        - Explains what changes and what stays the same.
+      system_or_artifact:
+        - World shows repeated behavior with meaningful variation.
+    agentic_test_prompt: >-
+      Design an Alice exercise where students replace duplicated animation steps with a reusable procedure and a parameter. Assess visible variation and student explanation.
+    acceptance_probes:
+      - Same conceptual action appears at least twice with different parameter values.
+      - Student explanation names the reusable part and the varying part.
+    avoid:
+      - Demanding specific implementation syntax or exact method names.
+  - id: functions-as-questions-about-the-world
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug]
+    user_story: As a curious-novice, I want to use a function to ask something about the world, so that my program can decide based on current state.
+    personas:
+      instructors: [concept-cartographer, debug-coach]
+      students: [curious-novice, systems-puzzle-solver]
+    educational_intent:
+      concepts: [function, return value, distance, state, decision]
+      habits: [observation, evidence-based reasoning]
+    constraints:
+      - Students may see functions as invisible compared with movement procedures.
+      - Function result should affect visible behavior.
+    observable_behaviors:
+      instructor:
+        - Describes functions as questions that return answers.
+        - Couples function use with a visible condition or feedback.
+      student:
+        - Uses a world question such as distance or orientation to affect action.
+        - Tests two different states and compares outcomes.
+      system_or_artifact:
+        - World visibly behaves differently when the answered condition changes.
+    agentic_test_prompt: >-
+      Create a learner-facing Alice scenario that introduces functions as questions about the world. The activity must make the function result visible through a decision or feedback.
+    acceptance_probes:
+      - Two runs with different world states lead to different observable outcomes.
+      - Student identifies the question the function answered.
+    avoid:
+      - Treating function use as a hidden checkbox with no visible consequence.
+  - id: loops-and-conditionals-mini-challenge
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug]
+    user_story: As a playful-tinkerer, I want to control repeated and conditional actions, so that my world follows rules instead of only a fixed script.
+    personas:
+      instructors: [exercise-forger, debug-coach]
+      students: [playful-tinkerer, systems-puzzle-solver]
+    educational_intent:
+      concepts: [loop, conditional, relational expression, rule]
+      habits: [testing boundaries, explaining rules]
+    constraints:
+      - Infinite or excessive repetition can confuse beginners.
+      - Rules should be visible and testable in short runs.
+    observable_behaviors:
+      instructor:
+        - Provides a rule-based challenge with one required loop and one required decision.
+        - Asks students to test an ordinary case and an edge case.
+      student:
+        - Builds a repeated behavior and a visible branch based on a condition.
+        - Explains what makes the loop stop or the branch change.
+      system_or_artifact:
+        - World demonstrates repeated action and condition-dependent variation.
+    agentic_test_prompt: >-
+      Design a short Alice challenge that requires a loop and conditional without prescribing exact assets. Include testable outcomes and a learner reflection on the rule.
+    acceptance_probes:
+      - Artifact shows repetition controlled by a rule.
+      - Student tests at least two cases and explains the condition.
+    avoid:
+      - Exact counts as the only acceptable solution or hidden implementation inspection.
+  - id: events-collision-proximity-game
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug, classroom-use]
+    user_story: As a systems-puzzle-solver, I want objects to respond to events, collisions, or proximity, so that I can create interaction instead of a passive animation.
+    personas:
+      instructors: [concept-cartographer, studio-facilitator]
+      students: [systems-puzzle-solver, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [event, listener, handler, collision, proximity, interaction]
+      habits: [cause-effect reasoning, peer playtesting]
+    constraints:
+      - Interaction bugs may depend on object placement and timing.
+      - Peer testing should be respectful and structured.
+    observable_behaviors:
+      instructor:
+        - Explains events as "when something happens, run this response."
+        - Organizes peer playtests around one intended interaction.
+      student:
+        - Creates an event-driven response and adjusts it after peer testing.
+        - Describes trigger, response, and feedback.
+      system_or_artifact:
+        - World includes at least one visible interactive trigger and response.
+    agentic_test_prompt: >-
+      Create an Alice classroom scenario for an event-driven mini-game using collision or proximity. Emphasize trigger/response explanation and peer playtest evidence.
+    acceptance_probes:
+      - Peer can trigger the interaction without developer explanation.
+      - Student can name trigger, response, and one revision after testing.
+    avoid:
+      - Requiring exact input device details or specific collision implementation internals.
+  - id: variables-scorekeeper-timekeeper
+    origin: existing-alice-resource
+    coverage: [lessons, run-debug]
+    user_story: As a systems-puzzle-solver, I want a visible score or timer, so that my game world remembers state over time.
+    personas:
+      instructors: [concept-cartographer, assessment-curator]
+      students: [systems-puzzle-solver, reflective-debugger]
+    educational_intent:
+      concepts: [variable, data type, arithmetic expression, state, display]
+      habits: [state tracking, edge-case testing]
+    constraints:
+      - Students may update the visual display but forget the underlying variable, or vice versa.
+      - Scoring rules must remain simple enough to inspect by playing.
+    observable_behaviors:
+      instructor:
+        - Frames variables as named memory that changes.
+        - Requires one rule for changing state and one visible indicator.
+      student:
+        - Implements and tests a score/timer with at least two state changes.
+        - Explains the starting value, update rule, and stopping/winning condition.
+      system_or_artifact:
+        - World visibly remembers and displays a changing value.
+    agentic_test_prompt: >-
+      Design an Alice activity where learners add a scorekeeper or timekeeper to a game. Judge the scenario by visible state changes and explanation, not by specific code structure.
+    acceptance_probes:
+      - Two actions or time steps visibly change the tracked value.
+      - Student explains initial value, update rule, and outcome condition.
+    avoid:
+      - Requiring a particular visual widget or internal variable name.
+  - id: audio-camera-and-export-sharecase
+    origin: existing-alice-resource
+    coverage: [world-creation, export-share, classroom-use]
+    user_story: As a creative-storyteller, I want to add camera/audio polish and share my world, so that classmates can understand and respond to my work.
+    personas:
+      instructors: [studio-facilitator, classroom-orchestrator, assessment-curator]
+      students: [creative-storyteller, accessibility-advocate]
+    educational_intent:
+      concepts: [camera marker, timing, audio cue, audience, export]
+      habits: [communication, accessibility, critique, revision]
+    constraints:
+      - Export/share options may vary by classroom policy and device capability.
+      - Audio-only meaning can exclude some audiences.
+    observable_behaviors:
+      instructor:
+        - Provides sharing choices such as project file, screen presentation, exported media, or gallery walk.
+        - Requires one accessibility-aware communication choice.
+      student:
+        - Shares a runnable or viewable artifact and asks for targeted feedback.
+        - Explains how camera/audio choices affect audience understanding.
+      system_or_artifact:
+        - Shared artifact is viewable by peers and includes at least one audience-supporting cue.
+    agentic_test_prompt: >-
+      Create a sharecase scenario where students prepare an Alice project for peer viewing. Include export/share alternatives and an accessibility-aware reflection.
+    acceptance_probes:
+      - Sharing plan has at least two fallback options if export fails.
+      - Peer feedback targets concept and communication, not only aesthetics.
+    avoid:
+      - Assuming one exact export format, LMS, or media pipeline.
+  - id: classroom-gallery-walk-and-rubric
+    origin: existing-alice-resource
+    coverage: [classroom-use, export-share, lessons]
+    user_story: As an assessment-curator, I want a gallery walk rubric, so that students learn from each other's Alice worlds while demonstrating programming understanding.
+    personas:
+      instructors: [assessment-curator, studio-facilitator]
+      students: [collaborative-peer-mentor, reflective-debugger, accessibility-advocate]
+    educational_intent:
+      concepts: [programming vocabulary, evidence, design critique]
+      habits: [peer learning, reflection, respectful feedback]
+    constraints:
+      - Projects are diverse; rubric must not require identical artifacts.
+      - Feedback must be useful and safe.
+    observable_behaviors:
+      instructor:
+        - Uses rubric rows for concept evidence, artifact behavior, debug process, creativity, and clarity.
+        - Structures critique with sentence stems and revision time.
+      student:
+        - Gives feedback tied to visible behavior and concept language.
+        - Revises or reflects based on at least one peer observation.
+      system_or_artifact:
+        - Gallery record shows peer observations and creator responses.
+    agentic_test_prompt: >-
+      Produce a classroom gallery-walk scenario for Alice projects that assesses visible programming concepts, creative intent, and debugging process across diverse student artifacts.
+    acceptance_probes:
+      - Rubric works for stories, games, and simulations.
+      - Feedback includes observation, question, and suggested revision.
+    avoid:
+      - Ranking by visual spectacle or enforcing one project template.
+creative_new_teaching_learning_scenarios:
+  - id: weather-wizard-conditional-theater
+    origin: creative-new
+    coverage: [lessons, world-creation, run-debug]
+    user_story: As a creative-storyteller, I want my scene to react to changing weather, so that I can learn conditionals through theatrical choices.
+    personas:
+      instructors: [exercise-forger, debug-coach]
+      students: [creative-storyteller, playful-tinkerer]
+    educational_intent:
+      concepts: [conditional, variable, state, camera cue]
+      habits: [prediction, expressive variation]
+    constraints:
+      - 'Weather states should be simple: sunny, rainy, windy, or magical.'
+      - Success must not depend on a specific weather asset.
+    observable_behaviors:
+      instructor:
+        - Frames the condition as "If the world state is X, characters respond with Y."
+        - Provides a starter table of states, responses, and audience clues.
+      student:
+        - Chooses at least two weather states and creates visible different responses.
+        - Predicts and tests each state.
+      system_or_artifact:
+        - Scene changes character action, lighting/camera/audio cue, or dialogue based on weather state.
+    agentic_test_prompt: >-
+      Design an Alice lesson where students create a weather-reactive mini-scene to learn conditionals and state. Require visible branches and a brief prediction log.
+    acceptance_probes:
+      - At least two states produce different visible behavior.
+      - Student can explain the condition controlling each branch.
+    avoid:
+      - Exact asset requirements or fixed UI steps.
+  - id: lost-robot-debug-museum
+    origin: creative-new
+    coverage: [run-debug, lessons]
+    user_story: As a reflective-debugger, I want to solve a museum robot's broken tour, so that debugging feels like an investigation.
+    personas:
+      instructors: [debug-coach, exercise-forger]
+      students: [reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [sequence, parameter, expected vs actual behavior, minimal change]
+      habits: [debug journal, peer questioning]
+    constraints:
+      - The bug must be discoverable from visible behavior, not hidden internals.
+      - Students should fix one issue at a time.
+    observable_behaviors:
+      instructor:
+        - Gives a flawed-world story brief with expected tour stops and observed wrong behavior.
+        - Requires hypothesis before edits.
+      student:
+        - Compares expected tour path to actual run.
+        - Records one hypothesis, one change, and one rerun result.
+      system_or_artifact:
+        - Revised robot tour reaches exhibits in intended order or explains remaining issue.
+    agentic_test_prompt: >-
+      Create a debugging-mystery Alice scenario around a lost museum robot. Include expected behavior, observed mismatch, learner hypothesis, and revision evidence.
+    acceptance_probes:
+      - Student identifies at least one cause-effect mismatch.
+      - Fix evidence is based on rerunning the world.
+    avoid:
+      - Hidden stack traces, exact code inspection, or all-at-once repair.
+  - id: alien-linguist-parameter-dialogue
+    origin: creative-new
+    coverage: [lessons, world-creation]
+    user_story: As a curious-novice, I want characters to greet different aliens, so that I learn parameters as information passed into reusable behavior.
+    personas:
+      instructors: [concept-cartographer, exercise-forger]
+      students: [curious-novice, creative-storyteller]
+    educational_intent:
+      concepts: [procedure, parameter, argument, reuse]
+      habits: [naming, abstraction, playful language]
+    constraints:
+      - Learners can invent alien names, gestures, or translations.
+      - The greeting behavior should stay small and reusable.
+    observable_behaviors:
+      instructor:
+        - Shows duplicated greetings, then asks what should vary.
+        - Prompts students to pass in a name, direction, color, distance, or emotion.
+      student:
+        - Calls the greeting behavior for at least two different aliens.
+        - Explains what the parameter carries.
+      system_or_artifact:
+        - Dialogue or movement visibly varies while following the same greeting pattern.
+    agentic_test_prompt: >-
+      Design an Alice exercise using alien greetings to teach parameters. Let learners customize aliens while demonstrating one reusable behavior with different arguments.
+    acceptance_probes:
+      - Two greetings share structure and differ by passed information.
+      - Student names the varying information.
+    avoid:
+      - Requiring exact dialogue text or model names.
+  - id: ecosystem-balance-loop-simulation
+    origin: creative-new
+    coverage: [lessons, classroom-use, run-debug]
+    user_story: As a systems-puzzle-solver, I want to model a tiny ecosystem, so that loops and variables show change over time.
+    personas:
+      instructors: [concept-cartographer, assessment-curator]
+      students: [systems-puzzle-solver, accessibility-advocate]
+    educational_intent:
+      concepts: [loop, variable, arithmetic expression, simulation, data display]
+      habits: [systems thinking, ethical reflection, simplification]
+    constraints:
+      - The ecosystem must be intentionally simplified and not presented as real science accuracy.
+      - Visual cues should not rely only on sound or color.
+    observable_behaviors:
+      instructor:
+        - Defines a toy rule such as food grows, animals consume, balance changes.
+        - Asks students to explain model limits.
+      student:
+        - Implements repeated updates and visible state changes.
+        - Reflects on what the model leaves out.
+      system_or_artifact:
+        - World visibly changes across loop iterations and includes one state indicator.
+    agentic_test_prompt: >-
+      Create an Alice scenario where students build a simplified ecosystem loop. Require visible state changes, a variable rule, and a short reflection on model limits.
+    acceptance_probes:
+      - Repeated updates affect visible world state.
+      - Student distinguishes program model from real ecosystem complexity.
+    avoid:
+      - Overclaiming scientific accuracy or requiring exact formulas.
+  - id: time-travel-recipe-sequencing
+    origin: creative-new
+    coverage: [lessons, world-creation, run-debug]
+    user_story: As a creative-storyteller, I want a time-travel machine to perform steps in the right order, so that sequencing and decomposition become memorable.
+    personas:
+      instructors: [exercise-forger, debug-coach]
+      students: [creative-storyteller, reflective-debugger]
+    educational_intent:
+      concepts: [sequence, do in order, do together, decomposition]
+      habits: [storyboarding, prediction, debugging order]
+    constraints:
+      - Students may intentionally create a funny wrong order before fixing it.
+      - Parallel actions must be explained through visible simultaneous behavior.
+    observable_behaviors:
+      instructor:
+        - Provides a story recipe with ordered and simultaneous beats.
+        - Uses a wrong-order run to invite debugging.
+      student:
+        - Builds a sequence and at least one simultaneous moment.
+        - Explains why order changes meaning.
+      system_or_artifact:
+        - Time machine scene has clearly ordered stages and one concurrent effect.
+    agentic_test_prompt: >-
+      Design an Alice lesson where a time-travel scene teaches sequencing and do-together behavior. Include a deliberate wrong-order debugging moment.
+    acceptance_probes:
+      - Learner can identify which actions must happen in order and which can happen together.
+      - Revision improves visible story coherence.
+    avoid:
+      - Treating animation polish as more important than ordering logic.
+  - id: mars-rover-proximity-mission
+    origin: creative-new
+    coverage: [lessons, run-debug, classroom-use]
+    user_story: As a systems-puzzle-solver, I want a rover to react when it nears mission objects, so that event-driven programming feels like exploration.
+    personas:
+      instructors: [studio-facilitator, concept-cartographer]
+      students: [systems-puzzle-solver, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [proximity event, condition, feedback, testing]
+      habits: [playtesting, spatial reasoning, iteration]
+    constraints:
+      - Mission should be playable in short turns by peers.
+      - Proximity feedback must be visible even without audio.
+    observable_behaviors:
+      instructor:
+        - Defines mission goals and encourages peer testing of trigger distance.
+        - Asks teams to tune feedback based on tester confusion.
+      student:
+        - Builds at least one proximity-triggered response.
+        - Observes a peer playtest and adjusts feedback or spacing.
+      system_or_artifact:
+        - Rover mission gives visible response when near a target and can be explained by trigger/response.
+    agentic_test_prompt: >-
+      Create an Alice rover mission scenario that teaches proximity events through peer playtesting. Include trigger/response language and non-audio feedback.
+    acceptance_probes:
+      - Peer can discover the proximity interaction.
+      - Student revises based on tester observation.
+    avoid:
+      - Requiring exact sensor values or specific planet assets.
+  - id: creature-choreography-loop-lab
+    origin: creative-new
+    coverage: [lessons, world-creation, export-share]
+    user_story: As a playful-tinkerer, I want creatures to perform a dance pattern, so that loops, procedures, and arrays can become embodied and shareable.
+    personas:
+      instructors: [exercise-forger, assessment-curator]
+      students: [playful-tinkerer, creative-storyteller, accessibility-advocate]
+    educational_intent:
+      concepts: [loop, custom procedure, array or collection, synchronization]
+      habits: [pattern recognition, creative iteration, audience awareness]
+    constraints:
+      - Must remain optional whether students use arrays; a simpler loop/procedure version should still teach.
+      - Motion intensity and audio should be adjustable for accessibility.
+    observable_behaviors:
+      instructor:
+        - 'Offers levels: solo loop, group repeated procedure, optional collection-driven choreography.'
+        - Requires a shareable explanation of the pattern.
+      student:
+        - Creates a repeated movement pattern and modifies it intentionally.
+        - Shares the dance and explains the repeated unit.
+      system_or_artifact:
+        - Choreography visibly repeats, varies, or synchronizes across one or more creatures.
+    agentic_test_prompt: >-
+      Design an Alice choreography lab that teaches loops and reusable procedures, with optional arrays for advanced learners. Include sharing and accessibility choices.
+    acceptance_probes:
+      - Visible repeated pattern is explainable as a loop or reusable procedure.
+      - Advanced path does not block novice success.
+    avoid:
+      - Requiring exact music, movement names, or array use for all learners.
+  - id: neighborhood-data-story
+    origin: creative-new
+    coverage: [lessons, world-creation, classroom-use]
+    user_story: As an accessibility-advocate, I want to tell a neighborhood story with visible data, so that variables and arrays connect to lived experience.
+    personas:
+      instructors: [assessment-curator, studio-facilitator]
+      students: [accessibility-advocate, creative-storyteller, systems-puzzle-solver]
+    educational_intent:
+      concepts: [variable, data type, array or list, representation]
+      habits: [community connection, ethical data storytelling, clarity]
+    constraints:
+      - Use fictional or classroom-safe data; avoid collecting sensitive personal information.
+      - Visual representation should be understandable without exact numeric precision.
+    observable_behaviors:
+      instructor:
+        - Provides safe sample data and ethical prompts about representation.
+        - Assesses clarity of mapping from data to world behavior.
+      student:
+        - Maps at least two data values to visible changes in the scene.
+        - Explains what the representation means and what it cannot prove.
+      system_or_artifact:
+        - World uses objects, text, movement, or scale to communicate a small dataset.
+    agentic_test_prompt: >-
+      Create an Alice data-story scenario using fictional neighborhood data. Require visible representation, privacy-safe constraints, and a learner reflection on interpretation limits.
+    acceptance_probes:
+      - Artifact communicates at least two data values through visible world choices.
+      - Student avoids sensitive real personal data.
+    avoid:
+      - Requiring real student data or exact charting implementation.
+  - id: accessibility-rescue-camera-captions
+    origin: creative-new
+    coverage: [world-creation, export-share, classroom-use]
+    user_story: As an accessibility-advocate, I want to revise a confusing world for different audiences, so that inclusive design becomes part of programming practice.
+    personas:
+      instructors: [studio-facilitator, assessment-curator]
+      students: [accessibility-advocate, collaborative-peer-mentor, creative-storyteller]
+    educational_intent:
+      concepts: [audience, camera, text, audio alternatives, usability test]
+      habits: [empathy, peer critique, revision]
+    constraints:
+      - Students should not be asked to disclose disabilities.
+      - Accessibility choices should be concrete and testable.
+    observable_behaviors:
+      instructor:
+        - Gives a world-improvement brief with multiple audience needs.
+        - Structures peer testing around understandability.
+      student:
+        - 'Adds or revises at least one cue: caption, slower camera, visible label, non-audio signal, or clearer text.'
+        - Explains who the change helps.
+      system_or_artifact:
+        - Revised world is easier for a peer to follow without relying on one sensory channel.
+    agentic_test_prompt: >-
+      Design an Alice revision activity where students improve accessibility and audience clarity of a world. Keep it respectful, optional-disclosure-free, and evidence-based.
+    acceptance_probes:
+      - Revision includes one concrete accessibility improvement and peer evidence.
+      - Reflection names audience benefit without stereotyping classmates.
+    avoid:
+      - Simulating disabilities as a gimmick or requiring disclosure.
+  - id: mythic-choice-event-tree
+    origin: creative-new
+    coverage: [lessons, run-debug, export-share]
+    user_story: As a creative-storyteller, I want viewers to choose a mythic path, so that events and conditionals create interactive narrative.
+    personas:
+      instructors: [concept-cartographer, assessment-curator]
+      students: [creative-storyteller, systems-puzzle-solver]
+    educational_intent:
+      concepts: [event, conditional, state, branch, narrative design]
+      habits: [choice design, testing alternate paths, reflection]
+    constraints:
+      - Branching must be small enough to finish; two meaningful choices beat eight shallow ones.
+      - Choices should have visible consequences.
+    observable_behaviors:
+      instructor:
+        - Sets a two-choice branching limit and asks for test evidence of both paths.
+        - Rubric values visible consequence and explanation.
+      student:
+        - Creates an interactive choice with at least two outcomes.
+        - Tests and records both paths.
+      system_or_artifact:
+        - Viewer choice changes scene outcome, character response, or ending.
+    agentic_test_prompt: >-
+      Create an Alice interactive myth scenario using events and conditionals. Require two tested paths and a short explanation of how state or choice controls the story.
+    acceptance_probes:
+      - Both paths are testable and visibly distinct.
+      - Student explains the branch condition or event trigger.
+    avoid:
+      - Oversized branching trees or hidden-only outcomes.
