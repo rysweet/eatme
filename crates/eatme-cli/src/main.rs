@@ -1,11 +1,12 @@
 use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
-    LaunchSmokeOptions, PackageOptions, check_dependencies, discover_alice, package_alice,
-    run_launch_smoke,
+    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies, discover_alice,
+    package_alice, run_launch_smoke,
 };
 use eatme_core::RealCommandRunner;
-use std::path::PathBuf;
+use std::env;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -56,8 +57,8 @@ struct JsonFlag {
 
 #[derive(Args)]
 struct AssetsValidateArgs {
-    #[arg(long, default_value = "assets/personas/alice-user-crew.yaml")]
-    path: PathBuf,
+    #[arg(long)]
+    path: Option<PathBuf>,
     #[arg(long)]
     json: bool,
 }
@@ -96,6 +97,8 @@ struct LaunchSmokeArgs {
     no_memory: bool,
     #[arg(long)]
     offline_package: bool,
+    #[arg(long, default_value = "real-alice-launch-smoke")]
+    scenario: String,
 }
 
 fn main() -> Result<()> {
@@ -104,7 +107,13 @@ fn main() -> Result<()> {
     match cli.command {
         Commands::Assets {
             command: AssetsCommand::Validate(args),
-        } => print_result(args.json, &eatme_assets::validate_persona_crew(&args.path)?)?,
+        } => match args.path {
+            Some(path) if is_scenario_asset_path(&path) => {
+                print_result(args.json, &eatme_assets::validate_scenario_asset(&path)?)?
+            }
+            Some(path) => print_result(args.json, &eatme_assets::validate_persona_crew(&path)?)?,
+            None => print_result(args.json, &eatme_assets::validate_assets(Path::new("."))?)?,
+        },
         Commands::Deps {
             command: DepsCommand::Check(args),
         } => print_result(args.json, &check_dependencies(&runner)?)?,
@@ -123,6 +132,7 @@ fn main() -> Result<()> {
                 )?,
             )?,
             AliceCommand::LaunchSmoke(args) => {
+                ensure_real_alice_gate(&args.scenario)?;
                 let manifest = run_launch_smoke(&LaunchSmokeOptions {
                     alice_home: args.alice_home,
                     run_id: args.run_id,
@@ -131,6 +141,7 @@ fn main() -> Result<()> {
                     json: args.json,
                     no_memory: args.no_memory,
                     offline_package: args.offline_package,
+                    scenario: LaunchSmokeScenario::new(args.scenario),
                 })?;
                 print_result(args.json, &manifest)?;
                 if let Some(category) = manifest.failure_category {
@@ -145,4 +156,82 @@ fn main() -> Result<()> {
 fn print_result<T: serde::Serialize>(_json: bool, value: &T) -> Result<()> {
     println!("{}", serde_json::to_string_pretty(value)?);
     Ok(())
+}
+
+fn is_scenario_asset_path(path: &Path) -> bool {
+    path.components()
+        .any(|component| component.as_os_str().to_string_lossy() == "scenarios")
+}
+
+fn ensure_real_alice_gate(scenario: &str) -> Result<()> {
+    if scenario != "real-alice-launch-smoke" && env::var("EATME_REAL_ALICE").as_deref() != Ok("1") {
+        bail!("launch smoke scenario {scenario} requires EATME_REAL_ALICE=1");
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn baseline_launch_smoke_keeps_compatibility_without_gate() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let old_gate = env::var("EATME_REAL_ALICE").ok();
+        unsafe {
+            env::remove_var("EATME_REAL_ALICE");
+        }
+
+        let result = ensure_real_alice_gate("real-alice-launch-smoke");
+        restore_gate(old_gate);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn lesson_launch_smoke_requires_real_alice_gate() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let old_gate = env::var("EATME_REAL_ALICE").ok();
+        unsafe {
+            env::remove_var("EATME_REAL_ALICE");
+        }
+
+        let result = ensure_real_alice_gate("building-a-scene-first-world");
+        restore_gate(old_gate);
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("EATME_REAL_ALICE=1")
+        );
+    }
+
+    #[test]
+    fn lesson_launch_smoke_accepts_explicit_real_alice_gate() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let old_gate = env::var("EATME_REAL_ALICE").ok();
+        unsafe {
+            env::set_var("EATME_REAL_ALICE", "1");
+        }
+
+        let result = ensure_real_alice_gate("building-a-scene-first-world");
+        restore_gate(old_gate);
+
+        assert!(result.is_ok());
+    }
+
+    fn restore_gate(old_gate: Option<String>) {
+        unsafe {
+            if let Some(value) = old_gate {
+                env::set_var("EATME_REAL_ALICE", value);
+            } else {
+                env::remove_var("EATME_REAL_ALICE");
+            }
+        }
+    }
 }

@@ -53,6 +53,7 @@ steps:
       --json
       --no-memory
       --offline-package
+      --scenario real-alice-launch-smoke
     evidence:
       - manifest failure_category is null
       - manifest assertions all pass

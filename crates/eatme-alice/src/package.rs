@@ -2,6 +2,7 @@ use anyhow::{Result, bail};
 use eatme_core::{CommandOutput, CommandRunner, CommandSpec};
 use serde::Serialize;
 use std::path::Path;
+use std::time::Duration;
 
 #[derive(Clone, Debug)]
 pub struct PackageOptions<'a> {
@@ -51,5 +52,10 @@ pub fn run_package_command(
         "-am".to_string(),
         "package".to_string(),
     ]);
-    runner.run(&CommandSpec::new("mvn").args(args).cwd(options.alice_home))
+    runner.run(
+        &CommandSpec::new("mvn")
+            .args(args)
+            .cwd(options.alice_home)
+            .timeout(Duration::from_secs(30 * 60)),
+    )
 }

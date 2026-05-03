@@ -1,7 +1,8 @@
 use anyhow::{Result, bail};
-use eatme_core::{CommandRunner, CommandSpec};
+use eatme_core::{CommandOutput, CommandRunner, CommandSpec};
 use serde::Serialize;
 use std::path::Path;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct AliceDiscovery {
@@ -22,17 +23,32 @@ pub fn discover_alice(alice_home: &Path, runner: &impl CommandRunner) -> Result<
         );
     }
 
-    let git_commit = runner
-        .run(
-            &CommandSpec::new("git")
-                .args(["rev-parse", "HEAD"])
-                .cwd(alice_home),
-        )?
-        .stdout
-        .trim()
-        .to_string();
-    let java_version = runner.run(&CommandSpec::new("java").args(["-version"]))?;
-    let maven_version = runner.run(&CommandSpec::new("mvn").args(["-version"]))?;
+    let git_commit_output = runner.run(
+        &CommandSpec::new("git")
+            .args(["rev-parse", "HEAD"])
+            .cwd(alice_home)
+            .timeout(Duration::from_secs(5))
+            .retries(2, Duration::from_millis(100)),
+    )?;
+    ensure_success(&git_commit_output, "reading Alice git commit")?;
+    let git_commit = git_commit_output.stdout.trim().to_string();
+    if git_commit.is_empty() {
+        bail!("reading Alice git commit returned empty output");
+    }
+    let java_version = runner.run(
+        &CommandSpec::new("java")
+            .args(["-version"])
+            .timeout(Duration::from_secs(10))
+            .retries(2, Duration::from_millis(100)),
+    )?;
+    let maven_version = runner.run(
+        &CommandSpec::new("mvn")
+            .args(["-version"])
+            .timeout(Duration::from_secs(10))
+            .retries(2, Duration::from_millis(100)),
+    )?;
+    ensure_success(&java_version, "reading Java version")?;
+    ensure_success(&maven_version, "reading Maven version")?;
 
     Ok(AliceDiscovery {
         alice_home: alice_home.display().to_string(),
@@ -57,4 +73,16 @@ pub fn first_non_empty(primary: &str, fallback: &str) -> String {
         .unwrap_or("")
         .trim()
         .to_string()
+}
+
+fn ensure_success(output: &CommandOutput, action: &str) -> Result<()> {
+    if output.exit_status == Some(0) {
+        return Ok(());
+    }
+    bail!(
+        "{action} failed with {:?}\n{}{}",
+        output.exit_status,
+        output.stdout,
+        output.stderr
+    )
 }

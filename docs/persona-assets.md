@@ -4,8 +4,10 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `alice-user-crew.yaml` — canonical editable YAML: asset shapes, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
-- This `README.md` — quick usage guide and source map.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
+- `assets/scenarios/eatme/building-a-scene-first-world.yaml` — canonical editable eatme scenario for the first post-launch Alice.org lesson smoke lane.
+- `assets/scenarios/gadugi/building-a-scene-first-world.yaml` — gadugi-compatible adapter that invokes eatme CLI behavior and checks manifest-level evidence only.
+- `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for the lesson smoke lane.
 
 ## How to use with agentic tests
 
@@ -13,6 +15,11 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 2. Pick a scenario by `id` and pass `agentic_test_prompt` to the custom agent.
 3. Judge output with `acceptance_probes` and `observable_behaviors`.
 4. Reject outputs that violate `avoid`, especially exact UI selectors, hidden implementation assertions, or one-path-only lessons.
+
+For deterministic desktop smoke coverage, use the editable scenario assets under
+`assets/scenarios/eatme/` and the `alice launch-smoke --scenario <id>` command.
+The `building-a-scene-first-world` lane is documented in
+[`docs/alice-lesson-smoke.md`](alice-lesson-smoke.md).
 
 ## QA-team outside-in test shape
 

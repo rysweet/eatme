@@ -2,6 +2,7 @@ use anyhow::Result;
 use eatme_core::{CommandRunner, CommandSpec};
 use serde::Serialize;
 use std::collections::BTreeMap;
+use std::time::Duration;
 
 pub const REQUIRED_TOOLS: &[&str] = &[
     "java", "mvn", "git", "Xvfb", "xdpyinfo", "wmctrl", "glxinfo",
@@ -37,7 +38,12 @@ pub fn check_dependencies(runner: &impl CommandRunner) -> Result<DependencyRepor
 }
 
 fn command_exists(runner: &impl CommandRunner, tool: &str) -> Result<bool> {
-    let output = runner.run(&CommandSpec::new("sh").args(["-c", &format!("command -v {tool}")]))?;
+    let output = runner.run(
+        &CommandSpec::new("sh")
+            .args(["-c", &format!("command -v {tool}")])
+            .timeout(Duration::from_secs(2))
+            .retries(2, Duration::from_millis(100)),
+    )?;
     Ok(output.exit_status == Some(0))
 }
 
