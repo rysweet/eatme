@@ -9,6 +9,7 @@ repository.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 eatme-alice = { path = "../eatme-alice" }
+eatme-assets = { path = "../eatme-assets" }
 eatme-core = { path = "../eatme-core" }
 serde.workspace = true
 serde_json.workspace = true

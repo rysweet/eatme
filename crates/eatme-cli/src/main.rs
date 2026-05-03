@@ -17,6 +17,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Assets {
+        #[command(subcommand)]
+        command: AssetsCommand,
+    },
     Deps {
         #[command(subcommand)]
         command: DepsCommand,
@@ -25,6 +29,11 @@ enum Commands {
         #[command(subcommand)]
         command: AliceCommand,
     },
+}
+
+#[derive(Subcommand)]
+enum AssetsCommand {
+    Validate(AssetsValidateArgs),
 }
 
 #[derive(Subcommand)]
@@ -41,6 +50,14 @@ enum AliceCommand {
 
 #[derive(Args)]
 struct JsonFlag {
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct AssetsValidateArgs {
+    #[arg(long, default_value = "assets/personas/alice-user-crew.yaml")]
+    path: PathBuf,
     #[arg(long)]
     json: bool,
 }
@@ -85,6 +102,9 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let runner = RealCommandRunner;
     match cli.command {
+        Commands::Assets {
+            command: AssetsCommand::Validate(args),
+        } => print_result(args.json, &eatme_assets::validate_persona_crew(&args.path)?)?,
         Commands::Deps {
             command: DepsCommand::Check(args),
         } => print_result(args.json, &check_dependencies(&runner)?)?,
