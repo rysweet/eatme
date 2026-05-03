@@ -58,10 +58,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let display = choose_display();
     let mut xvfb = start_xvfb(&display, &run_dir)?;
-    let display_responsive = command_ok(
-        &runner,
-        CommandSpec::new("xdpyinfo").env("DISPLAY", &display),
-    );
+    let display_responsive = wait_for_display(&runner, &display, Duration::from_secs(5));
     assertions.insert(
         "display_responsive".into(),
         bool_assert(
@@ -281,6 +278,17 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
         thread::sleep(Duration::from_millis(500));
     }
     true
+}
+
+fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duration) -> bool {
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        if command_ok(runner, CommandSpec::new("xdpyinfo").env("DISPLAY", display)) {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    false
 }
 
 fn capture_window_list(

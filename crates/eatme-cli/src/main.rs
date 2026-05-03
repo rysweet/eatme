@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
     LaunchSmokeOptions, PackageOptions, check_dependencies, discover_alice, package_alice,
@@ -122,9 +122,8 @@ fn main() -> Result<()> {
                     &runner,
                 )?,
             )?,
-            AliceCommand::LaunchSmoke(args) => print_result(
-                args.json,
-                &run_launch_smoke(&LaunchSmokeOptions {
+            AliceCommand::LaunchSmoke(args) => {
+                let manifest = run_launch_smoke(&LaunchSmokeOptions {
                     alice_home: args.alice_home,
                     run_id: args.run_id,
                     runs_dir: args.runs_dir,
@@ -132,8 +131,12 @@ fn main() -> Result<()> {
                     json: args.json,
                     no_memory: args.no_memory,
                     offline_package: args.offline_package,
-                })?,
-            )?,
+                })?;
+                print_result(args.json, &manifest)?;
+                if let Some(category) = manifest.failure_category {
+                    bail!("launch smoke failed: {category}");
+                }
+            }
         },
     }
     Ok(())

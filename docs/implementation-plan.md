@@ -260,6 +260,8 @@ Parallel GUI runs require unique:
 - Agents may read lessons, scenarios, and artifacts.
 - Agents may not modify Alice source.
 - Agents may not modify `eatme` source during test execution.
+- Supporting tool repos such as `amplihack-rs`, `gadugi-agentic-test`, `amplihack-recipe-runner`, and `amplihack-memory-lib` are in scope for bug fixes or feature work when needed.
+- Any supporting-tool repo change must follow the default workflow, and subagents doing that work must follow the default workflow too.
 - All commands must be logged.
 - Memory writes stay under `.eatme/memory` or `alice.eatme`.
 - No silent repo mutation.
