@@ -24,7 +24,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: .
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -38,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 31'
+        - '"scenario_asset_count": 33'
     timeout: 60000
 
   - name: "Validate modified class portability contract"

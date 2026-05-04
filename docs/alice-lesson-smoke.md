@@ -18,6 +18,7 @@ loops-and-conditionals-mini-challenge
 events-collision-proximity-game
 game-score-timer-win-lose-loop
 modified-class-portability
+vr-camera-locomotion-journey
 ```
 
 They are based on Alice.org lesson/tutorial resource families and prove that the
@@ -50,6 +51,13 @@ first-animation, evidence, and reflection expectations live in editable YAML as
 agentic follow-on contracts; runtime smoke still stops at deterministic
 launch-ready evidence.
 
+The `vr-camera-locomotion-journey` lane adds an explicit VR preflight contract:
+real headset or Alice Player VR execution is optional, but availability must be
+recorded. If real VR is unavailable, evidence must state
+`real_vr_available=false` and include the desktop launch manifest plus
+camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
+outside-in and evidence-based instead of silently skipping unavailable hardware.
+
 ## Scenario assets
 
 Canonical lesson scenarios live under:
@@ -70,6 +78,7 @@ assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
 assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
+assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -100,6 +109,7 @@ assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
 assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 Gadugi lesson scenarios may invoke the eatme CLI and inspect manifest-level
@@ -277,7 +287,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, or `modified-class-portability`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, or `vr-camera-locomotion-journey`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -483,6 +493,7 @@ Use the gadugi assets when a gadugi runner needs to exercise a lane:
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 The adapter performs three kinds of work:
@@ -501,11 +512,11 @@ Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
 `eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
-The committed gadugi adapters are portable: the agent `cwd` is `.` and shell
-commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO`
-without baking in a checkout-specific path. Run these scenarios from the checkout
-under test so asset validation counts the assets in that checkout, including
-gadugi-only regression adapters.
+The committed gadugi adapters are portable: the agent config uses `cwd: "."`
+and shell commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set
+`EATME_REPO` without baking in a checkout-specific path. Run these scenarios from
+the checkout under test so asset validation counts the assets in that checkout,
+including gadugi-only regression adapters.
 
 ## Testing expectations
 
