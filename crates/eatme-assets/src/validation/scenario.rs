@@ -7,6 +7,9 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
 
+mod gadugi_scenario;
+use self::gadugi_scenario::validate_gadugi_scenario;
+
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading scenario asset {}", path.display()))?;
@@ -357,124 +360,6 @@ fn validate_instructor_flow_boundary(step_id: &str, command: &str, errors: &mut 
     {
         errors.push(format!(
             "{step_id}: instructor_agentic_flow must stay at the editable asset/agentic evidence boundary, not own Alice desktop runtime"
-        ));
-    }
-}
-
-fn validate_gadugi_scenario(
-    path: &Path,
-    scenario: &GadugiScenarioAsset,
-) -> ScenarioAssetValidationReport {
-    let mut errors = Vec::new();
-    let warnings = Vec::new();
-
-    require_nonempty(&scenario.name, "name", &mut errors);
-    require_nonempty(&scenario.description, "description", &mut errors);
-    require_nonempty(&scenario.version, "version", &mut errors);
-    if scenario.steps.is_empty() {
-        errors.push("steps must contain at least one step".into());
-    }
-    for step in &scenario.steps {
-        require_nonempty(&step.name, "step.name", &mut errors);
-        require_nonempty(&step.agent, &format!("{}.agent", step.name), &mut errors);
-        require_nonempty(&step.action, &format!("{}.action", step.name), &mut errors);
-        if step.action == "execute_command" {
-            match step.params.get("command") {
-                Some(command) => require_nonempty(
-                    command,
-                    &format!("{}.params.command", step.name),
-                    &mut errors,
-                ),
-                None => errors.push(format!("{}.params.command must be defined", step.name)),
-            }
-        }
-        if let Some(command) = step.params.get("command") {
-            validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
-            if command.contains("alice launch-smoke") {
-                validate_gadugi_real_evidence_expectation(&step.name, step, &mut errors);
-            }
-        }
-        if step.action == "agentic_test" {
-            validate_gadugi_agentic_step(&step.name, &step.params, &mut errors);
-        }
-    }
-    if scenario.assertions.is_empty() {
-        errors.push("assertions must contain at least one assertion".into());
-    }
-    for assertion in &scenario.assertions {
-        require_nonempty(&assertion.name, "assertion.name", &mut errors);
-        require_nonempty(
-            &assertion.assertion_type,
-            &format!("{}.type", assertion.name),
-            &mut errors,
-        );
-    }
-
-    let errors = contextualize_scenario_errors(path, &scenario.name, errors);
-
-    ScenarioAssetValidationReport {
-        schema_version: "eatme.assets/scenario-validation/v1".into(),
-        asset_path: path.display().to_string(),
-        asset_kind: "gadugi".into(),
-        id: scenario.name.clone(),
-        passed: errors.is_empty(),
-        step_count: scenario.steps.len(),
-        assertion_count: scenario.assertions.len(),
-        errors,
-        warnings,
-    }
-}
-
-fn validate_gadugi_agentic_step(
-    step_name: &str,
-    params: &std::collections::BTreeMap<String, String>,
-    errors: &mut Vec<String>,
-) {
-    for key in ["asset", "prompt", "acceptance_probes"] {
-        match params.get(key) {
-            Some(value) => require_nonempty(value, &format!("{step_name}.params.{key}"), errors),
-            None => errors.push(format!("{step_name}.params.{key} must be defined")),
-        }
-    }
-}
-
-fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut Vec<String>) {
-    let direct_runtime_markers = [
-        "Xvfb",
-        "org.alice.stageide",
-        "java org.alice",
-        "java -",
-        "scrot",
-        "import -window",
-        "wmctrl",
-        "xwd",
-    ];
-    if command.contains("alice launch-smoke") {
-        return;
-    }
-    if direct_runtime_markers
-        .iter()
-        .any(|marker| command.contains(marker))
-    {
-        errors.push(format!(
-            "{step_name}: gadugi scenario must invoke eatme CLI alice launch-smoke and inspect manifest evidence only; it must not own Alice runtime concerns"
-        ));
-    }
-}
-
-fn validate_gadugi_real_evidence_expectation(
-    step_name: &str,
-    step: &crate::schema::GadugiScenarioStep,
-    errors: &mut Vec<String>,
-) {
-    if !step
-        .expect
-        .stdout_contains
-        .iter()
-        .any(|expected| expected.contains("real_alice_execution_evidence"))
-    {
-        errors.push(format!(
-            "{step_name}: gadugi launch-smoke step must assert manifest real_alice_execution_evidence"
         ));
     }
 }
