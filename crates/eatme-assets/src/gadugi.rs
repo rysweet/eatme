@@ -18,7 +18,7 @@ pub fn generate_gadugi_adapters(root: &Path, check: bool) -> Result<GadugiAdapte
     let eatme_root = root.join("assets/scenarios/eatme");
     let gadugi_root = root.join("assets/scenarios/gadugi");
     let source_paths = scenario_asset_paths(&eatme_root)?;
-    let expected_scenario_asset_count = source_paths.len() * 2;
+    let expected_scenario_asset_count = scenario_asset_paths(&root.join("assets/scenarios"))?.len();
     let mut report = GadugiAdapterGenerationReport {
         schema_version: "eatme.assets/gadugi-adapter-generation/v1".into(),
         root: root.display().to_string(),
@@ -80,8 +80,7 @@ pub fn generate_gadugi_adapters(root: &Path, check: bool) -> Result<GadugiAdapte
 }
 
 pub fn generate_gadugi_adapter_yaml(root: &Path, source_path: &Path) -> Result<String> {
-    let expected_scenario_asset_count =
-        scenario_asset_paths(&root.join("assets/scenarios/eatme"))?.len() * 2;
+    let expected_scenario_asset_count = scenario_asset_paths(&root.join("assets/scenarios"))?.len();
     generate_gadugi_adapter_yaml_with_count(root, source_path, expected_scenario_asset_count)
 }
 

@@ -35,6 +35,11 @@ Use these checks for documentation-only changes when the docs mention assets,
 scenario ids, or adapter workflow. They prove the documented command examples
 still map to committed assets.
 
+The generated adapter count contract is documented in
+[Generated Asset Consistency](generated-asset-consistency.md). It defines how
+`scenario_asset_count` is discovered, when validation exits non-zero, and why
+stale adapters must be regenerated instead of hand-edited.
+
 ## Rust quality gates
 
 The local quality script is:

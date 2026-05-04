@@ -133,6 +133,12 @@ If the check fails because adapters are stale, regenerate them:
 cargo run -q -p eatme-cli -- assets generate-gadugi --json
 ```
 
+See [Generated Asset Consistency](generated-asset-consistency.md) for the
+`scenario_asset_count` source of truth and the add, remove, and rename workflow
+for generated adapters. When removing or renaming a canonical scenario, delete
+the old generated Gadugi adapter too; check mode compares expected targets but
+does not prune orphaned files.
+
 ## Evidence language
 
 Good scenario evidence is observable:
@@ -152,4 +158,3 @@ Avoid brittle evidence:
 - screenshots judged only for visual polish
 - one-path-only instructions that prevent learner choice
 - silent fallback behavior when prerequisites are missing
-

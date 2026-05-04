@@ -41,6 +41,113 @@ title: ""
 }
 
 #[test]
+fn unknown_scenario_field_exits_nonzero_with_json_failure_report() {
+    let root = scratch_root("unknown-scenario-field");
+    let scenario_path = root.join("assets/scenarios/eatme/unknown-field.yaml");
+    fs::create_dir_all(scenario_path.parent().unwrap()).unwrap();
+    fs::write(
+        &scenario_path,
+        r#"
+schema_version: eatme.scenario/v1
+id: unknown-field
+title: Unknown Field
+purpose: Unknown top-level fields must be strict schema failures.
+unexpected_contract_drift: true
+"#,
+    )
+    .unwrap();
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    assert!(!output.status.success());
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("validation failure report is JSON");
+    assert_eq!(report["passed"], false);
+    let errors = report["errors"]
+        .as_array()
+        .expect("errors is an array")
+        .iter()
+        .filter_map(|error| error.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        errors.contains("unexpected_contract_drift"),
+        "errors: {errors}"
+    );
+}
+
+#[test]
+fn generate_gadugi_check_exits_nonzero_with_json_report_when_asset_count_is_stale() {
+    let root = scratch_root("stale-gadugi-count-check");
+    let source_path = root.join("assets/scenarios/eatme/count-contract.yaml");
+    let target_path = root.join("assets/scenarios/gadugi/count-contract.yaml");
+    fs::create_dir_all(source_path.parent().unwrap()).unwrap();
+    fs::create_dir_all(target_path.parent().unwrap()).unwrap();
+    fs::write(
+        &source_path,
+        r#"
+schema_version: eatme.scenario/v1
+id: count-contract
+title: Count Contract
+kind: alice_lesson_smoke
+owner: eatme
+purpose: Proves stale generated scenario counts fail the check gate.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+"#,
+    )
+    .unwrap();
+    fs::write(&target_path, "placeholder: counted before regeneration\n").unwrap();
+    let generated = Command::new(eatme_bin())
+        .args(["assets", "generate-gadugi", "--json", "--root"])
+        .arg(&root)
+        .output()
+        .unwrap();
+    assert_exit_code(&generated, 0);
+    let fresh_yaml = fs::read_to_string(&target_path).unwrap();
+    assert!(fresh_yaml.contains(r#""scenario_asset_count": 2"#));
+    fs::write(
+        &target_path,
+        fresh_yaml.replace(
+            r#""scenario_asset_count": 2"#,
+            r#""scenario_asset_count": 1"#,
+        ),
+    )
+    .unwrap();
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "generate-gadugi", "--check", "--json", "--root"])
+        .arg(&root)
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("generation check output is JSON");
+    assert_eq!(report["passed"], false);
+    assert_eq!(report["generated_count"], 1);
+    assert_eq!(report["checked_count"], 1);
+    assert!(
+        report["changed"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|path| path.as_str().unwrap().ends_with("count-contract.yaml")),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    assert_stdout_contains(&output.stdout, "is stale");
+}
+
+#[test]
 fn missing_scenario_root_exits_nonzero() {
     let root = scratch_root("missing-scenario-root");
     copy_committed_persona_asset(&root);
