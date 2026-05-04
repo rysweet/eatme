@@ -17,6 +17,7 @@ functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
 game-score-timer-win-lose-loop
+modified-class-portability
 ```
 
 They are based on Alice.org lesson/tutorial resource families and prove that the
@@ -68,6 +69,7 @@ assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
 assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
+assets/scenarios/eatme/modified-class-portability.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -97,12 +99,19 @@ assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
 assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
 They must not own or duplicate Alice runtime behavior such as Xvfb management,
 Swing/Java launch details, screenshot capture, log capture, or process
 lifecycle.
+
+The `modified-class-portability` lane adds export/import/share evidence for a
+modified class moving from one Alice project into another. Its editable contract
+requires the exported class identity, destination-project import evidence, and
+post-import behavior evidence proving the modified behavior persists after
+import.
 
 ## Validate assets
 
@@ -256,7 +265,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, or `game-score-timer-win-lose-loop`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, or `modified-class-portability`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
