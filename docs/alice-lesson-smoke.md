@@ -191,6 +191,7 @@ eatme alice launch-smoke \
   --run-id <run-id> \
   [--scenario <scenario-id>] \
   [--runs-dir <path>] \
+  [--starter-project <path>] \
   [--timeout <seconds>] \
   [--json] \
   [--no-memory] \
@@ -203,6 +204,7 @@ eatme alice launch-smoke \
 | `--run-id <run-id>` | Stable id for this run. Use a descriptive id for local or CI traces. |
 | `--scenario <scenario-id>` | Scenario id to record in the manifest and run directory. Defaults to `real-alice-launch-smoke`; it does not load scenario YAML at runtime yet. |
 | `--runs-dir <path>` | Root directory for run artifacts. Defaults to `runs`. |
+| `--starter-project <path>` | Starter project to open. Relative paths resolve from `--alice-home`; defaults to Alice's `africa.a3p`. |
 | `--timeout <seconds>` | Maximum launch wait before the smoke fails. |
 | `--json` | Accepted compatibility flag. Output is currently pretty JSON whether or not this flag is present. |
 | `--no-memory` | Disable memory writes for the run. |
@@ -249,6 +251,9 @@ The baseline launch smoke uses:
 ```text
 runs/real-alice-launch-smoke/<run-id>/
 ```
+
+If a run reuses the same `--run-id`, the previous evidence directory is archived
+next to the new run as `<run-id>.previous-...` instead of being deleted.
 
 ## Manifest reference
 

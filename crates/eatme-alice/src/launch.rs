@@ -1,32 +1,36 @@
+mod alice_cmd;
+mod display;
+mod evidence;
+mod manifest;
+mod run_dir;
+
+use self::alice_cmd::{DEFAULT_STARTER_PROJECT, alice_launch_args, start_alice};
+use self::display::{reserve_display, start_xvfb, wait_for_display};
+use self::evidence::{
+    artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
+    scan_fatal_logs,
+};
+use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
+use self::run_dir::prepare_run_dir;
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::package::{PackageOptions, package_alice};
-use anyhow::{Context, Result, bail};
-use display::{choose_display, start_xvfb, wait_for_display};
+use anyhow::{Result, bail};
 use eatme_core::{
     ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
     RealCommandRunner,
 };
-use evidence::{
-    artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
-    scan_fatal_logs,
-};
-use manifest::{build_manifest, write_blocked_manifest, write_manifest};
-use process::{alice_launch_args, shutdown, start_alice, wait_for_start};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
-
-mod display;
-mod evidence;
-mod manifest;
-mod process;
+use std::process::Child;
+use std::thread;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
     pub id: String,
     pub run_dir_name: String,
+    pub starter_project: PathBuf,
 }
 
 impl LaunchSmokeScenario {
@@ -34,6 +38,7 @@ impl LaunchSmokeScenario {
         let id = id.into();
         Self {
             run_dir_name: id.clone(),
+            starter_project: PathBuf::from(DEFAULT_STARTER_PROJECT),
             id,
         }
     }
@@ -44,6 +49,11 @@ impl LaunchSmokeScenario {
 
     pub fn accepts_window_evidence(&self) -> bool {
         self.id != "real-alice-launch-smoke"
+    }
+
+    pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
+        self.starter_project = starter_project.into();
+        self
     }
 }
 
@@ -150,8 +160,25 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         }
     };
 
-    let display = choose_display();
-    let mut xvfb = match start_xvfb(&display, &run_dir) {
+    let display = match reserve_display(&options.runs_dir) {
+        Ok(display) => display,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                None,
+                None,
+                "display_reservation_failed",
+                format!("preflight blocked: X display could not be reserved: {error:#}"),
+                assertions,
+            );
+        }
+    };
+    let mut xvfb = match start_xvfb(display.name(), &run_dir) {
         Ok(xvfb) => xvfb,
         Err(error) => {
             return write_blocked_manifest(
@@ -161,7 +188,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 &eatme_commit,
                 Some(&discovery),
                 Some(&package),
-                Some(&display),
+                Some(display.name()),
                 None,
                 "xvfb_start_failed",
                 format!("preflight blocked: Xvfb could not start: {error:#}"),
@@ -169,12 +196,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             );
         }
     };
-    let display_responsive = wait_for_display(&runner, &display, Duration::from_secs(5));
+    let display_responsive = wait_for_display(&runner, display.name(), Duration::from_secs(5));
     assertions.insert(
         "display_responsive".into(),
         bool_assert(
             display_responsive,
-            format!("{display} responds to xdpyinfo"),
+            format!("{} responds to xdpyinfo", display.name()),
         ),
     );
     if !display_responsive {
@@ -186,19 +213,41 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &eatme_commit,
             Some(&discovery),
             Some(&package),
-            Some(&display),
+            Some(display.name()),
             Some(xvfb.id()),
             "display_unresponsive",
-            format!("preflight blocked: {display} did not respond to xdpyinfo"),
+            format!(
+                "preflight blocked: {} did not respond to xdpyinfo",
+                display.name()
+            ),
             assertions,
         );
     }
 
     let log_path = run_dir.join("alice.log");
-    let launch_args = alice_launch_args(&options.alice_home)?;
+    let launch_args =
+        match alice_launch_args(&options.alice_home, &options.scenario.starter_project) {
+            Ok(args) => args,
+            Err(error) => {
+                shutdown(&mut xvfb);
+                return write_blocked_manifest(
+                    options,
+                    &run_dir,
+                    deps,
+                    &eatme_commit,
+                    Some(&discovery),
+                    Some(&package),
+                    Some(display.name()),
+                    Some(xvfb.id()),
+                    "alice_launch_args_failed",
+                    format!("preflight blocked: Alice launch arguments failed: {error:#}"),
+                    assertions,
+                );
+            }
+        };
     let mut alice = match start_alice(
         &options.alice_home,
-        &display,
+        display.name(),
         &run_dir,
         &log_path,
         &launch_args,
@@ -213,7 +262,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 &eatme_commit,
                 Some(&discovery),
                 Some(&package),
-                Some(&display),
+                Some(display.name()),
                 Some(xvfb.id()),
                 "alice_start_failed",
                 format!("preflight blocked: Alice process could not start: {error:#}"),
@@ -234,13 +283,13 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
 
     let (window_text, window_list_error) =
-        capture_text_or_error(capture_window_list(&runner, &display, &run_dir));
+        capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));
     let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
     let window_list_error = combine_errors([window_list_error, window_info_error]);
     let window_evidence_ok =
         options.scenario.accepts_window_evidence() && has_alice_window_evidence(&window_text);
     let (screenshot, screenshot_error) =
-        capture_artifact_or_error(capture_screenshot(&runner, &display, &run_dir));
+        capture_artifact_or_error(capture_screenshot(&runner, display.name(), &run_dir));
     let screenshot_ok = screenshot
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
@@ -306,7 +355,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         Some(&discovery),
         Some(&package),
         launch_command,
-        display.clone(),
+        display.name().to_string(),
         Some(xvfb.id()),
         Some(alice.id()),
         window_list,
@@ -320,22 +369,11 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category,
     );
 
-    write_manifest(&run_dir, &manifest)?;
+    let manifest_write = write_manifest(&run_dir, &manifest);
     shutdown(&mut alice);
     shutdown(&mut xvfb);
+    manifest_write?;
     Ok(manifest)
-}
-
-fn prepare_run_dir(run_dir: &Path) -> Result<()> {
-    if run_dir.exists() {
-        fs::remove_dir_all(run_dir).with_context(|| format!("removing {}", run_dir.display()))?;
-    }
-    fs::create_dir_all(run_dir.join("screenshots"))
-        .with_context(|| format!("creating {}", run_dir.display()))?;
-    fs::create_dir_all(run_dir.join("home"))?;
-    fs::create_dir_all(run_dir.join("prefs"))?;
-    fs::create_dir_all(run_dir.join("tmp"))?;
-    Ok(())
 }
 
 fn validate_scenario_name(name: &str) -> Result<()> {
@@ -349,6 +387,22 @@ fn validate_scenario_name(name: &str) -> Result<()> {
         bail!("launch smoke scenario {name:?} must be kebab-case");
     }
     Ok(())
+}
+
+fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
+    let deadline = Instant::now() + Duration::from_secs(seconds.clamp(5, 60));
+    while Instant::now() < deadline {
+        if let Ok(Some(_)) = child.try_wait() {
+            return false;
+        }
+        thread::sleep(Duration::from_millis(500));
+    }
+    true
+}
+
+fn shutdown(child: &mut Child) {
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
@@ -441,17 +495,4 @@ fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn chooses_non_default_display_format() {
-        assert!(choose_display().starts_with(':'));
-    }
-
-    #[test]
-    fn rejects_non_kebab_case_scenario_names() {
-        assert!(validate_scenario_name("../bad").is_err());
-        assert!(validate_scenario_name("building-a-scene-first-world").is_ok());
-    }
-}
+mod tests;
