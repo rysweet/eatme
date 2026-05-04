@@ -5,8 +5,8 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 ## Asset files
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
-- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline plus Alice.org-grounded lesson lanes.
-- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior and check manifest-level evidence only.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, and instructor agentic flows.
+- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks and agentic review behavior for instructor flows.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
 ## How to use with agentic tests
@@ -14,12 +14,18 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 1. Pick a persona pair: one instructor persona and one or more student personas.
 2. Pick a scenario by `id` and pass `agentic_test_prompt` to the custom agent.
 3. Judge output with `acceptance_probes` and `observable_behaviors`.
-4. Reject outputs that violate `avoid`, especially exact UI selectors, hidden implementation assertions, or one-path-only lessons.
+4. Reject outputs that violate `avoid`, especially exact UI selectors, hidden implementation assertions, one-path-only lessons, or visual-polish-only grading.
 
 For deterministic desktop smoke coverage, use the editable scenario assets under
 `assets/scenarios/eatme/` and the `alice launch-smoke --scenario <id>` command.
 The lesson lanes are documented in
 [`docs/alice-lesson-smoke.md`](alice-lesson-smoke.md).
+
+For instructor modernization pressure, use the editable
+`kind: instructor_agentic_flow` assets under `assets/scenarios/eatme/` with
+their paired `assets/scenarios/gadugi/` adapters. These flows intentionally
+stay at the natural-language prompt, acceptance probe, and rubric boundary so a
+non-coder can maintain lesson intent without touching Rust.
 
 ## QA-team outside-in test shape
 
@@ -93,6 +99,24 @@ Added editable eatme + gadugi scenario assets for:
 4. `events-collision-proximity-game`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+
+## Instructor agentic flow assets
+
+Added editable eatme + gadugi agentic-flow assets for the instructor goals the
+Alice modernization lane should pressure first:
+
+| Scenario ID | Instructor goal | Grounding |
+| --- | --- | --- |
+| `instructor-exercise-builder` | Create exercises with concept focus, scaffolds, student choice, and visible evidence. | Alice 3 lessons list; Programming in Alice. |
+| `instructor-lesson-materials-remix` | Prepare teacher plan, student handout, and exit ticket from Alice.org resources. | Building A Scene; Alice 3 resource categories. |
+| `instructor-alice-concept-map` | Map Alice actions to transferable CS vocabulary and misconception checks. | Programming in Alice; Alice 3 lessons list. |
+| `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
+| `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
+
+Each asset exposes `resource_basis`, `agentic_test_prompt`,
+`acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected
+agentic outputs as YAML. The paired gadugi adapters run asset validation and an
+`agentic_test` step instead of owning Alice desktop runtime details.
 
 ## 10 creative new scenarios
 
