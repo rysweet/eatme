@@ -780,7 +780,7 @@ student_outside_in_flow_assets:
       scenario_ids:
         - variables-scorekeeper-timekeeper
         - arrays-collection-choreography
-        - neighborhood-data-story
+        - functions-as-questions-about-the-world
       evidence:
         - Reflection maps data/state to visible world behavior and at least two test values.
     - id: interactive-playtest-card
@@ -792,7 +792,7 @@ student_outside_in_flow_assets:
       scenario_ids:
         - events-collision-proximity-game
         - mythic-choice-event-tree
-        - mars-rover-proximity-mission
+        - loops-and-conditionals-mini-challenge
       evidence:
         - Peer can trigger the interaction and the learner records one revision.
     - id: camera-vr-fallback-card
@@ -802,9 +802,7 @@ student_outside_in_flow_assets:
         Plan the intended immersive perspective, test it with a peer, and define a
         non-VR fallback such as camera-marker tour, storyboard, or screen recording.
       scenario_ids:
-        - audio-camera-and-export-sharecase
         - vr-camera-perspective-tour
-        - accessibility-rescue-camera-captions
       evidence:
         - Perspective choice improves audience understanding and includes a fallback.
   coverage_map:

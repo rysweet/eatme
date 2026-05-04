@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 mod discovery;
@@ -16,25 +17,26 @@ pub use validation::{validate_persona_crew, validate_scenario_asset};
 pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
     let persona_path = root.join("assets/personas/alice-user-crew.yaml");
     let scenario_root = root.join("assets/scenarios");
-    let mut report = validate_persona_crew(&persona_path)?;
-    let persona_index = validation::persona_reference_index(&persona_path)?;
-    report.schema_version = "eatme.assets/validation/v1".into();
-    report.asset_path = root.display().to_string();
+    let mut scenario_asset_ids = BTreeSet::new();
+    let mut scenario_errors = Vec::new();
+    let mut scenario_warnings = Vec::new();
+    let mut scenario_asset_count = 0;
 
     if !scenario_root.exists() {
-        report.errors.push(format!(
+        scenario_errors.push(format!(
             "{} must exist and contain scenario assets",
             scenario_root.display()
         ));
     } else if !scenario_root.is_dir() {
-        report.errors.push(format!(
+        scenario_errors.push(format!(
             "{} must be a directory containing scenario assets",
             scenario_root.display()
         ));
     } else {
         let scenario_paths = discovery::scenario_asset_paths(&scenario_root)?;
+        let persona_index = validation::persona_reference_index(&persona_path)?;
         if scenario_paths.is_empty() {
-            report.errors.push(format!(
+            scenario_errors.push(format!(
                 "{} must contain at least one .yaml or .yml scenario asset",
                 scenario_root.display()
             ));
@@ -42,14 +44,18 @@ pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
         for scenario_path in scenario_paths {
             let scenario_report =
                 validation::validate_scenario_asset_with_personas(&scenario_path, &persona_index)?;
-            report.scenario_asset_count += 1;
-            report.errors.extend(
+            let is_eatme_asset = scenario_report.asset_kind == "eatme";
+            if is_eatme_asset {
+                scenario_asset_ids.insert(scenario_report.id.clone());
+            }
+            scenario_asset_count += 1;
+            scenario_errors.extend(
                 scenario_report
                     .errors
                     .into_iter()
                     .map(|error| format!("{}: {error}", scenario_path.display())),
             );
-            report.warnings.extend(
+            scenario_warnings.extend(
                 scenario_report
                     .warnings
                     .into_iter()
@@ -57,6 +63,17 @@ pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
             );
         }
     }
+
+    let mut report = validation::validate_persona_crew_against_scenario_assets(
+        &persona_path,
+        Some(&scenario_asset_ids),
+    )?;
+    report.schema_version = "eatme.assets/validation/v1".into();
+    report.asset_path = root.display().to_string();
+    report.scenario_asset_count = scenario_asset_count;
+
+    report.errors.extend(scenario_errors);
+    report.warnings.extend(scenario_warnings);
 
     report.passed = report.errors.is_empty();
     Ok(report)

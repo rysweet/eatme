@@ -22,8 +22,24 @@ pub(crate) struct CrewAsset {
     #[serde(default)]
     pub(crate) constituency_coverage: Vec<ConstituencyCoverage>,
     pub(crate) personas: PersonaGroups,
+    #[serde(default)]
+    pub(crate) student_outside_in_flow_assets: StudentOutsideInFlowAssets,
     pub(crate) core_scenarios_from_existing_alice_resources: Vec<Scenario>,
     pub(crate) creative_new_teaching_learning_scenarios: Vec<Scenario>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct StudentOutsideInFlowAssets {
+    #[serde(default)]
+    pub(crate) prompt_cards: Vec<PromptCard>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct PromptCard {
+    #[serde(default)]
+    pub(crate) id: String,
+    #[serde(default)]
+    pub(crate) scenario_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
