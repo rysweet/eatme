@@ -15,6 +15,7 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
+    - EATME_REPO
     - RUN_ID
 
 agents:
@@ -22,7 +23,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 

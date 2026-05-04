@@ -47,8 +47,9 @@ mod tests {
             .join("../../assets/personas/alice-user-crew.yaml");
         let report = validate_persona_crew(&asset).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.instructor_count, 6);
-        assert_eq!(report.student_count, 7);
+        assert_eq!(report.instructor_count, 11);
+        assert_eq!(report.student_count, 10);
+        assert_eq!(report.core_scenario_count, 21);
         assert_eq!(report.creative_scenario_count, 10);
     }
 
