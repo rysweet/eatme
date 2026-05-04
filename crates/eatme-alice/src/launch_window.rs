@@ -2,24 +2,9 @@ use crate::discover::first_non_empty;
 use crate::launch_artifacts::artifact_info;
 use anyhow::{Context, Result, bail};
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
-use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::thread;
-use std::time::{Duration, Instant};
-
-pub fn choose_display() -> String {
-    let x11_unix_dir = env::var_os("X11_UNIX_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"));
-    for display in 90..130 {
-        let socket = x11_unix_dir.join(format!("X{display}"));
-        if !socket.exists() {
-            return format!(":{display}");
-        }
-    }
-    ":99".into()
-}
+use std::path::Path;
+use std::time::Duration;
 
 const ALICE_WINDOW_MARKERS: [&str; 4] = [
     "org.alice.stageide.entrypoint",
@@ -35,23 +20,6 @@ pub fn specific_alice_window_detected(window_list: &str) -> bool {
             .iter()
             .any(|marker| normalized.contains(marker))
     })
-}
-
-pub fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duration) -> bool {
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        if command_ok(
-            runner,
-            CommandSpec::new("xdpyinfo")
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(2))
-                .retries(2, Duration::from_millis(100)),
-        ) {
-            return true;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    false
 }
 
 pub fn capture_window_list(
@@ -114,21 +82,9 @@ pub fn capture_screenshot(
     artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
 }
 
-fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
-    runner
-        .run(&spec)
-        .map(|output| output.exit_status == Some(0))
-        .unwrap_or(false)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn chooses_non_default_display_format() {
-        assert!(choose_display().starts_with(':'));
-    }
 
     #[test]
     fn recognizes_alice_window_identity() {

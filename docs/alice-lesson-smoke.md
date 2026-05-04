@@ -17,6 +17,7 @@ functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
 first-lessons-real-ui-actions
+game-score-timer-win-lose-loop
 modified-class-portability
 ```
 
@@ -33,7 +34,8 @@ smoke readiness from deterministic harness evidence:
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
   `hour-of-code-studio-kickoff`, `building-a-scene-first-world`,
-  `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids.
+  `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids,
+  including the score/timer game lane.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - Alice log and window-list files are captured as artifacts when available.
@@ -74,6 +76,7 @@ assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
 assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
+assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
 ```
 
@@ -104,6 +107,7 @@ assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
 assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml
+assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 ```
 
@@ -203,6 +207,7 @@ eatme alice launch-smoke \
   --run-id <run-id> \
   [--scenario <scenario-id>] \
   [--runs-dir <path>] \
+  [--starter-project <path>] \
   [--timeout <seconds>] \
   [--json] \
   [--no-memory] \
@@ -236,6 +241,7 @@ failure as the current contract, not as passing coverage.
 | `--run-id <run-id>` | Stable id for this run. Use a descriptive id for local or CI traces. |
 | `--scenario <scenario-id>` | Scenario id to record in the manifest and run directory. Defaults to `real-alice-launch-smoke`; it does not load scenario YAML at runtime yet. |
 | `--runs-dir <path>` | Root directory for run artifacts. Defaults to `runs`. |
+| `--starter-project <path>` | Starter project to open. Relative paths resolve from `--alice-home`; defaults to Alice's `africa.a3p`. |
 | `--timeout <seconds>` | Maximum launch wait before the smoke fails. |
 | `--json` | Accepted compatibility flag. Output is currently pretty JSON whether or not this flag is present. |
 | `--no-memory` | Disable memory writes for the run. |
@@ -283,6 +289,9 @@ The baseline launch smoke uses:
 runs/real-alice-launch-smoke/<run-id>/
 ```
 
+If a run reuses the same `--run-id`, the previous evidence directory is archived
+next to the new run as `<run-id>.previous-...` instead of being deleted.
+
 ## Manifest reference
 
 Every launch smoke manifest includes the launch evidence needed by eatme and
@@ -291,7 +300,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, or `events-collision-proximity-game`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, or `modified-class-portability`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |

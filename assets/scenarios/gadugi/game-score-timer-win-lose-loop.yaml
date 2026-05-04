@@ -1,8 +1,8 @@
-name: "Eatme Real Alice Launch Smoke"
+name: "Eatme Game Score Timer Win Lose Loop Smoke"
 description: |
-  Gadugi-compatible CLI scenario that treats eatme as the system under test.
-  Desktop/Swing/Xvfb behavior remains owned by eatme; gadugi only runs CLI
-  commands and asserts manifest-level evidence.
+  Gadugi-compatible CLI scenario for the Game Score Timer Win Lose Loop lane.
+  Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
+  commands and checks manifest-level evidence before agentic score/timer/reflection judgment.
 version: "1.0.0"
 
 config:
@@ -13,6 +13,7 @@ config:
 environment:
   requires:
     - ALICE_HOME
+    - EATME_REAL_ALICE
   optional:
     - RUN_ID
     - EATME_REPO
@@ -27,7 +28,7 @@ agents:
       capture_output: true
 
 steps:
-  - name: "Validate editable Alice user assets"
+  - name: "Validate editable Alice scenario assets"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
@@ -39,6 +40,7 @@ steps:
       stdout_contains:
         - '"passed": true'
         - '"creative_scenario_count": 11'
+        - '"scenario_asset_count": 32'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
@@ -54,28 +56,14 @@ steps:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Discover packaged Alice fork"
+  - name: "Launch Game Score Timer Win Lose Loop lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json
-    expect:
-      exit_code: 0
-      stdout_contains:
-        - '"alice_ide_jar_exists": true'
-        - '"starter_project_exists": true'
-    timeout: 60000
-
-  - name: "Launch real Alice under Xvfb"
-    agent: "eatme-cli-agent"
-    action: "execute_command"
-    params:
-      command: |
-        cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-real-alice-launch-smoke}"
-        cargo run -q -p eatme-cli -- alice launch-smoke \
+        export RUN_ID="${RUN_ID:-gadugi-game-score-timer-win-lose-loop}"
+        EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
           --runs-dir runs \
@@ -83,12 +71,13 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario real-alice-launch-smoke
+          --scenario game-score-timer-win-lose-loop
     expect:
       exit_code: 0
       stdout_contains:
+        - '"scenario_id": "game-score-timer-win-lose-loop"'
         - '"failure_category": null'
-        - '"startup_screenshot": {'
+        - '"startup_window_or_screenshot": {'
         - '"passed": true'
     timeout: 1800000
 
@@ -97,7 +86,7 @@ assertions:
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Validate editable Alice user assets"
+      step: "Validate editable Alice scenario assets"
 
   - name: "Dependencies Available"
     type: "output_contains_all"
@@ -107,17 +96,20 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Alice Discoverable"
+  - name: "Game Score Timer Win Lose Loop Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Discover packaged Alice fork"
+      step: "Launch Game Score Timer Win Lose Loop lane under Xvfb"
 
-  - name: "Real Alice Launches"
-    type: "command_success"
+  - name: "Agentic Score Timer Reflection Contract"
+    type: "output_contains_all"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch real Alice under Xvfb"
+      step: "Validate editable Alice scenario assets"
+      required_strings:
+        - '"passed": true'
+        - '"creative_scenario_count": 11'
 
 metadata:
   tags:
@@ -125,6 +117,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
+    - "score-timer"
+    - "win-lose"
     - "outside-in"
   priority: "critical"
   author: "eatme"
