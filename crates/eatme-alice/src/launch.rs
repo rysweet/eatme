@@ -33,7 +33,7 @@ impl LaunchSmokeScenario {
     }
 
     pub fn accepts_window_evidence(&self) -> bool {
-        self.id == "building-a-scene-first-world"
+        self.id != "real-alice-launch-smoke"
     }
 }
 

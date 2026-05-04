@@ -223,10 +223,15 @@ fn validate_eatme_scenario(
         &mut errors,
     );
 
-    if scenario.id == "building-a-scene-first-world" {
-        if scenario.kind != "alice_lesson_smoke" {
-            errors.push("kind must be alice_lesson_smoke".into());
-        }
+    let is_known_lesson_smoke = matches!(
+        scenario.id.as_str(),
+        "building-a-scene-first-world" | "code-editor-first-run"
+    );
+    if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
+        errors.push("kind must be alice_lesson_smoke".into());
+    }
+
+    if scenario.kind == "alice_lesson_smoke" || is_known_lesson_smoke {
         if scenario.owner != "eatme" {
             errors.push("owner must be eatme".into());
         }
@@ -805,11 +810,13 @@ mod tests {
     }
 
     #[test]
-    fn validates_building_a_scene_lesson_assets() {
+    fn validates_committed_lesson_assets() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         for asset in [
             "assets/scenarios/eatme/building-a-scene-first-world.yaml",
             "assets/scenarios/gadugi/building-a-scene-first-world.yaml",
+            "assets/scenarios/eatme/code-editor-first-run.yaml",
+            "assets/scenarios/gadugi/code-editor-first-run.yaml",
         ] {
             let report = validate_scenario_asset(&root.join(asset)).unwrap();
             assert!(report.passed, "{asset}: {:?}", report.errors);
@@ -862,21 +869,21 @@ mod tests {
     }
 
     #[test]
-    fn building_a_scene_requires_real_alice_gate() {
+    fn lesson_smoke_requires_real_alice_gate() {
         let scenario = EatmeScenarioAsset {
             schema_version: "eatme.scenario/v1".into(),
-            id: "building-a-scene-first-world".into(),
-            title: "Building a Scene First World".into(),
+            id: "code-editor-first-run".into(),
+            title: "Code Editor First Run".into(),
             kind: "alice_lesson_smoke".into(),
             owner: "eatme".into(),
             purpose: "launches through the real Alice smoke harness".into(),
             launcher: Some(EatmeScenarioLauncher {
                 command: "alice launch-smoke".into(),
-                scenario: "building-a-scene-first-world".into(),
+                scenario: "code-editor-first-run".into(),
             }),
             steps: vec![EatmeScenarioStep {
                 id: "launch-smoke".into(),
-                command: "eatme alice launch-smoke --scenario building-a-scene-first-world".into(),
+                command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
                 evidence: vec!["manifest scenario_id matches".into()],
             }],
             timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
@@ -898,6 +905,57 @@ mod tests {
                 .errors
                 .iter()
                 .any(|error| error.contains("real_alice.gated_by"))
+        );
+    }
+
+    #[test]
+    fn known_lesson_smoke_requires_lesson_kind() {
+        let scenario = EatmeScenarioAsset {
+            schema_version: "eatme.scenario/v1".into(),
+            id: "code-editor-first-run".into(),
+            title: "Code Editor First Run".into(),
+            owner: "eatme".into(),
+            purpose: "launches through the real Alice smoke harness".into(),
+            launcher: Some(EatmeScenarioLauncher {
+                command: "alice launch-smoke".into(),
+                scenario: "code-editor-first-run".into(),
+            }),
+            real_alice: Some(EatmeScenarioRealAlice {
+                gated_by: "EATME_REAL_ALICE=1".into(),
+            }),
+            smoke_ready: Some(EatmeScenarioSmokeReady {
+                evidence: vec!["manifest assertions".into()],
+            }),
+            acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
+                given: "dependencies are available".into(),
+                when: "the lane launches".into(),
+                then: "the manifest records the scenario id".into(),
+            }],
+            steps: vec![EatmeScenarioStep {
+                id: "launch-smoke".into(),
+                command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
+                evidence: vec!["manifest scenario_id matches".into()],
+            }],
+            timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
+            artifacts: BTreeMap::from([
+                ("manifest".into(), "runs/code/manifest.json".into()),
+                (
+                    "screenshot".into(),
+                    "runs/code/screenshots/startup.png".into(),
+                ),
+                ("log".into(), "runs/code/alice.log".into()),
+            ]),
+            unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
+            ..EatmeScenarioAsset::default()
+        };
+        let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario);
+
+        assert!(!report.passed);
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|error| error.contains("kind must be alice_lesson_smoke"))
         );
     }
 
