@@ -1,0 +1,71 @@
+name: Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      run_real_alice:
+        description: Run the real Alice launch smoke on a self-hosted runner
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-quality:
+    name: fmt, clippy, tests, module size, coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy,llvm-tools-preview
+          rustup default stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install cargo-llvm-cov
+        run: |
+          if ! cargo llvm-cov --version >/dev/null 2>&1; then
+            cargo install cargo-llvm-cov --locked
+          fi
+
+      - name: Run local quality gates
+        run: scripts/quality-gates.sh
+
+  real-alice-launch-smoke:
+    name: manual real Alice launch smoke
+    if: github.event_name == 'workflow_dispatch' && inputs.run_real_alice
+    needs: rust-quality
+    runs-on: [self-hosted, linux, x64, alice]
+    env:
+      EATME_REAL_ALICE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run explicit real Alice smoke
+        run: |
+          test -n "${ALICE_HOME:-}"
+          cargo run -p eatme-cli -- alice launch-smoke \
+            --alice-home "$ALICE_HOME" \
+            --run-id "ci-${{ github.run_id }}-${{ github.run_attempt }}" \
+            --json

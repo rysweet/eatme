@@ -40,7 +40,7 @@ steps:
       stdout_contains:
         - '"passed": true'
         - '"creative_scenario_count": 11'
-        - '"scenario_asset_count": 20'
+        - '"scenario_asset_count": 30'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
