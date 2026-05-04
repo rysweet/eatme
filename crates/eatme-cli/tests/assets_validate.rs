@@ -88,3 +88,27 @@ fn assets_validate_combines_multiple_persona_crews() {
         String::from_utf8_lossy(&output.stdout)
     );
 }
+
+#[test]
+fn assets_validate_reports_malformed_discovered_persona_yaml() {
+    let scenario_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/malformed-root/flows/eatme/test_malformed_persona.yaml");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_eatme-cli"))
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .expect("run eatme-cli assets validate");
+
+    assert!(
+        !output.status.success(),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("parsing persona crew YAML") && stderr.contains("bad-crew.yaml"),
+        "stderr: {stderr}"
+    );
+}

@@ -1,8 +1,9 @@
-name: "Eatme Events Collision Proximity Game Smoke"
+name: "Eatme Hour of Code Studio Kickoff Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the Events Collision Proximity Game lesson smoke lane.
+  Gadugi-compatible CLI scenario for the Hour of Code studio kickoff lane.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  commands and checks manifest-level evidence only before any instructor/student
+  agent evaluates setup, first scene, first animation, evidence, or reflection.
 version: "1.0.0"
 
 config:
@@ -32,7 +33,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
     expect:
       exit_code: 0
       stdout_contains:
@@ -44,20 +45,20 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
     expect:
       exit_code: 0
       stdout_contains:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Events Collision Proximity Game lane under Xvfb"
+  - name: "Launch Hour of Code studio kickoff lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-events-collision-proximity-game}"
+        export RUN_ID="${RUN_ID:-gadugi-hour-of-code-studio-kickoff}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -66,11 +67,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario events-collision-proximity-game
+          --scenario hour-of-code-studio-kickoff
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "events-collision-proximity-game"'
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
         - '"failure_category": null'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
@@ -91,11 +92,21 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Events Collision Proximity Game Launches"
+  - name: "Hour of Code Studio Kickoff Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Events Collision Proximity Game lane under Xvfb"
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+
+  - name: "Manifest Boundary Only"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+      required_strings:
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
+        - '"failure_category": null'
+        - '"passed": true'
 
 metadata:
   tags:
@@ -103,7 +114,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "events-proximity"
+    - "hour-of-code"
+    - "studio-kickoff"
     - "outside-in"
   priority: "critical"
   author: "eatme"

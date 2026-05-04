@@ -17,9 +17,8 @@ pub(crate) fn discover_scenario_personas(path: &Path) -> Result<PersonaDiscovery
         let mut crew_paths = yaml_paths_under(&persona_dir)?;
         crew_paths.sort();
         for crew_path in crew_paths {
-            if let Ok(index) = persona_reference_index(&crew_path) {
-                accumulator.merge(&crew_path, index);
-            }
+            let index = persona_reference_index(&crew_path)?;
+            accumulator.merge(&crew_path, index);
         }
     }
 

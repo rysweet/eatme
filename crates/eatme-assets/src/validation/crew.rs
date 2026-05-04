@@ -1,6 +1,6 @@
 use super::{PersonaReferenceIndex, require_list, require_nonempty, validate_id};
 use crate::report::AssetValidationReport;
-use crate::schema::{CrewAsset, Persona, Scenario};
+use crate::schema::{ConstituencyCoverage, CrewAsset, Persona, Scenario};
 use anyhow::{Context, Result};
 use std::collections::BTreeSet;
 use std::fs;
@@ -99,6 +99,12 @@ fn validate_crew(path: &Path, crew: &CrewAsset) -> AssetValidationReport {
         &mut scenario_ids,
         &mut errors,
     );
+    validate_constituency_coverage(
+        &crew.constituency_coverage,
+        &all_ids,
+        &scenario_ids,
+        &mut errors,
+    );
 
     AssetValidationReport {
         schema_version: "eatme.assets/persona-crew-validation/v1".into(),
@@ -111,6 +117,76 @@ fn validate_crew(path: &Path, crew: &CrewAsset) -> AssetValidationReport {
         scenario_asset_count: 0,
         errors,
         warnings,
+    }
+}
+
+fn validate_constituency_coverage(
+    constituency_coverage: &[ConstituencyCoverage],
+    all_persona_ids: &BTreeSet<String>,
+    all_scenario_ids: &BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    let required_constituencies = [
+        "curriculum-designers",
+        "it-setup-support",
+        "workshop-facilitators",
+        "vr-player-users",
+        "media-audio-creators",
+        "model-texture-import-users",
+        "alice-2-migration-users",
+        "teacher-community-sharing",
+    ];
+    let mut seen_ids = BTreeSet::new();
+
+    for coverage in constituency_coverage {
+        validate_id(&coverage.id, "constituency", errors);
+        if !seen_ids.insert(coverage.id.clone()) {
+            errors.push(format!("duplicate constituency id {}", coverage.id));
+        }
+        require_nonempty(&coverage.label, &format!("{}.label", coverage.id), errors);
+        require_nonempty(
+            &coverage.editable_by,
+            &format!("{}.editable_by", coverage.id),
+            errors,
+        );
+        require_list(
+            &coverage.persona_ids,
+            &format!("{}.persona_ids", coverage.id),
+            errors,
+        );
+        require_list(
+            &coverage.scenario_ids,
+            &format!("{}.scenario_ids", coverage.id),
+            errors,
+        );
+        require_list(
+            &coverage.evidence,
+            &format!("{}.evidence", coverage.id),
+            errors,
+        );
+
+        for persona_id in &coverage.persona_ids {
+            if !all_persona_ids.contains(persona_id) {
+                errors.push(format!(
+                    "constituency {} references missing persona {}",
+                    coverage.id, persona_id
+                ));
+            }
+        }
+        for scenario_id in &coverage.scenario_ids {
+            if !all_scenario_ids.contains(scenario_id) {
+                errors.push(format!(
+                    "constituency {} references missing scenario {}",
+                    coverage.id, scenario_id
+                ));
+            }
+        }
+    }
+
+    for required_id in required_constituencies {
+        if !seen_ids.contains(required_id) {
+            errors.push(format!("missing constituency coverage {required_id}"));
+        }
     }
 }
 

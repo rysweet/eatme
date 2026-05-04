@@ -58,15 +58,15 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
         json: true,
         no_memory: true,
         offline_package: true,
-        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+        scenario: LaunchSmokeScenario::new("hour-of-code-studio-kickoff"),
     })
     .unwrap();
 
-    assert_eq!(manifest.scenario_id, "code-editor-first-run");
+    assert_eq!(manifest.scenario_id, "hour-of-code-studio-kickoff");
     assert!(
         fixture
             .root
-            .join("runs/code-editor-first-run/lesson-run/manifest.json")
+            .join("runs/hour-of-code-studio-kickoff/lesson-run/manifest.json")
             .is_file()
     );
 }
@@ -105,6 +105,83 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
         smoke_ready.passed,
         "window evidence should pass startup smoke-ready assertion: {:?}",
         smoke_ready
+    );
+}
+
+#[test]
+fn lesson_smoke_rejects_unrelated_window_without_screenshot() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_failing_screenshot_tools();
+    fixture.write_unrelated_window_tool();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "unrelated-window-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("screenshot_missing")
+    );
+    assert!(manifest.screenshot_error.is_some());
+    let smoke_ready = manifest
+        .assertions
+        .get("startup_window_or_screenshot")
+        .expect("manifest should assert startup window-or-screenshot evidence");
+    assert!(
+        !smoke_ready.passed,
+        "unrelated windows must not satisfy Alice launch evidence: {:?}",
+        smoke_ready
+    );
+}
+
+#[test]
+fn launch_smoke_fails_when_alice_log_is_missing() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_missing_log_java_tool();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "missing-log-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+    })
+    .unwrap();
+
+    assert_eq!(manifest.failure_category.as_deref(), Some("log_unreadable"));
+    assert!(manifest.log.is_none());
+    assert!(
+        manifest
+            .log_error
+            .as_deref()
+            .is_some_and(|error| error.contains("reading Alice log")),
+        "missing log read error should be preserved in manifest: {:?}",
+        manifest.log_error
+    );
+    let no_fatal_logs = manifest
+        .assertions
+        .get("no_fatal_logs")
+        .expect("manifest should assert fatal-log scan");
+    assert!(
+        !no_fatal_logs.passed,
+        "missing logs must not be treated as no fatal logs"
     );
 }
 
@@ -161,7 +238,10 @@ impl TestFixture {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root = env::temp_dir().join(format!("eatme-launch-smoke-{nonce}"));
+        let root = env::current_dir()
+            .unwrap()
+            .join("target/test-work/launch-smoke")
+            .join(format!("{nonce}"));
         let bin = root.join("bin");
         let alice_home = root.join("alice");
         fs::create_dir_all(&bin).unwrap();
@@ -248,6 +328,32 @@ exit 1
             "import",
             r#"#!/bin/sh
 exit 1
+"#,
+        );
+    }
+
+    fn write_unrelated_window_tool(&self) {
+        self.write_tool(
+            "wmctrl",
+            r#"#!/bin/sh
+echo "0x001 unrelated.firefox.Firefox Firefox"
+"#,
+        );
+    }
+
+    fn write_missing_log_java_tool(&self) {
+        self.write_tool(
+            "java",
+            r#"#!/bin/sh
+if [ "$1" = "-version" ]; then
+  echo "openjdk version 21" 1>&2
+  exit 0
+fi
+log_path="$(readlink /proc/$$/fd/1 2>/dev/null || true)"
+if [ -n "$log_path" ]; then
+  rm -f "$log_path"
+fi
+sleep 30
 "#,
         );
     }

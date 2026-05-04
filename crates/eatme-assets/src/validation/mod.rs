@@ -1,5 +1,6 @@
 mod crew;
 mod persona_discovery;
+mod portability;
 mod scenario;
 
 pub(crate) use crew::persona_reference_index;

@@ -1,6 +1,6 @@
 use super::{
     PersonaDiscovery, PersonaReferenceIndex, contextualize_scenario_errors,
-    discover_scenario_personas, require_list, require_nonempty, validate_id,
+    discover_scenario_personas, portability, require_list, require_nonempty, validate_id,
     validate_reference_list,
 };
 use crate::report::ScenarioAssetValidationReport;
@@ -144,6 +144,10 @@ fn validate_eatme_scenario(
             persona_diagnostics,
             &mut errors,
         );
+    }
+
+    if portability::is_class_portability_scenario(scenario) {
+        portability::validate_class_portability_scenario(scenario, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);

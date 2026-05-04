@@ -19,9 +19,27 @@ pub(crate) struct CrewAsset {
     pub(crate) asset_shapes: Option<Value>,
     #[serde(default)]
     pub(crate) personality_assets: Option<Value>,
+    #[serde(default)]
+    pub(crate) constituency_coverage: Vec<ConstituencyCoverage>,
     pub(crate) personas: PersonaGroups,
     pub(crate) core_scenarios_from_existing_alice_resources: Vec<Scenario>,
     pub(crate) creative_new_teaching_learning_scenarios: Vec<Scenario>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ConstituencyCoverage {
+    pub(crate) id: String,
+    #[serde(default)]
+    pub(crate) label: String,
+    #[serde(default)]
+    pub(crate) editable_by: String,
+    #[serde(default)]
+    pub(crate) persona_ids: Vec<String>,
+    #[serde(default)]
+    pub(crate) scenario_ids: Vec<String>,
+    #[serde(default)]
+    pub(crate) evidence: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -107,6 +125,9 @@ pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) personas: Option<ScenarioPersonas>,
     #[serde(default)]
+    #[allow(dead_code)]
+    pub(crate) persona_assets: Option<Value>,
+    #[serde(default)]
     pub(crate) capabilities: Option<ScenarioCapabilities>,
     #[serde(default)]
     pub(crate) adapter: Option<ScenarioAdapter>,
@@ -117,6 +138,9 @@ pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) steps: Vec<EatmeScenarioStep>,
     #[serde(default)]
+    #[allow(dead_code)]
+    pub(crate) studio_cycle: Option<Value>,
+    #[serde(default)]
     pub(crate) agentic_follow_on: Option<ScenarioAgenticFollowOn>,
     #[serde(default)]
     pub(crate) timeouts: BTreeMap<String, u64>,
@@ -124,6 +148,8 @@ pub(crate) struct EatmeScenarioAsset {
     pub(crate) artifacts: BTreeMap<String, String>,
     #[serde(default)]
     pub(crate) unsupported_policy: String,
+    #[serde(default)]
+    pub(crate) portability: Option<EatmeScenarioPortability>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -205,6 +231,21 @@ pub(crate) struct EatmeScenarioStep {
     pub(crate) command: String,
     #[serde(default)]
     pub(crate) evidence: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EatmeScenarioPortability {
+    #[serde(default)]
+    pub(crate) source_project: String,
+    #[serde(default)]
+    pub(crate) destination_project: String,
+    #[serde(default)]
+    pub(crate) modified_class: String,
+    #[serde(default)]
+    pub(crate) share_channel: String,
+    #[serde(default)]
+    pub(crate) evidence_after_import: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
