@@ -14,8 +14,8 @@ environment:
   requires:
     - ALICE_HOME
   optional:
-    - EATME_REPO
     - RUN_ID
+    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"

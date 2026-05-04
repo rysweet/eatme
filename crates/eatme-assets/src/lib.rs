@@ -49,7 +49,7 @@ mod tests {
         assert!(report.passed, "{:?}", report.errors);
         assert_eq!(report.instructor_count, 11);
         assert_eq!(report.student_count, 10);
-        assert_eq!(report.core_scenario_count, 20);
+        assert_eq!(report.core_scenario_count, 21);
         assert_eq!(report.creative_scenario_count, 10);
     }
 
