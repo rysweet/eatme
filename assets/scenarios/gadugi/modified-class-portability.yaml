@@ -1,8 +1,9 @@
-name: "Eatme Functions As Questions About The World Smoke"
+name: "Eatme Modified Class Portability Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the Functions as Questions About the World lesson smoke lane.
-  Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  Gadugi-compatible CLI scenario for the modified class portability lane. An
+  instructor/student agent authors the export/import/share story, but Alice
+  desktop launch behavior remains owned by eatme; gadugi invokes eatme commands
+  and checks manifest plus portability evidence only.
 version: "1.0.0"
 
 config:
@@ -14,9 +15,9 @@ environment:
   requires:
     - ALICE_HOME
     - EATME_REAL_ALICE
+    - EATME_REPO
   optional:
     - RUN_ID
-    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -40,24 +41,25 @@ steps:
         - '"scenario_asset_count": 16'
     timeout: 60000
 
-  - name: "Check desktop launch dependencies"
+  - name: "Validate modified class portability contract"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/modified-class-portability.yaml --json'
     expect:
       exit_code: 0
       stdout_contains:
-        - '"all_required_available": true'
+        - '"passed": true'
+        - '"id": "modified-class-portability"'
     timeout: 60000
 
-  - name: "Launch Functions as Questions About the World lane under Xvfb"
+  - name: "Launch modified class portability lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-functions-as-questions-about-the-world}"
+        export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -66,11 +68,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario functions-as-questions-about-the-world
+          --scenario modified-class-portability
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "functions-as-questions-about-the-world"'
+        - '"scenario_id": "modified-class-portability"'
         - '"failure_category": null'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
@@ -83,19 +85,20 @@ assertions:
     params:
       step: "Validate editable Alice scenario assets"
 
-  - name: "Dependencies Available"
+  - name: "Portability Contract Validates"
     type: "output_contains_all"
     agent: "eatme-cli-agent"
     params:
-      step: "Check desktop launch dependencies"
+      step: "Validate modified class portability contract"
       required_strings:
-        - '"all_required_available": true'
+        - '"id": "modified-class-portability"'
+        - '"passed": true'
 
-  - name: "Functions as Questions About the World Launches"
+  - name: "Modified Class Portability Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Functions as Questions About the World lane under Xvfb"
+      step: "Launch modified class portability lane under Xvfb"
 
 metadata:
   tags:
@@ -103,7 +106,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "functions"
+    - "modified-class"
+    - "export-import-share"
     - "outside-in"
   priority: "critical"
   author: "eatme"

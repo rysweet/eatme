@@ -1,8 +1,9 @@
-name: "Eatme Functions As Questions About The World Smoke"
+name: "Eatme Hour of Code Studio Kickoff Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the Functions as Questions About the World lesson smoke lane.
+  Gadugi-compatible CLI scenario for the Hour of Code studio kickoff lane.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  commands and checks manifest-level evidence only before any instructor/student
+  agent evaluates setup, first scene, first animation, evidence, or reflection.
 version: "1.0.0"
 
 config:
@@ -13,10 +14,10 @@ config:
 environment:
   requires:
     - ALICE_HOME
+    - EATME_REPO
     - EATME_REAL_ALICE
   optional:
     - RUN_ID
-    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -51,13 +52,13 @@ steps:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Functions as Questions About the World lane under Xvfb"
+  - name: "Launch Hour of Code studio kickoff lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-functions-as-questions-about-the-world}"
+        export RUN_ID="${RUN_ID:-gadugi-hour-of-code-studio-kickoff}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -66,11 +67,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario functions-as-questions-about-the-world
+          --scenario hour-of-code-studio-kickoff
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "functions-as-questions-about-the-world"'
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
         - '"failure_category": null'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
@@ -91,11 +92,21 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Functions as Questions About the World Launches"
+  - name: "Hour of Code Studio Kickoff Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Functions as Questions About the World lane under Xvfb"
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+
+  - name: "Manifest Boundary Only"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+      required_strings:
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
+        - '"failure_category": null'
+        - '"passed": true'
 
 metadata:
   tags:
@@ -103,7 +114,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "functions"
+    - "hour-of-code"
+    - "studio-kickoff"
     - "outside-in"
   priority: "critical"
   author: "eatme"

@@ -1,7 +1,6 @@
-use crate::discover::first_non_empty;
-use anyhow::{Context, Result, bail};
-use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
-use std::fs::{self, File};
+use anyhow::{Context, Result};
+use eatme_core::{CommandRunner, CommandSpec};
+use std::fs::File;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::thread;
@@ -98,79 +97,11 @@ pub(crate) fn wait_for_display(
     false
 }
 
-pub(crate) fn capture_window_list(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<String> {
-    let output = runner.run(
-        &CommandSpec::new("wmctrl")
-            .args(["-lx"])
-            .env("DISPLAY", display)
-            .timeout(Duration::from_secs(5))
-            .retries(2, Duration::from_millis(100)),
-    )?;
-    if output.exit_status != Some(0) {
-        bail!(
-            "capturing window list failed with {:?}\n{}{}",
-            output.exit_status,
-            output.stdout,
-            output.stderr
-        );
-    }
-    let combined = first_non_empty(&output.stdout, &output.stderr);
-    fs::write(run_dir.join("window-list.txt"), &combined)?;
-    Ok(combined)
-}
-
-pub(crate) fn capture_screenshot(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<ArtifactInfo> {
-    let path = run_dir.join("screenshots/startup.png");
-    let scrot = CommandSpec::new("scrot")
-        .args([path.display().to_string()])
-        .env("DISPLAY", display)
-        .timeout(Duration::from_secs(10))
-        .retries(2, Duration::from_millis(100));
-    let output = runner.run(&scrot)?;
-    if output.exit_status != Some(0) {
-        let fallback = runner.run(
-            &CommandSpec::new("import")
-                .args(["-window".into(), "root".into(), path.display().to_string()])
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(10))
-                .retries(2, Duration::from_millis(100)),
-        )?;
-        if fallback.exit_status != Some(0) {
-            bail!(
-                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
-                output.exit_status,
-                fallback.exit_status,
-                output.stdout,
-                output.stderr,
-                fallback.stdout,
-                fallback.stderr
-            );
-        }
-    }
-    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
-}
-
 fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
     runner
         .run(&spec)
         .map(|output| output.exit_status == Some(0))
         .unwrap_or(false)
-}
-
-pub(crate) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
-    Ok(ArtifactInfo {
-        path: path.display().to_string(),
-        size_bytes: file_size(path)?,
-        sha256: sha256_file(path)?,
-    })
 }
 
 pub(crate) fn shutdown(child: &mut Child) {

@@ -34,6 +34,9 @@ source_basis:
     - name: Programming in Alice lesson
       url: https://www.alice.org/resources/lessons/programming-in-alice/
       use: Code editor, procedures, methods, functions, parameters, run, edit, control structures, camera moves, sound.
+    - name: Hour of Code lesson
+      url: https://www.alice.org/resources/lessons/hour-of-code/
+      use: Condensed studio entry point for storyboard, first scene, first animation, evidence, and reflection.
     - name: Alice 3 download/setup page
       url: https://www.alice.org/get-alice/alice-3/
       use: 'Setup constraints: desktop/laptop, graphics, Java/OpenGL/Linux details, video-driver problems, Chromebook caveats.'
@@ -115,6 +118,26 @@ personality_assets:
       evidence:
         - Learner keeps control of the project and records the hypothesis.
         - Environmental launch problems are separated from learner code bugs.
+    - id: portability-studio-card
+      editable_by: instructor-agent
+      purpose: Frame modified class export/import/share as a transfer-of-behavior studio check.
+      prompt_frame: >-
+        Ask learners to name the class they changed, predict what behavior must
+        survive export, import it into a different project, run the imported
+        class, and compare before-export and after-import evidence.
+      evidence:
+        - The exported class is tied to a learner-visible behavior, not just a file name.
+        - The post-import run or reflection shows the same behavior in another project.
+    - id: hour-of-code-studio-kickoff-card
+      editable_by: instructor-agent
+      purpose: Run a one-hour Alice studio kickoff without hiding setup risk.
+      prompt_frame: >-
+        Start with a launch/readiness check, give a two-object storyboard
+        constraint, require one first animation, then collect screenshot or
+        window evidence plus a one-sentence cause/effect reflection.
+      evidence:
+        - Setup blockers and fallbacks are named before creative work starts.
+        - Student evidence includes first scene, first animation, and reflection.
   student_prompts:
     - id: prediction-observation-reflection-card
       editable_by: student-agent
@@ -143,6 +166,24 @@ personality_assets:
       evidence:
         - Peer feedback causes a visible revision.
         - Student names trigger, response, state, or audience cue involved.
+    - id: class-remix-transfer-card
+      editable_by: student-agent
+      purpose: Make class portability evidence visible when a modified class moves between projects.
+      prompt_frame: >-
+        I changed this class to..., I exported/shared it by..., my peer imported
+        it into..., and after import we saw the same behavior when...
+      evidence:
+        - Student names the modified class and behavior before sharing.
+        - Destination-project evidence confirms behavior persists after import.
+    - id: hour-of-code-novice-reflection-card
+      editable_by: student-agent
+      purpose: Make a novice's first Alice studio artifact assessable.
+      prompt_frame: >-
+        My first scene has..., my first animation makes..., I know it ran because...,
+        and my next change would be...
+      evidence:
+        - Reflection links a visible animation to a student-authored choice.
+        - Next change stays small enough for a second run in the same session.
   pairing_patterns:
     - id: concept-to-artifact
       instructors: [concept-cartographer, studio-facilitator]
@@ -156,6 +197,10 @@ personality_assets:
       instructors: [studio-facilitator, classroom-orchestrator]
       students: [accessibility-advocate, reflective-debugger]
       use_for: Export/share, gallery walk, audio/caption, and classroom adaptation lessons.
+    - id: share-to-import
+      instructors: [classroom-orchestrator, assessment-curator, studio-facilitator]
+      students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
+      use_for: Modified class export/import/share, peer remix, and portability evidence lessons.
 personas:
   instructors:
     - id: concept-cartographer
@@ -689,6 +734,41 @@ core_scenarios_from_existing_alice_resources:
       - Peer feedback targets concept and communication, not only aesthetics.
     avoid:
       - Assuming one exact export format, LMS, or media pipeline.
+  - id: modified-class-portability
+    origin: existing-alice-resource
+    coverage: [export-share, classroom-use, run-debug]
+    user_story: As a classroom-orchestrator, I want students to export, share, and import modified classes across Alice projects, so that reusable behavior travels with attribution and still works after import.
+    personas:
+      instructors: [classroom-orchestrator, assessment-curator, studio-facilitator]
+      students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
+    educational_intent:
+      concepts: [class, method, object behavior, export, import, reuse, attribution]
+      habits: [transfer, evidence gathering, peer verification, responsible sharing]
+    constraints:
+      - Students may confuse sharing a whole project with exporting a reusable modified class.
+      - The class must be tested in a different project, not only re-opened in the original source world.
+      - Credit, naming, and classroom sharing policy must be visible in the activity.
+    observable_behaviors:
+      instructor:
+        - Frames portability as a claim that needs before-export and after-import evidence.
+        - Assigns peer roles for source-project author, destination-project importer, and evidence checker.
+      student:
+        - Names the modified class, the behavior it owns, and the project it came from.
+        - Imports the shared class into another project and records whether the behavior persisted.
+      system_or_artifact:
+        - Export package, import report, and post-import run/reflection show the same learner-visible behavior in a different project.
+    agentic_test_prompt: >-
+      Create an Alice portability studio lane where a student modifies a class,
+      exports and shares it, a peer imports it into a different project, and the
+      pair proves the same visible behavior still runs after import. Prefer
+      instructor/student agent language, before/after evidence, attribution, and
+      fallback steps if export/import fails.
+    acceptance_probes:
+      - Given a source project with a modified class, when it is exported and shared, then evidence names the class and the visible behavior it should preserve.
+      - Given a destination project imports the class, when the imported behavior runs, then evidence compares before-export and after-import behavior.
+      - The activity distinguishes class portability from whole-project sharing and includes peer attribution.
+    avoid:
+      - Exact filesystem paths, private implementation inspection, or claiming success without running the imported class in a second project.
   - id: classroom-gallery-walk-and-rubric
     origin: existing-alice-resource
     coverage: [classroom-use, export-share, lessons]
@@ -718,6 +798,41 @@ core_scenarios_from_existing_alice_resources:
       - Feedback includes observation, question, and suggested revision.
     avoid:
       - Ranking by visual spectacle or enforcing one project template.
+  - id: hour-of-code-studio-kickoff
+    origin: existing-alice-resource
+    coverage: [setup, lessons, world-creation, run-debug, classroom-use]
+    user_story: As a studio-facilitator, I want a one-hour Alice kickoff that moves from setup to first scene, first animation, and reflection, so that novice students leave with visible evidence of programming cause and effect.
+    personas:
+      instructors: [classroom-orchestrator, studio-facilitator, concept-cartographer]
+      students: [curious-novice, creative-storyteller, reflective-debugger]
+    educational_intent:
+      concepts: [setup readiness, storyboard, virtual world, procedure, run, evidence]
+      habits: [prediction, creative ownership, reflection, resilient fallback]
+    constraints:
+      - Designed for a 60-minute Hour of Code studio with mixed device readiness.
+      - The artifact must work with many object choices and not depend on exact coordinates.
+      - Instructor agents must separate environmental launch problems from learner mistakes.
+    observable_behaviors:
+      instructor:
+        - Starts with launch/readiness and fallback pairing before concept instruction.
+        - Frames first scene and first animation as a tiny storyboard, not a menu-following race.
+        - Collects evidence and reflection before suggesting polish.
+      student:
+        - Builds a small scene with at least two meaningful objects or roles.
+        - Runs one first animation and changes one visible choice after observing it.
+        - Uses novice language to connect the change to visible behavior.
+      system_or_artifact:
+        - Run-ready Alice session, first scene, first animation evidence, and reflection are captured without brittle UI selectors.
+    agentic_test_prompt: >-
+      Create an Hour of Code Alice studio kickoff grounded in the official Hour of Code, Building a Scene, and Programming in Alice resources. Include instructor setup/fallback moves, a novice student's first scene and first animation, deterministic launch evidence, and a reflection that links a visible behavior to a student choice.
+    acceptance_probes:
+      - Given mixed setup readiness, when the kickoff starts, then every learner has a real launch path or fallback studio role.
+      - Given a novice student, when they complete the first build cycle, then there is visible evidence of a scene, one animation, and one cause/effect reflection.
+      - Given gadugi runs the adapter, when it exercises the lane, then it invokes eatme CLI and inspects manifest-level evidence only.
+    avoid:
+      - Exact object names, coordinates, UI selectors, or a single correct story.
+      - Treating setup failure as student failure.
+      - Grading visual polish before first-run evidence and reflection.
 creative_new_teaching_learning_scenarios:
   - id: weather-wizard-conditional-theater
     origin: creative-new
