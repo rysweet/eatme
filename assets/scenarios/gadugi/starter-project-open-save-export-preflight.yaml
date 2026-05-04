@@ -1,8 +1,8 @@
-name: "Eatme Building a Scene First World Smoke"
+name: "Eatme Starter Project Open Save Export Preflight"
 description: |
-  Gadugi-compatible CLI scenario for the Building a Scene First World lesson
-  smoke lane. Alice desktop launch behavior remains owned by eatme; gadugi
-  invokes eatme commands and checks manifest-level evidence only.
+  Gadugi-compatible CLI scenario for the real Alice starter-project preflight.
+  Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
+  commands and checks manifest-level evidence before save/reopen/export work.
 version: "1.0.0"
 
 config:
@@ -16,6 +16,7 @@ environment:
     - EATME_REAL_ALICE
   optional:
     - RUN_ID
+    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -31,9 +32,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: |
-        cd "${EATME_REPO:-.}"
-        cargo run -q -p eatme-cli -- assets validate --json
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
     expect:
       exit_code: 0
       stdout_contains:
@@ -45,22 +44,20 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: |
-        cd "${EATME_REPO:-.}"
-        cargo run -q -p eatme-cli -- deps check --json
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
     expect:
       exit_code: 0
       stdout_contains:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Building a Scene lane under Xvfb"
+  - name: "Launch starter project preflight under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-building-a-scene-first-world}"
+        export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -69,14 +66,15 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario building-a-scene-first-world
+          --scenario starter-project-open-save-export-preflight
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "building-a-scene-first-world"'
+        - '"scenario_id": "starter-project-open-save-export-preflight"'
         - '"failure_category": null'
         - '"real_alice_execution_evidence": {'
-        - '"startup_screenshot": {'
+        - '"startup_window_or_screenshot": {'
+        - 'africa.a3p'
         - '"passed": true'
     timeout: 1800000
 
@@ -95,11 +93,11 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Building a Scene Launches"
+  - name: "Starter Project Preflight Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Building a Scene lane under Xvfb"
+      step: "Launch starter project preflight under Xvfb"
 
 metadata:
   tags:
@@ -107,7 +105,7 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "building-a-scene"
+    - "open-save-export"
     - "outside-in"
   priority: "critical"
   author: "eatme"

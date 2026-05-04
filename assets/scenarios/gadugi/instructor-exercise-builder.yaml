@@ -35,7 +35,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 33'
+        - '"scenario_asset_count": 35'
         - '"instructor-exercise-builder"'
     timeout: 60000
 

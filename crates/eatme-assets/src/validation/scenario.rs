@@ -135,6 +135,7 @@ fn validate_lesson_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>
         None => errors.push("smoke_ready.evidence must be defined".into()),
     }
     validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+    validate_launch_smoke_real_evidence(scenario, errors);
 }
 
 fn validate_legacy_launch_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
@@ -161,6 +162,22 @@ fn validate_launch_smoke_contract(scenario: &EatmeScenarioAsset, errors: &mut Ve
         }
     }
     require_timeout_and_policy(scenario, errors);
+}
+
+fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    let launch_step_mentions_real_evidence = scenario.steps.iter().any(|step| {
+        step.command.contains("alice launch-smoke")
+            && step
+                .evidence
+                .iter()
+                .any(|evidence| evidence.contains("real_alice_execution_evidence"))
+    });
+    if !launch_step_mentions_real_evidence {
+        errors.push(
+            "launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence"
+                .into(),
+        );
+    }
 }
 
 fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
@@ -345,6 +362,9 @@ fn validate_gadugi_scenario(
         }
         if let Some(command) = step.params.get("command") {
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
+            if command.contains("alice launch-smoke") {
+                validate_gadugi_real_evidence_expectation(&step.name, step, &mut errors);
+            }
         }
         if step.action == "agentic_test" {
             validate_gadugi_agentic_step(&step.name, &step.params, &mut errors);
@@ -410,6 +430,23 @@ fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut
     {
         errors.push(format!(
             "{step_name}: gadugi scenario must invoke eatme CLI alice launch-smoke and inspect manifest evidence only; it must not own Alice runtime concerns"
+        ));
+    }
+}
+
+fn validate_gadugi_real_evidence_expectation(
+    step_name: &str,
+    step: &crate::schema::GadugiScenarioStep,
+    errors: &mut Vec<String>,
+) {
+    if !step
+        .expect
+        .stdout_contains
+        .iter()
+        .any(|expected| expected.contains("real_alice_execution_evidence"))
+    {
+        errors.push(format!(
+            "{step_name}: gadugi launch-smoke step must assert manifest real_alice_execution_evidence"
         ));
     }
 }

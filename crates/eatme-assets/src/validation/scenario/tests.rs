@@ -1,9 +1,7 @@
 use super::*;
 use crate::schema::{
-    EatmeScenarioAcceptanceCriterion, EatmeScenarioAgenticFlow, EatmeScenarioLauncher,
-    EatmeScenarioRealAlice, EatmeScenarioResource, EatmeScenarioRubricCriterion,
+    EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioRealAlice,
     EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
-    ScenarioPersonas,
 };
 use std::collections::BTreeMap;
 
@@ -144,40 +142,6 @@ fn known_lesson_smoke_requires_lesson_kind() {
 }
 
 #[test]
-fn accepts_instructor_agentic_flow_asset() {
-    let scenario = instructor_agentic_scenario("instructor-exercise-builder");
-
-    let report = validate_eatme_scenario(
-        Path::new("assets/scenarios/eatme/instructor-exercise-builder.yaml"),
-        &scenario,
-    );
-
-    assert!(report.passed, "{:?}", report.errors);
-    assert_eq!(report.assertion_count, 1);
-}
-
-#[test]
-fn instructor_agentic_flow_rejects_desktop_runtime_ownership() {
-    let mut scenario = instructor_agentic_scenario("instructor-classroom-setup");
-    scenario.steps.push(EatmeScenarioStep {
-        id: "launch-directly".into(),
-        command: "Xvfb :99 && alice launch-smoke --scenario building".into(),
-        evidence: vec!["desktop opened".into()],
-    });
-
-    let report = validate_eatme_scenario(Path::new("bad-instructor-flow.yaml"), &scenario);
-
-    assert!(!report.passed);
-    assert!(
-        report.errors.iter().any(|error| {
-            error.contains("instructor_agentic_flow") && error.contains("Alice desktop runtime")
-        }),
-        "{:?}",
-        report.errors
-    );
-}
-
-#[test]
 fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
     let scenario = GadugiScenarioAsset {
         name: "Bad Gadugi Alice Runtime Owner".into(),
@@ -192,7 +156,7 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
                 "command".into(),
                 "Xvfb :99 & java org.alice.stageide.EntryPoint".into(),
             )]),
-            expect: Default::default(),
+            ..GadugiScenarioStep::default()
         }],
         assertions: vec![GadugiScenarioAssertion {
             name: "Direct runtime command succeeded".into(),
@@ -221,91 +185,39 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
 }
 
 #[test]
-fn gadugi_agentic_steps_require_editable_asset_contract() {
+fn gadugi_launch_smoke_requires_real_execution_evidence_assertion() {
     let scenario = GadugiScenarioAsset {
-        name: "Incomplete Instructor Agentic Adapter".into(),
-        description: "Forgets to name the editable prompt asset.".into(),
+        name: "Metadata Only Smoke".into(),
+        description: "Launches through eatme but only checks scenario metadata.".into(),
         version: "1.0.0".into(),
         steps: vec![GadugiScenarioStep {
-            name: "Run instructor review".into(),
-            agent: "instructor-qa-agent".into(),
-            action: "agentic_test".into(),
-            params: BTreeMap::from([("asset".into(), "".into())]),
-            expect: Default::default(),
+            name: "Launch Alice".into(),
+            agent: "eatme-cli-agent".into(),
+            action: "execute_command".into(),
+            params: BTreeMap::from([(
+                "command".into(),
+                "cargo run -q -p eatme-cli -- alice launch-smoke --scenario code-editor-first-run"
+                    .into(),
+            )]),
+            ..GadugiScenarioStep::default()
         }],
         assertions: vec![GadugiScenarioAssertion {
-            name: "Instructor review completed".into(),
-            assertion_type: "agentic_acceptance".into(),
+            name: "Launch succeeded".into(),
+            assertion_type: "command_success".into(),
         }],
     };
 
     let report = validate_gadugi_scenario(
-        Path::new("assets/scenarios/gadugi/incomplete-instructor.yaml"),
+        Path::new("assets/scenarios/gadugi/metadata-only.yaml"),
         &scenario,
     );
-
     assert!(!report.passed);
     assert!(
         report
             .errors
             .iter()
-            .any(|error| error.contains("acceptance_probes")),
-        "{:?}",
+            .any(|error| error.contains("real_alice_execution_evidence")),
+        "gadugi launch-smoke validation should reject metadata-only checks: {:?}",
         report.errors
     );
-}
-
-fn instructor_agentic_scenario(id: &str) -> EatmeScenarioAsset {
-    EatmeScenarioAsset {
-        schema_version: "eatme.scenario/v1".into(),
-        id: id.into(),
-        title: "Instructor Exercise Builder".into(),
-        kind: "instructor_agentic_flow".into(),
-        owner: "eatme".into(),
-        purpose: "help instructors create an Alice exercise from existing resources".into(),
-        resource_basis: vec![EatmeScenarioResource {
-            name: "Alice.org Programming in Alice".into(),
-            url: "https://www.alice.org/resources/lessons/programming-in-alice/".into(),
-            use_note: "Ground exercise concepts in procedures, parameters, and run/revise.".into(),
-        }],
-        personas: Some(ScenarioPersonas {
-            instructors: vec!["exercise-forger".into()],
-            students: vec!["curious-novice".into()],
-        }),
-        agentic_flow: Some(EatmeScenarioAgenticFlow {
-            focus: "creating-exercises".into(),
-            instructor_goal: "draft a classroom-ready Alice exercise".into(),
-            prompt_source: "assets/scenarios/eatme/instructor-exercise-builder.yaml".into(),
-            non_coder_editable: vec!["agentic_test_prompt".into(), "rubric".into()],
-            expected_outputs: vec!["exercise brief".into(), "student evidence checklist".into()],
-        }),
-        agentic_test_prompt: "Act as the instructor QA agent and produce an exercise brief.".into(),
-        acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
-            given: "an Alice.org lesson concept".into(),
-            when: "the instructor agent drafts materials".into(),
-            then: "the output names concept evidence and learner choice".into(),
-        }],
-        acceptance_probes: vec!["Exercise has concept, starter task, and extension.".into()],
-        rubric: vec![EatmeScenarioRubricCriterion {
-            criterion: "Concept evidence".into(),
-            evidence: vec!["Student links a visible world behavior to a concept.".into()],
-        }],
-        avoid: vec!["Do not require exact coordinates or private implementation details.".into()],
-        steps: vec![
-            EatmeScenarioStep {
-                id: "validate-assets".into(),
-                command: "cargo run -q -p eatme-cli -- assets validate --json".into(),
-                evidence: vec!["asset validation passes".into()],
-            },
-            EatmeScenarioStep {
-                id: "agentic-instructor-review".into(),
-                command: "agentic review using this YAML prompt and acceptance probes".into(),
-                evidence: vec!["review returns maintainable lesson materials".into()],
-            },
-        ],
-        timeouts: BTreeMap::from([("agentic_seconds".into(), 900)]),
-        artifacts: BTreeMap::from([("lesson_brief".into(), "agentic://lesson-brief".into())]),
-        unsupported_policy: "Fail visibly if the agent cannot read this editable asset.".into(),
-        ..EatmeScenarioAsset::default()
-    }
 }
