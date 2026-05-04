@@ -1,0 +1,93 @@
+schema_version: eatme.scenario/v1
+id: instructor-alice-concept-map
+title: Instructor Alice Concept Map
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Use code editor, procedures, methods, functions, parameters, run, edit, control structures, camera moves, and sound.
+  - name: Alice.org Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Sequence concepts across programming, design process, methods, parameters, control structures, events, data, arrays, and VR.
+purpose: >-
+  Map Alice scene and code activities to transferable programming vocabulary for lesson sequencing.
+personas:
+  instructors: [concept-cartographer, debug-coach]
+  students: [systems-puzzle-solver, playful-tinkerer]
+agentic_flow:
+  focus: using-alice-concepts
+  instructor_goal: >-
+    Map Alice scene and code activities to transferable programming vocabulary for lesson sequencing.
+  prompt_source: assets/scenarios/eatme/instructor-alice-concept-map.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - concept_map
+    - misconception_checks
+    - transfer_prompt
+agentic_test_prompt: >-
+  Act as an instructor QA agent building a concept map. Given an Alice lesson idea, produce a concept ladder from visible world behavior to Alice vocabulary to transferable CS vocabulary. Include misconception checks, one prediction question, one debugging question, and one transfer prompt. Prefer agent reasoning over code assertions.
+acceptance_criteria:
+  - given: >-
+      an instructor wants conceptual transfer
+    when: >-
+      the agent maps Alice actions to vocabulary
+    then: >-
+      the output connects visible world behavior, Alice terms, and broader CS terms
+  - given: >-
+      students may over-focus on menus
+    when: >-
+      the agent writes questions
+    then: >-
+      the prompts ask students to predict and explain behavior before naming steps
+acceptance_probes:
+  - Concept map has visible behavior, Alice vocabulary, CS vocabulary, and misconception columns.
+  - Prediction and debugging questions are answerable from the student artifact.
+  - Transfer prompt helps students bridge Alice to text-based programming.
+rubric:
+  - criterion: Concept accuracy
+    evidence:
+      - Alice concepts are named consistently with resource_basis.
+      - Transfer vocabulary is not broader than the activity evidence supports.
+  - criterion: Question quality
+    evidence:
+      - Questions elicit prediction, observation, and reasoning.
+      - Debugging prompt keeps learner ownership.
+  - criterion: Sequencing
+    evidence:
+      - Concepts move from concrete world behavior to abstract vocabulary.
+      - No more than two new terms are introduced at once.
+avoid:
+  - Exact UI coordinates, menu paths, or private implementation details.
+  - Single correct creative answer; preserve student ownership.
+  - Visual polish as a substitute for concept evidence.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes instructor-alice-concept-map
+  - id: agentic-instructor-review
+    command: agentic instructor QA review using assets/scenarios/eatme/instructor-alice-concept-map.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  concept_map: agentic://instructor/concept-map
+  misconception_checks: agentic://instructor/misconception-checks
+  transfer_prompt: agentic://instructor/transfer-prompt
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or
+  the cited Alice.org resource basis, fail visibly and report the missing
+  evidence. Do not replace instructor judgment with brittle UI assertions.

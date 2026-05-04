@@ -24,7 +24,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 
@@ -38,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 20'
+        - '"scenario_asset_count": 30'
     timeout: 60000
 
   - name: "Launch first lessons real UI action contract"

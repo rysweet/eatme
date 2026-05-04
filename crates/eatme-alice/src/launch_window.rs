@@ -2,15 +2,19 @@ use crate::discover::first_non_empty;
 use crate::launch_artifacts::artifact_info;
 use anyhow::{Context, Result, bail};
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
+use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
 pub fn choose_display() -> String {
+    let x11_unix_dir = env::var_os("X11_UNIX_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"));
     for display in 90..130 {
-        let socket = format!("/tmp/.X11-unix/X{display}");
-        if !Path::new(&socket).exists() {
+        let socket = x11_unix_dir.join(format!("X{display}"));
+        if !socket.exists() {
             return format!(":{display}");
         }
     }
