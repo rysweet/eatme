@@ -40,6 +40,71 @@ source_basis:
     - name: Alice 3 download/setup page
       url: https://www.alice.org/get-alice/alice-3/
       use: 'Setup constraints: desktop/laptop, graphics, Java/OpenGL/Linux details, video-driver problems, Chromebook caveats.'
+constituency_coverage:
+  - id: curriculum-designers
+    label: Curriculum designers
+    editable_by: non-coder asset editors
+    persona_ids: [curriculum-pathway-designer]
+    scenario_ids: [curriculum-sequence-remix-pack]
+    evidence:
+      - Curriculum map connects Alice resources, concepts, pacing, prerequisites, and assessment evidence.
+      - Scenario can be edited as YAML without touching Rust or launcher code.
+  - id: it-setup-support
+    label: IT/setup support
+    editable_by: non-coder asset editors
+    persona_ids: [setup-support-specialist]
+    scenario_ids: [setup-support-lab-readiness]
+    evidence:
+      - Setup plan separates install, graphics, account, storage, and fallback responsibilities.
+      - Scenario records human-readable readiness signals instead of hidden diagnostics.
+  - id: workshop-facilitators
+    label: Workshop facilitators
+    editable_by: non-coder asset editors
+    persona_ids: [workshop-facilitator]
+    scenario_ids: [workshop-facilitator-live-studio]
+    evidence:
+      - Facilitation plan handles short blocks, rotating helpers, showcase moments, and recovery pauses.
+      - Scenario prompts visible learner progress rather than exact UI choreography.
+  - id: vr-player-users
+    label: VR/player users
+    editable_by: non-coder asset editors
+    persona_ids: [vr-player-tester]
+    scenario_ids: [vr-player-comfort-playtest]
+    evidence:
+      - Playtest notes include comfort, navigation, orientation, and non-VR fallback evidence.
+      - Scenario evaluates player experience from visible behavior and feedback.
+  - id: media-audio-creators
+    label: Media/audio creators
+    editable_by: non-coder asset editors
+    persona_ids: [media-audio-creator]
+    scenario_ids: [media-audio-cue-storyboard]
+    evidence:
+      - Storyboard connects sound, timing, camera, captions, and audience meaning.
+      - Scenario keeps audio choices editable and accessible.
+  - id: model-texture-import-users
+    label: Model/texture import users
+    editable_by: non-coder asset editors
+    persona_ids: [model-texture-importer]
+    scenario_ids: [model-texture-import-checkpoint]
+    evidence:
+      - Import checklist captures source, license, scale, orientation, texture visibility, and fallback asset.
+      - Scenario validates import learning without requiring a specific third-party model.
+  - id: alice-2-migration-users
+    label: Alice 2 migration users
+    editable_by: non-coder asset editors
+    persona_ids: [alice-2-migration-mentor]
+    scenario_ids: [alice-2-migration-bridge]
+    evidence:
+      - Migration bridge maps familiar Alice 2 habits to Alice 3 concepts and changed workflows.
+      - Scenario preserves prior teacher knowledge while requiring visible Alice 3 evidence.
+  - id: teacher-community-sharing
+    label: Teacher-community sharing
+    editable_by: non-coder asset editors
+    persona_ids: [teacher-community-curator]
+    scenario_ids: [teacher-community-sharing-loop]
+    evidence:
+      - Sharing loop includes remix notes, attribution, classroom constraints, and feedback prompts.
+      - Scenario supports reusable teacher-facing assets without code changes.
 asset_shapes:
   persona:
     id: string-kebab-case
@@ -89,6 +154,16 @@ asset_shapes:
       - Given/When/Then or checklist-style observable outcome
     avoid:
       - brittle selector, internal class name, exact timing, hidden implementation, or over-prescriptive solution
+  constituency_coverage:
+    id: string-kebab-case
+    label: human-readable constituency name
+    editable_by: non-coder editor role or team
+    persona_ids:
+      - persona-id covered by this constituency
+    scenario_ids:
+      - scenario-id covered by this constituency
+    evidence:
+      - artifact, checklist, reflection, or facilitation signal proving coverage
 personality_assets:
   instructor_prompts:
     - id: socratic-scaffold-card
@@ -345,6 +420,101 @@ personas:
         - Assumes every student can install, render, export, or share identically.
       evidence:
         - Class can begin with a known fallback path and end with collected artifacts or reflections.
+    - id: curriculum-pathway-designer
+      role: instructor
+      archetype: Curriculum Pathway Designer
+      goals:
+        - Turn Alice resources into a coherent sequence across weeks, units, or standards.
+        - Balance concept progression, creative ownership, assessment, and classroom pacing.
+      constraints:
+        - Must work across grade bands, bell schedules, standards language, and teacher comfort levels.
+        - Cannot assume every teacher starts with the same Alice experience or device access.
+      educational_intent:
+        - Curriculum mapping, prerequisite reasoning, spiral review, standards alignment, and evidence planning.
+      observable_behaviors:
+        - Produces a map from Alice activity to concept, prerequisite, artifact evidence, and extension.
+        - Identifies where setup, collaboration, reflection, and assessment fit in the learning arc.
+      anti_behaviors:
+        - Treats Alice lessons as isolated one-off demos.
+        - Requires a code change when a curriculum editor only needs to revise YAML assets.
+      evidence:
+        - Editable curriculum map names sequence, pacing, concept targets, and visible student evidence.
+    - id: setup-support-specialist
+      role: instructor
+      archetype: IT/Setup Support Specialist
+      goals:
+        - Make Alice install, launch, graphics, storage, and classroom access issues visible before instruction.
+        - Give teachers non-shaming fallback paths when devices cannot run Alice reliably.
+      constraints:
+        - Device permissions, graphics drivers, lab images, Linux/Chromebook limits, network policy, and privacy rules may vary.
+        - Support staff may not know Alice pedagogy and teachers may not know local IT constraints.
+      educational_intent:
+        - Preserve learning time by turning environment readiness into a shared, documented handoff.
+      observable_behaviors:
+        - Produces a plain-language readiness checklist and escalation/fallback matrix.
+        - Separates environmental blockers from student code or scene-design issues.
+      anti_behaviors:
+        - Blames learners for install failures.
+        - Requires hidden logs or privileged diagnostics as the only success evidence.
+      evidence:
+        - Class readiness record shows launch status, blockers, owners, and fallback participation roles.
+    - id: workshop-facilitator
+      role: instructor
+      archetype: Workshop Facilitator
+      goals:
+        - Run Alice sessions for short workshops, clubs, camps, or professional learning.
+        - Keep mixed-experience groups moving through build, playtest, share, and reflect cycles.
+      constraints:
+        - Participants may arrive late, share devices, lack accounts, or have very different goals.
+        - Workshop time rarely allows deep remediation or long lectures.
+      educational_intent:
+        - Facilitation moves, timeboxing, public checkpoints, peer support, and quick recovery loops.
+      observable_behaviors:
+        - Publishes milestones, helper roles, demo pauses, and optional extension routes.
+        - Uses visible artifacts and participant reflections to decide when to advance.
+      anti_behaviors:
+        - Turns the workshop into a presenter-only walkthrough.
+        - Lets early setup problems consume the entire learning block.
+      evidence:
+        - Facilitation board shows schedule, checkpoint evidence, stuck/help signals, and share-out prompts.
+    - id: alice-2-migration-mentor
+      role: instructor
+      archetype: Alice 2 Migration Mentor
+      goals:
+        - Help Alice 2 teachers and learners transfer useful habits into Alice 3 without pretending nothing changed.
+        - Name vocabulary, interface, model, and workflow differences in teacher-friendly language.
+      constraints:
+        - Existing Alice 2 materials may be beloved, old, incomplete, or tied to unavailable assets.
+        - Migration support must preserve teacher confidence while requiring current Alice 3 evidence.
+      educational_intent:
+        - Transfer, vocabulary bridging, resource triage, and incremental modernization.
+      observable_behaviors:
+        - Maps an Alice 2 lesson goal to an Alice 3 concept, artifact, and changed setup step.
+        - Identifies which old assumptions should be kept, adapted, or retired.
+      anti_behaviors:
+        - Dismisses prior Alice 2 expertise.
+        - Promises automatic conversion when the useful work is pedagogical migration.
+      evidence:
+        - Migration note pairs familiar Alice 2 intent with Alice 3 workflow, vocabulary, and learner evidence.
+    - id: teacher-community-curator
+      role: instructor
+      archetype: Teacher Community Curator
+      goals:
+        - Help teachers package, share, remix, and improve Alice activities through community exchange.
+        - Preserve classroom context, attribution, and adaptation notes with shared resources.
+      constraints:
+        - Shared materials may cross grade levels, policies, languages, standards, and device conditions.
+        - Teachers need quick confidence signals before adopting someone else's activity.
+      educational_intent:
+        - Community knowledge, attribution, remix literacy, implementation notes, and feedback loops.
+      observable_behaviors:
+        - Produces share cards with audience, prerequisites, assets, timing, evidence, and remix notes.
+        - Invites teacher feedback that improves future use instead of ranking people.
+      anti_behaviors:
+        - Shares orphaned files with no context or classroom constraints.
+        - Treats community contribution as polished publication only.
+      evidence:
+        - Community share card includes attribution, editable scenario link, implementation notes, and requested feedback.
   students:
     - id: curious-novice
       role: student
@@ -466,6 +636,63 @@ personas:
         - Treats accessibility as optional polish only after grading.
       evidence:
         - Project includes one explicit accessibility choice and explanation.
+    - id: vr-player-tester
+      role: student
+      archetype: VR/Player User
+      goals:
+        - Experience Alice worlds as a player or viewer and report whether interaction, comfort, and orientation make sense.
+        - Help creators see the difference between a runnable world and a playable one.
+      constraints:
+        - VR hardware, motion comfort, field of view, controllers, space, and accessibility options may vary.
+        - A non-VR or observer fallback may be required.
+      educational_intent:
+        - User testing, spatial empathy, interaction clarity, comfort, and inclusive fallback design.
+      observable_behaviors:
+        - Gives feedback about navigation, camera motion, controls, visibility, and confusion points.
+        - Compares player intent with what the world makes discoverable.
+      anti_behaviors:
+        - Judges only novelty or spectacle.
+        - Ignores discomfort, accessibility, or non-VR participation paths.
+      evidence:
+        - Playtest note records comfort signal, successful interaction, confusing cue, and creator revision.
+    - id: media-audio-creator
+      role: student
+      archetype: Media/Audio Creator
+      goals:
+        - Use sound, camera, timing, narration, and captions to make Alice worlds communicate clearly.
+        - Keep expressive media choices tied to programming concepts and audience understanding.
+      constraints:
+        - Audio libraries, recording permission, quiet spaces, export paths, and hearing access may vary.
+        - Media polish can distract from runnable behavior if scope is not controlled.
+      educational_intent:
+        - Sequencing, timing, audience design, multimodal communication, and accessibility alternatives.
+      observable_behaviors:
+        - Storyboards when audio, camera, text, or motion cues happen and why.
+        - Adds non-audio or caption alternatives when sound carries meaning.
+      anti_behaviors:
+        - Adds sound effects with no concept, timing, or audience purpose.
+        - Makes audio the only way to understand the world.
+      evidence:
+        - Media cue sheet maps each cue to scene purpose, concept evidence, and accessibility alternative.
+    - id: model-texture-importer
+      role: student
+      archetype: Model/Texture Import User
+      goals:
+        - Bring external models or textures into Alice responsibly and make them usable in a world.
+        - Learn import as design integration rather than asset hoarding.
+      constraints:
+        - File formats, scale, orientation, texture paths, licensing, and performance may fail.
+        - A classroom-safe fallback asset must exist when imports do not work.
+      educational_intent:
+        - Asset provenance, constraints, spatial reasoning, debugging visible import issues, and fallback design.
+      observable_behaviors:
+        - Checks source/permission, imports or selects a fallback, then tests scale/orientation/texture visibility.
+        - Explains how the asset supports the scene or concept.
+      anti_behaviors:
+        - Uses uncredited or inappropriate assets.
+        - Spends the whole lesson searching assets without a runnable world.
+      evidence:
+        - Import checkpoint records source, license note, visual check, issue/fallback, and integration purpose.
 core_scenarios_from_existing_alice_resources:
   - id: setup-preflight-ready-to-create
     origin: existing-alice-resource
@@ -821,6 +1048,238 @@ core_scenarios_from_existing_alice_resources:
       - Feedback includes observation, question, and suggested revision.
     avoid:
       - Ranking by visual spectacle or enforcing one project template.
+  - id: curriculum-sequence-remix-pack
+    origin: existing-alice-resource
+    coverage: [lessons, classroom-use]
+    user_story: As a curriculum-pathway-designer, I want to remix Alice resources into a sequenced unit, so that teachers can see concept progression and evidence before class starts.
+    personas:
+      instructors: [curriculum-pathway-designer, assessment-curator]
+      students: [curious-novice, systems-puzzle-solver]
+    educational_intent:
+      concepts: [scope, sequence, prerequisite, concept progression, assessment evidence]
+      habits: [backward design, transfer, reflection]
+    constraints:
+      - Unit plans must be editable by curriculum staff without Rust changes.
+      - Sequence must include fallback or extension notes for uneven device readiness and prior knowledge.
+    observable_behaviors:
+      instructor:
+        - Maps each Alice activity to prerequisite, concept, artifact evidence, and reflection prompt.
+        - Flags where teachers can swap scenarios while preserving the learning goal.
+      student:
+        - Encounters a coherent path from first world to programmed behavior and explanation.
+        - Can name what evidence proves learning at each checkpoint.
+      system_or_artifact:
+        - Editable curriculum pack lists sequence, timing, standards language, scenarios, and evidence.
+    agentic_test_prompt: >-
+      Create a non-coder-editable Alice curriculum sequence using existing scenario assets. Include prerequisites, pacing, swappable activities, assessment evidence, and fallback/extension notes.
+    acceptance_probes:
+      - Curriculum map references at least three Alice scenario assets and explains the concept progression.
+      - Plan names visible student evidence, not just lesson titles or UI steps.
+    avoid:
+      - Hard-coding exact UI clicks, hidden implementation fields, or one unchangeable lesson order.
+  - id: setup-support-lab-readiness
+    origin: existing-alice-resource
+    coverage: [setup, classroom-use]
+    user_story: As a setup-support-specialist, I want a lab readiness handoff, so that teachers know which devices can launch Alice and which fallback path each learner should use.
+    personas:
+      instructors: [setup-support-specialist, classroom-orchestrator]
+      students: [collaborative-peer-mentor, curious-novice]
+    educational_intent:
+      concepts: [environment readiness, support handoff, fallback planning]
+      habits: [documentation, resilience, shared responsibility]
+    constraints:
+      - Support may involve Windows, Mac, Linux, lab images, graphics drivers, storage, accounts, or Chromebook limitations.
+      - The scenario must not require privileged logs or expose private device details.
+    observable_behaviors:
+      instructor:
+        - Provides a plain-language readiness checklist and escalation owner for each blocker.
+        - Assigns productive fallback roles for learners without a working launch path.
+      student:
+        - Confirms launch status or selects a fallback role without being blamed.
+        - Knows who to ask for environment support versus lesson help.
+      system_or_artifact:
+        - Readiness handoff records status, blocker category, owner, fallback, and retest date.
+    agentic_test_prompt: >-
+      Produce an Alice lab-readiness handoff for mixed classroom devices. Separate install/graphics/account/storage risks from learning tasks and include fallback participation roles.
+    acceptance_probes:
+      - Every blocker has an owner, fallback, and retest signal.
+      - The handoff avoids private diagnostics and separates support failures from student mistakes.
+    avoid:
+      - Exact installer screens, hidden file paths, or assuming every device can render VR/3D equally.
+  - id: workshop-facilitator-live-studio
+    origin: existing-alice-resource
+    coverage: [lessons, classroom-use, export-share]
+    user_story: As a workshop-facilitator, I want a short live-studio flow, so that participants can build, test, get help, and share within a limited session.
+    personas:
+      instructors: [workshop-facilitator, studio-facilitator]
+      students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
+    educational_intent:
+      concepts: [thin slice, checkpoint, peer support, showcase]
+      habits: [timeboxing, help-seeking, iteration, reflection]
+    constraints:
+      - Participants may arrive with different prior knowledge, devices, and goals.
+      - The workshop must recover when setup or pacing goes sideways.
+    observable_behaviors:
+      instructor:
+        - Posts timeboxed milestones, helper roles, stuck signals, and share-out criteria.
+        - Uses checkpoint evidence to decide whether to pause, pair, demo, or extend.
+      student:
+        - Builds one visible behavior, asks for help using a stuck signal, and shares a tiny artifact.
+        - Gives or receives one piece of peer feedback.
+      system_or_artifact:
+        - Workshop board shows milestones, participant evidence, help queue, and showcase notes.
+    agentic_test_prompt: >-
+      Design a two-hour Alice workshop facilitation plan with checkpoints, helper roles, recovery moves, and a final share. Judge by visible participant progress and reflection.
+    acceptance_probes:
+      - Plan includes a minimum runnable artifact plus optional extension path.
+      - Facilitation handles late arrivals, setup failures, and mixed experience without derailing the group.
+    avoid:
+      - Presenter-only demos, exact UI choreography, or making final polish the only success signal.
+  - id: vr-player-comfort-playtest
+    origin: existing-alice-resource
+    coverage: [world-creation, run-debug, export-share]
+    user_story: As a vr-player-tester, I want to playtest a world for comfort and discoverability, so that creators can revise the player experience before sharing.
+    personas:
+      instructors: [studio-facilitator, assessment-curator]
+      students: [vr-player-tester, accessibility-advocate, systems-puzzle-solver]
+    educational_intent:
+      concepts: [player experience, camera, interaction cue, feedback loop]
+      habits: [empathy, playtesting, accessibility, iteration]
+    constraints:
+      - VR hardware may be unavailable, uncomfortable, or inappropriate for some participants.
+      - Feedback must include non-VR observation or screen-player fallback.
+    observable_behaviors:
+      instructor:
+        - Frames playtest prompts around comfort, orientation, controls, cues, and fallback participation.
+        - Requires a revision based on player feedback rather than spectacle.
+      student:
+        - Records player intent, confusion point, comfort signal, and suggested cue/revision.
+        - Tests whether the interaction is discoverable without creator explanation.
+      system_or_artifact:
+        - Playtest sheet links player feedback to a visible revision or justified design choice.
+    agentic_test_prompt: >-
+      Create an Alice VR/player playtest scenario focused on comfort, orientation, interaction cues, and fallback participation. Include creator revision evidence.
+    acceptance_probes:
+      - Playtest records comfort and discoverability, not only whether the world runs.
+      - Scenario includes a non-VR or observer fallback path.
+    avoid:
+      - Requiring VR hardware for all learners or judging only novelty.
+  - id: media-audio-cue-storyboard
+    origin: existing-alice-resource
+    coverage: [world-creation, export-share, lessons]
+    user_story: As a media-audio-creator, I want a cue storyboard, so that sound, camera, captions, and timing make the Alice world easier to understand.
+    personas:
+      instructors: [exercise-forger, assessment-curator]
+      students: [media-audio-creator, creative-storyteller, accessibility-advocate]
+    educational_intent:
+      concepts: [timing, sequence, camera marker, audio cue, audience support]
+      habits: [storyboarding, accessibility, revision]
+    constraints:
+      - Recording permissions, audio libraries, quiet spaces, hearing access, and export support may vary.
+      - Audio must not be the only way to understand a required idea.
+    observable_behaviors:
+      instructor:
+        - Asks for a cue sheet before adding media polish.
+        - Requires at least one alternative cue such as caption, visible label, gesture, or camera change.
+      student:
+        - Maps each cue to audience purpose and the programming behavior it supports.
+        - Revises timing after viewing or peer feedback.
+      system_or_artifact:
+        - Cue storyboard shows when media appears, what it communicates, and how non-audio access is preserved.
+    agentic_test_prompt: >-
+      Design an Alice media/audio creation activity with a cue storyboard, accessibility alternative, and peer-review evidence. Keep media choices editable and concept-linked.
+    acceptance_probes:
+      - Each audio/media cue has purpose, timing, and at least one non-audio support when needed.
+      - Student connects media timing to a visible programmed behavior.
+    avoid:
+      - Fixed audio file requirements, uncaptained meaning, or polishing without runnable behavior.
+  - id: model-texture-import-checkpoint
+    origin: existing-alice-resource
+    coverage: [setup, world-creation, run-debug]
+    user_story: As a model-texture-importer, I want an import checkpoint, so that external assets are sourced, visible, scaled, and replaceable if they fail.
+    personas:
+      instructors: [setup-support-specialist, exercise-forger]
+      students: [model-texture-importer, reflective-debugger, creative-storyteller]
+    educational_intent:
+      concepts: [asset provenance, scale, orientation, texture, fallback]
+      habits: [debugging, attribution, scope control]
+    constraints:
+      - File formats, texture paths, licensing, classroom policy, and performance may prevent import success.
+      - A failed import should not block the programming concept.
+    observable_behaviors:
+      instructor:
+        - Provides a checklist for source, permission, file, visual check, and fallback asset.
+        - Timeboxes import work before returning to the learning goal.
+      student:
+        - Tests imported or fallback asset for scale, orientation, texture visibility, and scene purpose.
+        - Records what failed and how the fallback keeps the world runnable.
+      system_or_artifact:
+        - Import checkpoint contains source/permission note, visual verification, issue/fallback, and concept link.
+    agentic_test_prompt: >-
+      Create an Alice model/texture import scenario that teaches responsible asset use and visible import checks while preserving a fallback path to the programming goal.
+    acceptance_probes:
+      - Checklist includes provenance, visual verification, and fallback evidence.
+      - Learner can proceed even when the import fails.
+    avoid:
+      - Requiring a specific third-party asset, ignoring license/source, or spending the entire lesson asset hunting.
+  - id: alice-2-migration-bridge
+    origin: existing-alice-resource
+    coverage: [lessons, classroom-use, world-creation]
+    user_story: As an alice-2-migration-mentor, I want a migration bridge, so that familiar Alice 2 lessons can become current Alice 3 activities without losing teacher intent.
+    personas:
+      instructors: [alice-2-migration-mentor, curriculum-pathway-designer]
+      students: [curious-novice, creative-storyteller]
+    educational_intent:
+      concepts: [transfer, vocabulary bridge, workflow difference, artifact evidence]
+      habits: [respectful modernization, adaptation, reflection]
+    constraints:
+      - Old Alice 2 materials may depend on outdated assets, vocabulary, screenshots, or classroom routines.
+      - Migration support should not promise automatic conversion of every old project.
+    observable_behaviors:
+      instructor:
+        - Identifies the original learning goal, the Alice 3 concept, and one changed workflow.
+        - Keeps the student-facing evidence visible and current.
+      student:
+        - Completes an Alice 3 artifact that preserves the old lesson's intent.
+        - Explains what is familiar and what changed.
+      system_or_artifact:
+        - Migration card maps Alice 2 intent, Alice 3 activity, vocabulary, changed workflow, and evidence.
+    agentic_test_prompt: >-
+      Produce an Alice 2-to-Alice 3 migration bridge for a teacher-owned lesson. Preserve pedagogical intent, name differences, and define current visible evidence.
+    acceptance_probes:
+      - Bridge distinguishes keep/adapt/retire decisions for old lesson assumptions.
+      - Student evidence is based on an Alice 3 world or reflection, not nostalgia or screenshots alone.
+    avoid:
+      - Dismissing prior teacher expertise or promising automatic conversion.
+  - id: teacher-community-sharing-loop
+    origin: existing-alice-resource
+    coverage: [classroom-use, export-share]
+    user_story: As a teacher-community-curator, I want a share-and-remix loop, so that teachers can exchange Alice activities with context, attribution, and improvement notes.
+    personas:
+      instructors: [teacher-community-curator, classroom-orchestrator, assessment-curator]
+      students: [collaborative-peer-mentor, accessibility-advocate]
+    educational_intent:
+      concepts: [community exchange, attribution, remix, implementation context]
+      habits: [reflection, generosity, adaptation, evidence-sharing]
+    constraints:
+      - Shared materials may cross policies, grade levels, languages, standards, and device setups.
+      - Community artifacts need enough context for adoption without becoming code-maintained packages.
+    observable_behaviors:
+      instructor:
+        - Packages an activity with audience, prerequisites, setup notes, student evidence, attribution, and remix invitation.
+        - Requests feedback on classroom fit and adaptation results.
+      student:
+        - Produces reflection or peer-feedback evidence that teachers can understand when reviewing the shared activity.
+        - Helps identify what future classes may need clarified.
+      system_or_artifact:
+        - Share card includes editable scenario/persona links, classroom constraints, attribution, and feedback prompts.
+    agentic_test_prompt: >-
+      Create a teacher-community share card for an Alice activity. Include attribution, classroom constraints, editable asset links, student evidence, and remix feedback prompts.
+    acceptance_probes:
+      - Shared resource includes enough context for another teacher to adapt it responsibly.
+      - Feedback loop asks for implementation notes rather than popularity ranking.
+    avoid:
+      - Orphaned files with no teaching context, hidden code assumptions, or treating sharing as final publication only.
   - id: hour-of-code-studio-kickoff
     origin: existing-alice-resource
     coverage: [setup, lessons, world-creation, run-debug, classroom-use]

@@ -14,15 +14,15 @@ environment:
   requires:
     - ALICE_HOME
   optional:
-    - RUN_ID
     - EATME_REPO
+    - RUN_ID
 
 agents:
   - name: "eatme-cli-agent"
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 
@@ -60,7 +60,7 @@ steps:
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json
+        cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json
     expect:
       exit_code: 0
       stdout_contains:

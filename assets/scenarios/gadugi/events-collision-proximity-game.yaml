@@ -15,15 +15,15 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
-    - RUN_ID
     - EATME_REPO
+    - RUN_ID
 
 agents:
   - name: "eatme-cli-agent"
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 
