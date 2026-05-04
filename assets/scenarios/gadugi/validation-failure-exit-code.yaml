@@ -11,12 +11,16 @@ config:
   retries: 0
   parallel: false
 
+environment:
+  optional:
+    - EATME_REPO
+
 agents:
   - name: "eatme-cli-agent"
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 120000
       capture_output: true
 
@@ -26,6 +30,7 @@ steps:
     action: "execute_command"
     params:
       command: |
+        cd "${EATME_REPO:-.}"
         mkdir -p target/eatme-gadugi-negative-validation/assets/scenarios/eatme
         cat > target/eatme-gadugi-negative-validation/assets/scenarios/eatme/malformed.yaml <<'EOF'
         schema_version: eatme.scenario/v1

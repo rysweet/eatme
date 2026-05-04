@@ -68,8 +68,9 @@ mod tests {
             .join("../../assets/personas/alice-user-crew.yaml");
         let report = validate_persona_crew(&asset).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.instructor_count, 6);
-        assert_eq!(report.student_count, 7);
+        assert_eq!(report.instructor_count, 11);
+        assert_eq!(report.student_count, 10);
+        assert_eq!(report.core_scenario_count, 21);
         assert_eq!(report.creative_scenario_count, 10);
     }
 
@@ -89,6 +90,8 @@ mod tests {
             "assets/scenarios/gadugi/building-a-scene-first-world.yaml",
             "assets/scenarios/eatme/code-editor-first-run.yaml",
             "assets/scenarios/gadugi/code-editor-first-run.yaml",
+            "assets/scenarios/eatme/modified-class-portability.yaml",
+            "assets/scenarios/gadugi/modified-class-portability.yaml",
             "assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml",
             "assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml",
         ] {

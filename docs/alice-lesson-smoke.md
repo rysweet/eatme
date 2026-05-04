@@ -16,6 +16,7 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+modified-class-portability
 ```
 
 They are based on Alice.org lesson/tutorial resource families and prove that the
@@ -65,6 +66,7 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/modified-class-portability.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -93,6 +95,7 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
 ```
 
 Gadugi lesson scenarios may invoke the eatme CLI and inspect manifest-level
@@ -101,6 +104,12 @@ management, Swing/Java launch details, screenshot capture, log capture, or
 process lifecycle. The additional
 `assets/scenarios/gadugi/validation-failure-exit-code.yaml` regression adapter
 covers the asset-validation exit-code contract without launching Alice.
+
+The `modified-class-portability` lane adds export/import/share evidence for a
+modified class moving from one Alice project into another. Its editable contract
+requires the exported class identity, destination-project import evidence, and
+post-import behavior evidence proving the modified behavior persists after
+import.
 
 ## Validate assets
 
@@ -156,7 +165,7 @@ scenario ids above and a matching descriptive run id.
 typical local value is:
 
 ```bash
-export ALICE_HOME=/home/azureuser/src/alice3-modernization
+export ALICE_HOME=/path/to/alice3-modernization
 ```
 
 The generic launch smoke still works without selecting the lesson lane:
@@ -422,7 +431,7 @@ for software rendering.
 3. Run a lesson lane:
 
    ```bash
-   export ALICE_HOME=/home/azureuser/src/alice3-modernization
+   export ALICE_HOME=/path/to/alice3-modernization
    export SCENARIO_ID=building-a-scene-first-world
    export RUN_ID=local-${SCENARIO_ID}
 
@@ -483,9 +492,11 @@ Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
 `eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
-The committed gadugi adapters avoid repository-specific absolute paths. Run
-these scenarios from the checkout under test so asset validation counts the
-assets in that checkout, including gadugi-only regression adapters.
+The committed gadugi adapters avoid repository-specific absolute paths. They
+default to the current directory and may be pointed at another checkout with
+`EATME_REPO=/path/to/eatme`. Run these scenarios from the checkout under test so
+asset validation counts the assets in that checkout, including gadugi-only
+regression adapters.
 
 ## Testing expectations
 
@@ -495,7 +506,7 @@ CLI smoke command:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home /home/azureuser/src/alice3-modernization \
+  --alice-home ${ALICE_HOME} \
   --scenario hour-of-code-studio-kickoff \
   --run-id local-hour-of-code-studio-kickoff \
   --runs-dir runs \
