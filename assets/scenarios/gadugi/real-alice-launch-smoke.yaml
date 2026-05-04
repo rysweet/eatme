@@ -31,19 +31,23 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- assets validate --json
     expect:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"creative_scenario_count": 10'
+        - '"creative_scenario_count": 11'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- deps check --json
     expect:
       exit_code: 0
       stdout_contains:
@@ -54,7 +58,9 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json'
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json
     expect:
       exit_code: 0
       stdout_contains:

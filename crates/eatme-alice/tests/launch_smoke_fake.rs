@@ -380,7 +380,7 @@ sleep 30
         }
         fs::write(
             self.alice_home
-                .join("alice-ide/target/alice-ide-9.1.0-SNAPSHOT.jar"),
+                .join("alice-ide/target/alice-ide-10.0.0-test.jar"),
             "jar",
         )
         .unwrap();
