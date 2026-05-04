@@ -11,6 +11,7 @@ use eatme_core::{
     RealCommandRunner,
 };
 use std::collections::BTreeMap;
+use std::env;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -236,9 +237,12 @@ fn validate_scenario_name(name: &str) -> Result<()> {
 }
 
 fn choose_display() -> String {
+    let x11_unix_dir = env::var_os("X11_UNIX_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"));
     for display in 90..130 {
-        let socket = format!("/tmp/.X11-unix/X{display}");
-        if !Path::new(&socket).exists() {
+        let socket = x11_unix_dir.join(format!("X{display}"));
+        if !socket.exists() {
             return format!(":{display}");
         }
     }

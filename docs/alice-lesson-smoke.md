@@ -161,7 +161,7 @@ scenario ids above and a matching descriptive run id.
 typical local value is:
 
 ```bash
-export ALICE_HOME=/home/azureuser/src/alice3-modernization
+export ALICE_HOME=/path/to/alice3-modernization
 ```
 
 The generic launch smoke still works without selecting the lesson lane:
@@ -424,7 +424,7 @@ for software rendering.
 3. Run a lesson lane:
 
    ```bash
-   export ALICE_HOME=/home/azureuser/src/alice3-modernization
+   export ALICE_HOME=/path/to/alice3-modernization
    export SCENARIO_ID=building-a-scene-first-world
    export RUN_ID=local-${SCENARIO_ID}
 
@@ -480,9 +480,8 @@ the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, and passing assertions. It does not reimplement or configure
 Alice launch internals.
 
-The committed gadugi adapter currently uses `/home/azureuser/src/eatme` as its
-working tree path. Treat that as an environment-bound adapter value until the
-gadugi compilation layer parameterizes repository roots.
+The committed gadugi adapters default to the current directory and may be
+pointed at another checkout with `EATME_REPO=/path/to/eatme`.
 
 ## Testing expectations
 
@@ -492,7 +491,7 @@ CLI smoke command:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home /home/azureuser/src/alice3-modernization \
+  --alice-home ${ALICE_HOME} \
   --scenario hour-of-code-studio-kickoff \
   --run-id local-hour-of-code-studio-kickoff \
   --runs-dir runs \
