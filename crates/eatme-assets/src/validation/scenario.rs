@@ -1,29 +1,35 @@
 use super::{
-    PersonaReferenceIndex, contextualize_scenario_errors, require_list, require_nonempty,
-    validate_id,
+    PersonaDiscovery, PersonaReferenceIndex, contextualize_scenario_errors,
+    discover_scenario_personas, require_list, require_nonempty, validate_id,
+    validate_reference_list,
 };
 use crate::report::ScenarioAssetValidationReport;
 use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset, ScenarioPersonas};
 use anyhow::{Context, Result};
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
-    let persona_index = scenario_persona_index(path)?;
-    validate_scenario_asset_inner(path, persona_index.as_ref())
+    let persona_discovery = discover_scenario_personas(path)?;
+    validate_scenario_asset_inner(path, persona_discovery)
 }
 
 pub(crate) fn validate_scenario_asset_with_personas(
     path: &Path,
     persona_index: &PersonaReferenceIndex,
 ) -> Result<ScenarioAssetValidationReport> {
-    validate_scenario_asset_inner(path, Some(persona_index))
+    validate_scenario_asset_inner(
+        path,
+        PersonaDiscovery {
+            index: Some(persona_index.clone()),
+            diagnostics: Vec::new(),
+        },
+    )
 }
 
 fn validate_scenario_asset_inner(
     path: &Path,
-    persona_index: Option<&PersonaReferenceIndex>,
+    persona_discovery: PersonaDiscovery,
 ) -> Result<ScenarioAssetValidationReport> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading scenario asset {}", path.display()))?;
@@ -37,30 +43,20 @@ fn validate_scenario_asset_inner(
     } else {
         let scenario: EatmeScenarioAsset = serde_yaml::from_str(&content)
             .with_context(|| format!("parsing eatme scenario YAML {}", path.display()))?;
-        Ok(validate_eatme_scenario(path, &scenario, persona_index))
+        Ok(validate_eatme_scenario(
+            path,
+            &scenario,
+            persona_discovery.index.as_ref(),
+            &persona_discovery.diagnostics,
+        ))
     }
-}
-
-fn scenario_persona_index(path: &Path) -> Result<Option<PersonaReferenceIndex>> {
-    for ancestor in path.ancestors() {
-        if ancestor.file_name().and_then(|name| name.to_str()) != Some("scenarios") {
-            continue;
-        }
-        let Some(assets_dir) = ancestor.parent() else {
-            continue;
-        };
-        let persona_path = assets_dir.join("personas/alice-user-crew.yaml");
-        if persona_path.is_file() {
-            return super::persona_reference_index(&persona_path).map(Some);
-        }
-    }
-    Ok(None)
 }
 
 fn validate_eatme_scenario(
     path: &Path,
     scenario: &EatmeScenarioAsset,
     persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
 ) -> ScenarioAssetValidationReport {
     let mut errors = Vec::new();
     let warnings = Vec::new();
@@ -139,9 +135,15 @@ fn validate_eatme_scenario(
     }
 
     if scenario.kind == "alice_lesson_smoke" || is_known_lesson_smoke {
-        validate_lesson_smoke_fields(scenario, persona_index, &mut errors);
+        validate_lesson_smoke_fields(scenario, persona_index, persona_diagnostics, &mut errors);
     } else if let Some(personas) = &scenario.personas {
-        validate_scenario_personas(&scenario.id, personas, persona_index, &mut errors);
+        validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            &mut errors,
+        );
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
@@ -217,6 +219,7 @@ fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<Str
 fn validate_lesson_smoke_fields(
     scenario: &EatmeScenarioAsset,
     persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
     errors: &mut Vec<String>,
 ) {
     if scenario.owner != "eatme" {
@@ -235,7 +238,13 @@ fn validate_lesson_smoke_fields(
         None => errors.push("smoke_ready.evidence must be defined".into()),
     }
     match &scenario.personas {
-        Some(personas) => validate_scenario_personas(&scenario.id, personas, persona_index, errors),
+        Some(personas) => validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            errors,
+        ),
         None => errors.push("personas.instructors and personas.students must be defined".into()),
     }
     if scenario.acceptance_criteria.is_empty() {
@@ -264,6 +273,7 @@ fn validate_scenario_personas(
     scenario_id: &str,
     personas: &ScenarioPersonas,
     persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
     errors: &mut Vec<String>,
 ) {
     require_list(
@@ -276,6 +286,9 @@ fn validate_scenario_personas(
         &format!("{scenario_id}.personas.students"),
         errors,
     );
+    if !personas.instructors.is_empty() || !personas.students.is_empty() {
+        errors.extend(persona_diagnostics.iter().cloned());
+    }
     if let Some(index) = persona_index {
         validate_reference_list(
             scenario_id,
@@ -297,28 +310,6 @@ fn validate_scenario_personas(
         errors.push(format!(
             "scenario {scenario_id} declares personas but no persona crew asset could be located"
         ));
-    }
-}
-
-fn validate_reference_list(
-    scenario_id: &str,
-    refs: &[String],
-    expected_ids: &BTreeSet<String>,
-    all_ids: &BTreeSet<String>,
-    role: &str,
-    errors: &mut Vec<String>,
-) {
-    for id in refs {
-        if !expected_ids.contains(id) {
-            let suffix = if all_ids.contains(id) {
-                " with wrong role"
-            } else {
-                ""
-            };
-            errors.push(format!(
-                "scenario {scenario_id} references missing {role} persona {id}{suffix}"
-            ));
-        }
     }
 }
 

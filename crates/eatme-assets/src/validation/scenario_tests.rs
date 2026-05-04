@@ -14,7 +14,7 @@ fn rejects_malformed_eatme_scenario_asset() {
         title: "".into(),
         ..EatmeScenarioAsset::default()
     };
-    let report = validate_eatme_scenario(Path::new("bad.yaml"), &scenario, None);
+    let report = validate_eatme_scenario(Path::new("bad.yaml"), &scenario, None, &[]);
     assert!(!report.passed);
     assert!(
         report
@@ -38,7 +38,7 @@ fn scenario_validation_errors_include_path_or_scenario_id() {
         ..EatmeScenarioAsset::default()
     };
     let path = Path::new("assets/scenarios/eatme/building-a-scene-first-world.yaml");
-    let report = validate_eatme_scenario(path, &scenario, None);
+    let report = validate_eatme_scenario(path, &scenario, None, &[]);
 
     assert!(!report.passed);
     assert!(
@@ -56,7 +56,7 @@ fn lesson_smoke_requires_real_alice_gate() {
     let mut scenario = valid_lesson_smoke("code-editor-first-run");
     scenario.real_alice = None;
 
-    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None);
+    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None, &[]);
     assert!(!report.passed);
     assert!(
         report
@@ -71,7 +71,7 @@ fn known_lesson_smoke_requires_lesson_kind() {
     let mut scenario = valid_lesson_smoke("code-editor-first-run");
     scenario.kind.clear();
 
-    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None);
+    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None, &[]);
 
     assert!(!report.passed);
     assert!(
@@ -99,6 +99,7 @@ fn lesson_smoke_rejects_missing_persona_references() {
         Path::new("assets/scenarios/eatme/code-editor-first-run.yaml"),
         &scenario,
         Some(&persona_index),
+        &[],
     );
 
     assert!(!report.passed);
@@ -133,6 +134,7 @@ fn lesson_smoke_rejects_personas_without_crew_index() {
         Path::new("scenarios/eatme/code-editor-first-run.yaml"),
         &scenario,
         None,
+        &[],
     );
 
     assert!(!report.passed);
