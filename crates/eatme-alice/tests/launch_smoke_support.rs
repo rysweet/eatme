@@ -71,6 +71,12 @@ pub struct TestFixture {
     pub alice_home: PathBuf,
 }
 
+impl Default for TestFixture {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TestFixture {
     pub fn new() -> Self {
         let nonce = SystemTime::now()
