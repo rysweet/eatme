@@ -202,6 +202,15 @@ personality_assets:
       evidence:
         - Learner keeps control of the project and records the hypothesis.
         - Environmental launch problems are separated from learner code bugs.
+    - id: score-timer-game-loop-card
+      editable_by: instructor-agent
+      purpose: Scaffold a playable Alice game loop with score, timer, and win/lose end state.
+      prompt_frame: >-
+        Ask learners to name the trigger, starting score/time, arithmetic update,
+        visible display, and win/lose condition before they tune assets or polish.
+      evidence:
+        - Instructor prompt ties collision or proximity to a visible variable update.
+        - Feedback checks the timer and end state through play evidence, not hidden code.
     - id: portability-studio-card
       editable_by: instructor-agent
       purpose: Frame modified class export/import/share as a transfer-of-behavior studio check.
@@ -250,6 +259,16 @@ personality_assets:
       evidence:
         - Peer feedback causes a visible revision.
         - Student names trigger, response, state, or audience cue involved.
+    - id: score-timer-outcome-reflection-card
+      editable_by: student-agent
+      purpose: Make game-state reasoning visible after a score/timer playtest.
+      prompt_frame: >-
+        My game starts with score..., time..., and ends when.... A collision or
+        proximity event changes the score by.... I tested win by..., lose by...,
+        and my next revision is....
+      evidence:
+        - Reflection names initial values, arithmetic update, timer, and end state.
+        - Reflection uses playtest evidence for both success and failure paths.
     - id: class-remix-transfer-card
       editable_by: student-agent
       purpose: Make class portability evidence visible when a modified class moves between projects.
@@ -277,6 +296,10 @@ personality_assets:
       instructors: [debug-coach, assessment-curator]
       students: [systems-puzzle-solver, collaborative-peer-mentor]
       use_for: Events, collisions, proximity, variables, loops, and conditionals.
+    - id: stateful-game-loop
+      instructors: [concept-cartographer, assessment-curator, debug-coach]
+      students: [systems-puzzle-solver, reflective-debugger, collaborative-peer-mentor]
+      use_for: Score, timer, arithmetic updates, win/lose states, and reflection-backed game playtests.
     - id: inclusion-to-revision
       instructors: [studio-facilitator, classroom-orchestrator]
       students: [accessibility-advocate, reflective-debugger]
@@ -1508,6 +1531,45 @@ creative_new_teaching_learning_scenarios:
       - Student revises based on tester observation.
     avoid:
       - Requiring exact sensor values or specific planet assets.
+  - id: game-score-timer-win-lose-loop
+    origin: creative-new
+    coverage: [lessons, run-debug, classroom-use]
+    user_story: As a systems-puzzle-solver, I want my Alice game to keep score, count down time, and end with a win or lose state, so that interaction has a clear playable goal.
+    personas:
+      instructors: [concept-cartographer, assessment-curator, debug-coach]
+      students: [systems-puzzle-solver, reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [collision, proximity event, variable, arithmetic expression, timer, comparison, end state]
+      habits: [state tracking, edge-case testing, peer playtesting, reflection]
+    constraints:
+      - The game loop must stay small enough to test in a short classroom turn.
+      - Win and lose evidence must be visible without inspecting hidden implementation details.
+      - Timer feedback should be understandable without relying only on sound or color.
+    observable_behaviors:
+      instructor:
+        - Frames score and time as variables whose values change through simple rules.
+        - Separates collision or proximity trigger, arithmetic update, timer check, and end-state feedback.
+        - Requires students to test both win and lose outcomes before polish.
+      student:
+        - Creates a collision or proximity event that updates a visible score.
+        - Uses a timer or countdown to change play state and stop or conclude the game.
+        - Reflects on initial values, update rules, and evidence from win and lose playtests.
+      system_or_artifact:
+        - Playable world displays changing score/time and a visible win or lose state.
+        - Peer can trigger the scoring interaction and recognize when the game is over.
+    agentic_test_prompt: >-
+      Design an outside-in Alice mini-game lane where learners add a visible score,
+      timer, and win/lose end state to a collision or proximity game. Use agentic
+      classroom evidence: instructor scaffold, student playtest notes, artifact
+      behavior, and reflection. Do not require exact Alice UI selectors, asset names,
+      variable names, or hidden code inspection.
+    acceptance_probes:
+      - A collision or proximity event changes score through an arithmetic rule visible to a player.
+      - A timer or countdown visibly changes over time and contributes to a win or lose end state.
+      - Student reflection names starting values, update rule, timer behavior, and evidence from both win and lose tests.
+    avoid:
+      - Exact UI coordinates, specific object models, fixed variable names, or brittle timing assertions.
+      - Treating a screenshot alone as proof that score, timer, and end-state logic work.
   - id: creature-choreography-loop-lab
     origin: creative-new
     coverage: [lessons, world-creation, export-share]

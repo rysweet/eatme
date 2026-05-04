@@ -99,6 +99,8 @@ struct LaunchSmokeArgs {
     offline_package: bool,
     #[arg(long, default_value = "real-alice-launch-smoke")]
     scenario: String,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -133,6 +135,10 @@ fn main() -> Result<()> {
             )?,
             AliceCommand::LaunchSmoke(args) => {
                 ensure_real_alice_gate(&args.scenario)?;
+                let mut scenario = LaunchSmokeScenario::new(args.scenario);
+                if let Some(starter_project) = args.starter_project {
+                    scenario = scenario.with_starter_project(starter_project);
+                }
                 let manifest = run_launch_smoke(&LaunchSmokeOptions {
                     alice_home: args.alice_home,
                     run_id: args.run_id,
@@ -141,7 +147,7 @@ fn main() -> Result<()> {
                     json: args.json,
                     no_memory: args.no_memory,
                     offline_package: args.offline_package,
-                    scenario: LaunchSmokeScenario::new(args.scenario),
+                    scenario,
                 })?;
                 print_result(args.json, &manifest)?;
                 if let Some(category) = manifest.failure_category {

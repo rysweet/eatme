@@ -32,7 +32,9 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- assets validate --json
     expect:
       exit_code: 0
       stdout_contains:
@@ -44,7 +46,9 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- deps check --json
     expect:
       exit_code: 0
       stdout_contains:
