@@ -226,13 +226,13 @@ fn validate_prompt_cards(
                     prompt_card.id, scenario_id
                 ));
             }
-            if let Some(asset_ids) = scenario_asset_ids {
-                if !asset_ids.contains(scenario_id) {
-                    errors.push(format!(
-                        "prompt card {} references missing scenario asset {}",
-                        prompt_card.id, scenario_id
-                    ));
-                }
+            if let Some(asset_ids) = scenario_asset_ids
+                && !asset_ids.contains(scenario_id)
+            {
+                errors.push(format!(
+                    "prompt card {} references missing scenario asset {}",
+                    prompt_card.id, scenario_id
+                ));
             }
         }
     }
