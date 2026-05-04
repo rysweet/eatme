@@ -231,6 +231,44 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
+    #[test]
+    fn reserve_display_skips_preexisting_lock_and_preserves_it() {
+        let root = unique_test_dir("display-lock-preexisting");
+        let lock_dir = root.join(".display-locks");
+        fs::create_dir_all(&lock_dir).unwrap();
+
+        let preexisting_display = (90..130)
+            .find(|display| !display_socket_exists(*display))
+            .expect("expected a display candidate without an existing X socket");
+        let expected_display = ((preexisting_display + 1)..130)
+            .find(|display| !display_socket_exists(*display))
+            .expect("expected another display candidate without an existing X socket");
+        let preexisting_lock = lock_dir.join(format!("X{preexisting_display}.lock"));
+        fs::write(&preexisting_lock, "preexisting\n").unwrap();
+
+        let allocation = reserve_display(&root).unwrap();
+        let reserved_display: u16 = allocation.name().trim_start_matches(':').parse().unwrap();
+        let reserved_lock = lock_dir.join(format!("X{reserved_display}.lock"));
+
+        assert_eq!(reserved_display, expected_display);
+        assert_ne!(reserved_lock, preexisting_lock);
+        assert_eq!(
+            fs::read_to_string(&preexisting_lock).unwrap(),
+            "preexisting\n"
+        );
+        assert!(reserved_lock.is_file());
+
+        drop(allocation);
+
+        assert!(preexisting_lock.is_file());
+        assert_eq!(
+            fs::read_to_string(&preexisting_lock).unwrap(),
+            "preexisting\n"
+        );
+        assert!(!reserved_lock.exists());
+        let _ = fs::remove_dir_all(root);
+    }
+
     fn unique_test_dir(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
