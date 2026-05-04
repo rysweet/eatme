@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -130,15 +130,27 @@ fn run_with_timeout(mut command: Command, timeout: Option<Duration>) -> Result<O
             return Ok(child.wait_with_output()?);
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let mut output = child.wait_with_output()?;
-            let timeout_message =
-                format!("\ncommand timed out after {}s", timeout.as_secs().max(1));
-            output.stderr.extend_from_slice(timeout_message.as_bytes());
-            return Ok(output);
+            return finish_timed_out_child(child, timeout);
         }
         thread::sleep(Duration::from_millis(50));
     }
+}
+
+fn finish_timed_out_child(mut child: Child, timeout: Duration) -> Result<Output> {
+    if child.try_wait()?.is_none() {
+        match child.kill() {
+            Ok(()) => {}
+            Err(kill_error) => match child.try_wait()? {
+                Some(_) => {}
+                None => return Err(kill_error).context("killing timed out command"),
+            },
+        }
+    }
+
+    let mut output = child.wait_with_output()?;
+    let timeout_message = format!("\ncommand timed out after {}s", timeout.as_secs().max(1));
+    output.stderr.extend_from_slice(timeout_message.as_bytes());
+    Ok(output)
 }
 
 #[cfg(test)]

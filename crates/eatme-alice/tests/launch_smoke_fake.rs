@@ -1,24 +1,20 @@
 use eatme_alice::{LaunchSmokeOptions, LaunchSmokeScenario, run_launch_smoke};
 use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 #[test]
 fn fake_toolchain_launch_smoke_writes_passing_manifest() {
-    let _guard = ENV_LOCK.lock().unwrap();
     let fixture = TestFixture::new();
     fixture.write_fake_tools();
     fixture.write_fake_alice_repo();
-
-    let old_path = env::var("PATH").unwrap_or_default();
-    unsafe {
-        env::set_var("PATH", format!("{}:{old_path}", fixture.bin.display()));
-    }
+    let _path_override = PathOverride::prepend(&fixture.bin);
 
     let manifest = run_launch_smoke(&LaunchSmokeOptions {
         alice_home: fixture.alice_home.clone(),
@@ -31,10 +27,6 @@ fn fake_toolchain_launch_smoke_writes_passing_manifest() {
         scenario: LaunchSmokeScenario::default(),
     })
     .unwrap();
-
-    unsafe {
-        env::set_var("PATH", old_path);
-    }
 
     assert!(manifest.failure_category.is_none());
     assert!(
@@ -53,15 +45,10 @@ fn fake_toolchain_launch_smoke_writes_passing_manifest() {
 
 #[test]
 fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
-    let _guard = ENV_LOCK.lock().unwrap();
     let fixture = TestFixture::new();
     fixture.write_fake_tools();
     fixture.write_fake_alice_repo();
-
-    let old_path = env::var("PATH").unwrap_or_default();
-    unsafe {
-        env::set_var("PATH", format!("{}:{old_path}", fixture.bin.display()));
-    }
+    let _path_override = PathOverride::prepend(&fixture.bin);
 
     let manifest = run_launch_smoke(&LaunchSmokeOptions {
         alice_home: fixture.alice_home.clone(),
@@ -75,10 +62,6 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
     })
     .unwrap();
 
-    unsafe {
-        env::set_var("PATH", old_path);
-    }
-
     assert_eq!(manifest.scenario_id, "building-a-scene-first-world");
     assert!(
         fixture
@@ -90,16 +73,11 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
 
 #[test]
 fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
-    let _guard = ENV_LOCK.lock().unwrap();
     let fixture = TestFixture::new();
     fixture.write_fake_tools();
     fixture.write_failing_screenshot_tools();
     fixture.write_fake_alice_repo();
-
-    let old_path = env::var("PATH").unwrap_or_default();
-    unsafe {
-        env::set_var("PATH", format!("{}:{old_path}", fixture.bin.display()));
-    }
+    let _path_override = PathOverride::prepend(&fixture.bin);
 
     let manifest = run_launch_smoke(&LaunchSmokeOptions {
         alice_home: fixture.alice_home.clone(),
@@ -112,10 +90,6 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
         scenario: LaunchSmokeScenario::new("building-a-scene-first-world"),
     })
     .unwrap();
-
-    unsafe {
-        env::set_var("PATH", old_path);
-    }
 
     assert_eq!(manifest.scenario_id, "building-a-scene-first-world");
     assert!(
@@ -132,6 +106,47 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
         "window evidence should pass startup smoke-ready assertion: {:?}",
         smoke_ready
     );
+}
+
+struct PathOverride<'a> {
+    _guard: MutexGuard<'a, ()>,
+    old_path: Option<OsString>,
+}
+
+impl<'a> PathOverride<'a> {
+    fn prepend(bin: &Path) -> Self {
+        let guard = ENV_LOCK.lock().unwrap();
+        let old_path = env::var_os("PATH");
+        let mut entries = vec![bin.to_path_buf()];
+        if let Some(path) = &old_path {
+            entries.extend(env::split_paths(path));
+        }
+        let new_path = env::join_paths(entries).unwrap();
+
+        unsafe {
+            // SAFETY: PATH is process-global. This guard holds ENV_LOCK for the
+            // whole fake-toolchain run and restores the original value on drop.
+            env::set_var("PATH", new_path);
+        }
+
+        Self {
+            _guard: guard,
+            old_path,
+        }
+    }
+}
+
+impl Drop for PathOverride<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            // SAFETY: ENV_LOCK is still held until this drop completes.
+            if let Some(old_path) = &self.old_path {
+                env::set_var("PATH", old_path);
+            } else {
+                env::remove_var("PATH");
+            }
+        }
+    }
 }
 
 struct TestFixture {
