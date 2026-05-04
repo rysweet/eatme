@@ -26,12 +26,19 @@ impl Drop for DisplayAllocation {
 }
 
 pub(super) fn reserve_display(runs_dir: &Path) -> Result<DisplayAllocation> {
+    reserve_display_with_socket_check(runs_dir, display_socket_exists)
+}
+
+fn reserve_display_with_socket_check(
+    runs_dir: &Path,
+    mut socket_exists: impl FnMut(u16) -> bool,
+) -> Result<DisplayAllocation> {
     let lock_dir = runs_dir.join(".display-locks");
     fs::create_dir_all(&lock_dir)
         .with_context(|| format!("creating display lock directory {}", lock_dir.display()))?;
 
     for display in 90..130 {
-        if display_socket_exists(display) {
+        if socket_exists(display) {
             continue;
         }
 
@@ -51,11 +58,9 @@ pub(super) fn reserve_display(runs_dir: &Path) -> Result<DisplayAllocation> {
         writeln!(lock, "pid={}", std::process::id())
             .with_context(|| format!("writing display lock {}", lock_path.display()))?;
 
-        if display_socket_exists(display) {
-            let _ = fs::remove_file(&lock_path);
-            continue;
-        }
-
+        // The lock only coordinates eatme-managed Xvfb launches. An external X
+        // server can still appear after this point; rechecking would introduce a
+        // TOCTOU window by dropping the reservation we just acquired.
         return Ok(DisplayAllocation {
             name: format!(":{display}"),
             lock_path,
@@ -205,6 +210,24 @@ mod tests {
         assert!(lock_path.is_file());
         drop(allocation);
         assert!(!lock_path.exists());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn reserve_display_keeps_lock_after_socket_check_passes() {
+        let root = unique_test_dir("display-lock-race");
+        let mut checks = Vec::new();
+        let allocation = reserve_display_with_socket_check(&root, |display| {
+            checks.push(display);
+            false
+        })
+        .unwrap();
+        let lock_path = root.join(".display-locks").join("X90.lock");
+
+        assert_eq!(allocation.name(), ":90");
+        assert_eq!(checks, vec![90]);
+        assert!(lock_path.is_file());
+        drop(allocation);
         let _ = fs::remove_dir_all(root);
     }
 
