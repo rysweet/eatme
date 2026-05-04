@@ -1,11 +1,30 @@
-use super::{contextualize_scenario_errors, require_list, require_nonempty, validate_id};
+use super::{
+    PersonaReferenceIndex, contextualize_scenario_errors, require_list, require_nonempty,
+    validate_id,
+};
 use crate::report::ScenarioAssetValidationReport;
-use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
+use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset, ScenarioPersonas};
 use anyhow::{Context, Result};
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
+    let persona_index = scenario_persona_index(path)?;
+    validate_scenario_asset_inner(path, persona_index.as_ref())
+}
+
+pub(crate) fn validate_scenario_asset_with_personas(
+    path: &Path,
+    persona_index: &PersonaReferenceIndex,
+) -> Result<ScenarioAssetValidationReport> {
+    validate_scenario_asset_inner(path, Some(persona_index))
+}
+
+fn validate_scenario_asset_inner(
+    path: &Path,
+    persona_index: Option<&PersonaReferenceIndex>,
+) -> Result<ScenarioAssetValidationReport> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading scenario asset {}", path.display()))?;
     if path
@@ -18,13 +37,33 @@ pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationRep
     } else {
         let scenario: EatmeScenarioAsset = serde_yaml::from_str(&content)
             .with_context(|| format!("parsing eatme scenario YAML {}", path.display()))?;
-        Ok(validate_eatme_scenario(path, &scenario))
+        Ok(validate_eatme_scenario(path, &scenario, persona_index))
     }
+}
+
+fn scenario_persona_index(path: &Path) -> Result<Option<PersonaReferenceIndex>> {
+    for ancestor in path.ancestors() {
+        if ancestor.file_name().and_then(|name| name.to_str()) != Some("scenarios") {
+            continue;
+        }
+        let Some(assets_dir) = ancestor.parent() else {
+            continue;
+        };
+        if assets_dir.file_name().and_then(|name| name.to_str()) != Some("assets") {
+            continue;
+        }
+        let persona_path = assets_dir.join("personas/alice-user-crew.yaml");
+        if persona_path.is_file() {
+            return super::persona_reference_index(&persona_path).map(Some);
+        }
+    }
+    Ok(None)
 }
 
 fn validate_eatme_scenario(
     path: &Path,
     scenario: &EatmeScenarioAsset,
+    persona_index: Option<&PersonaReferenceIndex>,
 ) -> ScenarioAssetValidationReport {
     let mut errors = Vec::new();
     let warnings = Vec::new();
@@ -38,6 +77,7 @@ fn validate_eatme_scenario(
     validate_id(&scenario.id, "scenario", &mut errors);
     require_nonempty(&scenario.title, "title", &mut errors);
     require_nonempty(&scenario.purpose, "purpose", &mut errors);
+    validate_eatme_doc_fields(scenario, &mut errors);
     if !scenario.owner.is_empty() && scenario.owner != "eatme" {
         errors.push(format!("owner must be eatme, got {}", scenario.owner));
     }
@@ -102,43 +142,9 @@ fn validate_eatme_scenario(
     }
 
     if scenario.kind == "alice_lesson_smoke" || is_known_lesson_smoke {
-        if scenario.owner != "eatme" {
-            errors.push("owner must be eatme".into());
-        }
-        match &scenario.real_alice {
-            Some(real_alice) if real_alice.gated_by == "EATME_REAL_ALICE=1" => {}
-            Some(real_alice) => errors.push(format!(
-                "real_alice.gated_by must be EATME_REAL_ALICE=1, got {}",
-                real_alice.gated_by
-            )),
-            None => errors.push("real_alice.gated_by must be EATME_REAL_ALICE=1".into()),
-        }
-        match &scenario.smoke_ready {
-            Some(smoke_ready) => {
-                require_list(&smoke_ready.evidence, "smoke_ready.evidence", &mut errors)
-            }
-            None => errors.push("smoke_ready.evidence must be defined".into()),
-        }
-        if scenario.acceptance_criteria.is_empty() {
-            errors.push("acceptance_criteria must contain at least one criterion".into());
-        }
-        for (index, criterion) in scenario.acceptance_criteria.iter().enumerate() {
-            require_nonempty(
-                &criterion.given,
-                &format!("acceptance_criteria[{index}].given"),
-                &mut errors,
-            );
-            require_nonempty(
-                &criterion.when,
-                &format!("acceptance_criteria[{index}].when"),
-                &mut errors,
-            );
-            require_nonempty(
-                &criterion.then,
-                &format!("acceptance_criteria[{index}].then"),
-                &mut errors,
-            );
-        }
+        validate_lesson_smoke_fields(scenario, persona_index, &mut errors);
+    } else if let Some(personas) = &scenario.personas {
+        validate_scenario_personas(&scenario.id, personas, persona_index, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
@@ -156,6 +162,165 @@ fn validate_eatme_scenario(
     }
 }
 
+fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.resource_basis.is_empty() {
+        errors.push("resource_basis must contain at least one named resource".into());
+    }
+    for (index, resource) in scenario.resource_basis.iter().enumerate() {
+        require_nonempty(
+            &resource.name,
+            &format!("resource_basis[{index}].name"),
+            errors,
+        );
+        require_nonempty(
+            &resource.url,
+            &format!("resource_basis[{index}].url"),
+            errors,
+        );
+    }
+    match &scenario.capabilities {
+        Some(capabilities) => {
+            require_list(&capabilities.required, "capabilities.required", errors);
+            if capabilities
+                .optional
+                .iter()
+                .any(|value| value.trim().is_empty())
+            {
+                errors.push("capabilities.optional must contain non-empty values".into());
+            }
+        }
+        None => errors.push("capabilities.required must be defined".into()),
+    }
+    match &scenario.adapter {
+        Some(adapter) => require_list(&adapter.targets, "adapter.targets", errors),
+        None => errors.push("adapter.targets must be defined".into()),
+    }
+    if let Some(follow_on) = &scenario.agentic_follow_on {
+        require_nonempty(
+            &follow_on.prompt_source,
+            "agentic_follow_on.prompt_source",
+            errors,
+        );
+        if follow_on
+            .personality_assets
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            errors
+                .push("agentic_follow_on.personality_assets must contain non-empty values".into());
+        }
+        require_nonempty(
+            &follow_on.deterministic_gate,
+            "agentic_follow_on.deterministic_gate",
+            errors,
+        );
+    }
+}
+
+fn validate_lesson_smoke_fields(
+    scenario: &EatmeScenarioAsset,
+    persona_index: Option<&PersonaReferenceIndex>,
+    errors: &mut Vec<String>,
+) {
+    if scenario.owner != "eatme" {
+        errors.push("owner must be eatme".into());
+    }
+    match &scenario.real_alice {
+        Some(real_alice) if real_alice.gated_by == "EATME_REAL_ALICE=1" => {}
+        Some(real_alice) => errors.push(format!(
+            "real_alice.gated_by must be EATME_REAL_ALICE=1, got {}",
+            real_alice.gated_by
+        )),
+        None => errors.push("real_alice.gated_by must be EATME_REAL_ALICE=1".into()),
+    }
+    match &scenario.smoke_ready {
+        Some(smoke_ready) => require_list(&smoke_ready.evidence, "smoke_ready.evidence", errors),
+        None => errors.push("smoke_ready.evidence must be defined".into()),
+    }
+    match &scenario.personas {
+        Some(personas) => validate_scenario_personas(&scenario.id, personas, persona_index, errors),
+        None => errors.push("personas.instructors and personas.students must be defined".into()),
+    }
+    if scenario.acceptance_criteria.is_empty() {
+        errors.push("acceptance_criteria must contain at least one criterion".into());
+    }
+    for (index, criterion) in scenario.acceptance_criteria.iter().enumerate() {
+        require_nonempty(
+            &criterion.given,
+            &format!("acceptance_criteria[{index}].given"),
+            errors,
+        );
+        require_nonempty(
+            &criterion.when,
+            &format!("acceptance_criteria[{index}].when"),
+            errors,
+        );
+        require_nonempty(
+            &criterion.then,
+            &format!("acceptance_criteria[{index}].then"),
+            errors,
+        );
+    }
+}
+
+fn validate_scenario_personas(
+    scenario_id: &str,
+    personas: &ScenarioPersonas,
+    persona_index: Option<&PersonaReferenceIndex>,
+    errors: &mut Vec<String>,
+) {
+    require_list(
+        &personas.instructors,
+        &format!("{scenario_id}.personas.instructors"),
+        errors,
+    );
+    require_list(
+        &personas.students,
+        &format!("{scenario_id}.personas.students"),
+        errors,
+    );
+    if let Some(index) = persona_index {
+        validate_reference_list(
+            scenario_id,
+            &personas.instructors,
+            &index.instructors,
+            &index.all,
+            "instructor",
+            errors,
+        );
+        validate_reference_list(
+            scenario_id,
+            &personas.students,
+            &index.students,
+            &index.all,
+            "student",
+            errors,
+        );
+    }
+}
+
+fn validate_reference_list(
+    scenario_id: &str,
+    refs: &[String],
+    expected_ids: &BTreeSet<String>,
+    all_ids: &BTreeSet<String>,
+    role: &str,
+    errors: &mut Vec<String>,
+) {
+    for id in refs {
+        if !expected_ids.contains(id) {
+            let suffix = if all_ids.contains(id) {
+                " with wrong role"
+            } else {
+                ""
+            };
+            errors.push(format!(
+                "scenario {scenario_id} references missing {role} persona {id}{suffix}"
+            ));
+        }
+    }
+}
+
 fn validate_gadugi_scenario(
     path: &Path,
     scenario: &GadugiScenarioAsset,
@@ -166,6 +331,7 @@ fn validate_gadugi_scenario(
     require_nonempty(&scenario.name, "name", &mut errors);
     require_nonempty(&scenario.description, "description", &mut errors);
     require_nonempty(&scenario.version, "version", &mut errors);
+    validate_gadugi_doc_fields(scenario, &mut errors);
     if scenario.steps.is_empty() {
         errors.push("steps must contain at least one step".into());
     }
@@ -174,17 +340,33 @@ fn validate_gadugi_scenario(
         require_nonempty(&step.agent, &format!("{}.agent", step.name), &mut errors);
         require_nonempty(&step.action, &format!("{}.action", step.name), &mut errors);
         if step.action == "execute_command" {
-            match step.params.get("command") {
+            match step.params.get("command").and_then(|value| value.as_str()) {
                 Some(command) => require_nonempty(
                     command,
                     &format!("{}.params.command", step.name),
                     &mut errors,
                 ),
-                None => errors.push(format!("{}.params.command must be defined", step.name)),
+                None => errors.push(format!("{}.params.command must be a string", step.name)),
             }
         }
-        if let Some(command) = step.params.get("command") {
+        if let Some(command) = step.params.get("command").and_then(|value| value.as_str()) {
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
+        }
+        match &step.expect {
+            Some(expect) => {
+                if expect.exit_code.is_none() {
+                    errors.push(format!("{}.expect.exit_code must be defined", step.name));
+                }
+                require_list(
+                    &expect.stdout_contains,
+                    &format!("{}.expect.stdout_contains", step.name),
+                    &mut errors,
+                );
+            }
+            None => errors.push(format!("{}.expect must be defined", step.name)),
+        }
+        if step.timeout == 0 {
+            errors.push(format!("{}.timeout must be greater than zero", step.name));
         }
     }
     if scenario.assertions.is_empty() {
@@ -197,6 +379,14 @@ fn validate_gadugi_scenario(
             &format!("{}.type", assertion.name),
             &mut errors,
         );
+        require_nonempty(
+            &assertion.agent,
+            &format!("{}.agent", assertion.name),
+            &mut errors,
+        );
+        if assertion.params.is_empty() {
+            errors.push(format!("{}.params must be defined", assertion.name));
+        }
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.name, errors);
@@ -211,6 +401,69 @@ fn validate_gadugi_scenario(
         assertion_count: scenario.assertions.len(),
         errors,
         warnings,
+    }
+}
+
+fn validate_gadugi_doc_fields(scenario: &GadugiScenarioAsset, errors: &mut Vec<String>) {
+    match &scenario.config {
+        Some(config) if config.timeout > 0 => {
+            if config.retries != 0 {
+                errors.push("config.retries must be 0 for deterministic validation".into());
+            }
+            if config.parallel {
+                errors.push("config.parallel must be false for deterministic validation".into());
+            }
+        }
+        Some(_) => errors.push("config.timeout must be greater than zero".into()),
+        None => errors.push("config must be defined".into()),
+    }
+    match &scenario.environment {
+        Some(environment) => {
+            require_list(&environment.requires, "environment.requires", errors);
+            if environment
+                .optional
+                .iter()
+                .any(|value| value.trim().is_empty())
+            {
+                errors.push("environment.optional must contain non-empty values".into());
+            }
+        }
+        None => errors.push("environment.requires must be defined".into()),
+    }
+    if scenario.agents.is_empty() {
+        errors.push("agents must contain at least one agent".into());
+    }
+    for agent in &scenario.agents {
+        require_nonempty(&agent.name, "agent.name", errors);
+        require_nonempty(&agent.agent_type, &format!("{}.type", agent.name), errors);
+        require_nonempty(
+            &agent.config.shell,
+            &format!("{}.config.shell", agent.name),
+            errors,
+        );
+        require_nonempty(
+            &agent.config.cwd,
+            &format!("{}.config.cwd", agent.name),
+            errors,
+        );
+        if agent.config.timeout == 0 {
+            errors.push(format!(
+                "{}.config.timeout must be greater than zero",
+                agent.name
+            ));
+        }
+        if !agent.config.capture_output {
+            errors.push(format!("{}.config.capture_output must be true", agent.name));
+        }
+    }
+    match &scenario.metadata {
+        Some(metadata) => {
+            require_list(&metadata.tags, "metadata.tags", errors);
+            require_nonempty(&metadata.priority, "metadata.priority", errors);
+            require_nonempty(&metadata.author, "metadata.author", errors);
+            require_nonempty(&metadata.test_type, "metadata.test_type", errors);
+        }
+        None => errors.push("metadata must be defined".into()),
     }
 }
 
@@ -239,189 +492,5 @@ fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::schema::{
-        EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioRealAlice,
-        EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
-    };
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn rejects_malformed_eatme_scenario_asset() {
-        let scenario = EatmeScenarioAsset {
-            schema_version: "eatme.scenario/v1".into(),
-            id: "not valid".into(),
-            title: "".into(),
-            ..EatmeScenarioAsset::default()
-        };
-        let report = validate_eatme_scenario(Path::new("bad.yaml"), &scenario);
-        assert!(!report.passed);
-        assert!(
-            report
-                .errors
-                .iter()
-                .any(|error| error.contains("must be kebab-case"))
-        );
-    }
-
-    #[test]
-    fn scenario_validation_errors_include_path_or_scenario_id() {
-        let scenario = EatmeScenarioAsset {
-            schema_version: "eatme.scenario/v1".into(),
-            id: "building-a-scene-first-world".into(),
-            kind: "alice_lesson_smoke".into(),
-            owner: "eatme".into(),
-            launcher: Some(EatmeScenarioLauncher {
-                command: "alice launch-smoke".into(),
-                scenario: "building-a-scene-first-world".into(),
-            }),
-            ..EatmeScenarioAsset::default()
-        };
-        let path = Path::new("assets/scenarios/eatme/building-a-scene-first-world.yaml");
-        let report = validate_eatme_scenario(path, &scenario);
-
-        assert!(!report.passed);
-        assert!(
-            report.errors.iter().all(|error| {
-                error.contains("building-a-scene-first-world")
-                    || error.contains("assets/scenarios/eatme/building-a-scene-first-world.yaml")
-            }),
-            "each schema error should identify the scenario id or asset path: {:?}",
-            report.errors
-        );
-    }
-
-    #[test]
-    fn lesson_smoke_requires_real_alice_gate() {
-        let scenario = EatmeScenarioAsset {
-            schema_version: "eatme.scenario/v1".into(),
-            id: "code-editor-first-run".into(),
-            title: "Code Editor First Run".into(),
-            kind: "alice_lesson_smoke".into(),
-            owner: "eatme".into(),
-            purpose: "launches through the real Alice smoke harness".into(),
-            launcher: Some(EatmeScenarioLauncher {
-                command: "alice launch-smoke".into(),
-                scenario: "code-editor-first-run".into(),
-            }),
-            steps: vec![EatmeScenarioStep {
-                id: "launch-smoke".into(),
-                command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
-                evidence: vec!["manifest scenario_id matches".into()],
-            }],
-            timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
-            artifacts: BTreeMap::from([
-                ("manifest".into(), "runs/building/manifest.json".into()),
-                (
-                    "screenshot".into(),
-                    "runs/building/screenshots/startup.png".into(),
-                ),
-                ("log".into(), "runs/building/alice.log".into()),
-            ]),
-            unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
-            ..EatmeScenarioAsset::default()
-        };
-        let report = validate_eatme_scenario(Path::new("building.yaml"), &scenario);
-        assert!(!report.passed);
-        assert!(
-            report
-                .errors
-                .iter()
-                .any(|error| error.contains("real_alice.gated_by"))
-        );
-    }
-
-    #[test]
-    fn known_lesson_smoke_requires_lesson_kind() {
-        let scenario = EatmeScenarioAsset {
-            schema_version: "eatme.scenario/v1".into(),
-            id: "code-editor-first-run".into(),
-            title: "Code Editor First Run".into(),
-            owner: "eatme".into(),
-            purpose: "launches through the real Alice smoke harness".into(),
-            launcher: Some(EatmeScenarioLauncher {
-                command: "alice launch-smoke".into(),
-                scenario: "code-editor-first-run".into(),
-            }),
-            real_alice: Some(EatmeScenarioRealAlice {
-                gated_by: "EATME_REAL_ALICE=1".into(),
-            }),
-            smoke_ready: Some(EatmeScenarioSmokeReady {
-                evidence: vec!["manifest assertions".into()],
-            }),
-            acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
-                given: "dependencies are available".into(),
-                when: "the lane launches".into(),
-                then: "the manifest records the scenario id".into(),
-            }],
-            steps: vec![EatmeScenarioStep {
-                id: "launch-smoke".into(),
-                command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
-                evidence: vec!["manifest scenario_id matches".into()],
-            }],
-            timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
-            artifacts: BTreeMap::from([
-                ("manifest".into(), "runs/code/manifest.json".into()),
-                (
-                    "screenshot".into(),
-                    "runs/code/screenshots/startup.png".into(),
-                ),
-                ("log".into(), "runs/code/alice.log".into()),
-            ]),
-            unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
-            ..EatmeScenarioAsset::default()
-        };
-        let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario);
-
-        assert!(!report.passed);
-        assert!(
-            report
-                .errors
-                .iter()
-                .any(|error| error.contains("kind must be alice_lesson_smoke"))
-        );
-    }
-
-    #[test]
-    fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
-        let scenario = GadugiScenarioAsset {
-            name: "Bad Gadugi Alice Runtime Owner".into(),
-            description:
-                "Attempts to own Xvfb and Java launch directly instead of using eatme CLI.".into(),
-            version: "1.0.0".into(),
-            steps: vec![GadugiScenarioStep {
-                name: "Launch Alice directly".into(),
-                agent: "gadugi-agent".into(),
-                action: "execute_command".into(),
-                params: BTreeMap::from([(
-                    "command".into(),
-                    "Xvfb :99 & java org.alice.stageide.EntryPoint".into(),
-                )]),
-            }],
-            assertions: vec![GadugiScenarioAssertion {
-                name: "Direct runtime command succeeded".into(),
-                assertion_type: "command_success".into(),
-            }],
-        };
-
-        let report = validate_gadugi_scenario(
-            Path::new("assets/scenarios/gadugi/bad-direct-runtime.yaml"),
-            &scenario,
-        );
-        assert!(
-            !report.passed,
-            "gadugi assets must not own Alice runtime details: {:?}",
-            report.errors
-        );
-        assert!(
-            report.errors.iter().any(|error| {
-                error.contains("gadugi")
-                    && error.contains("alice launch-smoke")
-                    && error.contains("runtime")
-            }),
-            "boundary error should direct gadugi scenarios to the eatme launch-smoke CLI: {:?}",
-            report.errors
-        );
-    }
-}
+#[path = "scenario_tests.rs"]
+mod scenario_tests;

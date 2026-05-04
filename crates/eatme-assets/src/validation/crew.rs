@@ -1,4 +1,4 @@
-use super::{require_list, require_nonempty, validate_id};
+use super::{PersonaReferenceIndex, require_list, require_nonempty, validate_id};
 use crate::report::AssetValidationReport;
 use crate::schema::{CrewAsset, Persona, Scenario};
 use anyhow::{Context, Result};
@@ -7,11 +7,42 @@ use std::fs;
 use std::path::Path;
 
 pub fn validate_persona_crew(path: &Path) -> Result<AssetValidationReport> {
+    let crew = parse_crew(path)?;
+    Ok(validate_crew(path, &crew))
+}
+
+pub(crate) fn persona_reference_index(path: &Path) -> Result<PersonaReferenceIndex> {
+    let crew = parse_crew(path)?;
+    let instructors = crew
+        .personas
+        .instructors
+        .iter()
+        .map(|persona| persona.id.clone())
+        .collect::<BTreeSet<_>>();
+    let students = crew
+        .personas
+        .students
+        .iter()
+        .map(|persona| persona.id.clone())
+        .collect::<BTreeSet<_>>();
+    let all = instructors
+        .iter()
+        .chain(students.iter())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+
+    Ok(PersonaReferenceIndex {
+        instructors,
+        students,
+        all,
+    })
+}
+
+fn parse_crew(path: &Path) -> Result<CrewAsset> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading persona crew asset {}", path.display()))?;
-    let crew: CrewAsset = serde_yaml::from_str(&content)
-        .with_context(|| format!("parsing persona crew YAML {}", path.display()))?;
-    Ok(validate_crew(path, &crew))
+    serde_yaml::from_str(&content)
+        .with_context(|| format!("parsing persona crew YAML {}", path.display()))
 }
 
 fn validate_crew(path: &Path, crew: &CrewAsset) -> AssetValidationReport {

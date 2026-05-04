@@ -1,23 +1,38 @@
 use serde::Deserialize;
+use serde_yaml::Value;
 use std::collections::BTreeMap;
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct CrewAsset {
+    #[serde(default)]
+    pub(crate) version: Option<Value>,
     pub(crate) workstream: String,
     pub(crate) title: String,
     pub(crate) purpose: String,
+    #[serde(default)]
+    pub(crate) philosophy: Option<Value>,
+    #[serde(default)]
+    pub(crate) source_basis: Option<Value>,
+    #[serde(default)]
+    pub(crate) asset_shapes: Option<Value>,
+    #[serde(default)]
+    pub(crate) personality_assets: Option<Value>,
     pub(crate) personas: PersonaGroups,
     pub(crate) core_scenarios_from_existing_alice_resources: Vec<Scenario>,
     pub(crate) creative_new_teaching_learning_scenarios: Vec<Scenario>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct PersonaGroups {
     pub(crate) instructors: Vec<Persona>,
     pub(crate) students: Vec<Persona>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct Persona {
     pub(crate) id: String,
     pub(crate) role: String,
@@ -31,6 +46,7 @@ pub(crate) struct Persona {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct Scenario {
     pub(crate) id: String,
     pub(crate) origin: String,
@@ -45,19 +61,22 @@ pub(crate) struct Scenario {
     pub(crate) avoid: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct ScenarioPersonas {
     pub(crate) instructors: Vec<String>,
     pub(crate) students: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct ScenarioIntent {
     pub(crate) concepts: Vec<String>,
     pub(crate) habits: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct ScenarioObservables {
     pub(crate) instructor: Vec<String>,
     pub(crate) student: Vec<String>,
@@ -65,6 +84,7 @@ pub(crate) struct ScenarioObservables {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) schema_version: String,
@@ -77,17 +97,27 @@ pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) owner: String,
     #[serde(default)]
+    pub(crate) resource_basis: Vec<ScenarioResourceBasis>,
+    #[serde(default)]
     pub(crate) purpose: String,
     #[serde(default)]
     pub(crate) launcher: Option<EatmeScenarioLauncher>,
     #[serde(default)]
     pub(crate) real_alice: Option<EatmeScenarioRealAlice>,
     #[serde(default)]
+    pub(crate) personas: Option<ScenarioPersonas>,
+    #[serde(default)]
+    pub(crate) capabilities: Option<ScenarioCapabilities>,
+    #[serde(default)]
+    pub(crate) adapter: Option<ScenarioAdapter>,
+    #[serde(default)]
     pub(crate) smoke_ready: Option<EatmeScenarioSmokeReady>,
     #[serde(default)]
     pub(crate) acceptance_criteria: Vec<EatmeScenarioAcceptanceCriterion>,
     #[serde(default)]
     pub(crate) steps: Vec<EatmeScenarioStep>,
+    #[serde(default)]
+    pub(crate) agentic_follow_on: Option<ScenarioAgenticFollowOn>,
     #[serde(default)]
     pub(crate) timeouts: BTreeMap<String, u64>,
     #[serde(default)]
@@ -96,7 +126,44 @@ pub(crate) struct EatmeScenarioAsset {
     pub(crate) unsupported_policy: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ScenarioResourceBasis {
+    #[serde(default)]
+    pub(crate) name: String,
+    #[serde(default)]
+    pub(crate) url: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ScenarioCapabilities {
+    #[serde(default)]
+    pub(crate) required: Vec<String>,
+    #[serde(default)]
+    pub(crate) optional: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ScenarioAdapter {
+    #[serde(default)]
+    pub(crate) targets: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ScenarioAgenticFollowOn {
+    #[serde(default)]
+    pub(crate) prompt_source: String,
+    #[serde(default)]
+    pub(crate) personality_assets: Vec<String>,
+    #[serde(default)]
+    pub(crate) deterministic_gate: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioLauncher {
     #[serde(default)]
     pub(crate) command: String,
@@ -104,19 +171,22 @@ pub(crate) struct EatmeScenarioLauncher {
     pub(crate) scenario: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioRealAlice {
     #[serde(default)]
     pub(crate) gated_by: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioSmokeReady {
     #[serde(default)]
     pub(crate) evidence: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioAcceptanceCriterion {
     #[serde(default)]
     pub(crate) given: String,
@@ -126,7 +196,8 @@ pub(crate) struct EatmeScenarioAcceptanceCriterion {
     pub(crate) then: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioStep {
     #[serde(default)]
     pub(crate) id: String,
@@ -137,6 +208,7 @@ pub(crate) struct EatmeScenarioStep {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct GadugiScenarioAsset {
     #[serde(default)]
     pub(crate) name: String,
@@ -145,12 +217,65 @@ pub(crate) struct GadugiScenarioAsset {
     #[serde(default)]
     pub(crate) version: String,
     #[serde(default)]
+    pub(crate) config: Option<GadugiConfig>,
+    #[serde(default)]
+    pub(crate) environment: Option<GadugiEnvironment>,
+    #[serde(default)]
+    pub(crate) agents: Vec<GadugiAgent>,
+    #[serde(default)]
     pub(crate) steps: Vec<GadugiScenarioStep>,
     #[serde(default)]
     pub(crate) assertions: Vec<GadugiScenarioAssertion>,
+    #[serde(default)]
+    pub(crate) metadata: Option<GadugiMetadata>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiConfig {
+    #[serde(default)]
+    pub(crate) timeout: u64,
+    #[serde(default)]
+    pub(crate) retries: u64,
+    #[serde(default)]
+    pub(crate) parallel: bool,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiEnvironment {
+    #[serde(default)]
+    pub(crate) requires: Vec<String>,
+    #[serde(default)]
+    pub(crate) optional: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiAgent {
+    #[serde(default)]
+    pub(crate) name: String,
+    #[serde(default, rename = "type")]
+    pub(crate) agent_type: String,
+    #[serde(default)]
+    pub(crate) config: GadugiAgentConfig,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiAgentConfig {
+    #[serde(default)]
+    pub(crate) shell: String,
+    #[serde(default)]
+    pub(crate) cwd: String,
+    #[serde(default)]
+    pub(crate) timeout: u64,
+    #[serde(default)]
+    pub(crate) capture_output: bool,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct GadugiScenarioStep {
     #[serde(default)]
     pub(crate) name: String,
@@ -159,13 +284,103 @@ pub(crate) struct GadugiScenarioStep {
     #[serde(default)]
     pub(crate) action: String,
     #[serde(default)]
-    pub(crate) params: BTreeMap<String, String>,
+    pub(crate) params: BTreeMap<String, Value>,
+    #[serde(default)]
+    pub(crate) expect: Option<GadugiStepExpect>,
+    #[serde(default)]
+    pub(crate) timeout: u64,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiStepExpect {
+    #[serde(default)]
+    pub(crate) exit_code: Option<i64>,
+    #[serde(default)]
+    pub(crate) stdout_contains: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct GadugiScenarioAssertion {
     #[serde(default)]
     pub(crate) name: String,
     #[serde(default, rename = "type")]
     pub(crate) assertion_type: String,
+    #[serde(default)]
+    pub(crate) agent: String,
+    #[serde(default)]
+    pub(crate) params: BTreeMap<String, Value>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct GadugiMetadata {
+    #[serde(default)]
+    pub(crate) tags: Vec<String>,
+    #[serde(default)]
+    pub(crate) priority: String,
+    #[serde(default)]
+    pub(crate) author: String,
+    #[serde(default)]
+    pub(crate) test_type: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_unknown_eatme_scenario_fields() {
+        let yaml = r#"
+schema_version: eatme.scenario/v1
+id: strict-test
+title: Strict Test
+purpose: Catch bad edits.
+unknown_field: should-fail
+"#;
+        let error = serde_yaml::from_str::<EatmeScenarioAsset>(yaml).unwrap_err();
+        assert!(error.to_string().contains("unknown field"), "{error}");
+    }
+
+    #[test]
+    fn rejects_unknown_nested_scenario_fields() {
+        let yaml = r#"
+schema_version: eatme.scenario/v1
+id: strict-test
+title: Strict Test
+purpose: Catch bad edits.
+resource_basis:
+  - name: Resource
+    href: https://example.invalid
+"#;
+        let error = serde_yaml::from_str::<EatmeScenarioAsset>(yaml).unwrap_err();
+        assert!(error.to_string().contains("unknown field"), "{error}");
+    }
+
+    #[test]
+    fn rejects_unknown_persona_fields() {
+        let yaml = r#"
+workstream: alice.eatme
+title: Strict Persona Test
+purpose: Catch bad persona edits.
+personas:
+  instructors:
+    - id: concept-cartographer
+      role: instructor
+      archetype: Concept Cartographer
+      goals: [Teach concepts]
+      constraints: [Limited time]
+      educational_intent: [Transfer]
+      observable_behaviors: [Names concepts]
+      anti_behaviors: [Over-prescribes]
+      evidence: [Reflection]
+      nickname: Cartographer
+  students: []
+core_scenarios_from_existing_alice_resources: []
+creative_new_teaching_learning_scenarios: []
+"#;
+        let error = serde_yaml::from_str::<CrewAsset>(yaml).unwrap_err();
+        assert!(error.to_string().contains("unknown field"), "{error}");
+    }
 }

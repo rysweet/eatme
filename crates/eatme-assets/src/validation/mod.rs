@@ -1,10 +1,20 @@
 mod crew;
 mod scenario;
 
+pub(crate) use crew::persona_reference_index;
 pub use crew::validate_persona_crew;
 pub use scenario::validate_scenario_asset;
+pub(crate) use scenario::validate_scenario_asset_with_personas;
 
+use std::collections::BTreeSet;
 use std::path::Path;
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct PersonaReferenceIndex {
+    pub(crate) instructors: BTreeSet<String>,
+    pub(crate) students: BTreeSet<String>,
+    pub(crate) all: BTreeSet<String>,
+}
 
 pub(crate) fn validate_id(id: &str, kind: &str, errors: &mut Vec<String>) {
     if id.is_empty()
