@@ -471,9 +471,9 @@ the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, `real_alice_execution_evidence`, and passing assertions. It
 does not reimplement or configure Alice launch internals.
 
-The committed gadugi adapter currently uses `/home/azureuser/src/eatme` as its
-working tree path. Treat that as an environment-bound adapter value until the
-gadugi compilation layer parameterizes repository roots.
+The committed gadugi adapter uses `cwd: .` plus `${EATME_REPO:-.}` so a
+runner can execute from the repository root by default or point at another
+checkout without baking local paths into the scenario assets.
 
 ## Testing expectations
 

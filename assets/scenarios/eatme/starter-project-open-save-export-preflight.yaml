@@ -7,7 +7,7 @@ resource_basis:
   - name: Alice 3 desktop launch and starter project flow
     url: https://www.alice.org/get-alice/alice-3/
   - name: Alice desktop outside-in open/save/export QA
-    url: /home/azureuser/src/alice3-modernization/qa/outside-in/alice-desktop/scenarios
+    url: "${ALICE_DESKTOP_SCENARIOS:-../alice3-modernization/qa/outside-in/alice-desktop/scenarios}"
 purpose: >-
   Prove that the real Alice harness can open the bundled starter project and
   capture deterministic evidence before instructor/student agents or manual QA
@@ -55,7 +55,7 @@ acceptance_criteria:
     then: screenshot or window evidence and logs are captured for the opened project state
   - given: open/save/export QA still needs user-like interaction evidence
     when: instructor/student agents plan the next save, reopen, or export pass
-    then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of claiming deep UI coverage
+    then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json

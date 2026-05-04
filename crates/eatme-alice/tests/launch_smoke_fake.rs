@@ -161,6 +161,40 @@ fn missing_desktop_dependency_writes_blocking_manifest() {
     );
 }
 
+#[test]
+fn package_failure_writes_blocking_manifest_without_real_evidence() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_failing_package_tool();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "package-failed-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("alice_package_failed")
+    );
+    let real_evidence = manifest
+        .assertions
+        .get("real_alice_execution_evidence")
+        .expect("blocked manifest should include the evidence contract");
+    assert!(!real_evidence.passed);
+    assert!(real_evidence.detail.contains("Alice package failed"));
+    assert!(manifest.alice_pid.is_none());
+    assert!(manifest.screenshot.is_none());
+}
+
 struct PathOverride<'a> {
     _guard: MutexGuard<'a, ()>,
     old_path: Option<OsString>,
@@ -332,6 +366,20 @@ if [ "$1" = "-c" ]; then
   esac
 fi
 exec /bin/sh "$@"
+"#,
+        );
+    }
+
+    fn write_failing_package_tool(&self) {
+        self.write_tool(
+            "mvn",
+            r#"#!/bin/sh
+if [ "$1" = "-version" ]; then
+  echo "Apache Maven 3.9.0"
+  exit 0
+fi
+echo "intentional package failure" 1>&2
+exit 42
 "#,
         );
     }
