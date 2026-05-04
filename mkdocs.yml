@@ -1,0 +1,27 @@
+site_name: eatme
+site_description: Agentic Alice outside-in QA harness
+repo_url: https://github.com/rysweet/eatme
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - CLI Usage: cli-usage.md
+  - Scenario Authoring: scenario-authoring.md
+  - Gadugi Adapters: gadugi-adapters.md
+  - Validation and Quality Gates: validation-quality-gates.md
+  - Alice Integration: alice-integration.md
+  - Instructor Missions: instructor-missions.md
+  - Student Missions: student-missions.md
+  - GitHub Pages: github-pages.md
+  - Existing Guides:
+      - Persona Assets: persona-assets.md
+      - Alice Lesson Smoke: alice-lesson-smoke.md
+      - Implementation Plan: implementation-plan.md
+
+strict: true
+
