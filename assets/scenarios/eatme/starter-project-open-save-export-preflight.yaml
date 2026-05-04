@@ -1,0 +1,104 @@
+schema_version: eatme.scenario/v1
+id: starter-project-open-save-export-preflight
+title: Starter Project Open/Save/Export Preflight
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice 3 desktop launch and starter project flow
+    url: https://www.alice.org/get-alice/alice-3/
+  - name: Alice desktop outside-in open/save/export QA
+    url: /home/azureuser/src/alice3-modernization/qa/outside-in/alice-desktop/scenarios
+purpose: >-
+  Prove that the real Alice harness can open the bundled starter project and
+  capture deterministic evidence before instructor/student agents or manual QA
+  attempt save, reopen, or export journeys.
+launcher:
+  command: alice launch-smoke
+  scenario: starter-project-open-save-export-preflight
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - classroom-orchestrator
+    - assessment-curator
+  students:
+    - creative-storyteller
+    - accessibility-advocate
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - starter_project_launch_command
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the starter-project-open-save-export-preflight scenario is launched through eatme
+    then: the manifest identifies scenario_id starter-project-open-save-export-preflight
+  - given: the harness starts Alice with the bundled africa.a3p starter project
+    when: Alice reaches a smoke-ready desktop session under Xvfb
+    then: screenshot or window evidence and logs are captured for the opened project state
+  - given: open/save/export QA still needs user-like interaction evidence
+    when: instructor/student agents plan the next save, reopen, or export pass
+    then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of claiming deep UI coverage
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario starter-project-open-save-export-preflight
+    evidence:
+      - manifest scenario_id equals starter-project-open-save-export-preflight
+      - manifest launch_command includes africa.a3p
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#open-save-export
+  deterministic_gate: >-
+    Run this smoke lane before asking instructor/student agents to judge whether
+    a learner can save, reopen, or export the opened starter project.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/starter-project-open-save-export-preflight/${RUN_ID}/manifest.json
+  screenshot: runs/starter-project-open-save-export-preflight/${RUN_ID}/screenshots/startup.png
+  log: runs/starter-project-open-save-export-preflight/${RUN_ID}/alice.log
+  window_list: runs/starter-project-open-save-export-preflight/${RUN_ID}/window-list.txt
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
+  substitute mocked open/save/export evidence.

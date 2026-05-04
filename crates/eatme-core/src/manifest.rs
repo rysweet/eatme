@@ -49,6 +49,7 @@ pub struct LaunchSmokeManifest {
     pub alice_pid: Option<u32>,
     pub timeout_seconds: u64,
     pub screenshot: Option<ArtifactInfo>,
+    pub window_list: Option<ArtifactInfo>,
     pub log: Option<ArtifactInfo>,
     pub fatal_log_scan: Vec<String>,
     pub assertions: BTreeMap<String, AssertionResult>,

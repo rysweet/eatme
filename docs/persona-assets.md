@@ -5,7 +5,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 ## Asset files
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
-- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline plus Alice.org-grounded lesson lanes.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, and desktop journey preflights.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior and check manifest-level evidence only.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
@@ -83,16 +83,19 @@ Rust or the launch harness.
 | Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
 | Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
 
-## New Alice.org-grounded smoke scenario assets
+## Alice.org-grounded smoke scenario assets
 
-Added editable eatme + gadugi scenario assets for:
+Editable eatme + gadugi scenario assets now cover:
 
-1. `reusable-methods-and-parameters`
-2. `functions-as-questions-about-the-world`
-3. `loops-and-conditionals-mini-challenge`
-4. `events-collision-proximity-game`
+1. `building-a-scene-first-world`
+2. `code-editor-first-run`
+3. `reusable-methods-and-parameters`
+4. `functions-as-questions-about-the-world`
+5. `loops-and-conditionals-mini-challenge`
+6. `events-collision-proximity-game`
+7. `starter-project-open-save-export-preflight`
 
-Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary. The starter-project preflight tightens the gap toward open/save/export QA by proving Alice opens the bundled starter project before any agent or manual pass claims save/reopen/export coverage.
 
 ## 10 creative new scenarios
 

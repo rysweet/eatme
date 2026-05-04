@@ -1,8 +1,8 @@
-name: "Eatme Functions As Questions About The World Smoke"
+name: "Eatme Starter Project Open Save Export Preflight"
 description: |
-  Gadugi-compatible CLI scenario for the Functions as Questions About the World lesson smoke lane.
+  Gadugi-compatible CLI scenario for the real Alice starter-project preflight.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  commands and checks manifest-level evidence before save/reopen/export work.
 version: "1.0.0"
 
 config:
@@ -50,13 +50,13 @@ steps:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Functions as Questions About the World lane under Xvfb"
+  - name: "Launch starter project preflight under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd /home/azureuser/src/eatme
-        export RUN_ID="${RUN_ID:-gadugi-functions-as-questions-about-the-world}"
+        export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -65,14 +65,15 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario functions-as-questions-about-the-world
+          --scenario starter-project-open-save-export-preflight
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "functions-as-questions-about-the-world"'
+        - '"scenario_id": "starter-project-open-save-export-preflight"'
         - '"failure_category": null'
         - '"real_alice_execution_evidence": {'
         - '"startup_window_or_screenshot": {'
+        - 'africa.a3p'
         - '"passed": true'
     timeout: 1800000
 
@@ -91,11 +92,11 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Functions as Questions About the World Launches"
+  - name: "Starter Project Preflight Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Functions as Questions About the World lane under Xvfb"
+      step: "Launch starter project preflight under Xvfb"
 
 metadata:
   tags:
@@ -103,7 +104,7 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "functions"
+    - "open-save-export"
     - "outside-in"
   priority: "critical"
   author: "eatme"

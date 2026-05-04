@@ -81,6 +81,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"failure_category": null'
+        - '"real_alice_execution_evidence": {'
         - '"startup_screenshot": {'
         - '"passed": true'
     timeout: 1800000

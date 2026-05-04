@@ -41,6 +41,14 @@ fn fake_toolchain_launch_smoke_writes_passing_manifest() {
             .join("runs/real-alice-launch-smoke/fake-run/manifest.json")
             .is_file()
     );
+    assert!(
+        manifest
+            .assertions
+            .get("real_alice_execution_evidence")
+            .expect("manifest should include real Alice evidence contract")
+            .passed
+    );
+    assert!(manifest.window_list.is_some());
 }
 
 #[test]
@@ -108,6 +116,51 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
     );
 }
 
+#[test]
+fn missing_desktop_dependency_writes_blocking_manifest() {
+    let fixture = TestFixture::new();
+    fixture.write_missing_xvfb_probe();
+    let _path_override = PathOverride::replace(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "missing-xvfb-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("missing_dependency")
+    );
+    let real_evidence = manifest
+        .assertions
+        .get("real_alice_execution_evidence")
+        .expect("blocked manifest should include the evidence contract");
+    assert!(!real_evidence.passed);
+    assert!(real_evidence.detail.contains("preflight blocked"));
+    assert!(
+        fixture
+            .root
+            .join("runs/code-editor-first-run/missing-xvfb-run/manifest.json")
+            .is_file()
+    );
+    assert!(
+        fs::read_to_string(
+            fixture
+                .root
+                .join("runs/code-editor-first-run/missing-xvfb-run/alice.log")
+        )
+        .unwrap()
+        .contains("preflight blocked")
+    );
+}
+
 struct PathOverride<'a> {
     _guard: MutexGuard<'a, ()>,
     old_path: Option<OsString>,
@@ -127,6 +180,22 @@ impl<'a> PathOverride<'a> {
             // SAFETY: PATH is process-global. This guard holds ENV_LOCK for the
             // whole fake-toolchain run and restores the original value on drop.
             env::set_var("PATH", new_path);
+        }
+
+        Self {
+            _guard: guard,
+            old_path,
+        }
+    }
+
+    fn replace(bin: &Path) -> Self {
+        let guard = ENV_LOCK.lock().unwrap();
+        let old_path = env::var_os("PATH");
+
+        unsafe {
+            // SAFETY: PATH is process-global. This guard holds ENV_LOCK for the
+            // whole fake-toolchain run and restores the original value on drop.
+            env::set_var("PATH", bin);
         }
 
         Self {
@@ -248,6 +317,21 @@ exit 1
             "import",
             r#"#!/bin/sh
 exit 1
+"#,
+        );
+    }
+
+    fn write_missing_xvfb_probe(&self) {
+        self.write_tool(
+            "sh",
+            r#"#!/bin/sh
+if [ "$1" = "-c" ]; then
+  case "$2" in
+    "command -v Xvfb") exit 1 ;;
+    "command -v "*) echo "/fake/${2#command -v }"; exit 0 ;;
+  esac
+fi
+exec /bin/sh "$@"
 "#,
         );
     }

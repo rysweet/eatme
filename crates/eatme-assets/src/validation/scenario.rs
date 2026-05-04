@@ -139,6 +139,19 @@ fn validate_eatme_scenario(
                 &mut errors,
             );
         }
+        let launch_step_mentions_real_evidence = scenario.steps.iter().any(|step| {
+            step.command.contains("alice launch-smoke")
+                && step
+                    .evidence
+                    .iter()
+                    .any(|evidence| evidence.contains("real_alice_execution_evidence"))
+        });
+        if !launch_step_mentions_real_evidence {
+            errors.push(
+                "launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence"
+                    .into(),
+            );
+        }
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
@@ -185,6 +198,9 @@ fn validate_gadugi_scenario(
         }
         if let Some(command) = step.params.get("command") {
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
+            if command.contains("alice launch-smoke") {
+                validate_gadugi_real_evidence_expectation(&step.name, step, &mut errors);
+            }
         }
     }
     if scenario.assertions.is_empty() {
@@ -234,6 +250,23 @@ fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut
     {
         errors.push(format!(
             "{step_name}: gadugi scenario must invoke eatme CLI alice launch-smoke and inspect manifest evidence only; it must not own Alice runtime concerns"
+        ));
+    }
+}
+
+fn validate_gadugi_real_evidence_expectation(
+    step_name: &str,
+    step: &crate::schema::GadugiScenarioStep,
+    errors: &mut Vec<String>,
+) {
+    if !step
+        .expect
+        .stdout_contains
+        .iter()
+        .any(|expected| expected.contains("real_alice_execution_evidence"))
+    {
+        errors.push(format!(
+            "{step_name}: gadugi launch-smoke step must assert manifest real_alice_execution_evidence"
         ));
     }
 }
@@ -398,6 +431,7 @@ mod tests {
                     "command".into(),
                     "Xvfb :99 & java org.alice.stageide.EntryPoint".into(),
                 )]),
+                ..GadugiScenarioStep::default()
             }],
             assertions: vec![GadugiScenarioAssertion {
                 name: "Direct runtime command succeeded".into(),
@@ -421,6 +455,44 @@ mod tests {
                     && error.contains("runtime")
             }),
             "boundary error should direct gadugi scenarios to the eatme launch-smoke CLI: {:?}",
+            report.errors
+        );
+    }
+
+    #[test]
+    fn gadugi_launch_smoke_requires_real_execution_evidence_assertion() {
+        let scenario = GadugiScenarioAsset {
+            name: "Metadata Only Smoke".into(),
+            description: "Launches through eatme but only checks scenario metadata.".into(),
+            version: "1.0.0".into(),
+            steps: vec![GadugiScenarioStep {
+                name: "Launch Alice".into(),
+                agent: "eatme-cli-agent".into(),
+                action: "execute_command".into(),
+                params: BTreeMap::from([(
+                    "command".into(),
+                    "cargo run -q -p eatme-cli -- alice launch-smoke --scenario code-editor-first-run"
+                        .into(),
+                )]),
+                ..GadugiScenarioStep::default()
+            }],
+            assertions: vec![GadugiScenarioAssertion {
+                name: "Launch succeeded".into(),
+                assertion_type: "command_success".into(),
+            }],
+        };
+
+        let report = validate_gadugi_scenario(
+            Path::new("assets/scenarios/gadugi/metadata-only.yaml"),
+            &scenario,
+        );
+        assert!(!report.passed);
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|error| error.contains("real_alice_execution_evidence")),
+            "gadugi launch-smoke validation should reject metadata-only checks: {:?}",
             report.errors
         );
     }

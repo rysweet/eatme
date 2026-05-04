@@ -1,6 +1,6 @@
 use crate::deps::check_dependencies;
-use crate::discover::{discover_alice, first_non_empty};
-use crate::package::{PackageOptions, package_alice};
+use crate::discover::{AliceDiscovery, discover_alice, first_non_empty};
+use crate::package::{PackageOptions, PackageResult, package_alice};
 use anyhow::{Context, Result, bail};
 use eatme_core::{
     ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
@@ -61,14 +61,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
-    let discovery = discover_alice(&options.alice_home, &runner)?;
-    let package = package_alice(
-        PackageOptions {
-            alice_home: &options.alice_home,
-            offline: options.offline_package,
-        },
-        &runner,
-    )?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
     let run_dir = options
         .runs_dir
@@ -89,9 +81,84 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     } else {
         Some("missing_dependency".to_string())
     };
+    if !deps.all_required_available {
+        return write_blocked_manifest(
+            options,
+            &run_dir,
+            deps,
+            &eatme_commit,
+            None,
+            None,
+            None,
+            None,
+            "missing_dependency",
+            "preflight blocked: one or more required desktop dependencies are unavailable",
+            assertions,
+        );
+    }
+
+    let discovery = match discover_alice(&options.alice_home, &runner) {
+        Ok(discovery) => discovery,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                None,
+                None,
+                None,
+                None,
+                "alice_discovery_failed",
+                format!("preflight blocked: Alice discovery failed: {error:#}"),
+                assertions,
+            );
+        }
+    };
+    let package = match package_alice(
+        PackageOptions {
+            alice_home: &options.alice_home,
+            offline: options.offline_package,
+        },
+        &runner,
+    ) {
+        Ok(package) => package,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                None,
+                None,
+                None,
+                "alice_package_failed",
+                format!("preflight blocked: Alice package failed: {error:#}"),
+                assertions,
+            );
+        }
+    };
 
     let display = choose_display();
-    let mut xvfb = start_xvfb(&display, &run_dir)?;
+    let mut xvfb = match start_xvfb(&display, &run_dir) {
+        Ok(xvfb) => xvfb,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                Some(&display),
+                None,
+                "xvfb_start_failed",
+                format!("preflight blocked: Xvfb could not start: {error:#}"),
+                assertions,
+            );
+        }
+    };
     let display_responsive = wait_for_display(&runner, &display, Duration::from_secs(5));
     assertions.insert(
         "display_responsive".into(),
@@ -101,18 +168,49 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         ),
     );
     if !display_responsive {
-        failure_category = Some("display_unresponsive".into());
+        shutdown(&mut xvfb);
+        return write_blocked_manifest(
+            options,
+            &run_dir,
+            deps,
+            &eatme_commit,
+            Some(&discovery),
+            Some(&package),
+            Some(&display),
+            Some(xvfb.id()),
+            "display_unresponsive",
+            format!("preflight blocked: {display} did not respond to xdpyinfo"),
+            assertions,
+        );
     }
 
     let log_path = run_dir.join("alice.log");
     let launch_args = alice_launch_args(&options.alice_home)?;
-    let mut alice = start_alice(
+    let mut alice = match start_alice(
         &options.alice_home,
         &display,
         &run_dir,
         &log_path,
         &launch_args,
-    )?;
+    ) {
+        Ok(alice) => alice,
+        Err(error) => {
+            shutdown(&mut xvfb);
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                Some(&display),
+                Some(xvfb.id()),
+                "alice_start_failed",
+                format!("preflight blocked: Alice process could not start: {error:#}"),
+                assertions,
+            );
+        }
+    };
     let process_started = wait_for_start(&mut alice, options.timeout_seconds.min(60));
     assertions.insert(
         "process_started".into(),
@@ -125,8 +223,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category = Some("alice_process_exited".into());
     }
 
-    let window_list = capture_window_list(&runner, &display, &run_dir).unwrap_or_default();
-    let window_evidence_ok = !window_list.trim().is_empty();
+    let window_list = capture_window_list(&runner, &display, &run_dir).ok();
+    let window_evidence_ok = window_list
+        .as_deref()
+        .map(|output| !output.trim().is_empty())
+        .unwrap_or(false);
+    let window_list_artifact = artifact_info(&run_dir.join("window-list.txt")).ok();
     let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
     let screenshot_ok = screenshot
         .as_ref()
@@ -171,35 +273,141 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
 
     let log = artifact_info(&log_path).ok();
+    let log_ok = log
+        .as_ref()
+        .map(|artifact| artifact.size_bytes > 0)
+        .unwrap_or(false);
+    let real_alice_execution_evidence =
+        process_started && display_responsive && smoke_ready_visual_evidence && log_ok;
+    assertions.insert(
+        "real_alice_execution_evidence".into(),
+        bool_assert(
+            real_alice_execution_evidence,
+            "real Alice process, responsive virtual display, visual evidence, and launch log were captured",
+        ),
+    );
+    if !real_alice_execution_evidence && failure_category.is_none() {
+        failure_category = Some("real_alice_evidence_missing".into());
+    }
     let launch_command = format!("java {}", launch_args.join(" "));
-    let manifest = LaunchSmokeManifest {
-        schema_version: "eatme.launch-smoke/v1".into(),
-        scenario_id: options.scenario.id.clone(),
-        run_id: options.run_id.clone(),
-        alice_home: discovery.alice_home,
-        alice_git_commit: discovery.git_commit,
-        eatme_git_commit: eatme_commit,
-        java_version: discovery.java_version,
-        maven_version: discovery.maven_version,
-        dependency_checks: deps.tools,
-        build_command: package.command,
-        build_exit_status: package.exit_status,
+    let manifest = build_manifest(
+        options,
+        deps,
+        &eatme_commit,
+        Some(&discovery),
+        Some(&package),
         launch_command,
-        display: display.clone(),
-        xvfb_pid: Some(xvfb.id()),
-        alice_pid: Some(alice.id()),
-        timeout_seconds: options.timeout_seconds,
+        display.clone(),
+        Some(xvfb.id()),
+        Some(alice.id()),
         screenshot,
+        window_list_artifact,
         log,
         fatal_log_scan,
         assertions,
         failure_category,
-    };
+    );
 
     write_manifest(&run_dir, &manifest)?;
     shutdown(&mut alice);
     shutdown(&mut xvfb);
     Ok(manifest)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn write_blocked_manifest(
+    options: &LaunchSmokeOptions,
+    run_dir: &Path,
+    deps: crate::deps::DependencyReport,
+    eatme_commit: &str,
+    discovery: Option<&AliceDiscovery>,
+    package: Option<&PackageResult>,
+    display: Option<&str>,
+    xvfb_pid: Option<u32>,
+    category: &str,
+    diagnostic: impl Into<String>,
+    mut assertions: BTreeMap<String, AssertionResult>,
+) -> Result<LaunchSmokeManifest> {
+    let diagnostic = diagnostic.into();
+    fs::write(run_dir.join("alice.log"), format!("{diagnostic}\n"))?;
+    assertions.insert(
+        "real_alice_execution_evidence".into(),
+        AssertionResult::fail(diagnostic),
+    );
+    let log = artifact_info(&run_dir.join("alice.log")).ok();
+    let manifest = build_manifest(
+        options,
+        deps,
+        eatme_commit,
+        discovery,
+        package,
+        String::new(),
+        display.unwrap_or("").to_string(),
+        xvfb_pid,
+        None,
+        None,
+        None,
+        log,
+        Vec::new(),
+        assertions,
+        Some(category.to_string()),
+    );
+    write_manifest(run_dir, &manifest)?;
+    Ok(manifest)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_manifest(
+    options: &LaunchSmokeOptions,
+    deps: crate::deps::DependencyReport,
+    eatme_commit: &str,
+    discovery: Option<&AliceDiscovery>,
+    package: Option<&PackageResult>,
+    launch_command: String,
+    display: String,
+    xvfb_pid: Option<u32>,
+    alice_pid: Option<u32>,
+    screenshot: Option<ArtifactInfo>,
+    window_list: Option<ArtifactInfo>,
+    log: Option<ArtifactInfo>,
+    fatal_log_scan: Vec<String>,
+    assertions: BTreeMap<String, AssertionResult>,
+    failure_category: Option<String>,
+) -> LaunchSmokeManifest {
+    LaunchSmokeManifest {
+        schema_version: "eatme.launch-smoke/v1".into(),
+        scenario_id: options.scenario.id.clone(),
+        run_id: options.run_id.clone(),
+        alice_home: discovery
+            .map(|value| value.alice_home.clone())
+            .unwrap_or_else(|| options.alice_home.display().to_string()),
+        alice_git_commit: discovery
+            .map(|value| value.git_commit.clone())
+            .unwrap_or_else(|| "unknown".into()),
+        eatme_git_commit: eatme_commit.to_string(),
+        java_version: discovery
+            .map(|value| value.java_version.clone())
+            .unwrap_or_else(|| "unknown".into()),
+        maven_version: discovery
+            .map(|value| value.maven_version.clone())
+            .unwrap_or_else(|| "unknown".into()),
+        dependency_checks: deps.tools,
+        build_command: package
+            .map(|value| value.command.clone())
+            .unwrap_or_default(),
+        build_exit_status: package.and_then(|value| value.exit_status),
+        launch_command,
+        display,
+        xvfb_pid,
+        alice_pid,
+        timeout_seconds: options.timeout_seconds,
+        screenshot,
+        window_list,
+        log,
+        fatal_log_scan,
+        assertions,
+        failure_category,
+    }
 }
 
 fn prepare_run_dir(run_dir: &Path) -> Result<()> {

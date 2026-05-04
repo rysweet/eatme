@@ -57,6 +57,7 @@ steps:
     evidence:
       - manifest failure_category is null
       - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
       - screenshot exists and is non-empty
       - log exists and is non-empty
 timeouts:
