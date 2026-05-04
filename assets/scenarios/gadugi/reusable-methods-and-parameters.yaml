@@ -15,7 +15,6 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
-    - EATME_REPO
     - RUN_ID
 
 agents:
@@ -39,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 30'
+        - '"scenario_asset_count": 34'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
@@ -76,6 +75,7 @@ steps:
       stdout_contains:
         - '"scenario_id": "reusable-methods-and-parameters"'
         - '"failure_category": null'
+        - '"real_alice_execution_evidence": {'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
     timeout: 1800000

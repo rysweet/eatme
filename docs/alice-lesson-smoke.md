@@ -1,15 +1,14 @@
-# Alice lesson smoke lanes
+# Alice lesson and desktop preflight smoke lanes
 
-Eatme lesson smoke lanes are editable, scenario-labeled checks that run through
-the real Alice launch smoke harness. A lesson lane does not introduce its own
-launcher. It passes a scenario id to the same packaging, Xvfb, Java process,
-screenshot, log, and manifest path used by the baseline launch smoke, then
-records that lesson id in the run manifest.
+Eatme smoke lanes are editable, scenario-labeled checks that run through the
+real Alice launch smoke harness. A lane does not introduce its own launcher. It
+passes a scenario id to the same packaging, Xvfb, Java process, screenshot,
+log, and manifest path used by the baseline launch smoke, then records that id
+in the run manifest.
 
 The post-launch lesson lanes are:
 
 ```text
-hour-of-code-studio-kickoff
 building-a-scene-first-world
 code-editor-first-run
 reusable-methods-and-parameters
@@ -18,26 +17,31 @@ loops-and-conditionals-mini-challenge
 events-collision-proximity-game
 game-score-timer-win-lose-loop
 modified-class-portability
+hour-of-code-studio-kickoff
+starter-project-open-save-export-preflight
 vr-camera-locomotion-journey
 ```
 
-They are based on Alice.org lesson/tutorial resource families and prove that the
-desktop harness can reach a smoke-ready Alice session for resource-grounded
-lesson paths before
-agentic instructor/student evaluation is trusted.
+They are based on Alice.org lesson/tutorial resource families and Alice desktop
+QA journeys. They prove that the desktop harness can reach a smoke-ready Alice
+session for resource-grounded paths before agentic instructor/student evaluation
+is trusted.
 
 ## What the lane verifies
 
-Each lesson lane is a manifest-only, lesson-labeled launch smoke. It verifies
-smoke readiness from deterministic harness evidence:
+Each lane is a manifest-only, scenario-labeled launch smoke. It verifies smoke
+readiness from deterministic harness evidence:
 
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
   `hour-of-code-studio-kickoff`, `building-a-scene-first-world`,
   `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids,
-  including the score/timer game lane.
+  including the score/timer game lane and starter-project preflight.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
+- The starter-project preflight expects the launch command to include bundled
+  `africa.a3p`, giving the next open/save/export pass a real opened-project
+  baseline.
 - Alice log and window-list files are captured as artifacts when available.
 - A non-empty startup screenshot or captured window list proves visual startup
   evidence for lesson lanes. Screenshots are represented by the top-level
@@ -46,10 +50,8 @@ smoke readiness from deterministic harness evidence:
 
 The lanes do not perform deep in-lesson UI automation. They intentionally stop
 at launch-ready evidence so lesson smokes remain stable in normal developer and
-CI environments. For the Hour of Code studio kickoff, learner-visible first-scene,
-first-animation, evidence, and reflection expectations live in editable YAML as
-agentic follow-on contracts; runtime smoke still stops at deterministic
-launch-ready evidence.
+CI environments. They do not yet prove learner-visible lesson steps such as
+placing objects, editing procedures, saving a world, or writing a reflection.
 
 The `vr-camera-locomotion-journey` lane adds an explicit VR preflight contract:
 real headset or Alice Player VR execution is optional, but availability must be
@@ -69,7 +71,6 @@ assets/scenarios/eatme/
 The canonical lesson lanes are defined by:
 
 ```text
-assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
 assets/scenarios/eatme/building-a-scene-first-world.yaml
 assets/scenarios/eatme/code-editor-first-run.yaml
 assets/scenarios/eatme/reusable-methods-and-parameters.yaml
@@ -78,6 +79,8 @@ assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
 assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
+assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
+assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
 assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
 ```
 
@@ -88,8 +91,7 @@ Gherkin-style acceptance criteria are edited in YAML rather than Rust tests.
 Current runtime behavior is intentionally narrower: `alice launch-smoke` does
 not load the YAML file. The `--scenario` value supplies the manifest
 `scenario_id` and run-directory namespace; asset validation separately checks
-that the YAML contract, including Hour of Code prompt/evidence fields, remains
-well-formed.
+that the YAML contract remains well-formed.
 
 Gadugi-compatible adapters live under:
 
@@ -100,7 +102,6 @@ assets/scenarios/gadugi/
 The gadugi adapters for these lanes are:
 
 ```text
-assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
 assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
@@ -109,6 +110,8 @@ assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
 assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
+assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
@@ -116,12 +119,6 @@ Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
 They must not own or duplicate Alice runtime behavior such as Xvfb management,
 Swing/Java launch details, screenshot capture, log capture, or process
 lifecycle.
-
-The `modified-class-portability` lane adds export/import/share evidence for a
-modified class moving from one Alice project into another. Its editable contract
-requires the exported class identity, destination-project import evidence, and
-post-import behavior evidence proving the modified behavior persists after
-import.
 
 ## Validate assets
 
@@ -131,7 +128,7 @@ Validate every committed persona and scenario asset:
 cargo run -q -p eatme-cli -- assets validate --json
 ```
 
-Validate only one lesson lane:
+Validate only one lane:
 
 ```bash
 cargo run -q -p eatme-cli -- assets validate \
@@ -139,11 +136,11 @@ cargo run -q -p eatme-cli -- assets validate \
   --json
 
 cargo run -q -p eatme-cli -- assets validate \
-  --path assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml \
+  --path assets/scenarios/eatme/code-editor-first-run.yaml \
   --json
 
 cargo run -q -p eatme-cli -- assets validate \
-  --path assets/scenarios/eatme/code-editor-first-run.yaml \
+  --path assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml \
   --json
 ```
 
@@ -280,7 +277,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, or `vr-camera-locomotion-journey`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `starter-project-open-save-export-preflight`, or `vr-camera-locomotion-journey`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -293,16 +290,16 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | `xvfb_pid` | Xvfb process id. |
 | `alice_pid` | Alice process id. |
 | `timeout_seconds` | Launch timeout applied to the run. |
-| `window_list.path` | Captured desktop window-list artifact path. |
-| `window_list_error` | Window-list capture or metadata error, when present. |
 | `screenshot.path` | Top-level startup screenshot artifact path. |
 | `screenshot.size_bytes` | Startup screenshot size. |
 | `screenshot.sha256` | Startup screenshot digest. |
-| `screenshot_error` | Screenshot capture or metadata error, when present. |
+| `window_list.path` | Captured `wmctrl -lx` artifact path when available. |
+| `window_list_error` | Window-list capture or artifact error when unavailable. |
+| `screenshot_error` | Screenshot capture or artifact error when unavailable. |
 | `log.path` | Alice log path. |
 | `log.size_bytes` | Alice log size. |
 | `log.sha256` | Alice log digest. |
-| `log_error` | Alice log read or metadata error, when present. |
+| `log_error` | Log read or artifact error when unavailable. |
 | `fatal_log_scan` | Fatal DISPLAY/OpenGL/Java pattern scan result. |
 | `assertions` | Deterministic launch assertions. |
 | `failure_category` | Failure classification, or `null` for a passing smoke. |
@@ -312,10 +309,10 @@ truth for smoke status. Gadugi adapters should not inspect desktop internals
 outside the manifest and captured artifacts.
 
 `startup_screenshot` is an assertion key under `assertions`, not a top-level
-artifact field. The top-level screenshot artifact is named `screenshot`. Startup
-visual evidence must be either a non-empty screenshot or a captured
-Alice-specific window identity. The harness records screenshot and log read
-errors in the manifest instead of treating missing artifacts as success.
+artifact field. The top-level screenshot artifact is named `screenshot`. The
+`real_alice_execution_evidence` assertion is the adapter contract that proves a
+real Alice process stayed alive on a responsive virtual display while visual
+evidence and a non-empty launch log were captured.
 
 ## Scenario YAML reference
 
@@ -370,6 +367,7 @@ steps:
     evidence:
       - manifest scenario_id equals building-a-scene-first-world
       - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -406,12 +404,14 @@ Validated fields:
 `acceptance_criteria` are enforced for every `alice_lesson_smoke` asset. A
 scenario must define a launcher or steps, route runtime through
 `alice launch-smoke`, define `artifacts.manifest`,
-`artifacts.screenshot`, and `artifacts.log`, and include at least one timeout.
+`artifacts.screenshot`, and `artifacts.log`, include at least one timeout, and
+make the launch-smoke step inspect
+`manifest.assertions.real_alice_execution_evidence`.
 
-Design-convention fields such as `resource_basis`, `capabilities`,
-`persona_assets`, `studio_cycle`, and `adapter.targets` may appear in assets,
-but the current validator does not deserialize or enforce them. Treat them as
-editable documentation for humans and agents, not as runtime inputs.
+Design-convention fields such as `resource_basis`, `capabilities`, and
+`adapter.targets` may appear in assets, but the current validator does not
+deserialize or enforce them. Treat them as documentation for humans and agents,
+not as runtime inputs.
 
 ## Configuration
 
@@ -474,18 +474,21 @@ for software rendering.
 
 The run is smoke-ready when `failure_category` is `null`, all deterministic
 assertions pass, and the manifest points at a non-empty startup screenshot or
-the lesson assertion has accepted captured window evidence. The Alice log is
-captured for diagnosis when artifact metadata is available, but log
-non-emptiness is not currently a separate assertion.
+the lesson assertion has accepted captured window evidence. The
+`real_alice_execution_evidence` assertion must pass; when preflight is blocked,
+the command writes a manifest and diagnostic `alice.log` with a non-null
+`failure_category` instead of silently skipping execution.
 
 ## Tutorial: gadugi adapter boundary
 
 Use the gadugi assets when a gadugi runner needs to exercise a lane:
 
 ```text
-assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
+assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
@@ -497,8 +500,8 @@ The adapter performs three kinds of work:
 
 The adapter asserts command success and manifest-level output such as
 the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
-window evidence, and passing assertions. It does not reimplement or configure
-Alice launch internals.
+window evidence, `real_alice_execution_evidence`, and passing assertions. It
+does not reimplement or configure Alice launch internals.
 
 The committed gadugi adapters are portable: the agent config uses `cwd: "."`
 and shell commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set
@@ -513,8 +516,8 @@ CLI smoke command:
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --alice-home "${ALICE_HOME}" \
-  --scenario hour-of-code-studio-kickoff \
-  --run-id local-hour-of-code-studio-kickoff \
+  --scenario starter-project-open-save-export-preflight \
+  --run-id local-starter-project-open-save-export-preflight \
   --runs-dir runs \
   --timeout 900 \
   --json \
@@ -531,5 +534,5 @@ cargo test --all-targets --all-features
 The lesson lane is complete when committed scenario assets validate, malformed
 scenario fixtures fail with actionable messages, the fake harness proves the
 scenario id is routed through the existing launch smoke path, and the gated real
-Alice command produces distinct scenario-namespaced artifacts when the host
-supports desktop launch.
+Alice command produces distinct `building-a-scene-first-world` artifacts when
+the host supports desktop launch.

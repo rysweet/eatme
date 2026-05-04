@@ -12,7 +12,7 @@ const ALICE_WINDOW_MARKERS: [&str; 4] = [
     "alice 3",
 ];
 
-pub(crate) fn capture_window_list(
+pub(super) fn capture_window_list(
     runner: &impl CommandRunner,
     display: &str,
     run_dir: &Path,
@@ -37,7 +37,7 @@ pub(crate) fn capture_window_list(
     Ok(combined)
 }
 
-pub(crate) fn has_alice_window_evidence(window_list: &str) -> bool {
+pub(super) fn has_alice_window_evidence(window_list: &str) -> bool {
     window_list.lines().any(|line| {
         let normalized = line.to_ascii_lowercase();
         ALICE_WINDOW_MARKERS
@@ -46,7 +46,7 @@ pub(crate) fn has_alice_window_evidence(window_list: &str) -> bool {
     })
 }
 
-pub(crate) fn capture_screenshot(
+pub(super) fn capture_screenshot(
     runner: &impl CommandRunner,
     display: &str,
     run_dir: &Path,
@@ -81,7 +81,7 @@ pub(crate) fn capture_screenshot(
     artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
 }
 
-pub(crate) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
+pub(super) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
     Ok(ArtifactInfo {
         path: path.display().to_string(),
         size_bytes: file_size(path)?,
@@ -89,7 +89,7 @@ pub(crate) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
     })
 }
 
-pub(crate) fn scan_fatal_logs(log_path: &Path) -> Result<Vec<String>> {
+pub(super) fn scan_fatal_logs(log_path: &Path) -> Result<Vec<String>> {
     let content = fs::read_to_string(log_path)
         .with_context(|| format!("reading Alice log {}", log_path.display()))?;
     let patterns = [
