@@ -9,7 +9,7 @@ The canonical source is:
 assets/scenarios/eatme/
 ```
 
-The generated adapter output is:
+Generated adapter output and hand-authored Gadugi regression scenarios live in:
 
 ```text
 assets/scenarios/gadugi/
@@ -90,6 +90,10 @@ Do not hand-edit generated Gadugi adapters to change mission intent. If a prompt
 rubric, artifact path, or expected evidence is wrong, edit the matching canonical
 eatme scenario and regenerate.
 
-Hand edits are only appropriate for generator development itself, and those
-changes must be followed by a generator run that proves the committed output is
-reproducible.
+Hand edits to generated adapters are only appropriate for generator development
+itself, and those changes must be followed by a generator run that proves the
+committed output is reproducible.
+
+Hand-authored Gadugi regression scenarios may live beside generated adapters when
+they test the eatme CLI or validation contract directly. They still count as
+scenario assets and must pass `assets validate`.

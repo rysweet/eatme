@@ -26,11 +26,15 @@ Canonical eatme scenarios live in:
 assets/scenarios/eatme/
 ```
 
-Generated Gadugi adapters live in:
+Gadugi scenario assets live in:
 
 ```text
 assets/scenarios/gadugi/
 ```
+
+Most Gadugi scenario assets are generated adapters whose matching source files
+live under `assets/scenarios/eatme/`. A small number may be hand-authored
+regression assets, such as validation CLI contract tests.
 
 The `scenario_asset_count` value is derived by discovering every `.yaml` and
 `.yml` scenario file under:
@@ -39,9 +43,17 @@ The `scenario_asset_count` value is derived by discovering every `.yaml` and
 assets/scenarios/
 ```
 
-Discovery is recursive and deterministic. The count includes canonical eatme
-scenario files and generated Gadugi adapter files because both are scenario
-assets validated by eatme.
+Discovery is recursive and deterministic. The count includes every scenario
+asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
+and any hand-authored Gadugi regression scenarios.
+
+The current inventory has 37 scenario YAML files:
+
+| Scenario asset type | Count |
+| --- | --- |
+| Canonical eatme scenarios | 18 |
+| Generated Gadugi adapters | 18 |
+| Hand-authored Gadugi regression scenarios | 1 |
 
 Generated adapters use that discovered count in their validation expectations:
 
@@ -53,8 +65,11 @@ expect:
     - '"scenario_asset_count": 37'
 ```
 
-When scenario assets are added or removed, the generated adapters must be
-regenerated so the committed expectation matches the discovered inventory.
+When scenario assets are added, removed, or renamed, the generated adapters must
+be regenerated so the committed expectation matches the discovered inventory.
+For removals and renames, remove the obsolete generated adapter file as part of
+the same change; the generator rewrites expected adapters but does not prune
+orphaned Gadugi files.
 
 ## Usage
 
@@ -133,7 +148,7 @@ Scenario output fields:
 | --- | --- |
 | `schema_version` | Scenario validation report schema, currently `eatme.assets/scenario-validation/v1` |
 | `asset_path` | Scenario file that was validated |
-| `asset_kind` | `eatme` for canonical scenarios, `gadugi` for generated adapters |
+| `asset_kind` | `eatme` for canonical scenarios, `gadugi` for Gadugi scenario assets |
 | `id` | Scenario id or generated Gadugi scenario name |
 | `passed` | `true` only when the scenario has no validation errors |
 | `step_count` | Number of executable scenario steps |
@@ -155,8 +170,8 @@ Output fields:
 | --- | --- |
 | `schema_version` | Generation report schema, currently `eatme.assets/gadugi-adapter-generation/v1` |
 | `root` | Repository root used for discovery |
-| `generated_count` | Number of adapters the generator would produce |
-| `checked_count` | Number of committed adapter files compared in check mode |
+| `generated_count` | Number of adapters the generator would produce from canonical eatme scenarios |
+| `checked_count` | Number of generated adapter targets compared in check mode |
 | `changed` | Adapter paths that are stale, missing, or would be rewritten |
 | `passed` | `true` only when committed adapters exactly match generated output |
 | `errors` | Blocking freshness errors |
@@ -204,8 +219,8 @@ directory.
 
 ### Runtime environment
 
-Generated adapters may require environment variables declared by their source
-scenario. Common variables are:
+Generated adapters declare runtime variables in their `environment` block.
+Common variables are:
 
 | Variable | Required when | Purpose |
 | --- | --- | --- |
@@ -244,18 +259,22 @@ stdout_contains:
 
 ### Stale adapter check
 
-If a canonical scenario is added and adapters are not regenerated, check mode
-reports the generated file that no longer matches:
+If the scenario inventory changes and adapters are not regenerated, check mode
+reports generated adapters whose committed expectations no longer match. When a
+new canonical scenario has no generated adapter yet, check mode reports the new
+target as missing:
 
 ```json
 {
   "schema_version": "eatme.assets/gadugi-adapter-generation/v1",
   "passed": false,
   "changed": [
+    "assets/scenarios/gadugi/building-a-scene-first-world.yaml",
     "assets/scenarios/gadugi/new-scenario.yaml"
   ],
   "errors": [
-    "assets/scenarios/gadugi/new-scenario.yaml is stale; regenerate with `eatme assets generate-gadugi`"
+    "assets/scenarios/gadugi/building-a-scene-first-world.yaml is stale; regenerate with `eatme assets generate-gadugi`",
+    "assets/scenarios/gadugi/new-scenario.yaml is missing or unreadable: ..."
   ]
 }
 ```
@@ -269,7 +288,7 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 ## Authoring tutorial
 
-Use this workflow when adding or removing a canonical scenario.
+Use this workflow when adding, removing, or renaming a canonical scenario.
 
 1. Edit or add the canonical scenario under `assets/scenarios/eatme/`.
 2. Validate the single scenario:
@@ -301,6 +320,10 @@ Use this workflow when adding or removing a canonical scenario.
 6. Commit the canonical scenario change and the generated adapter change
    together.
 
+For removals and renames, also delete the obsolete generated adapter under
+`assets/scenarios/gadugi/`; `generate-gadugi` does not delete files that no
+longer have a canonical source.
+
 Do not hand-edit `scenario_asset_count` in generated adapters. A hand edit may
 make one file pass locally while leaving the generator and committed output out
 of sync.
@@ -308,7 +331,8 @@ of sync.
 ## Strict validation behavior
 
 Scenario and persona YAML use strict schemas. Unknown top-level fields and
-unknown nested fields are rejected instead of ignored.
+unknown nested fields are rejected instead of ignored. This applies to canonical
+eatme scenarios, Gadugi scenario assets, and persona crew assets.
 
 This fails because `unknown_field` is not part of `eatme.scenario/v1`:
 
