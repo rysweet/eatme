@@ -303,7 +303,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 cargo llvm-cov --workspace --all-features --fail-under-lines 70
 find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
-  | awk '$1 > 500 { print; bad=1 } END { exit bad }'
+  | awk '$2 != "total" && $1 > 500 { print; bad=1 } END { exit bad }'
 ```
 
 Real Alice validation:
