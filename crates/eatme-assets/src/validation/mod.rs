@@ -1,4 +1,5 @@
 mod crew;
+mod portability;
 mod scenario;
 
 pub use crew::validate_persona_crew;

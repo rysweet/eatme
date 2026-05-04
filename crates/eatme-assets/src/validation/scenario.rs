@@ -1,4 +1,6 @@
-use super::{contextualize_scenario_errors, require_list, require_nonempty, validate_id};
+use super::{
+    contextualize_scenario_errors, portability, require_list, require_nonempty, validate_id,
+};
 use crate::report::ScenarioAssetValidationReport;
 use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
 use anyhow::{Context, Result};
@@ -56,7 +58,8 @@ fn validate_eatme_scenario(
 
     let is_known_lesson_smoke = matches!(
         scenario.id.as_str(),
-        "building-a-scene-first-world"
+        "hour-of-code-studio-kickoff"
+            | "building-a-scene-first-world"
             | "code-editor-first-run"
             | "events-collision-proximity-game"
             | "functions-as-questions-about-the-world"
@@ -69,14 +72,23 @@ fn validate_eatme_scenario(
 
     match scenario.kind.as_str() {
         "alice_lesson_smoke" => validate_lesson_smoke(scenario, &mut errors),
+        "alice_class_portability_smoke" => {
+            portability::validate_class_portability_scenario(scenario, &mut errors);
+        }
         "instructor_agentic_flow" => validate_instructor_agentic_flow(scenario, &mut errors),
         "" if scenario.id == "real-alice-launch-smoke" => {
             validate_legacy_launch_smoke(scenario, &mut errors)
         }
         "" => errors.push("kind must be defined".into()),
         other => errors.push(format!(
-            "kind must be alice_lesson_smoke or instructor_agentic_flow, got {other}"
+            "kind must be alice_lesson_smoke, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
         )),
+    }
+
+    if portability::is_class_portability_scenario(scenario)
+        && scenario.kind != "alice_class_portability_smoke"
+    {
+        portability::validate_class_portability_scenario(scenario, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);

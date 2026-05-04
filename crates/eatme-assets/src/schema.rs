@@ -108,6 +108,8 @@ pub(crate) struct EatmeScenarioAsset {
     pub(crate) artifacts: BTreeMap<String, String>,
     #[serde(default)]
     pub(crate) unsupported_policy: String,
+    #[serde(default)]
+    pub(crate) portability: Option<EatmeScenarioPortability>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -180,6 +182,20 @@ pub(crate) struct EatmeScenarioStep {
     pub(crate) command: String,
     #[serde(default)]
     pub(crate) evidence: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct EatmeScenarioPortability {
+    #[serde(default)]
+    pub(crate) source_project: String,
+    #[serde(default)]
+    pub(crate) destination_project: String,
+    #[serde(default)]
+    pub(crate) modified_class: String,
+    #[serde(default)]
+    pub(crate) share_channel: String,
+    #[serde(default)]
+    pub(crate) evidence_after_import: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

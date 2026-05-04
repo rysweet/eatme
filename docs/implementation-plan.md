@@ -49,10 +49,10 @@ Additional crates (`eatme-assets`, `eatme-gadugi`, `eatme-memory`, `eatme-report
 
 ```bash
 eatme deps check --json
-eatme alice discover --alice-home /home/azureuser/src/alice3-modernization --json
-eatme alice package --alice-home /home/azureuser/src/alice3-modernization --offline --json
+eatme alice discover --alice-home "${ALICE_HOME}" --json
+eatme alice package --alice-home "${ALICE_HOME}" --offline --json
 eatme alice launch-smoke \
-  --alice-home /home/azureuser/src/alice3-modernization \
+  --alice-home "${ALICE_HOME}" \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
   --timeout 900 \
@@ -134,12 +134,16 @@ Required `manifest.json` fields:
 - `xvfb_pid`
 - `alice_pid`
 - `timeout_seconds`
+- `window_list.path`
+- `window_list_error`
 - `screenshot.path`
 - `screenshot.size_bytes`
 - `screenshot.sha256`
+- `screenshot_error`
 - `log.path`
 - `log.size_bytes`
 - `log.sha256`
+- `log_error`
 - `fatal_log_scan`
 - `assertions`
 - `failure_category`
@@ -310,7 +314,7 @@ Real Alice validation:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home /home/azureuser/src/alice3-modernization \
+  --alice-home "${ALICE_HOME}" \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
