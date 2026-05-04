@@ -126,6 +126,22 @@ fn lesson_smoke_rejects_missing_persona_references() {
 }
 
 #[test]
+fn lesson_smoke_rejects_personas_without_crew_index() {
+    let scenario = valid_lesson_smoke("code-editor-first-run");
+
+    let report = validate_eatme_scenario(
+        Path::new("scenarios/eatme/code-editor-first-run.yaml"),
+        &scenario,
+        None,
+    );
+
+    assert!(!report.passed);
+    assert!(report.errors.iter().any(|error| {
+        error.contains("declares personas but no persona crew asset could be located")
+    }));
+}
+
+#[test]
 fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
     let scenario = GadugiScenarioAsset {
         name: "Bad Gadugi Alice Runtime Owner".into(),

@@ -49,9 +49,6 @@ fn scenario_persona_index(path: &Path) -> Result<Option<PersonaReferenceIndex>> 
         let Some(assets_dir) = ancestor.parent() else {
             continue;
         };
-        if assets_dir.file_name().and_then(|name| name.to_str()) != Some("assets") {
-            continue;
-        }
         let persona_path = assets_dir.join("personas/alice-user-crew.yaml");
         if persona_path.is_file() {
             return super::persona_reference_index(&persona_path).map(Some);
@@ -296,6 +293,10 @@ fn validate_scenario_personas(
             "student",
             errors,
         );
+    } else if !personas.instructors.is_empty() || !personas.students.is_empty() {
+        errors.push(format!(
+            "scenario {scenario_id} declares personas but no persona crew asset could be located"
+        ));
     }
 }
 
