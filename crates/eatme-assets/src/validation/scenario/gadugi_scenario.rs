@@ -35,6 +35,11 @@ pub(super) fn validate_gadugi_scenario(
             validate_execute_expect(&step.name, step.expect.as_ref(), &mut errors);
         }
         if let Some(command) = string_param(&step.params, "command") {
+            validate_no_hardcoded_repo_path(
+                &format!("{}.params.command", step.name),
+                command,
+                &mut errors,
+            );
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
             if command.contains("alice launch-smoke") {
                 validate_gadugi_real_evidence_expectation(
@@ -71,6 +76,7 @@ pub(super) fn validate_gadugi_scenario(
             errors.push(format!("{}.params must be defined", assertion.name));
         }
     }
+    validate_gadugi_source_reference(path, scenario, &mut errors);
 
     let errors = contextualize_scenario_errors(path, &scenario.name, errors);
     ScenarioAssetValidationReport {
@@ -99,7 +105,13 @@ fn validate_gadugi_doc_fields(scenario: &GadugiScenarioAsset, errors: &mut Vec<S
         }
     }
     if let Some(environment) = &scenario.environment {
-        require_list(&environment.requires, "environment.requires", errors);
+        if environment
+            .requires
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            errors.push("environment.requires must contain non-empty values".into());
+        }
         if environment
             .optional
             .iter()
@@ -114,6 +126,11 @@ fn validate_gadugi_doc_fields(scenario: &GadugiScenarioAsset, errors: &mut Vec<S
     for agent in &scenario.agents {
         require_nonempty(&agent.name, "agent.name", errors);
         require_nonempty(&agent.agent_type, &format!("{}.type", agent.name), errors);
+        validate_no_hardcoded_repo_path(
+            &format!("{}.config.cwd", agent.name),
+            &agent.config.cwd,
+            errors,
+        );
         if agent.config.timeout == 0 {
             errors.push(format!(
                 "{}.config.timeout must be greater than zero",
@@ -151,12 +168,10 @@ fn validate_gadugi_doc_fields(scenario: &GadugiScenarioAsset, errors: &mut Vec<S
             _ => {}
         }
     }
-    if let Some(metadata) = &scenario.metadata {
-        require_list(&metadata.tags, "metadata.tags", errors);
-        require_nonempty(&metadata.priority, "metadata.priority", errors);
-        require_nonempty(&metadata.author, "metadata.author", errors);
-        require_nonempty(&metadata.test_type, "metadata.test_type", errors);
-    }
+    require_list(&scenario.metadata.tags, "metadata.tags", errors);
+    require_nonempty(&scenario.metadata.priority, "metadata.priority", errors);
+    require_nonempty(&scenario.metadata.author, "metadata.author", errors);
+    require_nonempty(&scenario.metadata.test_type, "metadata.test_type", errors);
 }
 
 fn validate_execute_expect(
@@ -169,11 +184,15 @@ fn validate_execute_expect(
             if expect.exit_code.is_none() {
                 errors.push(format!("{step_name}.expect.exit_code must be defined"));
             }
-            require_list(
-                &expect.stdout_contains,
-                &format!("{step_name}.expect.stdout_contains"),
-                errors,
-            );
+            if expect
+                .stdout_contains
+                .iter()
+                .any(|value| value.trim().is_empty())
+            {
+                errors.push(format!(
+                    "{step_name}.expect.stdout_contains must contain non-empty values"
+                ));
+            }
         }
         None => errors.push(format!("{step_name}.expect must be defined")),
     }
@@ -192,6 +211,63 @@ fn validate_agentic_expect(
         ),
         None => errors.push(format!("{step_name}.expect must be defined")),
     }
+}
+
+fn validate_no_hardcoded_repo_path(field: &str, value: &str, errors: &mut Vec<String>) {
+    if value.contains("/home/") {
+        errors.push(format!(
+            "{field} must not hard-code an absolute home directory path; use relative paths or EATME_REPO"
+        ));
+    }
+}
+
+fn validate_gadugi_source_reference(
+    path: &Path,
+    scenario: &GadugiScenarioAsset,
+    errors: &mut Vec<String>,
+) {
+    let source = scenario.metadata.source_eatme_asset.trim();
+    require_nonempty(
+        &scenario.metadata.generated_by,
+        "metadata.generated_by",
+        errors,
+    );
+    if source.is_empty() {
+        errors.push(
+            "metadata.source_eatme_asset must reference the canonical eatme scenario asset".into(),
+        );
+        return;
+    }
+    let source_path = Path::new(source);
+    if source_path.is_absolute() || source.contains("..") {
+        errors.push("metadata.source_eatme_asset must be a repo-relative path".into());
+        return;
+    }
+    if !source.starts_with("assets/scenarios/eatme/") {
+        errors.push("metadata.source_eatme_asset must point at assets/scenarios/eatme".into());
+        return;
+    }
+    let Some(root) = repo_root_from_asset_path(path) else {
+        return;
+    };
+    if !root.join(source_path).is_file() {
+        errors.push(format!(
+            "metadata.source_eatme_asset references missing asset {source}"
+        ));
+    }
+}
+
+fn repo_root_from_asset_path(path: &Path) -> Option<&Path> {
+    for ancestor in path.ancestors() {
+        if ancestor
+            .file_name()
+            .map(|name| name == "assets")
+            .unwrap_or(false)
+        {
+            return ancestor.parent();
+        }
+    }
+    None
 }
 
 fn validate_gadugi_real_evidence_expectation(

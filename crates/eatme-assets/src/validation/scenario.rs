@@ -9,6 +9,9 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
 
+mod gadugi_scenario;
+use self::gadugi_scenario::validate_gadugi_scenario;
+
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
     let persona_discovery = discover_scenario_personas(path)?;
     validate_scenario_asset_inner(path, persona_discovery)
@@ -486,9 +489,6 @@ fn validate_instructor_flow_boundary(step_id: &str, command: &str, errors: &mut 
     }
 }
 
-#[path = "gadugi.rs"]
-mod gadugi;
-use gadugi::validate_gadugi_scenario;
 #[cfg(test)]
 #[path = "scenario_tests.rs"]
 mod scenario_tests;

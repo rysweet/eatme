@@ -300,13 +300,13 @@ pub(crate) struct GadugiScenarioAsset {
     #[serde(default)]
     pub(crate) environment: Option<GadugiEnvironment>,
     #[serde(default)]
-    pub(crate) agents: Vec<GadugiAgent>,
+    pub(crate) agents: Vec<GadugiScenarioAgent>,
     #[serde(default)]
     pub(crate) steps: Vec<GadugiScenarioStep>,
     #[serde(default)]
     pub(crate) assertions: Vec<GadugiScenarioAssertion>,
     #[serde(default)]
-    pub(crate) metadata: Option<GadugiMetadata>,
+    pub(crate) metadata: GadugiMetadata,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -331,18 +331,18 @@ pub(crate) struct GadugiEnvironment {
 
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct GadugiAgent {
+pub(crate) struct GadugiScenarioAgent {
     #[serde(default)]
     pub(crate) name: String,
     #[serde(default, rename = "type")]
     pub(crate) agent_type: String,
     #[serde(default)]
-    pub(crate) config: GadugiAgentConfig,
+    pub(crate) config: GadugiScenarioAgentConfig,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct GadugiAgentConfig {
+pub(crate) struct GadugiScenarioAgentConfig {
     #[serde(default)]
     pub(crate) shell: String,
     #[serde(default)]
@@ -401,6 +401,10 @@ pub(crate) struct GadugiScenarioAssertion {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct GadugiMetadata {
+    #[serde(default)]
+    pub(crate) source_eatme_asset: String,
+    #[serde(default)]
+    pub(crate) generated_by: String,
     #[serde(default)]
     pub(crate) tags: Vec<String>,
     #[serde(default)]
