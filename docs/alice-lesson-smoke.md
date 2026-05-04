@@ -255,12 +255,16 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | `xvfb_pid` | Xvfb process id. |
 | `alice_pid` | Alice process id. |
 | `timeout_seconds` | Launch timeout applied to the run. |
+| `window_list.path` | Captured desktop window-list artifact path. |
+| `window_list_error` | Window-list capture or metadata error, when present. |
 | `screenshot.path` | Top-level startup screenshot artifact path. |
 | `screenshot.size_bytes` | Startup screenshot size. |
 | `screenshot.sha256` | Startup screenshot digest. |
+| `screenshot_error` | Screenshot capture or metadata error, when present. |
 | `log.path` | Alice log path. |
 | `log.size_bytes` | Alice log size. |
 | `log.sha256` | Alice log digest. |
+| `log_error` | Alice log read or metadata error, when present. |
 | `fatal_log_scan` | Fatal DISPLAY/OpenGL/Java pattern scan result. |
 | `assertions` | Deterministic launch assertions. |
 | `failure_category` | Failure classification, or `null` for a passing smoke. |
@@ -270,9 +274,10 @@ truth for smoke status. Gadugi adapters should not inspect desktop internals
 outside the manifest and captured artifacts.
 
 `startup_screenshot` is an assertion key under `assertions`, not a top-level
-artifact field. The top-level screenshot artifact is named `screenshot`. The
-current harness records `log` artifact metadata when available but does not make
-log non-emptiness its own pass/fail assertion.
+artifact field. The top-level screenshot artifact is named `screenshot`. Startup
+visual evidence must be either a non-empty screenshot or a captured
+Alice-specific window identity. The harness records screenshot and log read
+errors in the manifest instead of treating missing artifacts as success.
 
 ## Scenario YAML reference
 
