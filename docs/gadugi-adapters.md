@@ -39,6 +39,9 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 The command fails when generated files would differ from committed files.
+See [Generated Asset Consistency](generated-asset-consistency.md) for the
+`scenario_asset_count` source of truth, generator freshness contract, and
+validation exit-code behavior.
 
 ## Regenerate adapters
 
@@ -90,4 +93,3 @@ eatme scenario and regenerate.
 Hand edits are only appropriate for generator development itself, and those
 changes must be followed by a generator run that proves the committed output is
 reproducible.
-

@@ -70,6 +70,11 @@ cargo run -q -p eatme-cli -- assets generate-gadugi \
 `--check` exits with a failure when an adapter would change. That makes it the
 right command for CI and pre-PR validation.
 
+The adapter generator derives validation expectations from the actual scenario
+asset inventory. See
+[Generated Asset Consistency](generated-asset-consistency.md) for the
+`scenario_asset_count` and exit-code contracts.
+
 ## Check dependencies
 
 ```bash
@@ -153,4 +158,3 @@ Command output is JSON intended for humans, CI, and adapter runners. For smoke
 runs, the manifest is the durable artifact. Consumers should use
 `failure_category` and `assertions` as the source of truth rather than scraping
 terminal text.
-
