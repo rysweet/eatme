@@ -2,10 +2,11 @@ use super::*;
 use crate::schema::{
     EatmeScenarioAcceptanceCriterion, EatmeScenarioAgenticFlow, EatmeScenarioLauncher,
     EatmeScenarioRealAlice, EatmeScenarioResource, EatmeScenarioRubricCriterion,
-    EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAgent, GadugiScenarioAgentConfig,
-    GadugiScenarioAssertion, GadugiScenarioStep, ScenarioPersonas,
+    EatmeScenarioSmokeReady, EatmeScenarioStep, ScenarioAdapter, ScenarioCapabilities,
+    ScenarioPersonas,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
 
 #[test]
 fn rejects_malformed_eatme_scenario_asset() {
@@ -15,7 +16,7 @@ fn rejects_malformed_eatme_scenario_asset() {
         title: "".into(),
         ..EatmeScenarioAsset::default()
     };
-    let report = validate_eatme_scenario(Path::new("bad.yaml"), &scenario);
+    let report = validate_eatme_scenario(Path::new("bad.yaml"), &scenario, None, &[]);
     assert!(!report.passed);
     assert!(
         report
@@ -39,7 +40,7 @@ fn scenario_validation_errors_include_path_or_scenario_id() {
         ..EatmeScenarioAsset::default()
     };
     let path = Path::new("assets/scenarios/eatme/building-a-scene-first-world.yaml");
-    let report = validate_eatme_scenario(path, &scenario);
+    let report = validate_eatme_scenario(path, &scenario, None, &[]);
 
     assert!(!report.passed);
     assert!(
@@ -54,35 +55,10 @@ fn scenario_validation_errors_include_path_or_scenario_id() {
 
 #[test]
 fn lesson_smoke_requires_real_alice_gate() {
-    let scenario = EatmeScenarioAsset {
-        schema_version: "eatme.scenario/v1".into(),
-        id: "code-editor-first-run".into(),
-        title: "Code Editor First Run".into(),
-        kind: "alice_lesson_smoke".into(),
-        owner: "eatme".into(),
-        purpose: "launches through the real Alice smoke harness".into(),
-        launcher: Some(EatmeScenarioLauncher {
-            command: "alice launch-smoke".into(),
-            scenario: "code-editor-first-run".into(),
-        }),
-        steps: vec![EatmeScenarioStep {
-            id: "launch-smoke".into(),
-            command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
-            evidence: vec!["manifest scenario_id matches".into()],
-        }],
-        timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
-        artifacts: BTreeMap::from([
-            ("manifest".into(), "runs/building/manifest.json".into()),
-            (
-                "screenshot".into(),
-                "runs/building/screenshots/startup.png".into(),
-            ),
-            ("log".into(), "runs/building/alice.log".into()),
-        ]),
-        unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
-        ..EatmeScenarioAsset::default()
-    };
-    let report = validate_eatme_scenario(Path::new("building.yaml"), &scenario);
+    let mut scenario = valid_lesson_smoke("code-editor-first-run");
+    scenario.real_alice = None;
+
+    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None, &[]);
     assert!(!report.passed);
     assert!(
         report
@@ -94,45 +70,10 @@ fn lesson_smoke_requires_real_alice_gate() {
 
 #[test]
 fn known_lesson_smoke_requires_lesson_kind() {
-    let scenario = EatmeScenarioAsset {
-        schema_version: "eatme.scenario/v1".into(),
-        id: "code-editor-first-run".into(),
-        title: "Code Editor First Run".into(),
-        owner: "eatme".into(),
-        purpose: "launches through the real Alice smoke harness".into(),
-        launcher: Some(EatmeScenarioLauncher {
-            command: "alice launch-smoke".into(),
-            scenario: "code-editor-first-run".into(),
-        }),
-        real_alice: Some(EatmeScenarioRealAlice {
-            gated_by: "EATME_REAL_ALICE=1".into(),
-        }),
-        smoke_ready: Some(EatmeScenarioSmokeReady {
-            evidence: vec!["manifest assertions".into()],
-        }),
-        acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
-            given: "dependencies are available".into(),
-            when: "the lane launches".into(),
-            then: "the manifest records the scenario id".into(),
-        }],
-        steps: vec![EatmeScenarioStep {
-            id: "launch-smoke".into(),
-            command: "eatme alice launch-smoke --scenario code-editor-first-run".into(),
-            evidence: vec!["manifest scenario_id matches".into()],
-        }],
-        timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
-        artifacts: BTreeMap::from([
-            ("manifest".into(), "runs/code/manifest.json".into()),
-            (
-                "screenshot".into(),
-                "runs/code/screenshots/startup.png".into(),
-            ),
-            ("log".into(), "runs/code/alice.log".into()),
-        ]),
-        unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
-        ..EatmeScenarioAsset::default()
-    };
-    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario);
+    let mut scenario = valid_lesson_smoke("code-editor-first-run");
+    scenario.kind.clear();
+
+    let report = validate_eatme_scenario(Path::new("code-editor.yaml"), &scenario, None, &[]);
 
     assert!(!report.passed);
     assert!(
@@ -144,12 +85,100 @@ fn known_lesson_smoke_requires_lesson_kind() {
 }
 
 #[test]
+fn lesson_smoke_rejects_missing_persona_references() {
+    let mut scenario = valid_lesson_smoke("code-editor-first-run");
+    scenario.personas = Some(ScenarioPersonas {
+        instructors: vec!["missing-instructor".into(), "curious-novice".into()],
+        students: vec!["missing-student".into(), "debug-coach".into()],
+    });
+    let persona_index = PersonaReferenceIndex {
+        instructors: BTreeSet::from(["debug-coach".into()]),
+        students: BTreeSet::from(["curious-novice".into()]),
+        all: BTreeSet::from(["debug-coach".into(), "curious-novice".into()]),
+    };
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/code-editor-first-run.yaml"),
+        &scenario,
+        Some(&persona_index),
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|error| error.contains("missing instructor persona missing-instructor"))
+    );
+    assert!(
+        report.errors.iter().any(
+            |error| error.contains("missing instructor persona curious-novice with wrong role")
+        )
+    );
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|error| error.contains("missing student persona missing-student"))
+    );
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|error| error.contains("missing student persona debug-coach with wrong role"))
+    );
+}
+
+#[test]
+fn lesson_smoke_rejects_personas_without_crew_index() {
+    let scenario = valid_lesson_smoke("code-editor-first-run");
+
+    let report = validate_eatme_scenario(
+        Path::new("scenarios/eatme/code-editor-first-run.yaml"),
+        &scenario,
+        None,
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(report.errors.iter().any(|error| {
+        error.contains("declares personas but no persona crew asset could be located")
+    }));
+}
+
+#[test]
+fn malformed_discovered_persona_yaml_is_returned_as_parse_error() {
+    let case_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target/eatme-assets-tests/malformed-discovered-persona");
+    let scenario_dir = case_dir.join("assets/scenarios/eatme");
+    let persona_dir = scenario_dir.join("personas");
+    let _ = fs::remove_dir_all(&case_dir);
+    fs::create_dir_all(&persona_dir).unwrap();
+    fs::write(persona_dir.join("bad.yaml"), "personas: [\n").unwrap();
+    let scenario_path = scenario_dir.join("code-editor-first-run.yaml");
+    fs::write(
+        &scenario_path,
+        "schema_version: eatme.scenario/v1\nid: code-editor-first-run\ntitle: Code Editor\npurpose: Test\n",
+    )
+    .unwrap();
+
+    let error = validate_scenario_asset(&scenario_path).unwrap_err();
+    let message = error.to_string();
+    assert!(message.contains("parsing persona crew YAML"), "{message}");
+    assert!(message.contains("bad.yaml"), "{message}");
+    let _ = fs::remove_dir_all(&case_dir);
+}
+
+#[test]
 fn accepts_instructor_agentic_flow_asset() {
     let scenario = instructor_agentic_scenario("instructor-exercise-builder");
 
     let report = validate_eatme_scenario(
         Path::new("assets/scenarios/eatme/instructor-exercise-builder.yaml"),
         &scenario,
+        None,
+        &[],
     );
 
     assert!(report.passed, "{:?}", report.errors);
@@ -165,7 +194,8 @@ fn instructor_agentic_flow_rejects_desktop_runtime_ownership() {
         evidence: vec!["desktop opened".into()],
     });
 
-    let report = validate_eatme_scenario(Path::new("bad-instructor-flow.yaml"), &scenario);
+    let report =
+        validate_eatme_scenario(Path::new("bad-instructor-flow.yaml"), &scenario, None, &[]);
 
     assert!(!report.passed);
     assert!(
@@ -177,186 +207,68 @@ fn instructor_agentic_flow_rejects_desktop_runtime_ownership() {
     );
 }
 
-#[test]
-fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
-    let scenario = GadugiScenarioAsset {
-        name: "Bad Gadugi Alice Runtime Owner".into(),
-        description: "Attempts to own Xvfb and Java launch directly instead of using eatme CLI."
-            .into(),
-        version: "1.0.0".into(),
-        steps: vec![GadugiScenarioStep {
-            name: "Launch Alice directly".into(),
-            agent: "gadugi-agent".into(),
-            action: "execute_command".into(),
-            params: BTreeMap::from([(
-                "command".into(),
-                "Xvfb :99 & java org.alice.stageide.EntryPoint".into(),
-            )]),
-            expect: Default::default(),
-        }],
-        assertions: vec![GadugiScenarioAssertion {
-            name: "Direct runtime command succeeded".into(),
-            assertion_type: "command_success".into(),
-        }],
-        metadata: crate::schema::GadugiScenarioMetadata {
-            source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
-            generated_by: "test".into(),
-        },
-        ..GadugiScenarioAsset::default()
-    };
+#[path = "scenario/gadugi_tests.rs"]
+mod gadugi_tests;
 
-    let report = validate_gadugi_scenario(
-        Path::new("assets/scenarios/gadugi/bad-direct-runtime.yaml"),
-        &scenario,
-    );
-    assert!(
-        !report.passed,
-        "gadugi assets must not own Alice runtime details: {:?}",
-        report.errors
-    );
-    assert!(
-        report.errors.iter().any(|error| {
-            error.contains("gadugi")
-                && error.contains("alice launch-smoke")
-                && error.contains("runtime")
+fn valid_lesson_smoke(id: &str) -> EatmeScenarioAsset {
+    EatmeScenarioAsset {
+        schema_version: "eatme.scenario/v1".into(),
+        id: id.into(),
+        title: "Code Editor First Run".into(),
+        kind: "alice_lesson_smoke".into(),
+        owner: "eatme".into(),
+        resource_basis: vec![EatmeScenarioResource {
+            name: "Alice lesson".into(),
+            url: "https://www.alice.org/resources/".into(),
+            ..EatmeScenarioResource::default()
+        }],
+        purpose: "launches through the real Alice smoke harness".into(),
+        launcher: Some(EatmeScenarioLauncher {
+            command: "alice launch-smoke".into(),
+            scenario: id.into(),
         }),
-        "boundary error should direct gadugi scenarios to the eatme launch-smoke CLI: {:?}",
-        report.errors
-    );
-}
-
-#[test]
-fn gadugi_scenario_rejects_hardcoded_repo_paths() {
-    let hardcoded_checkout = Path::new("/")
-        .join("home")
-        .join("runner")
-        .join("work")
-        .join("eatme");
-    let scenario = GadugiScenarioAsset {
-        name: "Hard-coded repo path".into(),
-        description: "Uses an environment-specific checkout path.".into(),
-        version: "1.0.0".into(),
-        steps: vec![GadugiScenarioStep {
-            name: "Validate assets".into(),
-            agent: "eatme-cli-agent".into(),
-            action: "execute_command".into(),
-            params: BTreeMap::from([(
-                "command".into(),
-                format!(
-                    "cd {} && cargo run -q -p eatme-cli -- assets validate --json",
-                    hardcoded_checkout.display()
-                ),
-            )]),
-            expect: Default::default(),
+        real_alice: Some(EatmeScenarioRealAlice {
+            gated_by: "EATME_REAL_ALICE=1".into(),
+        }),
+        personas: Some(ScenarioPersonas {
+            instructors: vec!["debug-coach".into()],
+            students: vec!["curious-novice".into()],
+        }),
+        capabilities: Some(ScenarioCapabilities {
+            required: vec!["rust-cli".into()],
+            optional: vec!["glxinfo".into()],
+        }),
+        adapter: Some(ScenarioAdapter {
+            targets: vec!["eatme-cli".into()],
+        }),
+        smoke_ready: Some(EatmeScenarioSmokeReady {
+            evidence: vec!["manifest assertions".into()],
+        }),
+        acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
+            given: "dependencies are available".into(),
+            when: "the lane launches".into(),
+            then: "the manifest records the scenario id".into(),
         }],
-        assertions: vec![GadugiScenarioAssertion {
-            name: "Validation succeeded".into(),
-            assertion_type: "command_success".into(),
+        steps: vec![EatmeScenarioStep {
+            id: "launch-smoke".into(),
+            command: format!("eatme alice launch-smoke --scenario {id}"),
+            evidence: vec![
+                "manifest scenario_id matches".into(),
+                "manifest assertions.real_alice_execution_evidence exists".into(),
+            ],
         }],
-        metadata: crate::schema::GadugiScenarioMetadata {
-            source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
-            generated_by: "test".into(),
-        },
-        ..GadugiScenarioAsset::default()
-    };
-
-    let report = validate_gadugi_scenario(
-        Path::new("assets/scenarios/gadugi/hard-coded.yaml"),
-        &scenario,
-    );
-
-    assert!(!report.passed);
-    assert!(
-        report
-            .errors
-            .iter()
-            .any(|error| error.contains("must not hard-code"))
-    );
-}
-
-#[test]
-fn gadugi_scenario_rejects_hardcoded_cwd_paths() {
-    let scenario = GadugiScenarioAsset {
-        name: "Hard-coded cwd".into(),
-        description: "Uses an environment-specific agent cwd.".into(),
-        version: "1.0.0".into(),
-        agents: vec![GadugiScenarioAgent {
-            name: "eatme-cli-agent".into(),
-            agent_type: "system".into(),
-            config: GadugiScenarioAgentConfig {
-                cwd: "/home/alice/src/eatme".into(),
-            },
-        }],
-        steps: vec![GadugiScenarioStep {
-            name: "Validate assets".into(),
-            agent: "eatme-cli-agent".into(),
-            action: "execute_command".into(),
-            params: BTreeMap::from([(
-                "command".into(),
-                "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
-                    .into(),
-            )]),
-            expect: Default::default(),
-        }],
-        assertions: vec![GadugiScenarioAssertion {
-            name: "Validation succeeded".into(),
-            assertion_type: "command_success".into(),
-        }],
-        metadata: crate::schema::GadugiScenarioMetadata {
-            source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
-            generated_by: "test".into(),
-        },
-    };
-
-    let report = validate_gadugi_scenario(
-        Path::new("assets/scenarios/gadugi/hard-coded-cwd.yaml"),
-        &scenario,
-    );
-
-    assert!(!report.passed);
-    assert!(report.errors.iter().any(|error| {
-        error.contains("eatme-cli-agent.config.cwd") && error.contains("must not hard-code")
-    }));
-}
-
-#[test]
-fn gadugi_agentic_steps_require_editable_asset_contract() {
-    let scenario = GadugiScenarioAsset {
-        name: "Incomplete Instructor Agentic Adapter".into(),
-        description: "Forgets to name the editable prompt asset.".into(),
-        version: "1.0.0".into(),
-        steps: vec![GadugiScenarioStep {
-            name: "Run instructor review".into(),
-            agent: "instructor-qa-agent".into(),
-            action: "agentic_test".into(),
-            params: BTreeMap::from([("asset".into(), "".into())]),
-            expect: Default::default(),
-        }],
-        assertions: vec![GadugiScenarioAssertion {
-            name: "Instructor review completed".into(),
-            assertion_type: "agentic_acceptance".into(),
-        }],
-        metadata: crate::schema::GadugiScenarioMetadata {
-            source_eatme_asset: "assets/scenarios/eatme/instructor-exercise-builder.yaml".into(),
-            generated_by: "test".into(),
-        },
-        ..GadugiScenarioAsset::default()
-    };
-
-    let report = validate_gadugi_scenario(
-        Path::new("assets/scenarios/gadugi/incomplete-instructor.yaml"),
-        &scenario,
-    );
-
-    assert!(!report.passed);
-    assert!(
-        report
-            .errors
-            .iter()
-            .any(|error| error.contains("acceptance_probes")),
-        "{:?}",
-        report.errors
-    );
+        timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
+        artifacts: BTreeMap::from([
+            ("manifest".into(), "runs/code/manifest.json".into()),
+            (
+                "screenshot".into(),
+                "runs/code/screenshots/startup.png".into(),
+            ),
+            ("log".into(), "runs/code/alice.log".into()),
+        ]),
+        unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
+        ..EatmeScenarioAsset::default()
+    }
 }
 
 fn instructor_agentic_scenario(id: &str) -> EatmeScenarioAsset {

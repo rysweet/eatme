@@ -1,0 +1,17 @@
+workstream: alice.eatme
+title: Test Instructors
+purpose: Regression fixture for split persona discovery.
+personas:
+  instructors:
+    - id: debug-coach
+      role: instructor
+      archetype: Debug Coach
+      goals: [Help learners debug visibly.]
+      constraints: [Keep feedback learner-owned.]
+      educational_intent: [Debugging as hypothesis testing.]
+      observable_behaviors: [Asks for expected and observed behavior.]
+      anti_behaviors: [Does not take over the project.]
+      evidence: [Learner records a next test.]
+  students: []
+core_scenarios_from_existing_alice_resources: []
+creative_new_teaching_learning_scenarios: []
