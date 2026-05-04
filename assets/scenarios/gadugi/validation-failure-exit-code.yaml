@@ -16,7 +16,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "/home/azureuser/src/eatme"
+      cwd: "."
       timeout: 120000
       capture_output: true
 
@@ -26,7 +26,6 @@ steps:
     action: "execute_command"
     params:
       command: |
-        cd /home/azureuser/src/eatme
         mkdir -p target/eatme-gadugi-negative-validation/assets/scenarios/eatme
         cat > target/eatme-gadugi-negative-validation/assets/scenarios/eatme/malformed.yaml <<'EOF'
         schema_version: eatme.scenario/v1

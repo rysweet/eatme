@@ -467,9 +467,9 @@ Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
 `eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
-The committed gadugi adapter currently uses `/home/azureuser/src/eatme` as its
-working tree path. Treat that as an environment-bound adapter value until the
-gadugi compilation layer parameterizes repository roots.
+The committed gadugi adapters avoid repository-specific absolute paths. Run
+these scenarios from the checkout under test so asset validation counts the
+assets in that checkout, including gadugi-only regression adapters.
 
 ## Testing expectations
 
