@@ -6,35 +6,37 @@ launcher. It passes a scenario id to the same packaging, Xvfb, Java process,
 screenshot, log, and manifest path used by the baseline launch smoke, then
 records that lesson id in the run manifest.
 
-The first post-launch lesson lane is:
+The first post-launch lesson lanes are:
 
 ```text
 building-a-scene-first-world
+code-editor-first-run
 ```
 
-It is based on the Alice.org Building a Scene lesson family and proves that the
-desktop harness can reach a smoke-ready Alice session for the first-world lesson
-path.
+They are based on Alice.org lesson families and prove that the desktop harness
+can reach a smoke-ready Alice session for resource-grounded lesson paths before
+agentic instructor/student evaluation is trusted.
 
 ## What the lane verifies
 
-`building-a-scene-first-world` is a manifest-only, lesson-labeled launch smoke.
-It verifies smoke readiness from deterministic harness evidence:
+Each lesson lane is a manifest-only, lesson-labeled launch smoke. It verifies
+smoke readiness from deterministic harness evidence:
 
 - Alice was launched through the existing `eatme-alice` launch smoke path.
-- The manifest identifies `scenario_id` as `building-a-scene-first-world`.
+- The manifest identifies `scenario_id` as the selected lesson lane, such as
+  `building-a-scene-first-world` or `code-editor-first-run`.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - Alice log and window-list files are captured as artifacts when available.
-- A non-empty startup screenshot is captured and represented by the top-level
-  `screenshot` manifest artifact and the `assertions.startup_screenshot`
-  assertion.
+- A non-empty startup screenshot or captured window list proves visual startup
+  evidence for lesson lanes. Screenshots are represented by the top-level
+  `screenshot` manifest artifact when available.
 - The run artifacts are stored under a scenario-specific run directory.
 
-The lane does not perform deep in-lesson UI automation. It intentionally stops
-at launch-ready evidence so the first lesson smoke remains stable in normal
-developer and CI environments. It does not yet prove learner-visible lesson
-steps such as placing objects, saving a world, or writing a reflection.
+The lanes do not perform deep in-lesson UI automation. They intentionally stop
+at launch-ready evidence so lesson smokes remain stable in normal developer and
+CI environments. They do not yet prove learner-visible lesson steps such as
+placing objects, editing procedures, saving a world, or writing a reflection.
 
 ## Scenario assets
 
@@ -44,13 +46,14 @@ Canonical lesson scenarios live under:
 assets/scenarios/eatme/
 ```
 
-The Building a Scene lane is defined by:
+The canonical lesson lanes are defined by:
 
 ```text
 assets/scenarios/eatme/building-a-scene-first-world.yaml
+assets/scenarios/eatme/code-editor-first-run.yaml
 ```
 
-This file is the editable design contract for the lesson smoke. Lesson copy,
+These files are the editable design contracts for lesson smokes. Lesson copy,
 resource links, smoke steps, expected evidence, timeouts, artifact paths, and
 Gherkin-style acceptance criteria are edited in YAML rather than Rust tests.
 
@@ -65,10 +68,11 @@ Gadugi-compatible adapters live under:
 assets/scenarios/gadugi/
 ```
 
-The gadugi adapter for this lane is:
+The gadugi adapters for these lanes are:
 
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
+assets/scenarios/gadugi/code-editor-first-run.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
@@ -84,11 +88,15 @@ Validate every committed persona and scenario asset:
 cargo run -q -p eatme-cli -- assets validate --json
 ```
 
-Validate only the Building a Scene lane:
+Validate only one lesson lane:
 
 ```bash
 cargo run -q -p eatme-cli -- assets validate \
   --path assets/scenarios/eatme/building-a-scene-first-world.yaml \
+  --json
+
+cargo run -q -p eatme-cli -- assets validate \
+  --path assets/scenarios/eatme/code-editor-first-run.yaml \
   --json
 ```
 
@@ -99,7 +107,8 @@ that needs attention.
 ## Run the lesson smoke
 
 Lesson-labeled Alice execution is explicit. Non-baseline scenarios such as
-`building-a-scene-first-world` refuse to run unless `EATME_REAL_ALICE=1` is set.
+`building-a-scene-first-world` and `code-editor-first-run` refuse to run unless
+`EATME_REAL_ALICE=1` is set.
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -112,6 +121,9 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --no-memory \
   --offline-package
 ```
+
+For the code editor lane, use the same command shape with
+`--scenario code-editor-first-run` and a code-editor run id.
 
 `ALICE_HOME` must point at the Alice source checkout to package and launch. A
 typical local value is:
@@ -197,6 +209,12 @@ runs/building-a-scene-first-world/<run-id>/
     `-- startup.png
 ```
 
+The code editor lane uses:
+
+```text
+runs/code-editor-first-run/<run-id>/
+```
+
 The baseline launch smoke uses:
 
 ```text
@@ -211,7 +229,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world` or `code-editor-first-run`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -280,7 +298,7 @@ smoke_ready:
   evidence:
     - manifest_assertions
     - captured_logs
-    - startup_screenshot
+    - screenshot_or_window_evidence
     - scenario_id
 acceptance_criteria:
   - given: Alice launch smoke dependencies are available
@@ -329,9 +347,9 @@ Validated fields:
 | `unsupported_policy` | Behavior when prerequisites are unavailable. |
 
 `kind`, `owner`, `real_alice.gated_by`, `smoke_ready.evidence`, and
-`acceptance_criteria` are specifically enforced for
-`building-a-scene-first-world`. A scenario must define a launcher or steps, route
-runtime through `alice launch-smoke`, define `artifacts.manifest`,
+`acceptance_criteria` are enforced for every `alice_lesson_smoke` asset. A
+scenario must define a launcher or steps, route runtime through
+`alice launch-smoke`, define `artifacts.manifest`,
 `artifacts.screenshot`, and `artifacts.log`, and include at least one timeout.
 
 Design-convention fields such as `resource_basis`, `capabilities`, and
@@ -343,7 +361,7 @@ not as runtime inputs.
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `EATME_REAL_ALICE=1` | Yes for lesson-labeled real launch | Enables non-baseline lesson smoke scenarios such as `building-a-scene-first-world`. Without it, those scenarios fail fast. |
+| `EATME_REAL_ALICE=1` | Yes for lesson-labeled real launch | Enables non-baseline lesson smoke scenarios such as `building-a-scene-first-world` and `code-editor-first-run`. Without it, those scenarios fail fast. |
 | `ALICE_HOME` | Yes for real launch | Alice checkout used by `--alice-home`. |
 | `RUN_ID` | Optional | Convenience value used by scenario YAML and gadugi adapters. |
 | `NODE_OPTIONS=--max-old-space-size=32768` | Optional | Preserved environment preference for Node-based wrappers or agent tooling; the Rust CLI does not require it. |
@@ -352,7 +370,7 @@ Host dependencies for real launch are the same as the baseline smoke: Java 21,
 Maven, Xvfb, `xdpyinfo`, `wmctrl`, a screenshot tool, and OpenGL/Mesa support
 for software rendering.
 
-## Tutorial: local Building a Scene smoke
+## Tutorial: local lesson smoke
 
 1. Validate the editable assets:
 
@@ -366,15 +384,16 @@ for software rendering.
    cargo run -q -p eatme-cli -- deps check --json
    ```
 
-3. Run the lesson lane:
+3. Run a lesson lane:
 
    ```bash
    export ALICE_HOME=/home/azureuser/src/alice3-modernization
-   export RUN_ID=local-building-a-scene-first-world
+   export SCENARIO_ID=building-a-scene-first-world
+   export RUN_ID=local-${SCENARIO_ID}
 
    EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
      --alice-home "${ALICE_HOME}" \
-     --scenario building-a-scene-first-world \
+     --scenario "${SCENARIO_ID}" \
      --run-id "${RUN_ID}" \
      --runs-dir runs \
      --timeout 900 \
@@ -387,39 +406,41 @@ for software rendering.
 
    ```bash
    jq '.scenario_id, .failure_category, .assertions' \
-     "runs/building-a-scene-first-world/${RUN_ID}/manifest.json"
+     "runs/${SCENARIO_ID}/${RUN_ID}/manifest.json"
    ```
 
 5. Inspect captured artifacts:
 
    ```bash
-   ls -lh "runs/building-a-scene-first-world/${RUN_ID}/alice.log"
-   ls -lh "runs/building-a-scene-first-world/${RUN_ID}/screenshots/startup.png"
+   ls -lh "runs/${SCENARIO_ID}/${RUN_ID}/alice.log"
+   ls -lh "runs/${SCENARIO_ID}/${RUN_ID}/screenshots/startup.png"
    ```
 
 The run is smoke-ready when `failure_category` is `null`, all deterministic
-assertions pass, and the manifest points at a non-empty startup screenshot. The
-Alice log is captured for diagnosis when artifact metadata is available, but log
+assertions pass, and the manifest points at a non-empty startup screenshot or
+the lesson assertion has accepted captured window evidence. The Alice log is
+captured for diagnosis when artifact metadata is available, but log
 non-emptiness is not currently a separate assertion.
 
 ## Tutorial: gadugi adapter boundary
 
-Use the gadugi asset when a gadugi runner needs to exercise the lane:
+Use the gadugi assets when a gadugi runner needs to exercise a lane:
 
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
+assets/scenarios/gadugi/code-editor-first-run.yaml
 ```
 
 The adapter performs three kinds of work:
 
 1. Run `eatme assets validate --json`.
 2. Run `eatme deps check --json`.
-3. Run `eatme alice launch-smoke --scenario building-a-scene-first-world`.
+3. Run `eatme alice launch-smoke --scenario <lesson-id>`.
 
 The adapter asserts command success and manifest-level output such as
-`"scenario_id": "building-a-scene-first-world"`, `"failure_category": null`,
-startup screenshot evidence, and passing assertions. It does not reimplement or
-configure Alice launch internals.
+the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
+window evidence, and passing assertions. It does not reimplement or configure
+Alice launch internals.
 
 The committed gadugi adapter currently uses `/home/azureuser/src/eatme` as its
 working tree path. Treat that as an environment-bound adapter value until the
@@ -434,8 +455,8 @@ CLI smoke command:
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --alice-home /home/azureuser/src/alice3-modernization \
-  --scenario building-a-scene-first-world \
-  --run-id local-building-a-scene-first-world \
+  --scenario code-editor-first-run \
+  --run-id local-code-editor-first-run \
   --runs-dir runs \
   --timeout 900 \
   --json \
@@ -446,7 +467,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 Normal workspace validation does not require real Alice:
 
 ```bash
-cargo test --workspace
+cargo test --all-targets --all-features
 ```
 
 The lesson lane is complete when committed scenario assets validate, malformed

@@ -159,10 +159,10 @@ The Alice log and `window-list.txt` are diagnostic artifacts, not independent
 pass/fail assertions in the current harness. Agentic annotations may be attached
 later, but they do not decide pass/fail in Milestone 0.
 
-## Milestone 1: canonical assets and first lesson smoke
+## Milestone 1: canonical assets and lesson smoke lanes
 
-Milestone 1 layers the first lesson-specific smoke lane on top of the real
-Alice launch smoke harness:
+Milestone 1 layers lesson-specific smoke lanes on top of the real Alice launch
+smoke harness:
 
 - `eatme-assets` validates editable persona and scenario YAML.
 - Canonical scenarios live under `assets/scenarios/eatme/`.
@@ -172,18 +172,27 @@ Alice launch smoke harness:
 - Scenario YAML is validated separately; `launch-smoke` currently records the
   scenario id and run namespace but does not load YAML fields as runtime inputs.
 
-The first lesson smoke is Alice.org resource-specific:
+The first two lesson smoke lanes are Alice.org resource-specific:
 
 - `building-a-scene-first-world`
-- resource basis: Building a Scene + Scene Editor Overview
-- current evidence: manifest-only launch readiness under a lesson-specific
-  scenario id
-- future lesson-automation evidence:
-  - at least two objects
-  - one object positioned/oriented/scaled
-  - camera view/marker language
-  - saved project/world
-  - learner explanation/reflection
+  - resource basis: Building a Scene + Scene Editor Overview
+  - current evidence: manifest-only launch readiness under a lesson-specific
+    scenario id
+  - future lesson-automation evidence:
+    - at least two objects
+    - one object positioned/oriented/scaled
+    - camera view/marker language
+    - saved project/world
+    - learner explanation/reflection
+- `code-editor-first-run`
+  - resource basis: Programming in Alice + Alice 3 lessons
+  - current evidence: manifest-only launch readiness under a lesson-specific
+    scenario id, with screenshot or window evidence accepted for smoke readiness
+  - future lesson-automation evidence:
+    - learner predicts one procedure's visible effect
+    - learner runs the world and observes expected-vs-actual behavior
+    - learner revises one argument or ordering choice
+    - learner explains code-to-action cause and effect
 
 Usage, CLI, manifest, scenario schema, configuration, and examples are
 documented in [`alice-lesson-smoke.md`](alice-lesson-smoke.md).

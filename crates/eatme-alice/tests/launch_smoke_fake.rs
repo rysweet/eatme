@@ -58,15 +58,15 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
         json: true,
         no_memory: true,
         offline_package: true,
-        scenario: LaunchSmokeScenario::new("building-a-scene-first-world"),
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
     })
     .unwrap();
 
-    assert_eq!(manifest.scenario_id, "building-a-scene-first-world");
+    assert_eq!(manifest.scenario_id, "code-editor-first-run");
     assert!(
         fixture
             .root
-            .join("runs/building-a-scene-first-world/lesson-run/manifest.json")
+            .join("runs/code-editor-first-run/lesson-run/manifest.json")
             .is_file()
     );
 }
@@ -87,11 +87,11 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
         json: true,
         no_memory: true,
         offline_package: true,
-        scenario: LaunchSmokeScenario::new("building-a-scene-first-world"),
+        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
     })
     .unwrap();
 
-    assert_eq!(manifest.scenario_id, "building-a-scene-first-world");
+    assert_eq!(manifest.scenario_id, "code-editor-first-run");
     assert!(
         manifest.failure_category.is_none(),
         "window evidence should satisfy lesson smoke-ready state without a screenshot: {:?}",
