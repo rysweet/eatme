@@ -17,6 +17,7 @@ environment:
     - EATME_REAL_ALICE
   optional:
     - RUN_ID
+    - EATME_REPO
     - EATME_REAL_VR
     - ALICE_PLAYER_HOME
     - VR_HEADSET_AVAILABLE
@@ -26,7 +27,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "/home/azureuser/src/eatme"
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -35,7 +36,9 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- assets validate --json"
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- assets validate --json
     expect:
       exit_code: 0
       stdout_contains:
@@ -47,7 +50,9 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- deps check --json"
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- deps check --json
     expect:
       exit_code: 0
       stdout_contains:
@@ -59,7 +64,7 @@ steps:
     action: "execute_command"
     params:
       command: |
-        cd /home/azureuser/src/eatme
+        cd "${EATME_REPO:-.}"
         if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then
           test -n "${ALICE_PLAYER_HOME:-}" || { echo "ALICE_PLAYER_HOME required when EATME_REAL_VR=1" >&2; exit 1; }
           printf 'real_vr_available=true\n'
@@ -80,7 +85,7 @@ steps:
     action: "execute_command"
     params:
       command: |
-        cd /home/azureuser/src/eatme
+        cd "${EATME_REPO:-.}"
         export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
