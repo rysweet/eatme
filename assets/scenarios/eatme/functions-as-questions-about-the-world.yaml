@@ -74,6 +74,7 @@ steps:
       - manifest scenario_id equals functions-as-questions-about-the-world
       - manifest failure_category is null
       - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
       - screenshot or window evidence exists and is non-empty
       - log exists and is non-empty
 agentic_follow_on:

@@ -36,6 +36,13 @@ pub(super) fn validate_gadugi_scenario(
         }
         if let Some(command) = string_param(&step.params, "command") {
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
+            if command.contains("alice launch-smoke") {
+                validate_gadugi_real_evidence_expectation(
+                    &step.name,
+                    step.expect.as_ref(),
+                    &mut errors,
+                );
+            }
         }
         if step.action == "agentic_test" {
             validate_gadugi_agentic_step(&step.name, &step.params, &mut errors);
@@ -184,6 +191,26 @@ fn validate_agentic_expect(
             errors,
         ),
         None => errors.push(format!("{step_name}.expect must be defined")),
+    }
+}
+
+fn validate_gadugi_real_evidence_expectation(
+    step_name: &str,
+    expect: Option<&crate::schema::GadugiStepExpect>,
+    errors: &mut Vec<String>,
+) {
+    let checks_real_evidence = expect
+        .map(|expect| {
+            expect
+                .stdout_contains
+                .iter()
+                .any(|expected| expected.contains("real_alice_execution_evidence"))
+        })
+        .unwrap_or(false);
+    if !checks_real_evidence {
+        errors.push(format!(
+            "{step_name}: gadugi launch-smoke step must assert manifest real_alice_execution_evidence"
+        ));
     }
 }
 

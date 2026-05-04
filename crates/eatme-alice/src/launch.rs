@@ -1,26 +1,30 @@
 mod alice_cmd;
 mod display;
+mod evidence;
+mod manifest;
+mod run_dir;
 
 use self::alice_cmd::{DEFAULT_STARTER_PROJECT, alice_launch_args, start_alice};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
-use crate::deps::check_dependencies;
-use crate::discover::discover_alice;
-use crate::evidence::{
+use self::evidence::{
     artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
     scan_fatal_logs,
 };
+use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
+use self::run_dir::prepare_run_dir;
+use crate::deps::check_dependencies;
+use crate::discover::discover_alice;
 use crate::package::{PackageOptions, package_alice};
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use eatme_core::{
     ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
     RealCommandRunner,
 };
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Child;
 use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
@@ -77,14 +81,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
-    let discovery = discover_alice(&options.alice_home, &runner)?;
-    let package = package_alice(
-        PackageOptions {
-            alice_home: &options.alice_home,
-            offline: options.offline_package,
-        },
-        &runner,
-    )?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
     let run_dir = options
         .runs_dir
@@ -105,9 +101,101 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     } else {
         Some("missing_dependency".to_string())
     };
+    if !deps.all_required_available {
+        return write_blocked_manifest(
+            options,
+            &run_dir,
+            deps,
+            &eatme_commit,
+            None,
+            None,
+            None,
+            None,
+            "missing_dependency",
+            "preflight blocked: one or more required desktop dependencies are unavailable",
+            assertions,
+        );
+    }
 
-    let display = reserve_display(&options.runs_dir)?;
-    let mut xvfb = start_xvfb(display.name(), &run_dir)?;
+    let discovery = match discover_alice(&options.alice_home, &runner) {
+        Ok(discovery) => discovery,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                None,
+                None,
+                None,
+                None,
+                "alice_discovery_failed",
+                format!("preflight blocked: Alice discovery failed: {error:#}"),
+                assertions,
+            );
+        }
+    };
+    let package = match package_alice(
+        PackageOptions {
+            alice_home: &options.alice_home,
+            offline: options.offline_package,
+        },
+        &runner,
+    ) {
+        Ok(package) => package,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                None,
+                None,
+                None,
+                "alice_package_failed",
+                format!("preflight blocked: Alice package failed: {error:#}"),
+                assertions,
+            );
+        }
+    };
+
+    let display = match reserve_display(&options.runs_dir) {
+        Ok(display) => display,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                None,
+                None,
+                "display_reservation_failed",
+                format!("preflight blocked: X display could not be reserved: {error:#}"),
+                assertions,
+            );
+        }
+    };
+    let mut xvfb = match start_xvfb(display.name(), &run_dir) {
+        Ok(xvfb) => xvfb,
+        Err(error) => {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                Some(display.name()),
+                None,
+                "xvfb_start_failed",
+                format!("preflight blocked: Xvfb could not start: {error:#}"),
+                assertions,
+            );
+        }
+    };
     let display_responsive = wait_for_display(&runner, display.name(), Duration::from_secs(5));
     assertions.insert(
         "display_responsive".into(),
@@ -117,11 +205,46 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         ),
     );
     if !display_responsive {
-        failure_category = Some("display_unresponsive".into());
+        shutdown(&mut xvfb);
+        return write_blocked_manifest(
+            options,
+            &run_dir,
+            deps,
+            &eatme_commit,
+            Some(&discovery),
+            Some(&package),
+            Some(display.name()),
+            Some(xvfb.id()),
+            "display_unresponsive",
+            format!(
+                "preflight blocked: {} did not respond to xdpyinfo",
+                display.name()
+            ),
+            assertions,
+        );
     }
 
     let log_path = run_dir.join("alice.log");
-    let launch_args = alice_launch_args(&options.alice_home, &options.scenario.starter_project)?;
+    let launch_args =
+        match alice_launch_args(&options.alice_home, &options.scenario.starter_project) {
+            Ok(args) => args,
+            Err(error) => {
+                shutdown(&mut xvfb);
+                return write_blocked_manifest(
+                    options,
+                    &run_dir,
+                    deps,
+                    &eatme_commit,
+                    Some(&discovery),
+                    Some(&package),
+                    Some(display.name()),
+                    Some(xvfb.id()),
+                    "alice_launch_args_failed",
+                    format!("preflight blocked: Alice launch arguments failed: {error:#}"),
+                    assertions,
+                );
+            }
+        };
     let mut alice = match start_alice(
         &options.alice_home,
         display.name(),
@@ -129,10 +252,22 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         &log_path,
         &launch_args,
     ) {
-        Ok(child) => child,
+        Ok(alice) => alice,
         Err(error) => {
             shutdown(&mut xvfb);
-            return Err(error);
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                Some(&package),
+                Some(display.name()),
+                Some(xvfb.id()),
+                "alice_start_failed",
+                format!("preflight blocked: Alice process could not start: {error:#}"),
+                assertions,
+            );
         }
     };
     let process_started = wait_for_start(&mut alice, options.timeout_seconds.min(60));
@@ -196,24 +331,33 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let (log, log_artifact_error) = artifact_or_error(&log_path);
     let log_error = combine_errors([log_scan_error, log_artifact_error]);
+    let log_ok = log
+        .as_ref()
+        .map(|artifact| artifact.size_bytes > 0)
+        .unwrap_or(false);
+    let real_alice_execution_evidence =
+        process_started && display_responsive && smoke_ready_visual_evidence && log_ok;
+    assertions.insert(
+        "real_alice_execution_evidence".into(),
+        bool_assert(
+            real_alice_execution_evidence,
+            "real Alice process, responsive virtual display, visual evidence, and launch log were captured",
+        ),
+    );
+    if !real_alice_execution_evidence && failure_category.is_none() {
+        failure_category = Some("real_alice_evidence_missing".into());
+    }
     let launch_command = format!("java {}", launch_args.join(" "));
-    let manifest = LaunchSmokeManifest {
-        schema_version: "eatme.launch-smoke/v1".into(),
-        scenario_id: options.scenario.id.clone(),
-        run_id: options.run_id.clone(),
-        alice_home: discovery.alice_home,
-        alice_git_commit: discovery.git_commit,
-        eatme_git_commit: eatme_commit,
-        java_version: discovery.java_version,
-        maven_version: discovery.maven_version,
-        dependency_checks: deps.tools,
-        build_command: package.command,
-        build_exit_status: package.exit_status,
+    let manifest = build_manifest(
+        options,
+        deps,
+        &eatme_commit,
+        Some(&discovery),
+        Some(&package),
         launch_command,
-        display: display.name().to_string(),
-        xvfb_pid: Some(xvfb.id()),
-        alice_pid: Some(alice.id()),
-        timeout_seconds: options.timeout_seconds,
+        display.name().to_string(),
+        Some(xvfb.id()),
+        Some(alice.id()),
         window_list,
         window_list_error,
         screenshot,
@@ -223,60 +367,13 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         fatal_log_scan,
         assertions,
         failure_category,
-    };
+    );
 
     let manifest_write = write_manifest(&run_dir, &manifest);
     shutdown(&mut alice);
     shutdown(&mut xvfb);
     manifest_write?;
     Ok(manifest)
-}
-
-fn prepare_run_dir(run_dir: &Path) -> Result<()> {
-    if run_dir.exists() {
-        archive_existing_run_dir(run_dir)?;
-    }
-    fs::create_dir_all(run_dir.join("screenshots"))
-        .with_context(|| format!("creating {}", run_dir.display()))?;
-    fs::create_dir_all(run_dir.join("home"))?;
-    fs::create_dir_all(run_dir.join("prefs"))?;
-    fs::create_dir_all(run_dir.join("tmp"))?;
-    Ok(())
-}
-
-fn archive_existing_run_dir(run_dir: &Path) -> Result<()> {
-    let parent = run_dir
-        .parent()
-        .with_context(|| format!("{} has no parent directory", run_dir.display()))?;
-    let name = run_dir
-        .file_name()
-        .and_then(|name| name.to_str())
-        .with_context(|| format!("{} has no valid directory name", run_dir.display()))?;
-    let stamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .context("system clock is before UNIX_EPOCH")?
-        .as_nanos();
-
-    for attempt in 0..1000 {
-        let archive_name = format!("{name}.previous-{stamp}-{attempt}");
-        let archive_path = parent.join(archive_name);
-        if archive_path.exists() {
-            continue;
-        }
-        fs::rename(run_dir, &archive_path).with_context(|| {
-            format!(
-                "archiving existing launch evidence {} to {}",
-                run_dir.display(),
-                archive_path.display()
-            )
-        })?;
-        return Ok(());
-    }
-
-    bail!(
-        "could not find a unique archive path for existing launch evidence {}",
-        run_dir.display()
-    );
 }
 
 fn validate_scenario_name(name: &str) -> Result<()> {
@@ -301,6 +398,11 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
         thread::sleep(Duration::from_millis(500));
     }
     true
+}
+
+fn shutdown(child: &mut Child) {
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
@@ -390,18 +492,6 @@ fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
         );
     }
     Ok(output.stdout.trim().to_string())
-}
-
-fn write_manifest(run_dir: &Path, manifest: &LaunchSmokeManifest) -> Result<()> {
-    let path = run_dir.join("manifest.json");
-    let json = serde_json::to_string_pretty(manifest)?;
-    fs::write(path, json)?;
-    Ok(())
-}
-
-fn shutdown(child: &mut Child) {
-    let _ = child.kill();
-    let _ = child.wait();
 }
 
 #[cfg(test)]

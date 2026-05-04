@@ -3,7 +3,7 @@ use crate::schema::{
     EatmeScenarioAcceptanceCriterion, EatmeScenarioAgenticFlow, EatmeScenarioLauncher,
     EatmeScenarioRealAlice, EatmeScenarioResource, EatmeScenarioRubricCriterion,
     EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
-    ScenarioAdapter, ScenarioCapabilities, ScenarioPersonas,
+    GadugiStepExpect, ScenarioAdapter, ScenarioCapabilities, ScenarioPersonas,
 };
 use serde_yaml::Value;
 use std::collections::{BTreeMap, BTreeSet};
@@ -255,6 +255,55 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
 }
 
 #[test]
+fn gadugi_launch_smoke_requires_real_execution_evidence_assertion() {
+    let scenario = GadugiScenarioAsset {
+        name: "Metadata Only Smoke".into(),
+        description: "Launches through eatme but only checks scenario metadata.".into(),
+        version: "1.0.0".into(),
+        steps: vec![GadugiScenarioStep {
+            name: "Launch Alice".into(),
+            agent: "eatme-cli-agent".into(),
+            action: "execute_command".into(),
+            params: BTreeMap::from([(
+                "command".into(),
+                Value::String(
+                    "cargo run -q -p eatme-cli -- alice launch-smoke --scenario code-editor-first-run"
+                        .into(),
+                ),
+            )]),
+            expect: Some(GadugiStepExpect {
+                exit_code: Some(0),
+                stdout_contains: vec!["\"scenario_id\": \"code-editor-first-run\"".into()],
+                ..GadugiStepExpect::default()
+            }),
+            timeout: 1,
+        }],
+        assertions: vec![GadugiScenarioAssertion {
+            name: "Launch succeeded".into(),
+            assertion_type: "command_success".into(),
+            agent: "eatme-cli-agent".into(),
+            params: BTreeMap::from([("step".into(), Value::String("Launch Alice".into()))]),
+        }],
+        ..GadugiScenarioAsset::default()
+    };
+
+    let report = validate_gadugi_scenario(
+        Path::new("assets/scenarios/gadugi/metadata-only.yaml"),
+        &scenario,
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|error| error.contains("real_alice_execution_evidence")),
+        "gadugi launch-smoke validation should reject metadata-only checks: {:?}",
+        report.errors
+    );
+}
+
+#[test]
 fn gadugi_agentic_steps_require_editable_asset_contract() {
     let scenario = GadugiScenarioAsset {
         name: "Incomplete Instructor Agentic Adapter".into(),
@@ -333,7 +382,10 @@ fn valid_lesson_smoke(id: &str) -> EatmeScenarioAsset {
         steps: vec![EatmeScenarioStep {
             id: "launch-smoke".into(),
             command: format!("eatme alice launch-smoke --scenario {id}"),
-            evidence: vec!["manifest scenario_id matches".into()],
+            evidence: vec![
+                "manifest scenario_id matches".into(),
+                "manifest assertions.real_alice_execution_evidence exists".into(),
+            ],
         }],
         timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
         artifacts: BTreeMap::from([

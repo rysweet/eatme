@@ -142,16 +142,8 @@ fn validate_eatme_scenario(
 }
 
 fn known_lesson_smoke(id: &str) -> bool {
-    matches!(
-        id,
-        "hour-of-code-studio-kickoff"
-            | "building-a-scene-first-world"
-            | "code-editor-first-run"
-            | "events-collision-proximity-game"
-            | "functions-as-questions-about-the-world"
-            | "loops-and-conditionals-mini-challenge"
-            | "reusable-methods-and-parameters"
-    )
+    const KNOWN: &str = "hour-of-code-studio-kickoff building-a-scene-first-world code-editor-first-run events-collision-proximity-game functions-as-questions-about-the-world loops-and-conditionals-mini-challenge reusable-methods-and-parameters";
+    KNOWN.split_whitespace().any(|known| known == id)
 }
 
 fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
@@ -268,6 +260,7 @@ fn validate_lesson_smoke(
         None => errors.push("personas.instructors and personas.students must be defined".into()),
     }
     validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+    validate_launch_smoke_real_evidence(scenario, errors);
 }
 
 fn validate_legacy_launch_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
@@ -294,6 +287,19 @@ fn validate_launch_smoke_contract(scenario: &EatmeScenarioAsset, errors: &mut Ve
         }
     }
     require_timeout_and_policy(scenario, errors);
+}
+
+fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    let launch_step_mentions_real_evidence = scenario.steps.iter().any(|step| {
+        step.command.contains("alice launch-smoke")
+            && step
+                .evidence
+                .iter()
+                .any(|evidence| evidence.contains("real_alice_execution_evidence"))
+    });
+    if !launch_step_mentions_real_evidence {
+        errors.push("launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence".into());
+    }
 }
 
 fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {

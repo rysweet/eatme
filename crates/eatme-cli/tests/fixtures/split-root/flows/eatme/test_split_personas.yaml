@@ -30,6 +30,11 @@ acceptance_criteria:
   - given: test
     when: test
     then: test
+steps:
+  - id: launch-smoke
+    command: eatme alice launch-smoke --scenario test-split-personas
+    evidence:
+      - manifest assertions.real_alice_execution_evidence exists
 timeouts:
   launch_seconds: 120
 artifacts:

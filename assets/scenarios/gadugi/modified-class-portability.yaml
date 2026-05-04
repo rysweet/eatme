@@ -24,7 +24,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: .
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -38,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 30'
+        - '"scenario_asset_count": 34'
     timeout: 60000
 
   - name: "Validate modified class portability contract"
@@ -74,6 +74,7 @@ steps:
       stdout_contains:
         - '"scenario_id": "modified-class-portability"'
         - '"failure_category": null'
+        - '"real_alice_execution_evidence": {'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
     timeout: 1800000

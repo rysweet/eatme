@@ -78,6 +78,7 @@ steps:
       - manifest scenario_id equals building-a-scene-first-world
       - manifest failure_category is null
       - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
       - screenshot exists and is non-empty
       - log exists and is non-empty
 timeouts:
