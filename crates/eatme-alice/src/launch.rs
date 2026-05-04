@@ -1,22 +1,30 @@
+mod alice_cmd;
+mod display;
+
+use self::alice_cmd::{DEFAULT_STARTER_PROJECT, alice_launch_args, start_alice};
+use self::display::{
+    artifact_info, capture_screenshot, capture_window_list, reserve_display, start_xvfb,
+    wait_for_display,
+};
 use crate::deps::check_dependencies;
-use crate::discover::{discover_alice, first_non_empty};
+use crate::discover::discover_alice;
 use crate::package::{PackageOptions, package_alice};
 use anyhow::{Context, Result, bail};
 use eatme_core::{
-    ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
-    RealCommandRunner, file_size, sha256_file,
+    AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest, RealCommandRunner,
 };
 use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Child;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
     pub id: String,
     pub run_dir_name: String,
+    pub starter_project: PathBuf,
 }
 
 impl LaunchSmokeScenario {
@@ -24,6 +32,7 @@ impl LaunchSmokeScenario {
         let id = id.into();
         Self {
             run_dir_name: id.clone(),
+            starter_project: PathBuf::from(DEFAULT_STARTER_PROJECT),
             id,
         }
     }
@@ -34,6 +43,11 @@ impl LaunchSmokeScenario {
 
     pub fn accepts_window_evidence(&self) -> bool {
         self.id != "real-alice-launch-smoke"
+    }
+
+    pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
+        self.starter_project = starter_project.into();
+        self
     }
 }
 
@@ -90,14 +104,14 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         Some("missing_dependency".to_string())
     };
 
-    let display = choose_display();
-    let mut xvfb = start_xvfb(&display, &run_dir)?;
-    let display_responsive = wait_for_display(&runner, &display, Duration::from_secs(5));
+    let display = reserve_display(&options.runs_dir)?;
+    let mut xvfb = start_xvfb(display.name(), &run_dir)?;
+    let display_responsive = wait_for_display(&runner, display.name(), Duration::from_secs(5));
     assertions.insert(
         "display_responsive".into(),
         bool_assert(
             display_responsive,
-            format!("{display} responds to xdpyinfo"),
+            format!("{} responds to xdpyinfo", display.name()),
         ),
     );
     if !display_responsive {
@@ -105,14 +119,20 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
 
     let log_path = run_dir.join("alice.log");
-    let launch_args = alice_launch_args(&options.alice_home)?;
-    let mut alice = start_alice(
+    let launch_args = alice_launch_args(&options.alice_home, &options.scenario.starter_project)?;
+    let mut alice = match start_alice(
         &options.alice_home,
-        &display,
+        display.name(),
         &run_dir,
         &log_path,
         &launch_args,
-    )?;
+    ) {
+        Ok(child) => child,
+        Err(error) => {
+            shutdown(&mut xvfb);
+            return Err(error);
+        }
+    };
     let process_started = wait_for_start(&mut alice, options.timeout_seconds.min(60));
     assertions.insert(
         "process_started".into(),
@@ -125,9 +145,9 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category = Some("alice_process_exited".into());
     }
 
-    let window_list = capture_window_list(&runner, &display, &run_dir).unwrap_or_default();
+    let window_list = capture_window_list(&runner, display.name(), &run_dir).unwrap_or_default();
     let window_evidence_ok = !window_list.trim().is_empty();
-    let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
+    let screenshot = capture_screenshot(&runner, display.name(), &run_dir).ok();
     let screenshot_ok = screenshot
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
@@ -185,7 +205,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         build_command: package.command,
         build_exit_status: package.exit_status,
         launch_command,
-        display: display.clone(),
+        display: display.name().to_string(),
         xvfb_pid: Some(xvfb.id()),
         alice_pid: Some(alice.id()),
         timeout_seconds: options.timeout_seconds,
@@ -196,15 +216,16 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category,
     };
 
-    write_manifest(&run_dir, &manifest)?;
+    let manifest_write = write_manifest(&run_dir, &manifest);
     shutdown(&mut alice);
     shutdown(&mut xvfb);
+    manifest_write?;
     Ok(manifest)
 }
 
 fn prepare_run_dir(run_dir: &Path) -> Result<()> {
     if run_dir.exists() {
-        fs::remove_dir_all(run_dir).with_context(|| format!("removing {}", run_dir.display()))?;
+        archive_existing_run_dir(run_dir)?;
     }
     fs::create_dir_all(run_dir.join("screenshots"))
         .with_context(|| format!("creating {}", run_dir.display()))?;
@@ -212,6 +233,41 @@ fn prepare_run_dir(run_dir: &Path) -> Result<()> {
     fs::create_dir_all(run_dir.join("prefs"))?;
     fs::create_dir_all(run_dir.join("tmp"))?;
     Ok(())
+}
+
+fn archive_existing_run_dir(run_dir: &Path) -> Result<()> {
+    let parent = run_dir
+        .parent()
+        .with_context(|| format!("{} has no parent directory", run_dir.display()))?;
+    let name = run_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .with_context(|| format!("{} has no valid directory name", run_dir.display()))?;
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .context("system clock is before UNIX_EPOCH")?
+        .as_nanos();
+
+    for attempt in 0..1000 {
+        let archive_name = format!("{name}.previous-{stamp}-{attempt}");
+        let archive_path = parent.join(archive_name);
+        if archive_path.exists() {
+            continue;
+        }
+        fs::rename(run_dir, &archive_path).with_context(|| {
+            format!(
+                "archiving existing launch evidence {} to {}",
+                run_dir.display(),
+                archive_path.display()
+            )
+        })?;
+        return Ok(());
+    }
+
+    bail!(
+        "could not find a unique archive path for existing launch evidence {}",
+        run_dir.display()
+    );
 }
 
 fn validate_scenario_name(name: &str) -> Result<()> {
@@ -227,113 +283,6 @@ fn validate_scenario_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn choose_display() -> String {
-    for display in 90..130 {
-        let socket = format!("/tmp/.X11-unix/X{display}");
-        if !Path::new(&socket).exists() {
-            return format!(":{display}");
-        }
-    }
-    ":99".into()
-}
-
-fn start_xvfb(display: &str, run_dir: &Path) -> Result<Child> {
-    let log = File::create(run_dir.join("xvfb.log"))?;
-    Command::new("Xvfb")
-        .args([
-            display,
-            "-screen",
-            "0",
-            "1280x900x24",
-            "+extension",
-            "GLX",
-            "+render",
-            "-noreset",
-        ])
-        .stdout(Stdio::from(log.try_clone()?))
-        .stderr(Stdio::from(log))
-        .spawn()
-        .with_context(|| format!("starting Xvfb {display}"))
-}
-
-fn alice_launch_args(alice_home: &Path) -> Result<Vec<String>> {
-    let fxmp = javafx_module_path(&alice_home.join("alice-ide/target/lib"))?;
-    Ok(vec![
-        "-ea".into(),
-        "-Xmx1024m".into(),
-        "-Dorg.alice.ide.rootDirectory=./core/resources/target/distribution".into(),
-        "-Dedu.cmu.cs.dennisc.java.util.logging.Logger.Level=WARNING".into(),
-        "-Dorg.alice.ide.internalTesting=true".into(),
-        "-Dorg.lgna.croquet.Element.isIdCheckDesired=true".into(),
-        "-Djogamp.gluegen.UseTempJarCache=false".into(),
-        "-Dorg.alice.stageide.isCrashDetectionDesired=false".into(),
-        "--add-opens=java.base/java.io=ALL-UNNAMED".into(),
-        "--add-opens=java.desktop/sun.awt=ALL-UNNAMED".into(),
-        "--add-opens=java.base/java.time=ALL-UNNAMED".into(),
-        "--module-path".into(),
-        fxmp,
-        "--add-modules".into(),
-        "javafx.graphics,javafx.media".into(),
-        "-cp".into(),
-        "alice-ide/target/alice-ide-9.1.0-SNAPSHOT.jar:alice-ide/target/lib/*".into(),
-        "org.alice.stageide.EntryPoint".into(),
-        "core/resources/target/distribution/application/starter-projects/africa.a3p".into(),
-        "0".into(),
-        "0".into(),
-        "1000".into(),
-        "740".into(),
-    ])
-}
-
-fn javafx_module_path(lib_dir: &Path) -> Result<String> {
-    let required = ["javafx-base", "javafx-graphics", "javafx-media"];
-    let mut jars = Vec::new();
-    for prefix in required {
-        let jar = fs::read_dir(lib_dir)?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .find(|path| {
-                path.file_name()
-                    .and_then(|name| name.to_str())
-                    .map(|name| name.starts_with(prefix) && name.ends_with("-linux.jar"))
-                    .unwrap_or(false)
-            })
-            .with_context(|| format!("missing {prefix} linux jar in {}", lib_dir.display()))?;
-        jars.push(jar.display().to_string());
-    }
-    Ok(jars.join(":"))
-}
-
-fn start_alice(
-    alice_home: &Path,
-    display: &str,
-    run_dir: &Path,
-    log_path: &Path,
-    args: &[String],
-) -> Result<Child> {
-    let log = File::create(log_path)?;
-    let mut command = Command::new("java");
-    command
-        .current_dir(alice_home)
-        .env("DISPLAY", display)
-        .env("LIBGL_ALWAYS_SOFTWARE", "1")
-        .env("HOME", run_dir.join("home"))
-        .env("TMPDIR", run_dir.join("tmp"))
-        .arg(format!("-Duser.home={}", run_dir.join("home").display()))
-        .arg(format!(
-            "-Djava.util.prefs.userRoot={}",
-            run_dir.join("prefs").display()
-        ))
-        .arg(format!(
-            "-Djava.io.tmpdir={}",
-            run_dir.join("tmp").display()
-        ))
-        .args(args)
-        .stdout(Stdio::from(log.try_clone()?))
-        .stderr(Stdio::from(log));
-    command.spawn().context("starting Alice")
-}
-
 fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
     let deadline = Instant::now() + Duration::from_secs(seconds.clamp(5, 60));
     while Instant::now() < deadline {
@@ -343,91 +292,6 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
         thread::sleep(Duration::from_millis(500));
     }
     true
-}
-
-fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duration) -> bool {
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        if command_ok(
-            runner,
-            CommandSpec::new("xdpyinfo")
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(2))
-                .retries(2, Duration::from_millis(100)),
-        ) {
-            return true;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    false
-}
-
-fn capture_window_list(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<String> {
-    let output = runner.run(
-        &CommandSpec::new("wmctrl")
-            .args(["-lx"])
-            .env("DISPLAY", display)
-            .timeout(Duration::from_secs(5))
-            .retries(2, Duration::from_millis(100)),
-    )?;
-    if output.exit_status != Some(0) {
-        bail!(
-            "capturing window list failed with {:?}\n{}{}",
-            output.exit_status,
-            output.stdout,
-            output.stderr
-        );
-    }
-    let combined = first_non_empty(&output.stdout, &output.stderr);
-    fs::write(run_dir.join("window-list.txt"), &combined)?;
-    Ok(combined)
-}
-
-fn capture_screenshot(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<ArtifactInfo> {
-    let path = run_dir.join("screenshots/startup.png");
-    let scrot = CommandSpec::new("scrot")
-        .args([path.display().to_string()])
-        .env("DISPLAY", display)
-        .timeout(Duration::from_secs(10))
-        .retries(2, Duration::from_millis(100));
-    let output = runner.run(&scrot)?;
-    if output.exit_status != Some(0) {
-        let fallback = runner.run(
-            &CommandSpec::new("import")
-                .args(["-window".into(), "root".into(), path.display().to_string()])
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(10))
-                .retries(2, Duration::from_millis(100)),
-        )?;
-        if fallback.exit_status != Some(0) {
-            bail!(
-                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
-                output.exit_status,
-                fallback.exit_status,
-                output.stdout,
-                output.stderr,
-                fallback.stdout,
-                fallback.stderr
-            );
-        }
-    }
-    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
-}
-
-fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
-    Ok(ArtifactInfo {
-        path: path.display().to_string(),
-        size_bytes: file_size(path)?,
-        sha256: sha256_file(path)?,
-    })
 }
 
 fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
@@ -445,13 +309,6 @@ fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
         .filter(|line| patterns.iter().any(|pattern| line.contains(pattern)))
         .map(str::to_string)
         .collect()
-}
-
-fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
-    runner
-        .run(&spec)
-        .map(|output| output.exit_status == Some(0))
-        .unwrap_or(false)
 }
 
 fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
@@ -499,13 +356,48 @@ mod tests {
     use super::*;
 
     #[test]
-    fn chooses_non_default_display_format() {
-        assert!(choose_display().starts_with(':'));
+    fn archives_existing_run_dir_instead_of_deleting_it() {
+        let root = unique_test_dir("archive-existing-run");
+        let run_dir = root.join("runs/real-alice-launch-smoke/reused-run");
+        fs::create_dir_all(&run_dir).unwrap();
+        fs::write(run_dir.join("manifest.json"), "old evidence").unwrap();
+
+        prepare_run_dir(&run_dir).unwrap();
+
+        assert!(run_dir.join("screenshots").is_dir());
+        let archived_manifest = fs::read_dir(run_dir.parent().unwrap())
+            .unwrap()
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .find(|path| {
+                path.file_name()
+                    .and_then(|name| name.to_str())
+                    .map(|name| name.starts_with("reused-run.previous-"))
+                    .unwrap_or(false)
+                    && path.join("manifest.json").is_file()
+            });
+        assert!(
+            archived_manifest.is_some(),
+            "existing evidence should be archived next to the new run"
+        );
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
     fn rejects_non_kebab_case_scenario_names() {
         assert!(validate_scenario_name("../bad").is_err());
         assert!(validate_scenario_name("building-a-scene-first-world").is_ok());
+    }
+
+    fn unique_test_dir(prefix: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::current_dir()
+            .unwrap()
+            .join("target")
+            .join("eatme-alice-tests")
+            .join(format!("{prefix}-{nonce}"))
     }
 }
