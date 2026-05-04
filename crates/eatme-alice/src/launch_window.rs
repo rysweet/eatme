@@ -17,10 +17,19 @@ pub fn choose_display() -> String {
     ":99".into()
 }
 
+const ALICE_WINDOW_MARKERS: [&str; 4] = [
+    "org.alice.stageide.entrypoint",
+    "org.alice.stageide",
+    "org.alice.ide",
+    "alice 3",
+];
+
 pub fn specific_alice_window_detected(window_list: &str) -> bool {
     window_list.lines().any(|line| {
-        let lower = line.to_ascii_lowercase();
-        lower.contains("org.alice.stageide") || lower.contains("alice")
+        let normalized = line.to_ascii_lowercase();
+        ALICE_WINDOW_MARKERS
+            .iter()
+            .any(|marker| normalized.contains(marker))
     })
 }
 
@@ -115,5 +124,19 @@ mod tests {
     #[test]
     fn chooses_non_default_display_format() {
         assert!(choose_display().starts_with(':'));
+    }
+
+    #[test]
+    fn recognizes_alice_window_identity() {
+        assert!(specific_alice_window_detected(
+            "0x001  0 host org.alice.stageide.EntryPoint Alice 3"
+        ));
+    }
+
+    #[test]
+    fn rejects_unrelated_windows() {
+        assert!(!specific_alice_window_detected(
+            "0x001  0 host firefox.Firefox Firefox"
+        ));
     }
 }

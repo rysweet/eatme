@@ -38,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 16'
+        - '"scenario_asset_count": 20'
     timeout: 60000
 
   - name: "Launch first lessons real UI action contract"

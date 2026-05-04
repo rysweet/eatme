@@ -1,4 +1,6 @@
-use super::{contextualize_scenario_errors, require_list, require_nonempty, validate_id};
+use super::{
+    contextualize_scenario_errors, portability, require_list, require_nonempty, validate_id,
+};
 use crate::report::ScenarioAssetValidationReport;
 use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
 use anyhow::{Context, Result};
@@ -164,6 +166,10 @@ fn validate_eatme_scenario(
                 }
             }
         }
+    }
+
+    if portability::is_class_portability_scenario(scenario) {
+        portability::validate_class_portability_scenario(scenario, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
