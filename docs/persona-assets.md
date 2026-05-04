@@ -4,7 +4,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative new scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, and agentic review behavior for instructor flows.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
@@ -108,11 +108,11 @@ requires persona and scenario references for:
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight` |
-| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
 | World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
 | Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop` |
 | Curriculum design | `curriculum-sequence-remix-pack` |
 | IT/setup support | `setup-support-lab-readiness` |
 | Workshops | `workshop-facilitator-live-studio` |
@@ -132,11 +132,22 @@ Editable eatme + gadugi scenario assets now cover:
 4. `functions-as-questions-about-the-world`
 5. `loops-and-conditionals-mini-challenge`
 6. `events-collision-proximity-game`
-7. `modified-class-portability`
-8. `hour-of-code-studio-kickoff`
-9. `starter-project-open-save-export-preflight`
+7. `game-score-timer-win-lose-loop`
+8. `modified-class-portability`
+9. `hour-of-code-studio-kickoff`
+10. `starter-project-open-save-export-preflight`
 
-Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary. The starter-project preflight tightens the gap toward open/save/export QA by proving Alice opens the bundled starter project before any agent or manual pass claims save/reopen/export coverage.
+Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+
+The starter-project preflight tightens the gap toward open/save/export QA by
+proving Alice opens the bundled starter project before any agent or manual pass
+claims save/reopen/export coverage.
+
+`modified-class-portability` adds an editable instructor/student portability
+lane for modified class export/import/share across Alice projects. Its contract
+requires before-export evidence, destination-project import evidence, and
+post-import behavior evidence showing the modified class still behaves the same
+after import.
 
 ## Instructor agentic flow assets
 
@@ -156,7 +167,7 @@ Each asset exposes `resource_basis`, `agentic_test_prompt`,
 agentic outputs as YAML. The paired gadugi adapters run asset validation and an
 `agentic_test` step instead of owning Alice desktop runtime details.
 
-## 10 creative new scenarios
+## 11 creative new scenarios
 
 1. `weather-wizard-conditional-theater`
 2. `lost-robot-debug-museum`
@@ -167,7 +178,8 @@ agentic outputs as YAML. The paired gadugi adapters run asset validation and an
 7. `creature-choreography-loop-lab`
 8. `neighborhood-data-story`
 9. `accessibility-rescue-camera-captions`
-10. `mythic-choice-event-tree`
+10. `game-score-timer-win-lose-loop`
+11. `mythic-choice-event-tree`
 
 ## Source map
 

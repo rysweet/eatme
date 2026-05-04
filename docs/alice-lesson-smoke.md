@@ -15,6 +15,7 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+game-score-timer-win-lose-loop
 modified-class-portability
 hour-of-code-studio-kickoff
 starter-project-open-save-export-preflight
@@ -32,8 +33,9 @@ readiness from deterministic harness evidence:
 
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
-  `building-a-scene-first-world`, `code-editor-first-run`, or one of the
-  expanded Alice.org-grounded lesson ids.
+  `hour-of-code-studio-kickoff`, `building-a-scene-first-world`,
+  `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids,
+  including the score/timer game lane and starter-project preflight.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - The starter-project preflight expects the launch command to include bundled
@@ -67,6 +69,7 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
 assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
 assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
@@ -96,6 +99,7 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
@@ -263,7 +267,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `modified-class-portability`, `hour-of-code-studio-kickoff`, or `starter-project-open-save-export-preflight`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, or `starter-project-open-save-export-preflight`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |

@@ -1,8 +1,8 @@
-name: "Eatme Starter Project Open Save Export Preflight"
+name: "Eatme Game Score Timer Win Lose Loop Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the real Alice starter-project preflight.
+  Gadugi-compatible CLI scenario for the Game Score Timer Win Lose Loop lane.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence before save/reopen/export work.
+  commands and checks manifest-level evidence before agentic score/timer/reflection judgment.
 version: "1.0.0"
 
 config:
@@ -23,7 +23,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 
@@ -32,11 +32,14 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- assets validate --json
     expect:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
+        - '"creative_scenario_count": 11'
         - '"scenario_asset_count": 32'
     timeout: 60000
 
@@ -44,20 +47,22 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
+      command: |
+        cd "${EATME_REPO:-.}"
+        cargo run -q -p eatme-cli -- deps check --json
     expect:
       exit_code: 0
       stdout_contains:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch starter project preflight under Xvfb"
+  - name: "Launch Game Score Timer Win Lose Loop lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
+        export RUN_ID="${RUN_ID:-gadugi-game-score-timer-win-lose-loop}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -66,15 +71,14 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario starter-project-open-save-export-preflight
+          --scenario game-score-timer-win-lose-loop
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "starter-project-open-save-export-preflight"'
+        - '"scenario_id": "game-score-timer-win-lose-loop"'
         - '"failure_category": null'
         - '"real_alice_execution_evidence": {'
         - '"startup_window_or_screenshot": {'
-        - 'africa.a3p'
         - '"passed": true'
     timeout: 1800000
 
@@ -93,11 +97,20 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Starter Project Preflight Launches"
+  - name: "Game Score Timer Win Lose Loop Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch starter project preflight under Xvfb"
+      step: "Launch Game Score Timer Win Lose Loop lane under Xvfb"
+
+  - name: "Agentic Score Timer Reflection Contract"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Validate editable Alice scenario assets"
+      required_strings:
+        - '"passed": true'
+        - '"creative_scenario_count": 11'
 
 metadata:
   tags:
@@ -105,7 +118,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "open-save-export"
+    - "score-timer"
+    - "win-lose"
     - "outside-in"
   priority: "critical"
   author: "eatme"
