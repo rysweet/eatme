@@ -77,11 +77,20 @@ Rust or the launch harness.
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create` |
-| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
-| World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
-| Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
-| Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
+| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
+| Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
+| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+
+## Hour of Code studio kickoff
+
+Added editable eatme + gadugi scenario assets for
+`hour-of-code-studio-kickoff`, grounded in Alice.org Hour of Code, Building a
+Scene, and Programming in Alice resources. The lane captures instructor setup
+and fallback moves, novice first-scene/first-animation prompts, and
+evidence/reflection expectations in YAML so facilitators can tune the studio
+kickoff without changing Rust.
 
 ## New Alice.org-grounded smoke scenario assets
 
@@ -91,8 +100,15 @@ Added editable eatme + gadugi scenario assets for:
 2. `functions-as-questions-about-the-world`
 3. `loops-and-conditionals-mini-challenge`
 4. `events-collision-proximity-game`
+5. `modified-class-portability`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+
+`modified-class-portability` adds an editable instructor/student portability
+lane for modified class export/import/share across Alice projects. Its contract
+requires before-export evidence, destination-project import evidence, and
+post-import behavior evidence showing the modified class still behaves the same
+after import.
 
 ## 10 creative new scenarios
 

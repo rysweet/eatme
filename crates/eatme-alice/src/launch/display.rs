@@ -1,6 +1,5 @@
-use crate::discover::first_non_empty;
 use anyhow::{Context, Result, bail};
-use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
+use eatme_core::{CommandRunner, CommandSpec};
 use std::fs::{self, File, OpenOptions};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -113,74 +112,6 @@ pub(super) fn wait_for_display(
     false
 }
 
-pub(super) fn capture_window_list(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<String> {
-    let output = runner.run(
-        &CommandSpec::new("wmctrl")
-            .args(["-lx"])
-            .env("DISPLAY", display)
-            .timeout(Duration::from_secs(5))
-            .retries(2, Duration::from_millis(100)),
-    )?;
-    if output.exit_status != Some(0) {
-        bail!(
-            "capturing window list failed with {:?}\n{}{}",
-            output.exit_status,
-            output.stdout,
-            output.stderr
-        );
-    }
-    let combined = first_non_empty(&output.stdout, &output.stderr);
-    fs::write(run_dir.join("window-list.txt"), &combined)?;
-    Ok(combined)
-}
-
-pub(super) fn capture_screenshot(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<ArtifactInfo> {
-    let path = run_dir.join("screenshots/startup.png");
-    let scrot = CommandSpec::new("scrot")
-        .args([path.display().to_string()])
-        .env("DISPLAY", display)
-        .timeout(Duration::from_secs(10))
-        .retries(2, Duration::from_millis(100));
-    let output = runner.run(&scrot)?;
-    if output.exit_status != Some(0) {
-        let fallback = runner.run(
-            &CommandSpec::new("import")
-                .args(["-window".into(), "root".into(), path.display().to_string()])
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(10))
-                .retries(2, Duration::from_millis(100)),
-        )?;
-        if fallback.exit_status != Some(0) {
-            bail!(
-                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
-                output.exit_status,
-                fallback.exit_status,
-                output.stdout,
-                output.stderr,
-                fallback.stdout,
-                fallback.stderr
-            );
-        }
-    }
-    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
-}
-
-pub(super) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
-    Ok(ArtifactInfo {
-        path: path.display().to_string(),
-        size_bytes: file_size(path)?,
-        sha256: sha256_file(path)?,
-    })
-}
-
 fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
     runner
         .run(&spec)
@@ -237,20 +168,22 @@ mod tests {
         let lock_dir = root.join(".display-locks");
         fs::create_dir_all(&lock_dir).unwrap();
 
-        let preexisting_display = (90..130)
-            .find(|display| !display_socket_exists(*display))
-            .expect("expected a display candidate without an existing X socket");
-        let expected_display = ((preexisting_display + 1)..130)
-            .find(|display| !display_socket_exists(*display))
-            .expect("expected another display candidate without an existing X socket");
+        let preexisting_display = 90;
+        let expected_display = 91;
         let preexisting_lock = lock_dir.join(format!("X{preexisting_display}.lock"));
         fs::write(&preexisting_lock, "preexisting\n").unwrap();
 
-        let allocation = reserve_display(&root).unwrap();
+        let mut checks = Vec::new();
+        let allocation = reserve_display_with_socket_check(&root, |display| {
+            checks.push(display);
+            false
+        })
+        .unwrap();
         let reserved_display: u16 = allocation.name().trim_start_matches(':').parse().unwrap();
         let reserved_lock = lock_dir.join(format!("X{reserved_display}.lock"));
 
         assert_eq!(reserved_display, expected_display);
+        assert_eq!(checks, vec![preexisting_display, expected_display]);
         assert_ne!(reserved_lock, preexisting_lock);
         assert_eq!(
             fs::read_to_string(&preexisting_lock).unwrap(),

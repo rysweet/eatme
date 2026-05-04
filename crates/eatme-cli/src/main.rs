@@ -224,6 +224,21 @@ mod tests {
     }
 
     #[test]
+    fn hour_of_code_launch_smoke_requires_real_alice_gate() {
+        let _gate = EnvOverride::remove("EATME_REAL_ALICE");
+
+        let result = ensure_real_alice_gate("hour-of-code-studio-kickoff");
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("EATME_REAL_ALICE=1")
+        );
+    }
+
+    #[test]
     fn lesson_launch_smoke_accepts_explicit_real_alice_gate() {
         let _gate = EnvOverride::set("EATME_REAL_ALICE", "1");
 
