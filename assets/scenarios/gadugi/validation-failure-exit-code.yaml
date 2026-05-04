@@ -1,0 +1,70 @@
+name: "Eatme Validation Failure Exit Code"
+description: |
+  Gadugi-compatible regression scenario for the eatme asset validation CLI
+  contract. Passing assets may expect exit code 0; malformed assets must expect
+  a non-zero exit and `"passed": false` instead of treating validation failures
+  as command success.
+version: "1.0.0"
+
+config:
+  timeout: 120000
+  retries: 0
+  parallel: false
+
+environment:
+  optional:
+    - EATME_REPO
+
+agents:
+  - name: "eatme-cli-agent"
+    type: "system"
+    config:
+      shell: "bash"
+      cwd: .
+      timeout: 120000
+      capture_output: true
+
+steps:
+  - name: "Validate malformed scenario asset"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: |
+        cd "${EATME_REPO:-.}"
+        mkdir -p target/eatme-gadugi-negative-validation/assets/scenarios/eatme
+        cat > target/eatme-gadugi-negative-validation/assets/scenarios/eatme/malformed.yaml <<'EOF'
+        schema_version: eatme.scenario/v1
+        id: "not valid"
+        title: ""
+        EOF
+        cargo run -q -p eatme-cli -- assets validate \
+          --path target/eatme-gadugi-negative-validation/assets/scenarios/eatme/malformed.yaml \
+          --json
+    expect:
+      exit_code: 1
+      stdout_contains:
+        - '"passed": false'
+        - 'must be kebab-case'
+    timeout: 120000
+
+assertions:
+  - name: "Malformed validation exits non-zero"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Validate malformed scenario asset"
+      required_strings:
+        - '"passed": false'
+        - 'must be kebab-case'
+
+metadata:
+  source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml"
+  generated_by: "eatme validation exit-code regression"
+  tags:
+    - "eatme"
+    - "assets"
+    - "validation"
+    - "exit-code"
+  priority: "critical"
+  author: "eatme"
+  test_type: "regression"

@@ -6,7 +6,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative new scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, and instructor agentic flows.
-- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, and agentic review behavior for instructor flows.
+- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, agentic review behavior for instructor flows, and CLI contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
 ## How to use with agentic tests
