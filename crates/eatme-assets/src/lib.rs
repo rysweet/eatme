@@ -68,6 +68,8 @@ mod tests {
             "assets/scenarios/gadugi/building-a-scene-first-world.yaml",
             "assets/scenarios/eatme/code-editor-first-run.yaml",
             "assets/scenarios/gadugi/code-editor-first-run.yaml",
+            "assets/scenarios/eatme/modified-class-portability.yaml",
+            "assets/scenarios/gadugi/modified-class-portability.yaml",
             "assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml",
             "assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml",
         ] {
