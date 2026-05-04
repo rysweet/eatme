@@ -15,7 +15,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "/home/azureuser/src/eatme"
+      cwd: .
       timeout: 60000
       capture_output: true
   - name: "instructor-qa-agent"
@@ -30,7 +30,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- assets validate --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
     expect:
       exit_code: 0
       stdout_contains:
