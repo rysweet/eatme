@@ -1,0 +1,99 @@
+schema_version: eatme.scenario/v1
+id: mythic-choice-event-tree
+title: Mythic Choice Event Tree
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 lessons
+    url: https://www.alice.org/resources/alice-3-lessons/
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+purpose: >-
+  Prove the game and interactive narrative student flow launches through the real Alice smoke harness before agentic evaluation judges choice, event, and branch evidence.
+launcher:
+  command: alice launch-smoke
+  scenario: mythic-choice-event-tree
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - concept-cartographer
+    - assessment-curator
+  students:
+    - creative-storyteller
+    - systems-puzzle-solver
+    - game-narrative-designer
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the mythic-choice-event-tree scenario is launched through eatme
+    then: the manifest identifies scenario_id mythic-choice-event-tree
+  - given: students need playable narrative evidence
+    when: agentic follow-on evaluates this lane
+    then: it judges player trigger, state or condition, feedback, and tested alternate paths
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario mythic-choice-event-tree
+    evidence:
+      - manifest scenario_id equals mythic-choice-event-tree
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#mythic-choice-event-tree
+  deterministic_gate: >-
+    Run this smoke lane before asking agents to assess whether a learner built a small interactive narrative or game with visible branching.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/mythic-choice-event-tree/${RUN_ID}/manifest.json
+  screenshot: runs/mythic-choice-event-tree/${RUN_ID}/screenshots/startup.png
+  log: runs/mythic-choice-event-tree/${RUN_ID}/alice.log
+  window_list: runs/mythic-choice-event-tree/${RUN_ID}/window-list.txt
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
+  substitute a mocked Alice runtime.

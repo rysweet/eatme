@@ -5,7 +5,7 @@ mod evidence;
 mod manifest;
 mod run_dir;
 
-use self::alice_cmd::{DEFAULT_STARTER_PROJECT, alice_launch_args, start_alice};
+use self::alice_cmd::{alice_launch_args, start_alice};
 use self::assertions::{bool_assert, fatal_log_detail, visual_evidence_detail};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
 use self::evidence::{
@@ -18,6 +18,7 @@ use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::launch_ui_actions::{record_ui_action_blockers, write_ui_action_contract};
 use crate::package::{PackageOptions, package_alice};
+use crate::scenario::LaunchSmokeScenario;
 use anyhow::{Result, bail};
 use eatme_core::{
     ArtifactInfo, CommandRunner, CommandSpec, LaunchSmokeManifest, RealCommandRunner,
@@ -27,47 +28,6 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 use std::thread;
 use std::time::{Duration, Instant};
-
-#[derive(Clone, Debug)]
-pub struct LaunchSmokeScenario {
-    pub id: String,
-    pub run_dir_name: String,
-    pub starter_project: PathBuf,
-}
-
-impl LaunchSmokeScenario {
-    pub fn new(id: impl Into<String>) -> Self {
-        let id = id.into();
-        Self {
-            run_dir_name: id.clone(),
-            starter_project: PathBuf::from(DEFAULT_STARTER_PROJECT),
-            id,
-        }
-    }
-
-    pub fn real_alice_launch_smoke() -> Self {
-        Self::new("real-alice-launch-smoke")
-    }
-
-    pub fn accepts_window_evidence(&self) -> bool {
-        self.id != "real-alice-launch-smoke"
-    }
-
-    pub fn requires_real_ui_actions(&self) -> bool {
-        self.id == "first-lessons-real-ui-actions"
-    }
-
-    pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
-        self.starter_project = starter_project.into();
-        self
-    }
-}
-
-impl Default for LaunchSmokeScenario {
-    fn default() -> Self {
-        Self::real_alice_launch_smoke()
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeOptions {

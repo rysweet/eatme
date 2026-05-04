@@ -75,9 +75,9 @@ mod tests {
         let report = validate_persona_crew(&asset).unwrap();
         assert!(report.passed, "{:?}", report.errors);
         assert_eq!(report.instructor_count, 11);
-        assert_eq!(report.student_count, 10);
-        assert_eq!(report.core_scenario_count, 22);
-        assert_eq!(report.creative_scenario_count, 11);
+        assert_eq!(report.student_count, 13);
+        assert_eq!(report.core_scenario_count, 24);
+        assert_eq!(report.creative_scenario_count, 12);
     }
 
     #[test]
@@ -85,7 +85,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 37);
+        assert_eq!(report.scenario_asset_count, 45);
     }
 
     #[test]
@@ -108,6 +108,14 @@ mod tests {
             "assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml",
             "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
             "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml",
+            "assets/scenarios/eatme/variables-scorekeeper-timekeeper.yaml",
+            "assets/scenarios/gadugi/variables-scorekeeper-timekeeper.yaml",
+            "assets/scenarios/eatme/arrays-collection-choreography.yaml",
+            "assets/scenarios/gadugi/arrays-collection-choreography.yaml",
+            "assets/scenarios/eatme/mythic-choice-event-tree.yaml",
+            "assets/scenarios/gadugi/mythic-choice-event-tree.yaml",
+            "assets/scenarios/eatme/vr-camera-perspective-tour.yaml",
+            "assets/scenarios/gadugi/vr-camera-perspective-tour.yaml",
         ] {
             let report = validate_scenario_asset(&root.join(asset)).unwrap();
             assert!(report.passed, "{asset}: {:?}", report.errors);

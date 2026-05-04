@@ -5,9 +5,6 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 
-pub(super) const DEFAULT_STARTER_PROJECT: &str =
-    "core/resources/target/distribution/application/starter-projects/africa.a3p";
-
 pub(super) fn alice_launch_args(alice_home: &Path, starter_project: &Path) -> Result<Vec<String>> {
     let target_dir = alice_home.join("alice-ide/target");
     let lib_dir = target_dir.join("lib");

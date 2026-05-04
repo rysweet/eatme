@@ -85,6 +85,19 @@ Rust or the launch harness.
 | `vr-player-tester` | Playtests worlds for comfort, orientation, discoverability, and fallback access. |
 | `media-audio-creator` | Uses audio, camera, timing, captions, and media cues for audience meaning. |
 | `model-texture-importer` | Imports or falls back from external models/textures responsibly. |
+| `data-detective` | Connects variables, data types, arrays, and visible world state. |
+| `immersive-camera-director` | Designs camera/VR perspective with audience clarity and fallbacks. |
+| `game-narrative-designer` | Builds small playable stories/games with choices, state, and playtest evidence. |
+
+## Student outside-in flow prompt cards
+
+The persona asset includes top-level `student_outside_in_flow_assets` cards
+editable by non-coders:
+
+- `curiosity-loop-card` — prediction, observation, surprise, next experiment.
+- `data-state-card` — variables, data types, arrays, and visible state evidence.
+- `interactive-playtest-card` — trigger, state/condition, feedback, and peer revision.
+- `camera-vr-fallback-card` — camera/VR perspective with non-VR classroom fallback.
 
 ## Constituency coverage
 
@@ -108,11 +121,11 @@ requires persona and scenario references for:
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight` |
-| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
-| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase` |
-| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum` |
+| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
+| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
+| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum`, `arrays-collection-choreography` |
 | Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop` |
+| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop`, `vr-camera-perspective-tour` |
 | Curriculum design | `curriculum-sequence-remix-pack` |
 | IT/setup support | `setup-support-lab-readiness` |
 | Workshops | `workshop-facilitator-live-studio` |
@@ -137,6 +150,20 @@ Editable eatme + gadugi scenario assets now cover:
 9. `hour-of-code-studio-kickoff`
 10. `starter-project-open-save-export-preflight`
 11. `vr-camera-locomotion-journey`
+
+## Expanded smoke scenario assets
+
+Added editable eatme + gadugi scenario assets for Alice.org-grounded and
+student creative outside-in lanes:
+
+1. `reusable-methods-and-parameters`
+2. `functions-as-questions-about-the-world`
+3. `loops-and-conditionals-mini-challenge`
+4. `events-collision-proximity-game`
+5. `variables-scorekeeper-timekeeper`
+6. `arrays-collection-choreography`
+7. `mythic-choice-event-tree`
+8. `vr-camera-perspective-tour`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
 

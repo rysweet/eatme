@@ -21,12 +21,16 @@ modified-class-portability
 hour-of-code-studio-kickoff
 starter-project-open-save-export-preflight
 vr-camera-locomotion-journey
+variables-scorekeeper-timekeeper
+arrays-collection-choreography
+mythic-choice-event-tree
+vr-camera-perspective-tour
 ```
 
-They are based on Alice.org lesson/tutorial resource families and Alice desktop
-QA journeys. They prove that the desktop harness can reach a smoke-ready Alice
-session for resource-grounded paths before agentic instructor/student evaluation
-is trusted.
+They are based on Alice.org lesson/tutorial resource families, Alice desktop QA
+journeys, and editable student creative lanes. They prove that the desktop
+harness can reach a smoke-ready Alice session for resource-grounded paths before
+agentic instructor/student evaluation is trusted.
 
 ## What the lane verifies
 
@@ -92,6 +96,10 @@ assets/scenarios/eatme/modified-class-portability.yaml
 assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
 assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
 assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
+assets/scenarios/eatme/variables-scorekeeper-timekeeper.yaml
+assets/scenarios/eatme/arrays-collection-choreography.yaml
+assets/scenarios/eatme/mythic-choice-event-tree.yaml
+assets/scenarios/eatme/vr-camera-perspective-tour.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -124,6 +132,10 @@ assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
+assets/scenarios/gadugi/variables-scorekeeper-timekeeper.yaml
+assets/scenarios/gadugi/arrays-collection-choreography.yaml
+assets/scenarios/gadugi/mythic-choice-event-tree.yaml
+assets/scenarios/gadugi/vr-camera-perspective-tour.yaml
 ```
 
 Gadugi lesson scenarios may invoke the eatme CLI and inspect manifest-level
@@ -316,7 +328,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `starter-project-open-save-export-preflight`, or `vr-camera-locomotion-journey`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `first-lessons-real-ui-actions`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `hour-of-code-studio-kickoff`, `starter-project-open-save-export-preflight`, `vr-camera-locomotion-journey`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `mythic-choice-event-tree`, or `vr-camera-perspective-tour`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |

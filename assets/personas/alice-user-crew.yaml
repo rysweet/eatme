@@ -702,6 +702,118 @@ personas:
         - Spends the whole lesson searching assets without a runnable world.
       evidence:
         - Import checkpoint records source, license note, visual check, issue/fallback, and integration purpose.
+    - id: data-detective
+      role: student
+      archetype: Data Detective
+      goals:
+        - Use variables, data types, and arrays to make Alice worlds remember and compare information.
+        - Explain how visible world state connects to stored program state.
+      constraints:
+        - May treat numbers, text, booleans, and collections as interchangeable unless the world makes type meaning visible.
+        - Needs short inspectable datasets instead of spreadsheet-scale complexity.
+      educational_intent:
+        - Variables, data types, arrays, indexing, state changes, and evidence-based debugging.
+      observable_behaviors:
+        - Names the value being tracked, its type, where it changes, and how the audience sees it.
+        - Tests at least two values or array items and compares the visible outcome.
+      anti_behaviors:
+        - Changes displays without explaining underlying state or collection order.
+      evidence:
+        - Data note or reflection maps variable/array values to visible world behavior.
+    - id: immersive-camera-director
+      role: student
+      archetype: Immersive Camera Director
+      goals:
+        - Use camera, point of view, and VR-style perspective to help an audience experience a world.
+        - Balance immersion with orientation, comfort, and clarity.
+      constraints:
+        - VR or camera features may be unavailable on some classroom devices.
+        - Fast or confusing camera motion can make worlds hard to follow.
+      educational_intent:
+        - Camera markers, perspective, spatial reasoning, audience design, fallback planning, and accessibility.
+      observable_behaviors:
+        - Creates or describes at least two audience perspectives and tests whether a peer can follow the scene.
+        - Provides a non-VR fallback such as screen view, storyboard, or camera-marker tour.
+      anti_behaviors:
+        - Treats camera motion as spectacle without checking audience understanding.
+      evidence:
+        - Perspective storyboard or reflection names camera choice, audience effect, and fallback.
+    - id: game-narrative-designer
+      role: student
+      archetype: Game Narrative Designer
+      goals:
+        - Combine events, choices, variables, and feedback into a small playable story or game.
+        - Make player decisions visible and test both success and failure paths.
+      constraints:
+        - Branching worlds can grow too large for a class period.
+        - Game rules must be understandable to a peer without hidden code inspection.
+      educational_intent:
+        - Event-driven thinking, conditionals, state, interaction loops, playtesting, and narrative consequence.
+      observable_behaviors:
+        - Describes trigger, state change, feedback, and outcome for each interaction.
+        - Runs a peer playtest and revises one rule, cue, or branch.
+      anti_behaviors:
+        - Adds many choices with no visible consequence or test evidence.
+      evidence:
+        - Playtest notes cover at least two paths or outcomes and one revision.
+student_outside_in_flow_assets:
+  prompt_cards:
+    - id: curiosity-loop-card
+      editable_by: instructor-agent
+      purpose: Keep beginner Alice work experiential before vocabulary-heavy explanation.
+      prompt_frame: >-
+        Ask the student to predict one visible change, run or observe Alice, name
+        what surprised them, and choose one next experiment tied to a concept.
+      scenario_ids:
+        - building-a-scene-first-world
+        - code-editor-first-run
+        - functions-as-questions-about-the-world
+      evidence:
+        - Prediction, observation, and next question are all visible in the learner response.
+        - The response names the Alice concept after observing behavior.
+    - id: data-state-card
+      editable_by: student-agent
+      purpose: Make variables, data types, and arrays explainable without hidden code inspection.
+      prompt_frame: >-
+        Name the stored value, say whether it is a number, text, true/false flag,
+        or item in a list, show where it changes, and point to what the audience sees.
+      scenario_ids:
+        - variables-scorekeeper-timekeeper
+        - arrays-collection-choreography
+        - neighborhood-data-story
+      evidence:
+        - Reflection maps data/state to visible world behavior and at least two test values.
+    - id: interactive-playtest-card
+      editable_by: student-agent
+      purpose: Keep games and interactive narratives small, playable, and testable.
+      prompt_frame: >-
+        Describe the player trigger, the state or condition checked, the feedback shown,
+        and the revision made after a peer tried one success path and one alternate path.
+      scenario_ids:
+        - events-collision-proximity-game
+        - mythic-choice-event-tree
+        - mars-rover-proximity-mission
+      evidence:
+        - Peer can trigger the interaction and the learner records one revision.
+    - id: camera-vr-fallback-card
+      editable_by: instructor-agent
+      purpose: Exercise camera and VR perspective where feasible without excluding classrooms.
+      prompt_frame: >-
+        Plan the intended immersive perspective, test it with a peer, and define a
+        non-VR fallback such as camera-marker tour, storyboard, or screen recording.
+      scenario_ids:
+        - audio-camera-and-export-sharecase
+        - vr-camera-perspective-tour
+        - accessibility-rescue-camera-captions
+      evidence:
+        - Perspective choice improves audience understanding and includes a fallback.
+  coverage_map:
+    curiosity: [curious-novice, playful-tinkerer]
+    creativity: [creative-storyteller, game-narrative-designer]
+    experiential_learning: [curious-novice, reflective-debugger]
+    variables_data_types_arrays: [data-detective, systems-puzzle-solver]
+    games_interactive_narrative: [game-narrative-designer, collaborative-peer-mentor]
+    vr_camera: [immersive-camera-director, accessibility-advocate]
 core_scenarios_from_existing_alice_resources:
   - id: setup-preflight-ready-to-create
     origin: existing-alice-resource
@@ -973,7 +1085,7 @@ core_scenarios_from_existing_alice_resources:
     user_story: As a systems-puzzle-solver, I want a visible score or timer, so that my game world remembers state over time.
     personas:
       instructors: [concept-cartographer, assessment-curator]
-      students: [systems-puzzle-solver, reflective-debugger]
+      students: [systems-puzzle-solver, reflective-debugger, data-detective]
     educational_intent:
       concepts: [variable, data type, arithmetic expression, state, display]
       habits: [state tracking, edge-case testing]
@@ -1002,7 +1114,7 @@ core_scenarios_from_existing_alice_resources:
     user_story: As a creative-storyteller, I want to add camera/audio polish and share my world, so that classmates can understand and respond to my work.
     personas:
       instructors: [studio-facilitator, classroom-orchestrator, assessment-curator]
-      students: [creative-storyteller, accessibility-advocate]
+      students: [creative-storyteller, accessibility-advocate, immersive-camera-director]
     educational_intent:
       concepts: [camera marker, timing, audio cue, audience, export]
       habits: [communication, accessibility, critique, revision]
@@ -1356,6 +1468,64 @@ core_scenarios_from_existing_alice_resources:
       - Exact object names, coordinates, UI selectors, or a single correct story.
       - Treating setup failure as student failure.
       - Grading visual polish before first-run evidence and reflection.
+  - id: arrays-collection-choreography
+    origin: existing-alice-resource
+    coverage: [lessons, world-creation, run-debug]
+    user_story: As a data-detective, I want to animate a collection of world objects, so that arrays and indexes become visible instead of abstract.
+    personas:
+      instructors: [concept-cartographer, exercise-forger]
+      students: [data-detective, playful-tinkerer, systems-puzzle-solver]
+    educational_intent:
+      concepts: [array, list, index, iteration, data type, collection]
+      habits: [pattern recognition, testing boundaries, explaining state]
+    constraints:
+      - Learners should succeed with a tiny collection before optional advanced variations.
+      - Array order and item identity must be visible enough for peers to understand.
+    observable_behaviors:
+      instructor:
+        - Introduces a collection as several related things handled by one plan.
+        - Provides a three-item starter challenge plus one optional extension.
+      student:
+        - Uses or describes a collection with at least three items and tests first, middle, or last behavior.
+        - Explains what the index or item selection changes in the world.
+      system_or_artifact:
+        - World shows repeated or selected behavior across related objects with visible variation.
+    agentic_test_prompt: >-
+      Design an outside-in Alice activity where students use a small collection of objects to make arrays, indexes, and data types visible. Include a novice path and a stretch path.
+    acceptance_probes:
+      - At least three related items are handled as a collection or list-like plan.
+      - Student explains item order or selection using visible world evidence.
+    avoid:
+      - Requiring advanced array syntax before the learner can explain the collection behavior.
+  - id: vr-camera-perspective-tour
+    origin: existing-alice-resource
+    coverage: [world-creation, lessons, export-share, classroom-use]
+    user_story: As an immersive-camera-director, I want to design a camera or VR perspective tour, so that audience point of view becomes a programmable choice.
+    personas:
+      instructors: [studio-facilitator, classroom-orchestrator, assessment-curator]
+      students: [immersive-camera-director, creative-storyteller, accessibility-advocate]
+    educational_intent:
+      concepts: [camera marker, point of view, VR perspective, timing, audience cue]
+      habits: [spatial reasoning, inclusive fallback planning, peer observation]
+    constraints:
+      - VR hardware or mode may not be available, so the learning evidence must also work as camera-marker or screen-view evidence.
+      - Camera motion should support clarity and comfort rather than only spectacle.
+    observable_behaviors:
+      instructor:
+        - Offers camera-marker, screen-view, and VR-feasible variants of the same perspective goal.
+        - Requires peer feedback on orientation, comfort, and story clarity.
+      student:
+        - Plans at least two viewpoints and revises one after a peer test.
+        - Explains how camera or VR perspective changes audience understanding.
+      system_or_artifact:
+        - Tour, storyboard, or exported evidence shows intentional point-of-view choices and a non-VR fallback.
+    agentic_test_prompt: >-
+      Create an Alice camera/VR perspective scenario that works even when VR hardware is unavailable. Judge the learner by audience understanding, perspective intent, and fallback evidence.
+    acceptance_probes:
+      - Scenario includes a feasible non-VR camera or storyboard fallback.
+      - Student explains how two viewpoints affect audience interpretation.
+    avoid:
+      - Assuming headset availability or requiring exact camera coordinates.
 creative_new_teaching_learning_scenarios:
   - id: weather-wizard-conditional-theater
     origin: creative-new
@@ -1663,7 +1833,7 @@ creative_new_teaching_learning_scenarios:
     user_story: As a creative-storyteller, I want viewers to choose a mythic path, so that events and conditionals create interactive narrative.
     personas:
       instructors: [concept-cartographer, assessment-curator]
-      students: [creative-storyteller, systems-puzzle-solver]
+      students: [creative-storyteller, systems-puzzle-solver, game-narrative-designer]
     educational_intent:
       concepts: [event, conditional, state, branch, narrative design]
       habits: [choice design, testing alternate paths, reflection]
