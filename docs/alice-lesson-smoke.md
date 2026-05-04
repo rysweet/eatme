@@ -16,6 +16,7 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+modified-class-portability
 vr-camera-locomotion-journey
 ```
 
@@ -53,7 +54,7 @@ real headset or Alice Player VR execution is optional, but availability must be
 recorded. If real VR is unavailable, evidence must state
 `real_vr_available=false` and include the desktop launch manifest plus
 camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
-honest without making ordinary CI depend on headset hardware.
+outside-in and evidence-based instead of silently skipping unavailable hardware.
 
 ## Scenario assets
 
@@ -73,6 +74,7 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/modified-class-portability.yaml
 assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
 ```
 
@@ -102,6 +104,7 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
@@ -109,6 +112,12 @@ Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
 They must not own or duplicate Alice runtime behavior such as Xvfb management,
 Swing/Java launch details, screenshot capture, log capture, or process
 lifecycle.
+
+The `modified-class-portability` lane adds export/import/share evidence for a
+modified class moving from one Alice project into another. Its editable contract
+requires the exported class identity, destination-project import evidence, and
+post-import behavior evidence proving the modified behavior persists after
+import.
 
 ## Validate assets
 
@@ -262,7 +271,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, or `vr-camera-locomotion-journey`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `modified-class-portability`, or `vr-camera-locomotion-journey`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -482,9 +491,9 @@ the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, and passing assertions. It does not reimplement or configure
 Alice launch internals.
 
-The committed gadugi adapters use `cd "${EATME_REPO:-.}"` so callers can set
-`EATME_REPO` when running from outside the repository, while local runs default
-to the current working tree.
+The committed gadugi adapters use `cwd: "."` and `cd "${EATME_REPO:-.}"` so
+callers can set `EATME_REPO` when running from outside the repository, while
+local runs default to the current checkout.
 
 ## Testing expectations
 
@@ -494,7 +503,7 @@ CLI smoke command:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home "${ALICE_HOME}" \
+  --alice-home ${ALICE_HOME} \
   --scenario hour-of-code-studio-kickoff \
   --run-id local-hour-of-code-studio-kickoff \
   --runs-dir runs \

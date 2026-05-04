@@ -49,10 +49,10 @@ Additional crates (`eatme-assets`, `eatme-gadugi`, `eatme-memory`, `eatme-report
 
 ```bash
 eatme deps check --json
-eatme alice discover --alice-home "${ALICE_HOME}" --json
-eatme alice package --alice-home "${ALICE_HOME}" --offline --json
+eatme alice discover --alice-home ${ALICE_HOME} --json
+eatme alice package --alice-home ${ALICE_HOME} --offline --json
 eatme alice launch-smoke \
-  --alice-home "${ALICE_HOME}" \
+  --alice-home ${ALICE_HOME} \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
   --timeout 900 \
@@ -307,14 +307,14 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 cargo llvm-cov --workspace --all-features --fail-under-lines 70
 find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
-  | awk '$1 > 500 { print; bad=1 } END { exit bad }'
+  | awk '$2 != "total" && $1 > 500 { print; bad=1 } END { exit bad }'
 ```
 
 Real Alice validation:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home "${ALICE_HOME}" \
+  --alice-home ${ALICE_HOME} \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \

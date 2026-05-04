@@ -17,6 +17,7 @@ environment:
   optional:
     - EATME_REPO
     - RUN_ID
+    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -32,19 +33,19 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
     expect:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 18'
+        - '"scenario_asset_count": 20'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
     expect:
       exit_code: 0
       stdout_contains:
@@ -72,7 +73,7 @@ steps:
       stdout_contains:
         - '"scenario_id": "building-a-scene-first-world"'
         - '"failure_category": null'
-        - '"startup_window_or_screenshot": {'
+        - '"startup_screenshot": {'
         - '"passed": true'
     timeout: 1800000
 

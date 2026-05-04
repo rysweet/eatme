@@ -1,4 +1,7 @@
 use crate::deps::check_dependencies;
+use crate::desktop::{
+    choose_display, shutdown, start_alice, start_xvfb, wait_for_display, wait_for_start,
+};
 use crate::discover::discover_alice;
 use crate::evidence::{
     artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
@@ -11,11 +14,9 @@ use eatme_core::{
     RealCommandRunner,
 };
 use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
@@ -235,35 +236,6 @@ fn validate_scenario_name(name: &str) -> Result<()> {
     Ok(())
 }
 
-fn choose_display() -> String {
-    for display in 90..130 {
-        let socket = format!("/tmp/.X11-unix/X{display}");
-        if !Path::new(&socket).exists() {
-            return format!(":{display}");
-        }
-    }
-    ":99".into()
-}
-
-fn start_xvfb(display: &str, run_dir: &Path) -> Result<Child> {
-    let log = File::create(run_dir.join("xvfb.log"))?;
-    Command::new("Xvfb")
-        .args([
-            display,
-            "-screen",
-            "0",
-            "1280x900x24",
-            "+extension",
-            "GLX",
-            "+render",
-            "-noreset",
-        ])
-        .stdout(Stdio::from(log.try_clone()?))
-        .stderr(Stdio::from(log))
-        .spawn()
-        .with_context(|| format!("starting Xvfb {display}"))
-}
-
 fn alice_launch_args(alice_home: &Path) -> Result<Vec<String>> {
     let fxmp = javafx_module_path(&alice_home.join("alice-ide/target/lib"))?;
     Ok(vec![
@@ -310,71 +282,6 @@ fn javafx_module_path(lib_dir: &Path) -> Result<String> {
         jars.push(jar.display().to_string());
     }
     Ok(jars.join(":"))
-}
-
-fn start_alice(
-    alice_home: &Path,
-    display: &str,
-    run_dir: &Path,
-    log_path: &Path,
-    args: &[String],
-) -> Result<Child> {
-    let log = File::create(log_path)?;
-    let mut command = Command::new("java");
-    command
-        .current_dir(alice_home)
-        .env("DISPLAY", display)
-        .env("LIBGL_ALWAYS_SOFTWARE", "1")
-        .env("HOME", run_dir.join("home"))
-        .env("TMPDIR", run_dir.join("tmp"))
-        .arg(format!("-Duser.home={}", run_dir.join("home").display()))
-        .arg(format!(
-            "-Djava.util.prefs.userRoot={}",
-            run_dir.join("prefs").display()
-        ))
-        .arg(format!(
-            "-Djava.io.tmpdir={}",
-            run_dir.join("tmp").display()
-        ))
-        .args(args)
-        .stdout(Stdio::from(log.try_clone()?))
-        .stderr(Stdio::from(log));
-    command.spawn().context("starting Alice")
-}
-
-fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
-    let deadline = Instant::now() + Duration::from_secs(seconds.clamp(5, 60));
-    while Instant::now() < deadline {
-        if let Ok(Some(_)) = child.try_wait() {
-            return false;
-        }
-        thread::sleep(Duration::from_millis(500));
-    }
-    true
-}
-
-fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duration) -> bool {
-    let deadline = Instant::now() + timeout;
-    while Instant::now() < deadline {
-        if command_ok(
-            runner,
-            CommandSpec::new("xdpyinfo")
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(2))
-                .retries(2, Duration::from_millis(100)),
-        ) {
-            return true;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    false
-}
-
-fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
-    runner
-        .run(&spec)
-        .map(|output| output.exit_status == Some(0))
-        .unwrap_or(false)
 }
 
 fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
@@ -471,11 +378,6 @@ fn write_manifest(run_dir: &Path, manifest: &LaunchSmokeManifest) -> Result<()> 
     let json = serde_json::to_string_pretty(manifest)?;
     fs::write(path, json)?;
     Ok(())
-}
-
-fn shutdown(child: &mut Child) {
-    let _ = child.kill();
-    let _ = child.wait();
 }
 
 #[cfg(test)]

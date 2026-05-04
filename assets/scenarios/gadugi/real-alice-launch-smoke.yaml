@@ -14,8 +14,8 @@ environment:
   requires:
     - ALICE_HOME
   optional:
-    - EATME_REPO
     - RUN_ID
+    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -31,7 +31,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
     expect:
       exit_code: 0
       stdout_contains:
@@ -43,7 +43,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- deps check --json'
     expect:
       exit_code: 0
       stdout_contains:
@@ -54,7 +54,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json"
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json'
     expect:
       exit_code: 0
       stdout_contains:
@@ -82,7 +82,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"failure_category": null'
-        - '"startup_window_or_screenshot": {'
+        - '"startup_screenshot": {'
         - '"passed": true'
     timeout: 1800000
 
