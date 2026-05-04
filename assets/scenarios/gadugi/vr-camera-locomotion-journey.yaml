@@ -16,8 +16,8 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
-    - RUN_ID
     - EATME_REPO
+    - RUN_ID
     - EATME_REAL_VR
     - ALICE_PLAYER_HOME
     - VR_HEADSET_AVAILABLE
@@ -43,7 +43,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 16'
+        - '"scenario_asset_count": 18'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"

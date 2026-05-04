@@ -49,7 +49,7 @@ mod tests {
         assert!(report.passed, "{:?}", report.errors);
         assert_eq!(report.instructor_count, 6);
         assert_eq!(report.student_count, 7);
-        assert_eq!(report.core_scenario_count, 12);
+        assert_eq!(report.core_scenario_count, 13);
         assert_eq!(report.creative_scenario_count, 10);
     }
 
@@ -58,7 +58,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert!(report.scenario_asset_count >= 2);
+        assert_eq!(report.scenario_asset_count, 18);
     }
 
     #[test]
@@ -71,6 +71,8 @@ mod tests {
             "assets/scenarios/gadugi/code-editor-first-run.yaml",
             "assets/scenarios/eatme/vr-camera-locomotion-journey.yaml",
             "assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml",
+            "assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml",
+            "assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml",
         ] {
             let report = validate_scenario_asset(&root.join(asset)).unwrap();
             assert!(report.passed, "{asset}: {:?}", report.errors);
