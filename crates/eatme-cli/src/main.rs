@@ -108,11 +108,18 @@ fn main() -> Result<()> {
         Commands::Assets {
             command: AssetsCommand::Validate(args),
         } => match args.path {
-            Some(path) if is_scenario_asset_path(&path) => {
-                print_result(args.json, &eatme_assets::validate_scenario_asset(&path)?)?
-            }
-            Some(path) => print_result(args.json, &eatme_assets::validate_persona_crew(&path)?)?,
-            None => print_result(args.json, &eatme_assets::validate_assets(Path::new("."))?)?,
+            Some(path) if is_scenario_asset_path(&path) => print_scenario_validation_result(
+                args.json,
+                &eatme_assets::validate_scenario_asset(&path)?,
+            )?,
+            Some(path) => print_asset_validation_result(
+                args.json,
+                &eatme_assets::validate_persona_crew(&path)?,
+            )?,
+            None => print_asset_validation_result(
+                args.json,
+                &eatme_assets::validate_assets(Path::new("."))?,
+            )?,
         },
         Commands::Deps {
             command: DepsCommand::Check(args),
@@ -155,6 +162,28 @@ fn main() -> Result<()> {
 
 fn print_result<T: serde::Serialize>(_json: bool, value: &T) -> Result<()> {
     println!("{}", serde_json::to_string_pretty(value)?);
+    Ok(())
+}
+
+fn print_asset_validation_result(
+    json: bool,
+    report: &eatme_assets::AssetValidationReport,
+) -> Result<()> {
+    print_result(json, report)?;
+    if !report.passed {
+        bail!("asset validation failed");
+    }
+    Ok(())
+}
+
+fn print_scenario_validation_result(
+    json: bool,
+    report: &eatme_assets::ScenarioAssetValidationReport,
+) -> Result<()> {
+    print_result(json, report)?;
+    if !report.passed {
+        bail!("scenario validation failed");
+    }
     Ok(())
 }
 
