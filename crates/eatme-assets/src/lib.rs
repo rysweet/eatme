@@ -16,11 +16,13 @@ pub use validation::{validate_persona_crew, validate_scenario_asset};
 pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
     let persona_path = root.join("assets/personas/alice-user-crew.yaml");
     let mut report = validate_persona_crew(&persona_path)?;
+    let persona_index = validation::persona_reference_index(&persona_path)?;
     report.schema_version = "eatme.assets/validation/v1".into();
     report.asset_path = root.display().to_string();
 
     for scenario_path in discovery::scenario_asset_paths(&root.join("assets/scenarios"))? {
-        let scenario_report = validate_scenario_asset(&scenario_path)?;
+        let scenario_report =
+            validation::validate_scenario_asset_with_personas(&scenario_path, &persona_index)?;
         report.scenario_asset_count += 1;
         report.errors.extend(
             scenario_report

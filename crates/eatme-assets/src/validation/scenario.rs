@@ -1,16 +1,41 @@
 use super::{
-    contextualize_scenario_errors, portability, require_list, require_nonempty, validate_id,
+    PersonaDiscovery, PersonaReferenceIndex, contextualize_scenario_errors,
+    discover_scenario_personas, portability, require_list, require_nonempty, validate_id,
+    validate_reference_list,
 };
 use crate::report::ScenarioAssetValidationReport;
-use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
+use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset, ScenarioPersonas};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
 
 mod gadugi_scenario;
 use self::gadugi_scenario::validate_gadugi_scenario;
+mod real_ui_action_contract;
+use self::real_ui_action_contract::validate_real_ui_action_contract;
 
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
+    let persona_discovery = discover_scenario_personas(path)?;
+    validate_scenario_asset_inner(path, persona_discovery)
+}
+
+pub(crate) fn validate_scenario_asset_with_personas(
+    path: &Path,
+    persona_index: &PersonaReferenceIndex,
+) -> Result<ScenarioAssetValidationReport> {
+    validate_scenario_asset_inner(
+        path,
+        PersonaDiscovery {
+            index: Some(persona_index.clone()),
+            diagnostics: Vec::new(),
+        },
+    )
+}
+
+fn validate_scenario_asset_inner(
+    path: &Path,
+    persona_discovery: PersonaDiscovery,
+) -> Result<ScenarioAssetValidationReport> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading scenario asset {}", path.display()))?;
     if path
@@ -23,13 +48,20 @@ pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationRep
     } else {
         let scenario: EatmeScenarioAsset = serde_yaml::from_str(&content)
             .with_context(|| format!("parsing eatme scenario YAML {}", path.display()))?;
-        Ok(validate_eatme_scenario(path, &scenario))
+        Ok(validate_eatme_scenario(
+            path,
+            &scenario,
+            persona_discovery.index.as_ref(),
+            &persona_discovery.diagnostics,
+        ))
     }
 }
 
 fn validate_eatme_scenario(
     path: &Path,
     scenario: &EatmeScenarioAsset,
+    persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
 ) -> ScenarioAssetValidationReport {
     let mut errors = Vec::new();
     let warnings = Vec::new();
@@ -43,10 +75,10 @@ fn validate_eatme_scenario(
     validate_id(&scenario.id, "scenario", &mut errors);
     require_nonempty(&scenario.title, "title", &mut errors);
     require_nonempty(&scenario.purpose, "purpose", &mut errors);
+    validate_eatme_doc_fields(scenario, &mut errors);
     if !scenario.owner.is_empty() && scenario.owner != "eatme" {
         errors.push(format!("owner must be eatme, got {}", scenario.owner));
     }
-
     if let Some(launcher) = &scenario.launcher {
         require_nonempty(&launcher.command, "launcher.command", &mut errors);
         if launcher.scenario != scenario.id {
@@ -56,31 +88,23 @@ fn validate_eatme_scenario(
             ));
         }
     }
-
     validate_eatme_steps(scenario, &mut errors);
 
-    let is_known_lesson_smoke = matches!(
-        scenario.id.as_str(),
-        "hour-of-code-studio-kickoff"
-            | "building-a-scene-first-world"
-            | "code-editor-first-run"
-            | "events-collision-proximity-game"
-            | "functions-as-questions-about-the-world"
-            | "loops-and-conditionals-mini-challenge"
-            | "reusable-methods-and-parameters"
-    );
+    let is_known_lesson_smoke = known_lesson_smoke(&scenario.id);
     if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
         errors.push("kind must be alice_lesson_smoke".into());
     }
 
     match scenario.kind.as_str() {
-        "alice_lesson_smoke" => validate_lesson_smoke(scenario, &mut errors),
+        "alice_lesson_smoke" => {
+            validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors)
+        }
         "alice_real_ui_action_contract" => {
-            validate_lesson_smoke(scenario, &mut errors);
+            validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
             validate_real_ui_action_contract(scenario, &mut errors);
         }
         "alice_class_portability_smoke" => {
-            portability::validate_class_portability_scenario(scenario, &mut errors);
+            portability::validate_class_portability_scenario(scenario, &mut errors)
         }
         "instructor_agentic_flow" => validate_instructor_agentic_flow(scenario, &mut errors),
         "" if scenario.id == "real-alice-launch-smoke" => {
@@ -91,7 +115,21 @@ fn validate_eatme_scenario(
             "kind must be alice_lesson_smoke, alice_real_ui_action_contract, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
         )),
     }
-
+    if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
+        validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
+    } else if !matches!(
+        scenario.kind.as_str(),
+        "alice_lesson_smoke" | "alice_real_ui_action_contract" | "instructor_agentic_flow"
+    ) && let Some(personas) = &scenario.personas
+    {
+        validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            &mut errors,
+        );
+    }
     if portability::is_class_portability_scenario(scenario)
         && scenario.kind != "alice_class_portability_smoke"
     {
@@ -99,7 +137,6 @@ fn validate_eatme_scenario(
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
-
     ScenarioAssetValidationReport {
         schema_version: "eatme.assets/scenario-validation/v1".into(),
         asset_path: path.display().to_string(),
@@ -110,6 +147,81 @@ fn validate_eatme_scenario(
         assertion_count: scenario.acceptance_criteria.len(),
         errors,
         warnings,
+    }
+}
+
+fn known_lesson_smoke(id: &str) -> bool {
+    const KNOWN: &str = "hour-of-code-studio-kickoff building-a-scene-first-world code-editor-first-run events-collision-proximity-game functions-as-questions-about-the-world loops-and-conditionals-mini-challenge reusable-methods-and-parameters";
+    KNOWN.split_whitespace().any(|known| known == id)
+}
+
+fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    validate_resource_basis_names(scenario, errors);
+    if scenario.kind != "instructor_agentic_flow" {
+        match &scenario.capabilities {
+            Some(capabilities) => {
+                require_list(&capabilities.required, "capabilities.required", errors);
+                if capabilities
+                    .optional
+                    .iter()
+                    .any(|value| value.trim().is_empty())
+                {
+                    errors.push("capabilities.optional must contain non-empty values".into());
+                }
+            }
+            None => errors.push("capabilities.required must be defined".into()),
+        }
+        match &scenario.adapter {
+            Some(adapter) => require_list(&adapter.targets, "adapter.targets", errors),
+            None => errors.push("adapter.targets must be defined".into()),
+        }
+    }
+    if let Some(follow_on) = &scenario.agentic_follow_on {
+        require_nonempty(
+            &follow_on.prompt_source,
+            "agentic_follow_on.prompt_source",
+            errors,
+        );
+        if follow_on
+            .personality_assets
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            errors
+                .push("agentic_follow_on.personality_assets must contain non-empty values".into());
+        }
+        require_nonempty(
+            &follow_on.deterministic_gate,
+            "agentic_follow_on.deterministic_gate",
+            errors,
+        );
+        if follow_on
+            .required_observables
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            errors.push(
+                "agentic_follow_on.required_observables must contain non-empty values".into(),
+            );
+        }
+    }
+}
+
+fn validate_resource_basis_names(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.resource_basis.is_empty() {
+        errors.push("resource_basis must contain at least one named resource".into());
+    }
+    for (index, resource) in scenario.resource_basis.iter().enumerate() {
+        require_nonempty(
+            &resource.name,
+            &format!("resource_basis[{index}].name"),
+            errors,
+        );
+        require_nonempty(
+            &resource.url,
+            &format!("resource_basis[{index}].url"),
+            errors,
+        );
     }
 }
 
@@ -124,7 +236,12 @@ fn validate_eatme_steps(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>)
     }
 }
 
-fn validate_lesson_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+fn validate_lesson_smoke(
+    scenario: &EatmeScenarioAsset,
+    persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
+    errors: &mut Vec<String>,
+) {
     validate_launch_smoke_contract(scenario, errors);
     if scenario.owner != "eatme" {
         errors.push("owner must be eatme".into());
@@ -141,32 +258,18 @@ fn validate_lesson_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>
         Some(smoke_ready) => require_list(&smoke_ready.evidence, "smoke_ready.evidence", errors),
         None => errors.push("smoke_ready.evidence must be defined".into()),
     }
+    match &scenario.personas {
+        Some(personas) => validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            errors,
+        ),
+        None => errors.push("personas.instructors and personas.students must be defined".into()),
+    }
     validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
     validate_launch_smoke_real_evidence(scenario, errors);
-}
-
-fn validate_real_ui_action_contract(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
-    if !scenario.artifacts.contains_key("ui_action_contract") {
-        errors.push("artifacts.ui_action_contract must be defined".into());
-    }
-    let action_evidence = [
-        "specific_alice_window_detected",
-        "place_object_ui_action",
-        "edit_procedure_ui_action",
-        "run_world_ui_action",
-        "save_project_ui_action",
-        "ui_action_artifact_captured",
-    ];
-    for required in action_evidence {
-        let mentioned = scenario.steps.iter().any(|step| {
-            step.evidence
-                .iter()
-                .any(|evidence| evidence.contains(required))
-        });
-        if !mentioned {
-            errors.push(format!("real UI action contract must inspect {required}"));
-        }
-    }
 }
 
 fn validate_legacy_launch_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
@@ -204,10 +307,7 @@ fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &m
                 .any(|evidence| evidence.contains("real_alice_execution_evidence"))
     });
     if !launch_step_mentions_real_evidence {
-        errors.push(
-            "launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence"
-                .into(),
-        );
+        errors.push("launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence".into());
     }
 }
 
@@ -217,7 +317,7 @@ fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut 
             "instructor_agentic_flow must use agentic steps, not a real-Alice launcher".into(),
         );
     }
-    validate_resource_basis(scenario, errors);
+    validate_instructor_resource_basis(scenario, errors);
     validate_agentic_personas(scenario, errors);
     match &scenario.agentic_flow {
         Some(flow) => {
@@ -250,11 +350,11 @@ fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut 
         errors.push("artifacts must name the instructor-maintainable outputs".into());
     }
     require_timeout_and_policy(scenario, errors);
-    let has_agentic_step = scenario
+    if !scenario
         .steps
         .iter()
-        .any(|step| step.command.contains("agentic"));
-    if !has_agentic_step {
+        .any(|step| step.command.contains("agentic"))
+    {
         errors.push("instructor_agentic_flow steps must include an agentic evaluation step".into());
     }
     for step in &scenario.steps {
@@ -262,28 +362,8 @@ fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut 
     }
 }
 
-fn require_timeout_and_policy(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
-    if scenario.timeouts.is_empty() {
-        errors.push("timeouts must define at least one timeout".into());
-    }
-    require_nonempty(&scenario.unsupported_policy, "unsupported_policy", errors);
-}
-
-fn validate_resource_basis(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
-    if scenario.resource_basis.is_empty() {
-        errors.push("resource_basis must cite existing Alice.org resources".into());
-    }
+fn validate_instructor_resource_basis(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
     for (index, resource) in scenario.resource_basis.iter().enumerate() {
-        require_nonempty(
-            &resource.name,
-            &format!("resource_basis[{index}].name"),
-            errors,
-        );
-        require_nonempty(
-            &resource.url,
-            &format!("resource_basis[{index}].url"),
-            errors,
-        );
         require_nonempty(
             &resource.use_note,
             &format!("resource_basis[{index}].use"),
@@ -343,6 +423,57 @@ fn validate_rubric(
         );
         require_list(&item.evidence, &format!("rubric[{index}].evidence"), errors);
     }
+}
+
+fn validate_scenario_personas(
+    scenario_id: &str,
+    personas: &ScenarioPersonas,
+    persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
+    errors: &mut Vec<String>,
+) {
+    require_list(
+        &personas.instructors,
+        &format!("{scenario_id}.personas.instructors"),
+        errors,
+    );
+    require_list(
+        &personas.students,
+        &format!("{scenario_id}.personas.students"),
+        errors,
+    );
+    if !personas.instructors.is_empty() || !personas.students.is_empty() {
+        errors.extend(persona_diagnostics.iter().cloned());
+    }
+    if let Some(index) = persona_index {
+        validate_reference_list(
+            scenario_id,
+            &personas.instructors,
+            &index.instructors,
+            &index.all,
+            "instructor",
+            errors,
+        );
+        validate_reference_list(
+            scenario_id,
+            &personas.students,
+            &index.students,
+            &index.all,
+            "student",
+            errors,
+        );
+    } else if !personas.instructors.is_empty() || !personas.students.is_empty() {
+        errors.push(format!(
+            "scenario {scenario_id} declares personas but no persona crew asset could be located"
+        ));
+    }
+}
+
+fn require_timeout_and_policy(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.timeouts.is_empty() {
+        errors.push("timeouts must define at least one timeout".into());
+    }
+    require_nonempty(&scenario.unsupported_policy, "unsupported_policy", errors);
 }
 
 fn validate_instructor_flow_boundary(step_id: &str, command: &str, errors: &mut Vec<String>) {
