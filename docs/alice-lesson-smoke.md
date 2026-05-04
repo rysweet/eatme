@@ -503,9 +503,15 @@ the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, `real_alice_execution_evidence`, and passing assertions. It
 does not reimplement or configure Alice launch internals.
 
-The committed gadugi adapters are portable: the agent config uses `cwd: "."`
-and shell commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set
-`EATME_REPO` without baking in a checkout-specific path.
+The committed gadugi adapters are generated from the canonical eatme scenario
+assets and portable: the agent config uses `cwd: .` and shell commands begin
+with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO` without baking
+in a checkout-specific path. Regenerate or verify them with:
+
+```bash
+cargo run -q -p eatme-cli -- assets generate-gadugi --root .
+cargo run -q -p eatme-cli -- assets generate-gadugi --root . --check
+```
 
 ## Testing expectations
 
