@@ -40,7 +40,7 @@ steps:
       stdout_contains:
         - '"passed": true'
         - '"creative_scenario_count": 11'
-        - '"scenario_asset_count": 32'
+        - '"scenario_asset_count": 36'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
@@ -77,6 +77,7 @@ steps:
       stdout_contains:
         - '"scenario_id": "game-score-timer-win-lose-loop"'
         - '"failure_category": null'
+        - '"real_alice_execution_evidence": {'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
     timeout: 1800000

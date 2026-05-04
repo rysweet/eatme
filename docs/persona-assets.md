@@ -5,8 +5,8 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 ## Asset files
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative new scenarios.
-- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, and instructor agentic flows.
-- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, and agentic review behavior for instructor flows.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, and instructor agentic flows.
+- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, and agentic review behavior for instructor flows.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
 ## How to use with agentic tests
@@ -107,10 +107,10 @@ requires persona and scenario references for:
 
 | Coverage area | Scenario IDs |
 | --- | --- |
-| Setup | `setup-preflight-ready-to-create` |
-| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
-| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
-| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
+| Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight` |
+| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase` |
+| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
 | Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop` |
 | Curriculum design | `curriculum-sequence-remix-pack` |
@@ -122,27 +122,31 @@ requires persona and scenario references for:
 | Alice 2 migration | `alice-2-migration-bridge` |
 | Teacher-community sharing | `teacher-community-sharing-loop` |
 
-## Hour of Code studio kickoff
+## Alice.org-grounded smoke scenario assets
 
-Added editable eatme + gadugi scenario assets for
-`hour-of-code-studio-kickoff`, grounded in Alice.org Hour of Code, Building a
-Scene, and Programming in Alice resources. The lane captures instructor setup
-and fallback moves, novice first-scene/first-animation prompts, and
-evidence/reflection expectations in YAML so facilitators can tune the studio
-kickoff without changing Rust.
+Editable eatme + gadugi scenario assets now cover:
 
-## New Alice.org-grounded smoke scenario assets
-
-Added editable eatme + gadugi scenario assets for:
-
-1. `reusable-methods-and-parameters`
-2. `functions-as-questions-about-the-world`
-3. `loops-and-conditionals-mini-challenge`
-4. `events-collision-proximity-game`
-5. `game-score-timer-win-lose-loop`
-6. `modified-class-portability`
+1. `building-a-scene-first-world`
+2. `code-editor-first-run`
+3. `reusable-methods-and-parameters`
+4. `functions-as-questions-about-the-world`
+5. `loops-and-conditionals-mini-challenge`
+6. `events-collision-proximity-game`
+7. `game-score-timer-win-lose-loop`
+8. `modified-class-portability`
+9. `hour-of-code-studio-kickoff`
+10. `starter-project-open-save-export-preflight`
+11. `vr-camera-locomotion-journey`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+
+The starter-project preflight tightens the gap toward open/save/export QA by
+proving Alice opens the bundled starter project before any agent or manual pass
+claims save/reopen/export coverage.
+
+The VR camera lane records whether real VR execution is available; when it is
+not, expected evidence is the desktop launch manifest plus camera-marker,
+viewpoint, and locomotion-comfort artifacts rather than a silent VR skip.
 
 `modified-class-portability` adds an editable instructor/student portability
 lane for modified class export/import/share across Alice projects. Its contract
@@ -192,3 +196,7 @@ Grounded in official Alice resource themes:
 - Building A Scene: <https://www.alice.org/resources/lessons/building-a-scene/>
 - Programming in Alice: <https://www.alice.org/resources/lessons/programming-in-alice/>
 - Alice 3 setup/download: <https://www.alice.org/get-alice/alice-3/>
+- Design Process Virtual Reality lesson: <https://www.alice.org/resources/lessons/design-process-virtual-reality/>
+- Moving The Camera how-to: <https://www.alice.org/resources/how-tos/moving-the-camera/>
+- Using Camera Markers how-to: <https://www.alice.org/resources/how-tos/using-camera-markers/>
+- Using Camera Views how-to: <https://www.alice.org/resources/how-tos/using-camera-views/>

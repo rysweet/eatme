@@ -1,0 +1,146 @@
+schema_version: eatme.scenario/v1
+id: vr-camera-locomotion-journey
+title: VR Camera Locomotion Journey
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Design Process Virtual Reality lesson
+    url: https://www.alice.org/resources/lessons/design-process-virtual-reality/
+    use: VR sickness, locomotion, object interaction, and common VR mechanics design considerations.
+  - name: Alice.org Moving The Camera how-to
+    url: https://www.alice.org/resources/how-tos/moving-the-camera/
+    use: Camera navigation controllers, camera one-shots, and advanced camera coordinates.
+  - name: Alice.org Using Camera Markers how-to
+    url: https://www.alice.org/resources/how-tos/using-camera-markers/
+    use: Marking camera position/orientation and moving the camera to markers from code.
+  - name: Alice.org Using Camera Views how-to
+    url: https://www.alice.org/resources/how-tos/using-camera-views/
+    use: Layout/top/side/front views for orienting objects and camera perspective while authoring.
+purpose: >-
+  Prove that a VR-inspired first-person or over-the-shoulder camera and
+  locomotion journey has an editable outside-in lane before instructor/student
+  agents judge comfort, viewpoint, and movement evidence.
+launcher:
+  command: alice launch-smoke
+  scenario: vr-camera-locomotion-journey
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors: [studio-facilitator, debug-coach, classroom-orchestrator]
+  students: [creative-storyteller, reflective-debugger, accessibility-advocate]
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+    - alice-player-vr
+    - vr-headset
+    - screen-recording
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - vr_preflight_record
+    - camera_marker_or_viewpoint_plan
+    - locomotion_comfort_expectations
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the vr-camera-locomotion-journey scenario is launched through eatme
+    then: the manifest identifies scenario_id vr-camera-locomotion-journey
+  - given: a real VR headset or Alice Player VR execution path is not available
+    when: the lane is evaluated outside-in
+    then: evidence explicitly records real_vr_available=false plus the required desktop camera-marker, viewpoint, and locomotion-comfort artifacts
+  - given: a real VR headset or Alice Player VR execution path is available
+    when: the lane is evaluated with EATME_REAL_VR=1 and VR_HEADSET_AVAILABLE=1
+    then: evidence records the player/headset preflight, an exported-world or player run artifact, comfort notes, and any capture or observer log
+  - given: learners choose first-person or over-the-shoulder perspective
+    when: they test locomotion in the Alice world
+    then: they explain how camera markers, camera moves, events, or object movement support comfort and orientation
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI, records VR preflight expectations, and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes vr-camera-locomotion-journey in the committed scenario set
+  - id: check-desktop-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true before real Alice desktop launch is attempted
+  - id: record-vr-preflight
+    command: >-
+      bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then
+      printf "real_vr_available=true\nrequired_evidence=alice-player-or-headset-capture,comfort-notes,observer-log\n";
+      else printf "real_vr_available=false\nrequired_evidence=camera-marker-plan,viewpoint-choice,locomotion-comfort-check,desktop-launch-manifest\n"; fi'
+    evidence:
+      - preflight output states whether real VR execution is available
+      - if real_vr_available=false, required evidence names the non-VR fallback artifacts instead of silently skipping VR expectations
+      - if real_vr_available=true, required evidence names Alice Player or headset capture plus comfort notes and observer log
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario vr-camera-locomotion-journey
+    evidence:
+      - manifest scenario_id equals vr-camera-locomotion-journey
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+  - id: agentic-journey-evidence
+    command: >-
+      Review the launched Alice session and learner artifact using the persona
+      prompt assets; do not require real VR hardware unless record-vr-preflight
+      reports real_vr_available=true.
+    evidence:
+      - learner chooses first-person or over-the-shoulder viewpoint and explains why
+      - camera marker, camera move, or camera coordinate choice is visible in the design notes or world artifact
+      - locomotion plan includes a comfort constraint such as short moves, stable horizon, teleport/marker jump, or pause/recenter cue
+      - if real VR is unavailable, the evidence bundle contains desktop screenshot/window evidence and the explicit real_vr_available=false preflight record
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#vr-camera-locomotion-journey
+  personality_assets:
+    - studio-critique-card
+    - debug-conference-card
+    - creative-ownership-card
+  deterministic_gate: >-
+    Run this smoke lane and record VR availability before asking instructor/student
+    agents to judge camera perspective, locomotion comfort, viewpoint orientation,
+    or VR-readiness evidence.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/vr-camera-locomotion-journey/${RUN_ID}/manifest.json
+  screenshot: runs/vr-camera-locomotion-journey/${RUN_ID}/screenshots/startup.png
+  log: runs/vr-camera-locomotion-journey/${RUN_ID}/alice.log
+  window_list: runs/vr-camera-locomotion-journey/${RUN_ID}/window-list.txt
+  vr_preflight: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-preflight.txt
+  fallback_evidence: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-fallback-evidence.md
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice
+  Player VR execution is unavailable, do not fail the desktop lane; record
+  real_vr_available=false and require the listed camera-marker, viewpoint, and
+  locomotion-comfort evidence before agentic VR claims are accepted.

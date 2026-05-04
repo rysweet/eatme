@@ -1,9 +1,8 @@
-name: "Eatme First Lessons Real UI Actions Contract"
+name: "Eatme Starter Project Open Save Export Preflight"
 description: |
-  Gadugi-compatible CLI scenario for the first Alice real UI action contract.
+  Gadugi-compatible CLI scenario for the real Alice starter-project preflight.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence, including the expected explicit
-  failure while UI actions are not automated.
+  commands and checks manifest-level evidence before save/reopen/export work.
 version: "1.0.0"
 
 config:
@@ -24,7 +23,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: .
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -33,7 +32,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cargo run -q -p eatme-cli -- assets validate --json"
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
     expect:
       exit_code: 0
       stdout_contains:
@@ -41,13 +40,24 @@ steps:
         - '"scenario_asset_count": 36'
     timeout: 60000
 
-  - name: "Launch first lessons real UI action contract"
+  - name: "Check desktop launch dependencies"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"all_required_available": true'
+    timeout: 60000
+
+  - name: "Launch starter project preflight under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-first-lessons-real-ui-actions}"
+        export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -56,19 +66,16 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario first-lessons-real-ui-actions
+          --scenario starter-project-open-save-export-preflight
     expect:
-      exit_code: 1
+      exit_code: 0
       stdout_contains:
-        - '"scenario_id": "first-lessons-real-ui-actions"'
+        - '"scenario_id": "starter-project-open-save-export-preflight"'
+        - '"failure_category": null'
         - '"real_alice_execution_evidence": {'
-        - '"failure_category": "ui_action_automation_unimplemented"'
-        - '"specific_alice_window_detected": {'
-        - '"place_object_ui_action": {'
-        - '"edit_procedure_ui_action": {'
-        - '"run_world_ui_action": {'
-        - '"save_project_ui_action": {'
-        - '"ui_action_contract": {'
+        - '"startup_window_or_screenshot": {'
+        - 'africa.a3p'
+        - '"passed": true'
     timeout: 1800000
 
 assertions:
@@ -78,14 +85,19 @@ assertions:
     params:
       step: "Validate editable Alice scenario assets"
 
-  - name: "Real UI Actions Fail Explicitly"
+  - name: "Dependencies Available"
     type: "output_contains_all"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch first lessons real UI action contract"
+      step: "Check desktop launch dependencies"
       required_strings:
-        - '"failure_category": "ui_action_automation_unimplemented"'
-        - '"ui_action_contract": {'
+        - '"all_required_available": true'
+
+  - name: "Starter Project Preflight Launches"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch starter project preflight under Xvfb"
 
 metadata:
   tags:
@@ -93,8 +105,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "real-ui-actions"
+    - "open-save-export"
     - "outside-in"
   priority: "critical"
   author: "eatme"
-  test_type: "ui-action-contract"
+  test_type: "launch-smoke"

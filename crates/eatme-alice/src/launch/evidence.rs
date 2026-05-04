@@ -1,7 +1,6 @@
 use crate::discover::first_non_empty;
-use crate::launch_artifacts::artifact_info;
 use anyhow::{Context, Result, bail};
-use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
+use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
@@ -13,16 +12,7 @@ const ALICE_WINDOW_MARKERS: [&str; 4] = [
     "alice 3",
 ];
 
-pub fn specific_alice_window_detected(window_list: &str) -> bool {
-    window_list.lines().any(|line| {
-        let normalized = line.to_ascii_lowercase();
-        ALICE_WINDOW_MARKERS
-            .iter()
-            .any(|marker| normalized.contains(marker))
-    })
-}
-
-pub fn capture_window_list(
+pub(super) fn capture_window_list(
     runner: &impl CommandRunner,
     display: &str,
     run_dir: &Path,
@@ -47,7 +37,16 @@ pub fn capture_window_list(
     Ok(combined)
 }
 
-pub fn capture_screenshot(
+pub(super) fn has_alice_window_evidence(window_list: &str) -> bool {
+    window_list.lines().any(|line| {
+        let normalized = line.to_ascii_lowercase();
+        ALICE_WINDOW_MARKERS
+            .iter()
+            .any(|marker| normalized.contains(marker))
+    })
+}
+
+pub(super) fn capture_screenshot(
     runner: &impl CommandRunner,
     display: &str,
     run_dir: &Path,
@@ -82,20 +81,46 @@ pub fn capture_screenshot(
     artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
 }
 
+pub(super) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
+    Ok(ArtifactInfo {
+        path: path.display().to_string(),
+        size_bytes: file_size(path)?,
+        sha256: sha256_file(path)?,
+    })
+}
+
+pub(super) fn scan_fatal_logs(log_path: &Path) -> Result<Vec<String>> {
+    let content = fs::read_to_string(log_path)
+        .with_context(|| format!("reading Alice log {}", log_path.display()))?;
+    let patterns = [
+        "Unable to open DISPLAY",
+        "No X11 DISPLAY",
+        "SEVERE",
+        "Exception in thread",
+        "HeadlessException",
+        "GLException",
+    ];
+    Ok(content
+        .lines()
+        .filter(|line| patterns.iter().any(|pattern| line.contains(pattern)))
+        .map(str::to_string)
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn recognizes_alice_window_identity() {
-        assert!(specific_alice_window_detected(
+        assert!(has_alice_window_evidence(
             "0x001  0 host org.alice.stageide.EntryPoint Alice 3"
         ));
     }
 
     #[test]
     fn rejects_unrelated_windows() {
-        assert!(!specific_alice_window_detected(
+        assert!(!has_alice_window_evidence(
             "0x001  0 host firefox.Firefox Firefox"
         ));
     }

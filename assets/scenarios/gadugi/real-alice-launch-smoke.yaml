@@ -22,7 +22,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: .
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -88,6 +88,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"failure_category": null'
+        - '"real_alice_execution_evidence": {'
         - '"startup_screenshot": {'
         - '"passed": true'
     timeout: 1800000

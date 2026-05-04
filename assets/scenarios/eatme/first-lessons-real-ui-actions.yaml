@@ -81,6 +81,7 @@ steps:
       --scenario first-lessons-real-ui-actions
     evidence:
       - manifest scenario_id equals first-lessons-real-ui-actions
+      - manifest assertions.real_alice_execution_evidence is present
       - manifest assertions include specific_alice_window_detected
       - manifest assertions include place_object_ui_action
       - manifest assertions include edit_procedure_ui_action
