@@ -537,10 +537,20 @@ Use the gadugi assets when a gadugi runner needs to exercise a lane:
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
+assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
+assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
+assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml
+assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
+assets/scenarios/gadugi/variables-scorekeeper-timekeeper.yaml
+assets/scenarios/gadugi/arrays-collection-choreography.yaml
+assets/scenarios/gadugi/mythic-choice-event-tree.yaml
+assets/scenarios/gadugi/vr-camera-perspective-tour.yaml
 ```
 
 The adapter performs three kinds of work:
