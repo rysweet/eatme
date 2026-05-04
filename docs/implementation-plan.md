@@ -55,7 +55,7 @@ eatme alice launch-smoke \
   --alice-home /home/azureuser/src/alice3-modernization \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory
 ```
@@ -305,7 +305,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory \
   --offline-package

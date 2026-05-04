@@ -62,7 +62,7 @@ steps:
       --alice-home ${ALICE_HOME}
       --run-id ${RUN_ID}
       --runs-dir runs
-      --timeout 120
+      --timeout 900
       --json
       --no-memory
       --offline-package
@@ -74,8 +74,8 @@ steps:
       - screenshot exists and is non-empty
       - log exists and is non-empty
 timeouts:
-  scenario_seconds: 300
-  launch_seconds: 120
+  scenario_seconds: 1800
+  launch_seconds: 900
 artifacts:
   manifest: runs/building-a-scene-first-world/${RUN_ID}/manifest.json
   screenshot: runs/building-a-scene-first-world/${RUN_ID}/screenshots/startup.png

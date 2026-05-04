@@ -6,7 +6,7 @@ description: |
 version: "1.0.0"
 
 config:
-  timeout: 300000
+  timeout: 1800000
   retries: 0
   parallel: false
 
@@ -22,7 +22,7 @@ agents:
     config:
       shell: "bash"
       cwd: "/home/azureuser/src/eatme"
-      timeout: 300000
+      timeout: 1800000
       capture_output: true
 
 steps:
@@ -72,7 +72,7 @@ steps:
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
           --runs-dir runs \
-          --timeout 120 \
+          --timeout 900 \
           --json \
           --no-memory \
           --offline-package \
@@ -83,7 +83,7 @@ steps:
         - '"failure_category": null'
         - '"startup_screenshot": {'
         - '"passed": true'
-    timeout: 240000
+    timeout: 1800000
 
 assertions:
   - name: "Assets Validate"

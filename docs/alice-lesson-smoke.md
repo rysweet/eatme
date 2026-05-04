@@ -107,7 +107,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory \
   --offline-package
@@ -127,7 +127,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --alice-home "${ALICE_HOME}" \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory
 ```
@@ -297,8 +297,8 @@ steps:
       - manifest scenario_id equals building-a-scene-first-world
       - manifest assertions all pass
 timeouts:
-  scenario_seconds: 300
-  launch_seconds: 120
+  scenario_seconds: 1800
+  launch_seconds: 900
 artifacts:
   manifest: runs/building-a-scene-first-world/${RUN_ID}/manifest.json
   screenshot: runs/building-a-scene-first-world/${RUN_ID}/screenshots/startup.png
@@ -377,7 +377,7 @@ for software rendering.
      --scenario building-a-scene-first-world \
      --run-id "${RUN_ID}" \
      --runs-dir runs \
-     --timeout 120 \
+     --timeout 900 \
      --json \
      --no-memory \
      --offline-package
@@ -437,7 +437,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory \
   --offline-package
