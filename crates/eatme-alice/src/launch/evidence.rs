@@ -5,6 +5,13 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
+const ALICE_WINDOW_MARKERS: [&str; 4] = [
+    "org.alice.stageide.entrypoint",
+    "org.alice.stageide",
+    "org.alice.ide",
+    "alice 3",
+];
+
 pub(super) fn capture_window_list(
     runner: &impl CommandRunner,
     display: &str,
@@ -28,6 +35,15 @@ pub(super) fn capture_window_list(
     let combined = first_non_empty(&output.stdout, &output.stderr);
     fs::write(run_dir.join("window-list.txt"), &combined)?;
     Ok(combined)
+}
+
+pub(super) fn has_alice_window_evidence(window_list: &str) -> bool {
+    window_list.lines().any(|line| {
+        let normalized = line.to_ascii_lowercase();
+        ALICE_WINDOW_MARKERS
+            .iter()
+            .any(|marker| normalized.contains(marker))
+    })
 }
 
 pub(super) fn capture_screenshot(
@@ -73,8 +89,9 @@ pub(super) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
     })
 }
 
-pub(super) fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
-    let content = fs::read_to_string(log_path).unwrap_or_default();
+pub(super) fn scan_fatal_logs(log_path: &Path) -> Result<Vec<String>> {
+    let content = fs::read_to_string(log_path)
+        .with_context(|| format!("reading Alice log {}", log_path.display()))?;
     let patterns = [
         "Unable to open DISPLAY",
         "No X11 DISPLAY",
@@ -83,9 +100,28 @@ pub(super) fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
         "HeadlessException",
         "GLException",
     ];
-    content
+    Ok(content
         .lines()
         .filter(|line| patterns.iter().any(|pattern| line.contains(pattern)))
         .map(str::to_string)
-        .collect()
+        .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recognizes_alice_window_identity() {
+        assert!(has_alice_window_evidence(
+            "0x001  0 host org.alice.stageide.EntryPoint Alice 3"
+        ));
+    }
+
+    #[test]
+    fn rejects_unrelated_windows() {
+        assert!(!has_alice_window_evidence(
+            "0x001  0 host firefox.Firefox Firefox"
+        ));
+    }
 }

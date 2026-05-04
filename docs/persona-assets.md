@@ -93,7 +93,9 @@ Editable eatme + gadugi scenario assets now cover:
 4. `functions-as-questions-about-the-world`
 5. `loops-and-conditionals-mini-challenge`
 6. `events-collision-proximity-game`
-7. `starter-project-open-save-export-preflight`
+7. `modified-class-portability`
+8. `hour-of-code-studio-kickoff`
+9. `starter-project-open-save-export-preflight`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary. The starter-project preflight tightens the gap toward open/save/export QA by proving Alice opens the bundled starter project before any agent or manual pass claims save/reopen/export coverage.
 

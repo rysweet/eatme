@@ -4,9 +4,13 @@ use crate::package::{PackageOptions, package_alice};
 use anyhow::{Context, Result, bail};
 use display::{choose_display, start_xvfb, wait_for_display};
 use eatme_core::{
-    AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest, RealCommandRunner,
+    ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
+    RealCommandRunner,
 };
-use evidence::{artifact_info, capture_screenshot, capture_window_list, scan_fatal_logs};
+use evidence::{
+    artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
+    scan_fatal_logs,
+};
 use manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use process::{alice_launch_args, shutdown, start_alice, wait_for_start};
 use std::collections::BTreeMap;
@@ -229,56 +233,55 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category = Some("alice_process_exited".into());
     }
 
-    let window_list = capture_window_list(&runner, &display, &run_dir).ok();
-    let window_evidence_ok = window_list
-        .as_deref()
-        .map(|output| !output.trim().is_empty())
-        .unwrap_or(false);
-    let window_list_artifact = artifact_info(&run_dir.join("window-list.txt")).ok();
-    let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
+    let (window_text, window_list_error) =
+        capture_text_or_error(capture_window_list(&runner, &display, &run_dir));
+    let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
+    let window_list_error = combine_errors([window_list_error, window_info_error]);
+    let window_evidence_ok =
+        options.scenario.accepts_window_evidence() && has_alice_window_evidence(&window_text);
+    let (screenshot, screenshot_error) =
+        capture_artifact_or_error(capture_screenshot(&runner, &display, &run_dir));
     let screenshot_ok = screenshot
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
         .unwrap_or(false);
-    let smoke_ready_visual_evidence =
-        screenshot_ok || (options.scenario.accepts_window_evidence() && window_evidence_ok);
+    let smoke_ready_visual_evidence = screenshot_ok || window_evidence_ok;
+    let visual_evidence_detail = visual_evidence_detail(
+        screenshot_ok,
+        window_evidence_ok,
+        screenshot_error.as_deref(),
+        window_list_error.as_deref(),
+    );
     assertions.insert(
         "startup_screenshot".into(),
-        bool_assert(
-            smoke_ready_visual_evidence,
-            if options.scenario.accepts_window_evidence() {
-                "startup screenshot exists or window evidence was captured"
-            } else {
-                "startup screenshot exists and is non-empty"
-            },
-        ),
+        bool_assert(smoke_ready_visual_evidence, visual_evidence_detail.clone()),
     );
     if options.scenario.accepts_window_evidence() {
         assertions.insert(
             "startup_window_or_screenshot".into(),
-            bool_assert(
-                smoke_ready_visual_evidence,
-                "startup screenshot or window evidence exists",
-            ),
+            bool_assert(smoke_ready_visual_evidence, visual_evidence_detail),
         );
     }
     if !smoke_ready_visual_evidence && failure_category.is_none() {
         failure_category = Some("screenshot_missing".into());
     }
 
-    let fatal_log_scan = scan_fatal_logs(&log_path);
+    let (fatal_log_scan, log_scan_error) = capture_text_or_error(scan_fatal_logs(&log_path));
     assertions.insert(
         "no_fatal_logs".into(),
         bool_assert(
-            fatal_log_scan.is_empty(),
-            format!("{} fatal log lines found", fatal_log_scan.len()),
+            log_scan_error.is_none() && fatal_log_scan.is_empty(),
+            fatal_log_detail(&fatal_log_scan, log_scan_error.as_deref()),
         ),
     );
-    if !fatal_log_scan.is_empty() && failure_category.is_none() {
+    if log_scan_error.is_some() && failure_category.is_none() {
+        failure_category = Some("log_unreadable".into());
+    } else if !fatal_log_scan.is_empty() && failure_category.is_none() {
         failure_category = Some("fatal_log".into());
     }
 
-    let log = artifact_info(&log_path).ok();
+    let (log, log_artifact_error) = artifact_or_error(&log_path);
+    let log_error = combine_errors([log_scan_error, log_artifact_error]);
     let log_ok = log
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
@@ -306,9 +309,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         display.clone(),
         Some(xvfb.id()),
         Some(alice.id()),
+        window_list,
+        window_list_error,
         screenshot,
-        window_list_artifact,
+        screenshot_error,
         log,
+        log_error,
         fatal_log_scan,
         assertions,
         failure_category,
@@ -343,6 +349,67 @@ fn validate_scenario_name(name: &str) -> Result<()> {
         bail!("launch smoke scenario {name:?} must be kebab-case");
     }
     Ok(())
+}
+
+fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
+    match result {
+        Ok(value) => (value, None),
+        Err(error) => (T::default(), Some(format!("{error:#}"))),
+    }
+}
+
+fn capture_artifact_or_error<T>(result: Result<T>) -> (Option<T>, Option<String>) {
+    match result {
+        Ok(value) => (Some(value), None),
+        Err(error) => (None, Some(format!("{error:#}"))),
+    }
+}
+
+fn artifact_or_error(path: &Path) -> (Option<ArtifactInfo>, Option<String>) {
+    capture_artifact_or_error(artifact_info(path))
+}
+
+fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<String> {
+    let errors = errors.into_iter().flatten().collect::<Vec<_>>();
+    if errors.is_empty() {
+        None
+    } else {
+        Some(errors.join("\n"))
+    }
+}
+
+fn visual_evidence_detail(
+    screenshot_ok: bool,
+    window_evidence_ok: bool,
+    screenshot_error: Option<&str>,
+    window_list_error: Option<&str>,
+) -> String {
+    if screenshot_ok {
+        return "startup screenshot exists and is non-empty".into();
+    }
+    if window_evidence_ok {
+        return "Alice-specific window identity was captured".into();
+    }
+
+    let mut details = vec![
+        "startup requires a non-empty screenshot or Alice-specific window identity".to_string(),
+    ];
+    match screenshot_error {
+        Some(error) => details.push(format!("screenshot error: {error}")),
+        None => details.push("startup screenshot is missing or empty".into()),
+    }
+    match window_list_error {
+        Some(error) => details.push(format!("window list error: {error}")),
+        None => details.push("no Alice-specific window identity found".into()),
+    }
+    details.join("; ")
+}
+
+fn fatal_log_detail(fatal_lines: &[String], log_error: Option<&str>) -> String {
+    if let Some(error) = log_error {
+        return format!("Alice log could not be read: {error}");
+    }
+    format!("{} fatal log lines found", fatal_lines.len())
 }
 
 fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {

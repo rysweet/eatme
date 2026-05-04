@@ -15,6 +15,8 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+modified-class-portability
+hour-of-code-studio-kickoff
 starter-project-open-save-export-preflight
 ```
 
@@ -65,6 +67,8 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/modified-class-portability.yaml
+assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
 assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
 ```
 
@@ -92,6 +96,8 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 ```
 
@@ -152,7 +158,7 @@ scenario ids above and a matching descriptive run id.
 typical local value is:
 
 ```bash
-export ALICE_HOME=/home/azureuser/src/alice3-modernization
+export ALICE_HOME=/path/to/alice3-modernization
 ```
 
 The generic launch smoke still works without selecting the lesson lane:
@@ -252,7 +258,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, or `events-collision-proximity-game`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `modified-class-portability`, `hour-of-code-studio-kickoff`, or `starter-project-open-save-export-preflight`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -269,9 +275,12 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | `screenshot.size_bytes` | Startup screenshot size. |
 | `screenshot.sha256` | Startup screenshot digest. |
 | `window_list.path` | Captured `wmctrl -lx` artifact path when available. |
+| `window_list_error` | Window-list capture or artifact error when unavailable. |
+| `screenshot_error` | Screenshot capture or artifact error when unavailable. |
 | `log.path` | Alice log path. |
 | `log.size_bytes` | Alice log size. |
 | `log.sha256` | Alice log digest. |
+| `log_error` | Log read or artifact error when unavailable. |
 | `fatal_log_scan` | Fatal DISPLAY/OpenGL/Java pattern scan result. |
 | `assertions` | Deterministic launch assertions. |
 | `failure_category` | Failure classification, or `null` for a passing smoke. |
@@ -415,7 +424,7 @@ for software rendering.
 3. Run a lesson lane:
 
    ```bash
-   export ALICE_HOME=/home/azureuser/src/alice3-modernization
+   export ALICE_HOME=/path/to/alice3-modernization
    export SCENARIO_ID=building-a-scene-first-world
    export RUN_ID=local-${SCENARIO_ID}
 
@@ -458,6 +467,9 @@ Use the gadugi assets when a gadugi runner needs to exercise a lane:
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
+assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 ```
 
 The adapter performs three kinds of work:
@@ -483,7 +495,7 @@ CLI smoke command:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home /home/azureuser/src/alice3-modernization \
+  --alice-home /path/to/alice3-modernization \
   --scenario code-editor-first-run \
   --run-id local-code-editor-first-run \
   --runs-dir runs \
