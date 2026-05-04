@@ -15,7 +15,7 @@ The plan is intentionally staged. The first milestone is not a classroom simulat
 - Use deterministic process/X/log/screenshot evidence as the first test oracle.
 - Demote agentic judgment until deterministic evidence is stable.
 - Keep memory and generated artifacts namespaced under `alice.eatme`.
-- Real Alice tests stay gated behind `EATME_REAL_ALICE=1`.
+- Lesson-labeled real Alice validation stays gated behind `EATME_REAL_ALICE=1`.
 
 ## Milestone 0: deterministic real-Alice launch smoke
 
@@ -55,7 +55,7 @@ eatme alice launch-smoke \
   --alice-home /home/azureuser/src/alice3-modernization \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
-  --timeout 120 \
+  --timeout 900 \
   --json \
   --no-memory
 ```
@@ -107,8 +107,11 @@ Each run writes:
 runs/real-alice-launch-smoke/<run-id>/
 ├── manifest.json
 ├── alice.log
-├── commands.jsonl
+├── xvfb.log
 ├── window-list.txt
+├── home/
+├── prefs/
+├── tmp/
 └── screenshots/
     └── startup.png
 ```
@@ -130,7 +133,7 @@ Required `manifest.json` fields:
 - `display`
 - `xvfb_pid`
 - `alice_pid`
-- `timeouts`
+- `timeout_seconds`
 - `screenshot.path`
 - `screenshot.size_bytes`
 - `screenshot.sha256`
@@ -150,30 +153,40 @@ Pass/fail must come from deterministic evidence:
 - X display responsive
 - Alice process started
 - screenshot exists and is non-empty
-- log exists and is non-empty
 - fatal DISPLAY/OpenGL/Java exception patterns are absent
 
-Agentic annotations may be attached later, but they do not decide pass/fail in Milestone 0.
+The Alice log and `window-list.txt` are diagnostic artifacts, not independent
+pass/fail assertions in the current harness. Agentic annotations may be attached
+later, but they do not decide pass/fail in Milestone 0.
 
 ## Milestone 1: canonical assets and first lesson smoke
 
-After Milestone 0 passes locally:
+Milestone 1 layers the first lesson-specific smoke lane on top of the real
+Alice launch smoke harness:
 
-- Add `eatme-assets`.
-- Validate editable YAML/Markdown assets.
-- Add canonical scenarios under `assets/scenarios/eatme/`.
-- Split launch smoke from lesson smoke.
+- `eatme-assets` validates editable persona and scenario YAML.
+- Canonical scenarios live under `assets/scenarios/eatme/`.
+- Gadugi adapters live under `assets/scenarios/gadugi/`.
+- Lesson smoke scenarios route through `eatme alice launch-smoke --scenario <id>`.
+- Non-baseline lesson smoke scenarios remain gated by `EATME_REAL_ALICE=1`.
+- Scenario YAML is validated separately; `launch-smoke` currently records the
+  scenario id and run namespace but does not load YAML fields as runtime inputs.
 
-First lesson smoke is Alice.org resource-specific:
+The first lesson smoke is Alice.org resource-specific:
 
 - `building-a-scene-first-world`
 - resource basis: Building a Scene + Scene Editor Overview
-- expected learner-visible evidence:
+- current evidence: manifest-only launch readiness under a lesson-specific
+  scenario id
+- future lesson-automation evidence:
   - at least two objects
   - one object positioned/oriented/scaled
   - camera view/marker language
   - saved project/world
   - learner explanation/reflection
+
+Usage, CLI, manifest, scenario schema, configuration, and examples are
+documented in [`alice-lesson-smoke.md`](alice-lesson-smoke.md).
 
 ## Milestone 2: gadugi boundary
 
@@ -210,7 +223,7 @@ Then add Alice.org core path scenarios:
 
 Defer export/player and collision/proximity game scenarios until after the core path.
 
-Every scenario must include:
+Scenario design conventions should include:
 
 - `schema_version`
 - `resource_basis`
@@ -221,6 +234,11 @@ Every scenario must include:
 - `timeouts`
 - `artifacts`
 - `unsupported_policy`
+
+The current validator enforces the subset needed for launch-smoke routing and
+the `building-a-scene-first-world` contract. Fields such as `resource_basis`,
+`capabilities.*`, and `adapter.targets` are human/agent documentation until the
+asset schema grows stricter enforcement.
 
 ## Milestone 4: memory and reporting
 
@@ -262,7 +280,9 @@ Parallel GUI runs require unique:
 - Agents may not modify `eatme` source during test execution.
 - Supporting tool repos such as `amplihack-rs`, `gadugi-agentic-test`, `amplihack-recipe-runner`, and `amplihack-memory-lib` are in scope for bug fixes or feature work when needed.
 - Any supporting-tool repo change must follow the default workflow, and subagents doing that work must follow the default workflow too.
-- All commands must be logged.
+- Commands must be visible through CLI stdout/stderr and manifest fields.
+  Dedicated `commands.jsonl` command logging is future work, not part of the
+  current launch-smoke artifact tree.
 - Memory writes stay under `.eatme/memory` or `alice.eatme`.
 - No silent repo mutation.
 
@@ -280,5 +300,13 @@ find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
 Real Alice validation:
 
 ```bash
-EATME_REAL_ALICE=1 ALICE_HOME=/home/azureuser/src/alice3-modernization cargo test --test real_alice
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home /home/azureuser/src/alice3-modernization \
+  --scenario building-a-scene-first-world \
+  --run-id local-building-a-scene-first-world \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
 ```

@@ -1,8 +1,8 @@
-name: "Eatme Real Alice Launch Smoke"
+name: "Eatme Building a Scene First World Smoke"
 description: |
-  Gadugi-compatible CLI scenario that treats eatme as the system under test.
-  Desktop/Swing/Xvfb behavior remains owned by eatme; gadugi only runs CLI
-  commands and asserts manifest-level evidence.
+  Gadugi-compatible CLI scenario for the Building a Scene First World lesson
+  smoke lane. Alice desktop launch behavior remains owned by eatme; gadugi
+  invokes eatme commands and checks manifest-level evidence only.
 version: "1.0.0"
 
 config:
@@ -13,6 +13,7 @@ config:
 environment:
   requires:
     - ALICE_HOME
+    - EATME_REAL_ALICE
   optional:
     - RUN_ID
 
@@ -26,7 +27,7 @@ agents:
       capture_output: true
 
 steps:
-  - name: "Validate editable Alice user assets"
+  - name: "Validate editable Alice scenario assets"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
@@ -35,7 +36,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"creative_scenario_count": 10'
+        - '"scenario_asset_count": 4'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
@@ -49,26 +50,14 @@ steps:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Discover packaged Alice fork"
-    agent: "eatme-cli-agent"
-    action: "execute_command"
-    params:
-      command: "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json"
-    expect:
-      exit_code: 0
-      stdout_contains:
-        - '"alice_ide_jar_exists": true'
-        - '"starter_project_exists": true'
-    timeout: 60000
-
-  - name: "Launch real Alice under Xvfb"
+  - name: "Launch Building a Scene lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd /home/azureuser/src/eatme
-        export RUN_ID="${RUN_ID:-gadugi-real-alice-launch-smoke}"
-        cargo run -q -p eatme-cli -- alice launch-smoke \
+        export RUN_ID="${RUN_ID:-gadugi-building-a-scene-first-world}"
+        EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
           --runs-dir runs \
@@ -76,10 +65,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario real-alice-launch-smoke
+          --scenario building-a-scene-first-world
     expect:
       exit_code: 0
       stdout_contains:
+        - '"scenario_id": "building-a-scene-first-world"'
         - '"failure_category": null'
         - '"startup_screenshot": {'
         - '"passed": true'
@@ -90,7 +80,7 @@ assertions:
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Validate editable Alice user assets"
+      step: "Validate editable Alice scenario assets"
 
   - name: "Dependencies Available"
     type: "output_contains_all"
@@ -100,17 +90,11 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Alice Discoverable"
+  - name: "Building a Scene Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Discover packaged Alice fork"
-
-  - name: "Real Alice Launches"
-    type: "command_success"
-    agent: "eatme-cli-agent"
-    params:
-      step: "Launch real Alice under Xvfb"
+      step: "Launch Building a Scene lane under Xvfb"
 
 metadata:
   tags:
@@ -118,6 +102,7 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
+    - "building-a-scene"
     - "outside-in"
   priority: "critical"
   author: "eatme"

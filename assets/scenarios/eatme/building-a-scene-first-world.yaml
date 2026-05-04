@@ -1,0 +1,86 @@
+schema_version: eatme.scenario/v1
+id: building-a-scene-first-world
+title: Building a Scene First World
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Building a Scene lesson family
+    url: https://www.alice.org/resources/
+purpose: >-
+  Prove that the lesson-specific smoke lane for Building a Scene First World
+  launches through the same real Alice desktop harness as the baseline launch
+  smoke, then captures manifest-level evidence for downstream adapters.
+launcher:
+  command: alice launch-smoke
+  scenario: building-a-scene-first-world
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the building-a-scene-first-world scenario is launched through eatme
+    then: the manifest identifies scenario_id building-a-scene-first-world
+  - given: the harness captures desktop evidence
+    when: Alice starts under Xvfb for this lesson lane
+    then: the manifest records passing assertions plus screenshot and log artifacts
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario building-a-scene-first-world
+    evidence:
+      - manifest scenario_id equals building-a-scene-first-world
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - screenshot exists and is non-empty
+      - log exists and is non-empty
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/building-a-scene-first-world/${RUN_ID}/manifest.json
+  screenshot: runs/building-a-scene-first-world/${RUN_ID}/screenshots/startup.png
+  log: runs/building-a-scene-first-world/${RUN_ID}/alice.log
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
+  substitute a mocked Alice runtime.

@@ -1,2 +1,5 @@
 /target/
 /runs/
+.claude/runtime/
+.claude/logs/
+worktrees/

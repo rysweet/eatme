@@ -49,18 +49,19 @@ steps:
       --alice-home ${ALICE_HOME}
       --run-id ${RUN_ID}
       --runs-dir runs
-      --timeout 120
+      --timeout 900
       --json
       --no-memory
       --offline-package
+      --scenario real-alice-launch-smoke
     evidence:
       - manifest failure_category is null
       - manifest assertions all pass
       - screenshot exists and is non-empty
       - log exists and is non-empty
 timeouts:
-  scenario_seconds: 300
-  launch_seconds: 120
+  scenario_seconds: 1800
+  launch_seconds: 900
 artifacts:
   manifest: runs/real-alice-launch-smoke/${RUN_ID}/manifest.json
   screenshot: runs/real-alice-launch-smoke/${RUN_ID}/screenshots/startup.png

@@ -1,7 +1,7 @@
 use crate::deps::check_dependencies;
 use crate::discover::{discover_alice, first_non_empty};
 use crate::package::{PackageOptions, package_alice};
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use eatme_core::{
     ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
     RealCommandRunner, file_size, sha256_file,
@@ -14,6 +14,36 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Debug)]
+pub struct LaunchSmokeScenario {
+    pub id: String,
+    pub run_dir_name: String,
+}
+
+impl LaunchSmokeScenario {
+    pub fn new(id: impl Into<String>) -> Self {
+        let id = id.into();
+        Self {
+            run_dir_name: id.clone(),
+            id,
+        }
+    }
+
+    pub fn real_alice_launch_smoke() -> Self {
+        Self::new("real-alice-launch-smoke")
+    }
+
+    pub fn accepts_window_evidence(&self) -> bool {
+        self.id == "building-a-scene-first-world"
+    }
+}
+
+impl Default for LaunchSmokeScenario {
+    fn default() -> Self {
+        Self::real_alice_launch_smoke()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct LaunchSmokeOptions {
     pub alice_home: PathBuf,
     pub run_id: String,
@@ -22,9 +52,13 @@ pub struct LaunchSmokeOptions {
     pub json: bool,
     pub no_memory: bool,
     pub offline_package: bool,
+    pub scenario: LaunchSmokeScenario,
 }
 
 pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManifest> {
+    validate_scenario_name(&options.scenario.id)?;
+    validate_scenario_name(&options.scenario.run_dir_name)?;
+
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
     let discovery = discover_alice(&options.alice_home, &runner)?;
@@ -38,7 +72,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
     let run_dir = options
         .runs_dir
-        .join("real-alice-launch-smoke")
+        .join(&options.scenario.run_dir_name)
         .join(&options.run_id);
     prepare_run_dir(&run_dir)?;
 
@@ -92,16 +126,35 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
 
     let window_list = capture_window_list(&runner, &display, &run_dir).unwrap_or_default();
+    let window_evidence_ok = !window_list.trim().is_empty();
     let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
     let screenshot_ok = screenshot
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
         .unwrap_or(false);
+    let smoke_ready_visual_evidence =
+        screenshot_ok || (options.scenario.accepts_window_evidence() && window_evidence_ok);
     assertions.insert(
         "startup_screenshot".into(),
-        bool_assert(screenshot_ok, "startup screenshot exists and is non-empty"),
+        bool_assert(
+            smoke_ready_visual_evidence,
+            if options.scenario.accepts_window_evidence() {
+                "startup screenshot exists or window evidence was captured"
+            } else {
+                "startup screenshot exists and is non-empty"
+            },
+        ),
     );
-    if !screenshot_ok && failure_category.is_none() {
+    if options.scenario.accepts_window_evidence() {
+        assertions.insert(
+            "startup_window_or_screenshot".into(),
+            bool_assert(
+                smoke_ready_visual_evidence,
+                "startup screenshot or window evidence exists",
+            ),
+        );
+    }
+    if !smoke_ready_visual_evidence && failure_category.is_none() {
         failure_category = Some("screenshot_missing".into());
     }
 
@@ -121,7 +174,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     let launch_command = format!("java {}", launch_args.join(" "));
     let manifest = LaunchSmokeManifest {
         schema_version: "eatme.launch-smoke/v1".into(),
-        scenario_id: "real-alice-launch-smoke".into(),
+        scenario_id: options.scenario.id.clone(),
         run_id: options.run_id.clone(),
         alice_home: discovery.alice_home,
         alice_git_commit: discovery.git_commit,
@@ -146,7 +199,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     write_manifest(&run_dir, &manifest)?;
     shutdown(&mut alice);
     shutdown(&mut xvfb);
-    let _ = window_list;
     Ok(manifest)
 }
 
@@ -159,6 +211,19 @@ fn prepare_run_dir(run_dir: &Path) -> Result<()> {
     fs::create_dir_all(run_dir.join("home"))?;
     fs::create_dir_all(run_dir.join("prefs"))?;
     fs::create_dir_all(run_dir.join("tmp"))?;
+    Ok(())
+}
+
+fn validate_scenario_name(name: &str) -> Result<()> {
+    if name.is_empty()
+        || name.starts_with('-')
+        || name.ends_with('-')
+        || !name
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+    {
+        bail!("launch smoke scenario {name:?} must be kebab-case");
+    }
     Ok(())
 }
 
@@ -283,7 +348,13 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
 fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duration) -> bool {
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
-        if command_ok(runner, CommandSpec::new("xdpyinfo").env("DISPLAY", display)) {
+        if command_ok(
+            runner,
+            CommandSpec::new("xdpyinfo")
+                .env("DISPLAY", display)
+                .timeout(Duration::from_secs(2))
+                .retries(2, Duration::from_millis(100)),
+        ) {
             return true;
         }
         thread::sleep(Duration::from_millis(100));
@@ -299,8 +370,18 @@ fn capture_window_list(
     let output = runner.run(
         &CommandSpec::new("wmctrl")
             .args(["-lx"])
-            .env("DISPLAY", display),
+            .env("DISPLAY", display)
+            .timeout(Duration::from_secs(5))
+            .retries(2, Duration::from_millis(100)),
     )?;
+    if output.exit_status != Some(0) {
+        bail!(
+            "capturing window list failed with {:?}\n{}{}",
+            output.exit_status,
+            output.stdout,
+            output.stderr
+        );
+    }
     let combined = first_non_empty(&output.stdout, &output.stderr);
     fs::write(run_dir.join("window-list.txt"), &combined)?;
     Ok(combined)
@@ -314,16 +395,31 @@ fn capture_screenshot(
     let path = run_dir.join("screenshots/startup.png");
     let scrot = CommandSpec::new("scrot")
         .args([path.display().to_string()])
-        .env("DISPLAY", display);
+        .env("DISPLAY", display)
+        .timeout(Duration::from_secs(10))
+        .retries(2, Duration::from_millis(100));
     let output = runner.run(&scrot)?;
     if output.exit_status != Some(0) {
-        runner.run(
+        let fallback = runner.run(
             &CommandSpec::new("import")
                 .args(["-window".into(), "root".into(), path.display().to_string()])
-                .env("DISPLAY", display),
+                .env("DISPLAY", display)
+                .timeout(Duration::from_secs(10))
+                .retries(2, Duration::from_millis(100)),
         )?;
+        if fallback.exit_status != Some(0) {
+            bail!(
+                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
+                output.exit_status,
+                fallback.exit_status,
+                output.stdout,
+                output.stderr,
+                fallback.stdout,
+                fallback.stderr
+            );
+        }
     }
-    artifact_info(&path)
+    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
 }
 
 fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
@@ -370,8 +466,19 @@ fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
     let output = runner.run(
         &CommandSpec::new("git")
             .args(["rev-parse", "HEAD"])
-            .cwd(path),
+            .cwd(path)
+            .timeout(Duration::from_secs(5))
+            .retries(2, Duration::from_millis(100)),
     )?;
+    if output.exit_status != Some(0) {
+        bail!(
+            "reading git commit in {} failed with {:?}\n{}{}",
+            path.display(),
+            output.exit_status,
+            output.stdout,
+            output.stderr
+        );
+    }
     Ok(output.stdout.trim().to_string())
 }
 
@@ -394,5 +501,11 @@ mod tests {
     #[test]
     fn chooses_non_default_display_format() {
         assert!(choose_display().starts_with(':'));
+    }
+
+    #[test]
+    fn rejects_non_kebab_case_scenario_names() {
+        assert!(validate_scenario_name("../bad").is_err());
+        assert!(validate_scenario_name("building-a-scene-first-world").is_ok());
     }
 }
