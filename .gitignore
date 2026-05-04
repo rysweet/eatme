@@ -1,5 +1,7 @@
 /target/
 /runs/
+/site/
+/.venv/
 .claude/runtime/
 .claude/logs/
 worktrees/

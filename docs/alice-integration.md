@@ -1,0 +1,127 @@
+# Alice integration
+
+Eatme integrates with a real Alice checkout through explicit CLI commands. The
+integration discovers the checkout, checks host dependencies, packages Alice,
+launches Alice through a virtual display, and writes deterministic evidence to a
+run manifest.
+
+## Configure `ALICE_HOME`
+
+```bash
+export ALICE_HOME="${ALICE_HOME:-../alice3-modernization}"
+```
+
+Every Alice command accepts `--alice-home`. The same value can be supplied
+through the `ALICE_HOME` environment variable.
+
+## Dependency check
+
+```bash
+cargo run -q -p eatme-cli -- deps check --json
+```
+
+The check covers the desktop and build tools needed by real launch smoke runs:
+
+- Java 21
+- Maven
+- Xvfb
+- `xdpyinfo`
+- `wmctrl`
+- screenshot tooling
+- GLX/Mesa software rendering support
+
+## Discover Alice
+
+```bash
+cargo run -q -p eatme-cli -- alice discover \
+  --alice-home "${ALICE_HOME}" \
+  --json
+```
+
+Discovery verifies that the configured Alice checkout has the expected shape
+before packaging or launch commands depend on it.
+
+## Package Alice
+
+```bash
+cargo run -q -p eatme-cli -- alice package \
+  --alice-home "${ALICE_HOME}" \
+  --offline \
+  --json
+```
+
+Packaging delegates to the Alice Maven build. Use `--offline` when the Maven
+cache already contains the required dependencies.
+
+## Launch smoke
+
+```bash
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario building-a-scene-first-world \
+  --run-id local-building-a-scene-first-world \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+The launch smoke records evidence under:
+
+```text
+runs/<scenario-id>/<run-id>/
+```
+
+Typical artifacts include:
+
+```text
+manifest.json
+alice.log
+xvfb.log
+window-list.txt
+home/
+prefs/
+tmp/
+screenshots/startup.png
+```
+
+## Manifest contract
+
+The manifest is the integration contract for automation. Important fields are:
+
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Manifest schema version |
+| `scenario_id` | Scenario selected for the run |
+| `run_id` | Caller-provided run id |
+| `alice_home` | Alice checkout used for the run |
+| `alice_git_commit` | Alice commit when available |
+| `eatme_git_commit` | Eatme commit when available |
+| `dependency_checks` | Host dependency results |
+| `build_command` | Alice packaging command |
+| `build_exit_status` | Packaging result |
+| `launch_command` | Java launch command |
+| `display` | X display used by the run |
+| `xvfb_pid` | Xvfb process id |
+| `alice_pid` | Alice process id |
+| `timeout_seconds` | Launch timeout |
+| `window_list.path` | Captured window-list artifact when available |
+| `screenshot.path` | Startup screenshot artifact when available |
+| `log.path` | Alice log path |
+| `fatal_log_scan` | Fatal DISPLAY/OpenGL/Java scan result |
+| `assertions` | Deterministic pass/fail assertions |
+| `failure_category` | Failure classification, or `null` on pass |
+
+Consumers should treat `assertions` and `failure_category` as the source of
+truth. Gadugi adapters and external scripts should not infer pass/fail by
+replaying Alice internals.
+
+## Current scope
+
+The real Alice integration proves launch readiness. It does not yet drive a full
+lesson UI path, place objects in a scene, grade a student world, or automate
+creative assessment. Those expectations belong in scenario assets, instructor
+missions, student missions, and future harness work until deterministic support
+exists.
+
