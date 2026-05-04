@@ -77,11 +77,20 @@ Rust or the launch harness.
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create` |
-| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
-| World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
-| Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
+| Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
+| Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+
+## Hour of Code studio kickoff
+
+Added editable eatme + gadugi scenario assets for
+`hour-of-code-studio-kickoff`, grounded in Alice.org Hour of Code, Building a
+Scene, and Programming in Alice resources. The lane captures instructor setup
+and fallback moves, novice first-scene/first-animation prompts, and
+evidence/reflection expectations in YAML so facilitators can tune the studio
+kickoff without changing Rust.
 
 ## New Alice.org-grounded smoke scenario assets
 
