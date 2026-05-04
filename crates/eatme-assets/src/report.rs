@@ -26,3 +26,14 @@ pub struct ScenarioAssetValidationReport {
     pub errors: Vec<String>,
     pub warnings: Vec<String>,
 }
+
+#[derive(Clone, Debug, Serialize)]
+pub struct GadugiAdapterGenerationReport {
+    pub schema_version: String,
+    pub root: String,
+    pub generated_count: usize,
+    pub checked_count: usize,
+    pub changed: Vec<String>,
+    pub passed: bool,
+    pub errors: Vec<String>,
+}

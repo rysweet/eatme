@@ -169,6 +169,19 @@ fn validate_gadugi_scenario(
     if scenario.steps.is_empty() {
         errors.push("steps must contain at least one step".into());
     }
+    for agent in &scenario.agents {
+        require_nonempty(&agent.name, "agent.name", &mut errors);
+        require_nonempty(
+            &agent.agent_type,
+            &format!("{}.type", agent.name),
+            &mut errors,
+        );
+        validate_no_hardcoded_repo_path(
+            &format!("{}.config.cwd", agent.name),
+            &agent.config.cwd,
+            &mut errors,
+        );
+    }
     for step in &scenario.steps {
         require_nonempty(&step.name, "step.name", &mut errors);
         require_nonempty(&step.agent, &format!("{}.agent", step.name), &mut errors);
@@ -184,6 +197,11 @@ fn validate_gadugi_scenario(
             }
         }
         if let Some(command) = step.params.get("command") {
+            validate_no_hardcoded_repo_path(
+                &format!("{}.params.command", step.name),
+                command,
+                &mut errors,
+            );
             validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
         }
     }
@@ -198,6 +216,7 @@ fn validate_gadugi_scenario(
             &mut errors,
         );
     }
+    validate_gadugi_source_reference(path, scenario, &mut errors);
 
     let errors = contextualize_scenario_errors(path, &scenario.name, errors);
 
@@ -212,6 +231,63 @@ fn validate_gadugi_scenario(
         errors,
         warnings,
     }
+}
+
+fn validate_no_hardcoded_repo_path(field: &str, value: &str, errors: &mut Vec<String>) {
+    if value.contains("/home/azureuser/src/eatme") {
+        errors.push(format!(
+            "{field} must not hard-code /home/azureuser/src/eatme; use relative paths or EATME_REPO"
+        ));
+    }
+}
+
+fn validate_gadugi_source_reference(
+    path: &Path,
+    scenario: &GadugiScenarioAsset,
+    errors: &mut Vec<String>,
+) {
+    let source = scenario.metadata.source_eatme_asset.trim();
+    require_nonempty(
+        &scenario.metadata.generated_by,
+        "metadata.generated_by",
+        errors,
+    );
+    if source.is_empty() {
+        errors.push(
+            "metadata.source_eatme_asset must reference the canonical eatme scenario asset".into(),
+        );
+        return;
+    }
+    let source_path = Path::new(source);
+    if source_path.is_absolute() || source.contains("..") {
+        errors.push("metadata.source_eatme_asset must be a repo-relative path".into());
+        return;
+    }
+    if !source.starts_with("assets/scenarios/eatme/") {
+        errors.push("metadata.source_eatme_asset must point at assets/scenarios/eatme".into());
+        return;
+    }
+    let Some(root) = repo_root_from_asset_path(path) else {
+        return;
+    };
+    if !root.join(source_path).is_file() {
+        errors.push(format!(
+            "metadata.source_eatme_asset references missing asset {source}"
+        ));
+    }
+}
+
+fn repo_root_from_asset_path(path: &Path) -> Option<&Path> {
+    for ancestor in path.ancestors() {
+        if ancestor
+            .file_name()
+            .map(|name| name == "assets")
+            .unwrap_or(false)
+        {
+            return ancestor.parent();
+        }
+    }
+    None
 }
 
 fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut Vec<String>) {
@@ -403,6 +479,11 @@ mod tests {
                 name: "Direct runtime command succeeded".into(),
                 assertion_type: "command_success".into(),
             }],
+            metadata: crate::schema::GadugiScenarioMetadata {
+                source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
+                generated_by: "test".into(),
+            },
+            ..GadugiScenarioAsset::default()
         };
 
         let report = validate_gadugi_scenario(
@@ -422,6 +503,46 @@ mod tests {
             }),
             "boundary error should direct gadugi scenarios to the eatme launch-smoke CLI: {:?}",
             report.errors
+        );
+    }
+
+    #[test]
+    fn gadugi_scenario_rejects_hardcoded_repo_paths() {
+        let scenario = GadugiScenarioAsset {
+            name: "Hard-coded repo path".into(),
+            description: "Uses an environment-specific checkout path.".into(),
+            version: "1.0.0".into(),
+            steps: vec![GadugiScenarioStep {
+                name: "Validate assets".into(),
+                agent: "eatme-cli-agent".into(),
+                action: "execute_command".into(),
+                params: BTreeMap::from([(
+                    "command".into(),
+                    "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- assets validate --json".into(),
+                )]),
+            }],
+            assertions: vec![GadugiScenarioAssertion {
+                name: "Validation succeeded".into(),
+                assertion_type: "command_success".into(),
+            }],
+            metadata: crate::schema::GadugiScenarioMetadata {
+                source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
+                generated_by: "test".into(),
+            },
+            ..GadugiScenarioAsset::default()
+        };
+
+        let report = validate_gadugi_scenario(
+            Path::new("assets/scenarios/gadugi/hard-coded.yaml"),
+            &scenario,
+        );
+
+        assert!(!report.passed);
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|error| error.contains("must not hard-code"))
         );
     }
 }

@@ -145,9 +145,29 @@ pub(crate) struct GadugiScenarioAsset {
     #[serde(default)]
     pub(crate) version: String,
     #[serde(default)]
+    pub(crate) agents: Vec<GadugiScenarioAgent>,
+    #[serde(default)]
     pub(crate) steps: Vec<GadugiScenarioStep>,
     #[serde(default)]
     pub(crate) assertions: Vec<GadugiScenarioAssertion>,
+    #[serde(default)]
+    pub(crate) metadata: GadugiScenarioMetadata,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct GadugiScenarioAgent {
+    #[serde(default)]
+    pub(crate) name: String,
+    #[serde(default, rename = "type")]
+    pub(crate) agent_type: String,
+    #[serde(default)]
+    pub(crate) config: GadugiScenarioAgentConfig,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct GadugiScenarioAgentConfig {
+    #[serde(default)]
+    pub(crate) cwd: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -168,4 +188,12 @@ pub(crate) struct GadugiScenarioAssertion {
     pub(crate) name: String,
     #[serde(default, rename = "type")]
     pub(crate) assertion_type: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct GadugiScenarioMetadata {
+    #[serde(default)]
+    pub(crate) source_eatme_asset: String,
+    #[serde(default)]
+    pub(crate) generated_by: String,
 }
