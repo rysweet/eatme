@@ -14,6 +14,7 @@ environment:
   requires:
     - ALICE_HOME
   optional:
+    - EATME_REPO
     - RUN_ID
 
 agents:
@@ -53,7 +54,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json'
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json'
     expect:
       exit_code: 0
       stdout_contains:

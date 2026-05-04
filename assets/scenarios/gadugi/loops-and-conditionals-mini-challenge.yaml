@@ -15,6 +15,7 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
+    - EATME_REPO
     - RUN_ID
 
 agents:

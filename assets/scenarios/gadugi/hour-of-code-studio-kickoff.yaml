@@ -14,9 +14,9 @@ config:
 environment:
   requires:
     - ALICE_HOME
-    - EATME_REPO
     - EATME_REAL_ALICE
   optional:
+    - EATME_REPO
     - RUN_ID
 
 agents:
