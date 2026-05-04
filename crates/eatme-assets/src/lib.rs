@@ -57,7 +57,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 16);
+        assert_eq!(report.scenario_asset_count, 18);
     }
 
     #[test]
@@ -70,6 +70,8 @@ mod tests {
             "assets/scenarios/gadugi/code-editor-first-run.yaml",
             "assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml",
             "assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml",
+            "assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml",
+            "assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml",
         ] {
             let report = validate_scenario_asset(&root.join(asset)).unwrap();
             assert!(report.passed, "{asset}: {:?}", report.errors);
