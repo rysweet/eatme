@@ -68,6 +68,8 @@ mod tests {
             "assets/scenarios/gadugi/building-a-scene-first-world.yaml",
             "assets/scenarios/eatme/code-editor-first-run.yaml",
             "assets/scenarios/gadugi/code-editor-first-run.yaml",
+            "assets/scenarios/eatme/modified-class-portability.yaml",
+            "assets/scenarios/gadugi/modified-class-portability.yaml",
         ] {
             let report = validate_scenario_asset(&root.join(asset)).unwrap();
             assert!(report.passed, "{asset}: {:?}", report.errors);
