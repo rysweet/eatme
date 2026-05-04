@@ -15,6 +15,7 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+game-score-timer-win-lose-loop
 ```
 
 They are based on Alice.org lesson/tutorial resource families and prove that the
@@ -30,7 +31,7 @@ smoke readiness from deterministic harness evidence:
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
   `building-a-scene-first-world`, `code-editor-first-run`, or one of the
-  expanded Alice.org-grounded lesson ids.
+  expanded Alice.org-grounded lesson ids, including the score/timer game lane.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - Alice log and window-list files are captured as artifacts when available.
@@ -61,6 +62,7 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -87,6 +89,7 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
@@ -242,7 +245,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, or `events-collision-proximity-game`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, or `game-score-timer-win-lose-loop`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |

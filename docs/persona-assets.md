@@ -4,7 +4,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative new scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline plus Alice.org-grounded lesson lanes.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior and check manifest-level evidence only.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
@@ -77,11 +77,11 @@ Rust or the launch harness.
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create` |
-| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
 | World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
 | Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+| Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop` |
 
 ## New Alice.org-grounded smoke scenario assets
 
@@ -91,10 +91,11 @@ Added editable eatme + gadugi scenario assets for:
 2. `functions-as-questions-about-the-world`
 3. `loops-and-conditionals-mini-challenge`
 4. `events-collision-proximity-game`
+5. `game-score-timer-win-lose-loop`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
 
-## 10 creative new scenarios
+## 11 creative new scenarios
 
 1. `weather-wizard-conditional-theater`
 2. `lost-robot-debug-museum`
@@ -105,7 +106,8 @@ Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- ali
 7. `creature-choreography-loop-lab`
 8. `neighborhood-data-story`
 9. `accessibility-rescue-camera-captions`
-10. `mythic-choice-event-tree`
+10. `game-score-timer-win-lose-loop`
+11. `mythic-choice-event-tree`
 
 ## Source map
 
