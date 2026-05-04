@@ -134,12 +134,16 @@ Required `manifest.json` fields:
 - `xvfb_pid`
 - `alice_pid`
 - `timeout_seconds`
+- `window_list.path`
+- `window_list_error`
 - `screenshot.path`
 - `screenshot.size_bytes`
 - `screenshot.sha256`
+- `screenshot_error`
 - `log.path`
 - `log.size_bytes`
 - `log.sha256`
+- `log_error`
 - `fatal_log_scan`
 - `assertions`
 - `failure_category`

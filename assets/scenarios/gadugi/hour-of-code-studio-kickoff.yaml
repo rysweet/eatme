@@ -1,8 +1,9 @@
-name: "Eatme Loops And Conditionals Mini Challenge Smoke"
+name: "Eatme Hour of Code Studio Kickoff Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the Loops and Conditionals Mini Challenge lesson smoke lane.
+  Gadugi-compatible CLI scenario for the Hour of Code studio kickoff lane.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  commands and checks manifest-level evidence only before any instructor/student
+  agent evaluates setup, first scene, first animation, evidence, or reflection.
 version: "1.0.0"
 
 config:
@@ -15,6 +16,7 @@ environment:
     - ALICE_HOME
     - EATME_REAL_ALICE
   optional:
+    - EATME_REPO
     - RUN_ID
 
 agents:
@@ -22,7 +24,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: "."
+      cwd: .
       timeout: 1800000
       capture_output: true
 
@@ -31,7 +33,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cargo run -q -p eatme-cli -- assets validate --json"
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
     expect:
       exit_code: 0
       stdout_contains:
@@ -43,19 +45,20 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cargo run -q -p eatme-cli -- deps check --json"
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
     expect:
       exit_code: 0
       stdout_contains:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Loops and Conditionals Mini Challenge lane under Xvfb"
+  - name: "Launch Hour of Code studio kickoff lane under Xvfb"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
-        export RUN_ID="${RUN_ID:-gadugi-loops-and-conditionals-mini-challenge}"
+        cd "${EATME_REPO:-.}"
+        export RUN_ID="${RUN_ID:-gadugi-hour-of-code-studio-kickoff}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -64,11 +67,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario loops-and-conditionals-mini-challenge
+          --scenario hour-of-code-studio-kickoff
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "loops-and-conditionals-mini-challenge"'
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
         - '"failure_category": null'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
@@ -89,11 +92,21 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Loops and Conditionals Mini Challenge Launches"
+  - name: "Hour of Code Studio Kickoff Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Loops and Conditionals Mini Challenge lane under Xvfb"
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+
+  - name: "Manifest Boundary Only"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+      required_strings:
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
+        - '"failure_category": null'
+        - '"passed": true'
 
 metadata:
   tags:
@@ -101,7 +114,8 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "loops-conditionals"
+    - "hour-of-code"
+    - "studio-kickoff"
     - "outside-in"
   priority: "critical"
   author: "eatme"
