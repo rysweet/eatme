@@ -515,11 +515,17 @@ Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
 `eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
-The committed gadugi adapters are portable: the agent config uses `cwd: "."`
-and shell commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set
-`EATME_REPO` without baking in a checkout-specific path. Run these scenarios from
-the checkout under test so asset validation counts the assets in that checkout,
-including gadugi-only regression adapters.
+The committed gadugi adapters are generated from the canonical eatme scenario
+assets and portable: the agent config uses `cwd: .` and shell commands begin
+with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO` without baking
+in a checkout-specific path. Run these scenarios from the checkout under test so
+asset validation counts the assets in that checkout, including gadugi-only
+regression adapters. Regenerate or verify them with:
+
+```bash
+cargo run -q -p eatme-cli -- assets generate-gadugi --root .
+cargo run -q -p eatme-cli -- assets generate-gadugi --root . --check
+```
 
 ## Testing expectations
 

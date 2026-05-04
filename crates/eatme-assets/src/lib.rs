@@ -2,11 +2,15 @@ use anyhow::Result;
 use std::path::Path;
 
 mod discovery;
+mod gadugi;
 mod report;
 mod schema;
 mod validation;
 
-pub use report::{AssetValidationReport, ScenarioAssetValidationReport};
+pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
+pub use report::{
+    AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
+};
 pub use validation::{validate_persona_crew, validate_scenario_asset};
 
 pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
@@ -164,5 +168,13 @@ mod tests {
             target,
         )
         .unwrap();
+    }
+
+    #[test]
+    fn committed_gadugi_adapters_are_generated_and_fresh() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let report = generate_gadugi_adapters(&root, true).unwrap();
+        assert!(report.passed, "{:?}", report.errors);
+        assert!(report.checked_count >= 2);
     }
 }

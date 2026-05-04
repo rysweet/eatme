@@ -35,6 +35,7 @@ enum Commands {
 #[derive(Subcommand)]
 enum AssetsCommand {
     Validate(AssetsValidateArgs),
+    GenerateGadugi(AssetsGenerateGadugiArgs),
 }
 
 #[derive(Subcommand)]
@@ -59,6 +60,16 @@ struct JsonFlag {
 struct AssetsValidateArgs {
     #[arg(long)]
     path: Option<PathBuf>,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct AssetsGenerateGadugiArgs {
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    #[arg(long)]
+    check: bool,
     #[arg(long)]
     json: bool,
 }
@@ -123,6 +134,15 @@ fn main() -> Result<()> {
                 &eatme_assets::validate_assets(Path::new("."))?,
             )?,
         },
+        Commands::Assets {
+            command: AssetsCommand::GenerateGadugi(args),
+        } => {
+            let report = eatme_assets::generate_gadugi_adapters(&args.root, args.check)?;
+            print_result(args.json, &report)?;
+            if !report.passed {
+                bail!("gadugi adapter generation check failed");
+            }
+        }
         Commands::Deps {
             command: DepsCommand::Check(args),
         } => print_result(args.json, &check_dependencies(&runner)?)?,

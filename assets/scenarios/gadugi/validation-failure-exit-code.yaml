@@ -58,6 +58,8 @@ assertions:
         - 'must be kebab-case'
 
 metadata:
+  source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml"
+  generated_by: "eatme validation exit-code regression"
   tags:
     - "eatme"
     - "assets"
