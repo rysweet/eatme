@@ -1,0 +1,93 @@
+schema_version: eatme.scenario/v1
+id: instructor-exercise-builder
+title: Instructor Exercise Builder
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Choose lesson concepts such as methods, functions, control structures, events, data, arrays, and design process.
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Ground exercise structure in procedures, methods, parameters, run, edit, and control structures.
+purpose: >-
+  Create an Alice exercise brief that teaches one concept while preserving student creative choice.
+personas:
+  instructors: [exercise-forger, concept-cartographer]
+  students: [curious-novice, creative-storyteller]
+agentic_flow:
+  focus: creating-exercises
+  instructor_goal: >-
+    Create an Alice exercise brief that teaches one concept while preserving student creative choice.
+  prompt_source: assets/scenarios/eatme/instructor-exercise-builder.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - exercise_brief
+    - hint_ladder
+    - student_evidence_checklist
+agentic_test_prompt: >-
+  Act as an instructor QA agent. Using the resource_basis and persona goals in this YAML, draft a classroom-ready Alice exercise brief. The brief must name one target Alice concept, a starter world or code action, student choice points, hints, stretch options, and visible evidence students can submit. Keep all directions editable by a non-coder and avoid exact UI coordinates.
+acceptance_criteria:
+  - given: >-
+      an instructor has an Alice.org lesson concept
+    when: >-
+      the agent drafts the exercise
+    then: >-
+      the output includes concept, starter task, creative choice, scaffold, stretch path, and visible evidence
+  - given: >-
+      students have mixed prior experience
+    when: >-
+      the agent defines supports
+    then: >-
+      the exercise offers hints without solving the full task and an extension without adding a second core concept
+acceptance_probes:
+  - Exercise brief names exactly one primary Alice concept and one optional extension.
+  - Student success can be checked from visible world behavior and a short explanation.
+  - The artifact avoids brittle menu paths, exact coordinates, and hidden implementation details.
+rubric:
+  - criterion: Concept focus
+    evidence:
+      - The required task maps to a named Alice concept.
+      - The extension does not obscure the primary concept.
+  - criterion: Learner ownership
+    evidence:
+      - Students choose a character, motion, scene detail, or rule variation.
+      - Choice is bounded enough to finish in one class segment.
+  - criterion: Evidence quality
+    evidence:
+      - Submission includes a world behavior plus student explanation.
+      - Instructor can judge without opening private code internals.
+avoid:
+  - Exact UI coordinates, menu paths, or private implementation details.
+  - Single correct creative answer; preserve student ownership.
+  - Visual polish as a substitute for concept evidence.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes instructor-exercise-builder
+  - id: agentic-instructor-review
+    command: agentic instructor QA review using assets/scenarios/eatme/instructor-exercise-builder.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  exercise_brief: agentic://instructor/exercise-brief
+  hint_ladder: agentic://instructor/hint-ladder
+  student_evidence_checklist: agentic://instructor/evidence-checklist
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or
+  the cited Alice.org resource basis, fail visibly and report the missing
+  evidence. Do not replace instructor judgment with brittle UI assertions.

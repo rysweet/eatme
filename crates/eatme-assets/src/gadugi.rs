@@ -3,6 +3,10 @@ use crate::report::GadugiAdapterGenerationReport;
 use crate::schema::EatmeScenarioAsset;
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
+#[path = "gadugi_instructor.rs"]
+mod gadugi_instructor;
+
+use gadugi_instructor::generate_instructor_agentic_adapter;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
@@ -86,18 +90,18 @@ pub fn generate_gadugi_adapter_yaml(root: &Path, source_path: &Path) -> Result<S
         bail!("{} must define id", source_path.display());
     }
 
-    let timeout_ms = scenario
-        .timeouts
-        .get("scenario_seconds")
-        .copied()
-        .unwrap_or(1800)
-        * 1000;
+    let timeout_ms = scenario_timeout_ms(&scenario);
     let launch_timeout = scenario
         .timeouts
         .get("launch_seconds")
         .copied()
         .unwrap_or(900);
     let run_id = format!("gadugi-{}", scenario.id);
+
+    if scenario.kind == "instructor_agentic_flow" {
+        return generate_instructor_agentic_adapter(&scenario, source_asset, timeout_ms);
+    }
+
     let steps = scenario
         .steps
         .iter()
@@ -106,12 +110,7 @@ pub fn generate_gadugi_adapter_yaml(root: &Path, source_path: &Path) -> Result<S
     let assertions = scenario
         .steps
         .iter()
-        .map(|step| GeneratedAssertion {
-            name: format!("{} succeeds", step.id),
-            assertion_type: "command_success".into(),
-            agent: "eatme-cli-agent".into(),
-            params: BTreeMap::from([("step".into(), step_title(&step.id))]),
-        })
+        .map(|step| command_success_assertion(&step.id, "eatme-cli-agent"))
         .collect::<Vec<_>>();
 
     let adapter = GeneratedGadugiAdapter {
@@ -133,10 +132,12 @@ pub fn generate_gadugi_adapter_yaml(root: &Path, source_path: &Path) -> Result<S
             name: "eatme-cli-agent".into(),
             agent_type: "system".into(),
             config: GeneratedAgentConfig {
-                shell: "bash".into(),
-                cwd: ".".into(),
+                shell: Some("bash".into()),
+                cwd: Some(".".into()),
                 timeout: timeout_ms,
-                capture_output: true,
+                capture_output: Some(true),
+                persona_asset: None,
+                scenario_asset: None,
             },
         }],
         steps,
@@ -157,12 +158,7 @@ pub fn generate_gadugi_adapter_yaml(root: &Path, source_path: &Path) -> Result<S
         },
     };
 
-    let mut yaml = GENERATED_FILE_HEADER.to_string();
-    yaml.push_str(&serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?);
-    if !yaml.ends_with('\n') {
-        yaml.push('\n');
-    }
-    Ok(yaml)
+    render_yaml(adapter)
 }
 
 fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {
@@ -170,6 +166,15 @@ fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {
         .with_context(|| format!("reading eatme scenario asset {}", path.display()))?;
     serde_yaml::from_str(&content)
         .with_context(|| format!("parsing eatme scenario YAML {}", path.display()))
+}
+
+fn render_yaml(adapter: GeneratedGadugiAdapter) -> Result<String> {
+    let mut yaml = GENERATED_FILE_HEADER.to_string();
+    yaml.push_str(&serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?);
+    if !yaml.ends_with('\n') {
+        yaml.push('\n');
+    }
+    Ok(yaml)
 }
 
 fn generated_step(
@@ -185,11 +190,31 @@ fn generated_step(
         action: "execute_command".into(),
         params: BTreeMap::from([("command".into(), command)]),
         expect: GeneratedExpect {
-            exit_code: 0,
-            stdout_contains: expected_stdout(scenario, &step.id),
+            exit_code: Some(0),
+            stdout_contains: Some(expected_stdout(scenario, &step.id)),
+            output_contains: None,
         },
         timeout: step_timeout_ms(&step.id, launch_timeout),
     }
+}
+
+fn command_success_assertion(step_id: &str, agent: &str) -> GeneratedAssertion {
+    GeneratedAssertion {
+        name: format!("{step_id} succeeds"),
+        assertion_type: "command_success".into(),
+        agent: agent.into(),
+        params: BTreeMap::from([("step".into(), step_title(step_id))]),
+    }
+}
+
+fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
+    scenario
+        .timeouts
+        .get("scenario_seconds")
+        .or_else(|| scenario.timeouts.get("agentic_seconds"))
+        .copied()
+        .unwrap_or(1800)
+        * 1000
 }
 
 fn repository_command(command: &str, run_id: &str) -> String {
@@ -287,10 +312,17 @@ struct GeneratedAgent {
 
 #[derive(Serialize)]
 struct GeneratedAgentConfig {
-    shell: String,
-    cwd: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    shell: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cwd: Option<String>,
     timeout: u64,
-    capture_output: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    capture_output: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    persona_asset: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scenario_asset: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -305,8 +337,12 @@ struct GeneratedStep {
 
 #[derive(Serialize)]
 struct GeneratedExpect {
-    exit_code: u64,
-    stdout_contains: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    exit_code: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stdout_contains: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    output_contains: Option<Vec<String>>,
 }
 
 #[derive(Serialize)]
@@ -329,55 +365,5 @@ struct GeneratedMetadata {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::validate_scenario_asset;
-
-    #[test]
-    fn generated_gadugi_adapter_has_do_not_edit_header() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let source_path = root.join("assets/scenarios/eatme/real-alice-launch-smoke.yaml");
-        let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-
-        assert!(generated.starts_with("# DO NOT EDIT:"));
-        assert!(generated.contains("assets/scenarios/eatme/"));
-    }
-
-    #[test]
-    fn generated_gadugi_adapters_match_committed_assets_and_validate() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        for source_path in scenario_asset_paths(&root.join("assets/scenarios/eatme")).unwrap() {
-            let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-            let scenario = read_eatme_scenario(&source_path).unwrap();
-            let target_path = root
-                .join("assets/scenarios/gadugi")
-                .join(format!("{}.yaml", scenario.id));
-            let committed = fs::read_to_string(&target_path).unwrap();
-
-            assert_portable_gadugi_yaml(&generated, &root);
-            assert_eq!(committed, generated, "{} is stale", target_path.display());
-            let report = validate_scenario_asset(&target_path).unwrap();
-            assert!(
-                report.passed,
-                "{}: {:?}",
-                target_path.display(),
-                report.errors
-            );
-        }
-    }
-
-    fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
-        let absolute_root = root.display().to_string();
-
-        assert!(
-            !generated.contains(&absolute_root),
-            "generated gadugi YAML leaked absolute repo root {absolute_root}"
-        );
-        assert!(
-            !generated.contains("/home/"),
-            "generated gadugi YAML leaked an absolute home path"
-        );
-        assert!(generated.contains("cwd: ."));
-        assert!(generated.contains("cd \"${EATME_REPO:-.}\""));
-    }
-}
+#[path = "gadugi_tests.rs"]
+mod gadugi_tests;
