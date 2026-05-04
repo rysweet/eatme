@@ -2,15 +2,12 @@ use anyhow::Result;
 use std::path::Path;
 
 mod discovery;
-mod models;
-mod persona;
 mod report;
-mod scenario;
+mod schema;
 mod validation;
 
-pub use persona::validate_persona_crew;
 pub use report::{AssetValidationReport, ScenarioAssetValidationReport};
-pub use scenario::validate_scenario_asset;
+pub use validation::{validate_persona_crew, validate_scenario_asset};
 
 pub fn validate_assets(root: &Path) -> Result<AssetValidationReport> {
     let persona_path = root.join("assets/personas/alice-user-crew.yaml");

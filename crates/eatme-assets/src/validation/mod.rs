@@ -1,3 +1,9 @@
+mod crew;
+mod scenario;
+
+pub use crew::validate_persona_crew;
+pub use scenario::validate_scenario_asset;
+
 use std::path::Path;
 
 pub(crate) fn validate_id(id: &str, kind: &str, errors: &mut Vec<String>) {

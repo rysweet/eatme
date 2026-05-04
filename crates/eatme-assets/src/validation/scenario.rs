@@ -1,8 +1,6 @@
-use crate::models::{EatmeScenarioAsset, GadugiScenarioAsset};
+use super::{contextualize_scenario_errors, require_list, require_nonempty, validate_id};
 use crate::report::ScenarioAssetValidationReport;
-use crate::validation::{
-    contextualize_scenario_errors, require_list, require_nonempty, validate_id,
-};
+use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
@@ -243,7 +241,7 @@ fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
+    use crate::schema::{
         EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioRealAlice,
         EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
     };

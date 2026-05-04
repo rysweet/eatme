@@ -1,6 +1,6 @@
-use crate::models::{CrewAsset, Persona, Scenario};
+use super::{require_list, require_nonempty, validate_id};
 use crate::report::AssetValidationReport;
-use crate::validation::{require_list, require_nonempty, validate_id};
+use crate::schema::{CrewAsset, Persona, Scenario};
 use anyhow::{Context, Result};
 use std::collections::BTreeSet;
 use std::fs;
