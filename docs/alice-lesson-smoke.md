@@ -6,15 +6,20 @@ launcher. It passes a scenario id to the same packaging, Xvfb, Java process,
 screenshot, log, and manifest path used by the baseline launch smoke, then
 records that lesson id in the run manifest.
 
-The first post-launch lesson lanes are:
+The post-launch lesson lanes are:
 
 ```text
 building-a-scene-first-world
 code-editor-first-run
+reusable-methods-and-parameters
+functions-as-questions-about-the-world
+loops-and-conditionals-mini-challenge
+events-collision-proximity-game
 ```
 
-They are based on Alice.org lesson families and prove that the desktop harness
-can reach a smoke-ready Alice session for resource-grounded lesson paths before
+They are based on Alice.org lesson/tutorial resource families and prove that the
+desktop harness can reach a smoke-ready Alice session for resource-grounded
+lesson paths before
 agentic instructor/student evaluation is trusted.
 
 ## What the lane verifies
@@ -24,7 +29,8 @@ smoke readiness from deterministic harness evidence:
 
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
-  `building-a-scene-first-world` or `code-editor-first-run`.
+  `building-a-scene-first-world`, `code-editor-first-run`, or one of the
+  expanded Alice.org-grounded lesson ids.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - Alice log and window-list files are captured as artifacts when available.
@@ -51,6 +57,10 @@ The canonical lesson lanes are defined by:
 ```text
 assets/scenarios/eatme/building-a-scene-first-world.yaml
 assets/scenarios/eatme/code-editor-first-run.yaml
+assets/scenarios/eatme/reusable-methods-and-parameters.yaml
+assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
+assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
+assets/scenarios/eatme/events-collision-proximity-game.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -73,6 +83,10 @@ The gadugi adapters for these lanes are:
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
+assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
+assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
+assets/scenarios/gadugi/events-collision-proximity-game.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
@@ -106,9 +120,8 @@ that needs attention.
 
 ## Run the lesson smoke
 
-Lesson-labeled Alice execution is explicit. Non-baseline scenarios such as
-`building-a-scene-first-world` and `code-editor-first-run` refuse to run unless
-`EATME_REAL_ALICE=1` is set.
+Lesson-labeled Alice execution is explicit. Non-baseline scenarios refuse to run
+unless `EATME_REAL_ALICE=1` is set.
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -122,8 +135,8 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-For the code editor lane, use the same command shape with
-`--scenario code-editor-first-run` and a code-editor run id.
+For any other lesson lane, use the same command shape with one of the
+scenario ids above and a matching descriptive run id.
 
 `ALICE_HOME` must point at the Alice source checkout to package and launch. A
 typical local value is:
@@ -229,7 +242,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world` or `code-editor-first-run`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, or `events-collision-proximity-game`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -361,7 +374,7 @@ not as runtime inputs.
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `EATME_REAL_ALICE=1` | Yes for lesson-labeled real launch | Enables non-baseline lesson smoke scenarios such as `building-a-scene-first-world` and `code-editor-first-run`. Without it, those scenarios fail fast. |
+| `EATME_REAL_ALICE=1` | Yes for lesson-labeled real launch | Enables non-baseline lesson smoke scenarios. Without it, those scenarios fail fast. |
 | `ALICE_HOME` | Yes for real launch | Alice checkout used by `--alice-home`. |
 | `RUN_ID` | Optional | Convenience value used by scenario YAML and gadugi adapters. |
 | `NODE_OPTIONS=--max-old-space-size=32768` | Optional | Preserved environment preference for Node-based wrappers or agent tooling; the Rust CLI does not require it. |

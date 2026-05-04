@@ -86,6 +86,76 @@ asset_shapes:
       - Given/When/Then or checklist-style observable outcome
     avoid:
       - brittle selector, internal class name, exact timing, hidden implementation, or over-prescriptive solution
+personality_assets:
+  instructor_prompts:
+    - id: socratic-scaffold-card
+      editable_by: instructor-agent
+      purpose: Turn an Alice tutorial step into a question-first teaching move.
+      prompt_frame: >-
+        Ask learners to predict the visible world change, name the Alice concept,
+        run or observe the result, and revise one small choice before you explain.
+      evidence:
+        - Student prediction appears before direct instruction.
+        - Feedback points at visible Alice world behavior, not hidden implementation.
+    - id: studio-critique-card
+      editable_by: instructor-agent
+      purpose: Convert tutorial completion into shareable studio critique.
+      prompt_frame: >-
+        Ask for one thing the world communicates, one programming choice that made
+        it happen, and one revision that would help a peer understand it.
+      evidence:
+        - Critique references artifact behavior and a programming concept.
+        - Revision is scoped to a short classroom iteration.
+    - id: debug-conference-card
+      editable_by: instructor-agent
+      purpose: Keep debugging learner-owned during Alice run/test moments.
+      prompt_frame: >-
+        Require expected behavior, observed behavior, last change, smallest next
+        test, and a rerun before offering a fix.
+      evidence:
+        - Learner keeps control of the project and records the hypothesis.
+        - Environmental launch problems are separated from learner code bugs.
+  student_prompts:
+    - id: prediction-observation-reflection-card
+      editable_by: student-agent
+      purpose: Make the learner voice visible around each Alice tutorial action.
+      prompt_frame: >-
+        I predict the world will..., I observed..., I think this happened because...,
+        and my next small change is...
+      evidence:
+        - Reflection links one code or scene choice to visible behavior.
+        - Next change is small enough to test in one run.
+    - id: creative-ownership-card
+      editable_by: student-agent
+      purpose: Preserve learner choice while staying inside tutorial constraints.
+      prompt_frame: >-
+        Choose one asset, camera, audio, rule, or motion variation that expresses
+        your idea, then explain which required concept it still demonstrates.
+      evidence:
+        - Creative choice is tied to a required Alice concept.
+        - Artifact can be judged without exact coordinates or exact model choice.
+    - id: peer-playtest-card
+      editable_by: student-agent
+      purpose: Capture peer evidence for interactive Alice worlds.
+      prompt_frame: >-
+        Ask a peer to try the world, record what they expected, what happened, and
+        what one cue or rule you changed afterward.
+      evidence:
+        - Peer feedback causes a visible revision.
+        - Student names trigger, response, state, or audience cue involved.
+  pairing_patterns:
+    - id: concept-to-artifact
+      instructors: [concept-cartographer, studio-facilitator]
+      students: [curious-novice, creative-storyteller]
+      use_for: Scene-building, first-code, camera, sound, and storyboard lessons.
+    - id: rule-to-playtest
+      instructors: [debug-coach, assessment-curator]
+      students: [systems-puzzle-solver, collaborative-peer-mentor]
+      use_for: Events, collisions, proximity, variables, loops, and conditionals.
+    - id: inclusion-to-revision
+      instructors: [studio-facilitator, classroom-orchestrator]
+      students: [accessibility-advocate, reflective-debugger]
+      use_for: Export/share, gallery walk, audio/caption, and classroom adaptation lessons.
 personas:
   instructors:
     - id: concept-cartographer

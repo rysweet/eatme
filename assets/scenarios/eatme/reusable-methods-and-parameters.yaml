@@ -1,0 +1,98 @@
+schema_version: eatme.scenario/v1
+id: reusable-methods-and-parameters
+title: Reusable Methods and Parameters
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+purpose: >-
+  Prove that the reusable-methods lesson lane launches through the real Alice desktop harness before instructor/student agents judge abstraction and parameter evidence.
+launcher:
+  command: alice launch-smoke
+  scenario: reusable-methods-and-parameters
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors: [concept-cartographer, exercise-forger]
+  students: [systems-puzzle-solver, playful-tinkerer]
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the reusable-methods-and-parameters scenario is launched through eatme
+    then: the manifest identifies scenario_id reusable-methods-and-parameters
+  - given: the real Alice fork starts under the existing Xvfb launch-smoke path
+    when: instructor/student agents use this Alice.org-grounded lesson contract
+    then: agentic judgment is gated on deterministic manifest evidence before lesson reasoning
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario reusable-methods-and-parameters
+    evidence:
+      - manifest scenario_id equals reusable-methods-and-parameters
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#reusable-methods-and-parameters
+  personality_assets:
+    - socratic-scaffold-card
+    - prediction-observation-reflection-card
+  deterministic_gate: >-
+    Run this smoke lane before asking instructor/student agents to judge whether
+    a learner demonstrated custom procedures and parameters through a reusable action with visible variation.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/reusable-methods-and-parameters/${RUN_ID}/manifest.json
+  screenshot: runs/reusable-methods-and-parameters/${RUN_ID}/screenshots/startup.png
+  log: runs/reusable-methods-and-parameters/${RUN_ID}/alice.log
+  window_list: runs/reusable-methods-and-parameters/${RUN_ID}/window-list.txt
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
+  substitute a mocked Alice runtime.

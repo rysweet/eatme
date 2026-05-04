@@ -4,11 +4,9 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
-- `assets/scenarios/eatme/building-a-scene-first-world.yaml` — canonical editable eatme scenario for the first post-launch Alice.org lesson smoke lane.
-- `assets/scenarios/eatme/code-editor-first-run.yaml` — canonical editable eatme scenario for the next post-launch code editor lesson smoke lane.
-- `assets/scenarios/gadugi/building-a-scene-first-world.yaml` — gadugi-compatible adapter that invokes eatme CLI behavior and checks manifest-level evidence only.
-- `assets/scenarios/gadugi/code-editor-first-run.yaml` — gadugi-compatible adapter for the code editor lane.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline plus Alice.org-grounded lesson lanes.
+- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior and check manifest-level evidence only.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
 ## How to use with agentic tests
@@ -20,7 +18,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 For deterministic desktop smoke coverage, use the editable scenario assets under
 `assets/scenarios/eatme/` and the `alice launch-smoke --scenario <id>` command.
-The `building-a-scene-first-world` and `code-editor-first-run` lanes are documented in
+The lesson lanes are documented in
 [`docs/alice-lesson-smoke.md`](alice-lesson-smoke.md).
 
 ## QA-team outside-in test shape
@@ -40,6 +38,14 @@ reject_if:
   - Output depends on exact UI coordinates or private implementation details.
   - Output grades only visual polish.
 ```
+
+## Editable personality assets
+
+`assets/personas/alice-user-crew.yaml` now includes top-level
+`personality_assets` for instructor prompt cards, student reflection cards, and
+pairing patterns. They are intentionally editable YAML prompts: agents can tune
+teaching voice, learner reflection shape, and pairing strategy without changing
+Rust or the launch harness.
 
 ## Initial persona roster
 
@@ -71,11 +77,22 @@ reject_if:
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create` |
-| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `design-process-story-or-game`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `variables-scorekeeper-timekeeper` |
+| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
 | World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
 | Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
 | Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+
+## New Alice.org-grounded smoke scenario assets
+
+Added editable eatme + gadugi scenario assets for:
+
+1. `reusable-methods-and-parameters`
+2. `functions-as-questions-about-the-world`
+3. `loops-and-conditionals-mini-challenge`
+4. `events-collision-proximity-game`
+
+Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
 
 ## 10 creative new scenarios
 
