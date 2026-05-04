@@ -89,10 +89,12 @@ assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
 ```
 
-Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
-They must not own or duplicate Alice runtime behavior such as Xvfb management,
-Swing/Java launch details, screenshot capture, log capture, or process
-lifecycle.
+Gadugi lesson scenarios may invoke the eatme CLI and inspect manifest-level
+evidence. They must not own or duplicate Alice runtime behavior such as Xvfb
+management, Swing/Java launch details, screenshot capture, log capture, or
+process lifecycle. The additional
+`assets/scenarios/gadugi/validation-failure-exit-code.yaml` regression adapter
+covers the asset-validation exit-code contract without launching Alice.
 
 ## Validate assets
 
@@ -114,9 +116,11 @@ cargo run -q -p eatme-cli -- assets validate \
   --json
 ```
 
-Validation fails with an actionable message when required fields are missing or
-malformed. Error messages include the asset path or scenario id and the field
-that needs attention.
+Passing validation exits `0` and reports `"passed": true`. Validation failures
+exit non-zero and report `"passed": false`; scenarios that intentionally
+exercise malformed assets must expect the non-zero exit instead of command
+success. Error messages include the asset path or scenario id and the field that
+needs attention.
 
 ## Run the lesson smoke
 
@@ -204,6 +208,9 @@ eatme assets validate [--path <asset-path>] [--json]
 | --- | --- |
 | `--path <asset-path>` | Validate one asset file instead of the full committed asset set. |
 | `--json` | Emit validation results as JSON. |
+
+Exit code contract: successful validation exits `0`; schema or asset validation
+failures exit non-zero while still printing the JSON validation report.
 
 ## Run artifacts
 
@@ -446,7 +453,8 @@ assets/scenarios/gadugi/code-editor-first-run.yaml
 
 The adapter performs three kinds of work:
 
-1. Run `eatme assets validate --json`.
+1. Run `eatme assets validate --json` and expect exit `0` only when the output
+   reports `"passed": true`.
 2. Run `eatme deps check --json`.
 3. Run `eatme alice launch-smoke --scenario <lesson-id>`.
 
@@ -454,6 +462,10 @@ The adapter asserts command success and manifest-level output such as
 the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, and passing assertions. It does not reimplement or configure
 Alice launch internals.
+
+Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
+counterpart: it creates a malformed scenario asset and expects
+`eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
 The committed gadugi adapter currently uses `/home/azureuser/src/eatme` as its
 working tree path. Treat that as an environment-bound adapter value until the

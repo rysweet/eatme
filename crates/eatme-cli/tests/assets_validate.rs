@@ -3,6 +3,18 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[test]
+fn committed_assets_validation_exits_zero() {
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json"])
+        .current_dir(workspace_root())
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 0);
+    assert_stdout_contains(&output.stdout, "\"passed\": true");
+}
+
+#[test]
 fn malformed_scenario_asset_exits_nonzero() {
     let root = scratch_root("malformed-scenario-asset");
     let scenario_path = root.join("assets/scenarios/eatme/malformed.yaml");
@@ -23,6 +35,7 @@ title: ""
         .output()
         .unwrap();
 
+    assert_exit_code(&output, 1);
     assert!(!output.status.success());
     assert_stdout_contains(&output.stdout, "\"passed\": false");
 }
@@ -38,6 +51,7 @@ fn missing_scenario_root_exits_nonzero() {
         .output()
         .unwrap();
 
+    assert_exit_code(&output, 1);
     assert!(!output.status.success());
     assert_stdout_contains(&output.stdout, "\"passed\": false");
     assert_stdout_contains(&output.stdout, "assets/scenarios");
@@ -55,6 +69,7 @@ fn empty_scenario_root_exits_nonzero() {
         .output()
         .unwrap();
 
+    assert_exit_code(&output, 1);
     assert!(!output.status.success());
     assert_stdout_contains(&output.stdout, "\"passed\": false");
     assert_stdout_contains(
@@ -98,6 +113,17 @@ fn eatme_bin() -> PathBuf {
         path.pop();
     }
     path.join("eatme-cli")
+}
+
+fn assert_exit_code(output: &std::process::Output, code: i32) {
+    assert_eq!(
+        output.status.code(),
+        Some(code),
+        "unexpected status {:?}; stdout: {}; stderr: {}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 fn assert_stdout_contains(stdout: &[u8], needle: &str) {
