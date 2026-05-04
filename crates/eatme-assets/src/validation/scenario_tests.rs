@@ -1,7 +1,8 @@
 use super::*;
 use crate::schema::{
     EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioRealAlice,
-    EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
+    EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAgent, GadugiScenarioAgentConfig,
+    GadugiScenarioAssertion, GadugiScenarioStep,
 };
 use std::collections::BTreeMap;
 
@@ -191,28 +192,29 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
 #[test]
 fn gadugi_scenario_rejects_hardcoded_repo_paths() {
     let scenario = GadugiScenarioAsset {
-            name: "Hard-coded repo path".into(),
-            description: "Uses an environment-specific checkout path.".into(),
-            version: "1.0.0".into(),
-            steps: vec![GadugiScenarioStep {
-                name: "Validate assets".into(),
-                agent: "eatme-cli-agent".into(),
-                action: "execute_command".into(),
-                params: BTreeMap::from([(
-                    "command".into(),
-                    "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- assets validate --json".into(),
-                )]),
-            }],
-            assertions: vec![GadugiScenarioAssertion {
-                name: "Validation succeeded".into(),
-                assertion_type: "command_success".into(),
-            }],
-            metadata: crate::schema::GadugiScenarioMetadata {
-                source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
-                generated_by: "test".into(),
-            },
-            ..GadugiScenarioAsset::default()
-        };
+        name: "Hard-coded repo path".into(),
+        description: "Uses an environment-specific checkout path.".into(),
+        version: "1.0.0".into(),
+        steps: vec![GadugiScenarioStep {
+            name: "Validate assets".into(),
+            agent: "eatme-cli-agent".into(),
+            action: "execute_command".into(),
+            params: BTreeMap::from([(
+                "command".into(),
+                "cd /home/runner/work/eatme && cargo run -q -p eatme-cli -- assets validate --json"
+                    .into(),
+            )]),
+        }],
+        assertions: vec![GadugiScenarioAssertion {
+            name: "Validation succeeded".into(),
+            assertion_type: "command_success".into(),
+        }],
+        metadata: crate::schema::GadugiScenarioMetadata {
+            source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
+            generated_by: "test".into(),
+        },
+        ..GadugiScenarioAsset::default()
+    };
 
     let report = validate_gadugi_scenario(
         Path::new("assets/scenarios/gadugi/hard-coded.yaml"),
@@ -226,4 +228,49 @@ fn gadugi_scenario_rejects_hardcoded_repo_paths() {
             .iter()
             .any(|error| error.contains("must not hard-code"))
     );
+}
+
+#[test]
+fn gadugi_scenario_rejects_hardcoded_cwd_paths() {
+    let scenario = GadugiScenarioAsset {
+        name: "Hard-coded cwd".into(),
+        description: "Uses an environment-specific agent cwd.".into(),
+        version: "1.0.0".into(),
+        agents: vec![GadugiScenarioAgent {
+            name: "eatme-cli-agent".into(),
+            agent_type: "system".into(),
+            config: GadugiScenarioAgentConfig {
+                cwd: "/home/alice/src/eatme".into(),
+            },
+        }],
+        steps: vec![GadugiScenarioStep {
+            name: "Validate assets".into(),
+            agent: "eatme-cli-agent".into(),
+            action: "execute_command".into(),
+            params: BTreeMap::from([(
+                "command".into(),
+                "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
+                    .into(),
+            )]),
+        }],
+        assertions: vec![GadugiScenarioAssertion {
+            name: "Validation succeeded".into(),
+            assertion_type: "command_success".into(),
+        }],
+        metadata: crate::schema::GadugiScenarioMetadata {
+            source_eatme_asset: "assets/scenarios/eatme/real-alice-launch-smoke.yaml".into(),
+            generated_by: "test".into(),
+        },
+        ..GadugiScenarioAsset::default()
+    };
+
+    let report = validate_gadugi_scenario(
+        Path::new("assets/scenarios/gadugi/hard-coded-cwd.yaml"),
+        &scenario,
+    );
+
+    assert!(!report.passed);
+    assert!(report.errors.iter().any(|error| {
+        error.contains("eatme-cli-agent.config.cwd") && error.contains("must not hard-code")
+    }));
 }

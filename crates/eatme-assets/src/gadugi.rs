@@ -354,6 +354,7 @@ mod tests {
                 .join(format!("{}.yaml", scenario.id));
             let committed = fs::read_to_string(&target_path).unwrap();
 
+            assert_portable_gadugi_yaml(&generated, &root);
             assert_eq!(committed, generated, "{} is stale", target_path.display());
             let report = validate_scenario_asset(&target_path).unwrap();
             assert!(
@@ -363,5 +364,20 @@ mod tests {
                 report.errors
             );
         }
+    }
+
+    fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
+        let absolute_root = root.display().to_string();
+
+        assert!(
+            !generated.contains(&absolute_root),
+            "generated gadugi YAML leaked absolute repo root {absolute_root}"
+        );
+        assert!(
+            !generated.contains("/home/"),
+            "generated gadugi YAML leaked an absolute home path"
+        );
+        assert!(generated.contains("cwd: ."));
+        assert!(generated.contains("cd \"${EATME_REPO:-.}\""));
     }
 }

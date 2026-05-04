@@ -234,9 +234,9 @@ fn validate_gadugi_scenario(
 }
 
 fn validate_no_hardcoded_repo_path(field: &str, value: &str, errors: &mut Vec<String>) {
-    if value.contains("/home/azureuser/src/eatme") {
+    if value.contains("/home/") {
         errors.push(format!(
-            "{field} must not hard-code /home/azureuser/src/eatme; use relative paths or EATME_REPO"
+            "{field} must not hard-code an absolute home directory path; use relative paths or EATME_REPO"
         ));
     }
 }
