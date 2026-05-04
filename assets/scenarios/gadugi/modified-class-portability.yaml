@@ -49,6 +49,7 @@ steps:
     stdout_contains:
     - '"scenario_id": "modified-class-portability"'
     - '"failure_category": null'
+    - '"real_alice_execution_evidence"'
     - '"passed": true'
   timeout: 900000
 - name: Verify Portability Evidence

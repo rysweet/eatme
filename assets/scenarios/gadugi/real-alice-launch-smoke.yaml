@@ -74,6 +74,7 @@ steps:
     stdout_contains:
     - '"scenario_id": "real-alice-launch-smoke"'
     - '"failure_category": null'
+    - '"real_alice_execution_evidence"'
     - '"passed": true'
   timeout: 900000
 assertions:

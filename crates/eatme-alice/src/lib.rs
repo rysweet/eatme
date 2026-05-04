@@ -1,6 +1,5 @@
 pub mod deps;
 pub mod discover;
-mod evidence;
 pub mod launch;
 pub mod package;
 

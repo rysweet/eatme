@@ -259,6 +259,14 @@ pub(crate) struct GadugiScenarioStep {
     pub(crate) action: String,
     #[serde(default)]
     pub(crate) params: BTreeMap<String, String>,
+    #[serde(default)]
+    pub(crate) expect: GadugiScenarioExpect,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub(crate) struct GadugiScenarioExpect {
+    #[serde(default)]
+    pub(crate) stdout_contains: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

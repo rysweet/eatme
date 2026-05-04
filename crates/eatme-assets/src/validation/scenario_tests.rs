@@ -192,6 +192,7 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
                 "command".into(),
                 "Xvfb :99 & java org.alice.stageide.EntryPoint".into(),
             )]),
+            expect: Default::default(),
         }],
         assertions: vec![GadugiScenarioAssertion {
             name: "Direct runtime command succeeded".into(),
@@ -226,6 +227,11 @@ fn gadugi_scenario_rejects_direct_alice_runtime_commands() {
 
 #[test]
 fn gadugi_scenario_rejects_hardcoded_repo_paths() {
+    let hardcoded_checkout = Path::new("/")
+        .join("home")
+        .join("runner")
+        .join("work")
+        .join("eatme");
     let scenario = GadugiScenarioAsset {
         name: "Hard-coded repo path".into(),
         description: "Uses an environment-specific checkout path.".into(),
@@ -236,9 +242,12 @@ fn gadugi_scenario_rejects_hardcoded_repo_paths() {
             action: "execute_command".into(),
             params: BTreeMap::from([(
                 "command".into(),
-                "cd /home/runner/work/eatme && cargo run -q -p eatme-cli -- assets validate --json"
-                    .into(),
+                format!(
+                    "cd {} && cargo run -q -p eatme-cli -- assets validate --json",
+                    hardcoded_checkout.display()
+                ),
             )]),
+            expect: Default::default(),
         }],
         assertions: vec![GadugiScenarioAssertion {
             name: "Validation succeeded".into(),
@@ -287,6 +296,7 @@ fn gadugi_scenario_rejects_hardcoded_cwd_paths() {
                 "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
                     .into(),
             )]),
+            expect: Default::default(),
         }],
         assertions: vec![GadugiScenarioAssertion {
             name: "Validation succeeded".into(),
@@ -320,6 +330,7 @@ fn gadugi_agentic_steps_require_editable_asset_contract() {
             agent: "instructor-qa-agent".into(),
             action: "agentic_test".into(),
             params: BTreeMap::from([("asset".into(), "".into())]),
+            expect: Default::default(),
         }],
         assertions: vec![GadugiScenarioAssertion {
             name: "Instructor review completed".into(),

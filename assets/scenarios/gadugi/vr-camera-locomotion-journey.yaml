@@ -74,6 +74,7 @@ steps:
     stdout_contains:
     - '"scenario_id": "vr-camera-locomotion-journey"'
     - '"failure_category": null'
+    - '"real_alice_execution_evidence"'
     - '"passed": true'
   timeout: 900000
 - name: Agentic Journey Evidence

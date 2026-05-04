@@ -62,6 +62,7 @@ steps:
     stdout_contains:
     - '"scenario_id": "game-score-timer-win-lose-loop"'
     - '"failure_category": null'
+    - '"real_alice_execution_evidence"'
     - '"passed": true'
   timeout: 900000
 assertions:

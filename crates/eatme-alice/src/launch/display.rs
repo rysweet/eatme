@@ -8,6 +8,9 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
+const EATME_X11_SOCKET_DIR_ENV: &str = "EATME_X11_SOCKET_DIR";
+const X11_UNIX_DIR_ENV: &str = "X11_UNIX_DIR";
+
 pub(super) struct DisplayAllocation {
     name: String,
     lock_path: PathBuf,
@@ -58,9 +61,6 @@ fn reserve_display_with_socket_check(
         writeln!(lock, "pid={}", std::process::id())
             .with_context(|| format!("writing display lock {}", lock_path.display()))?;
 
-        // The lock only coordinates eatme-managed Xvfb launches. An external X
-        // server can still appear after this point; rechecking would introduce a
-        // TOCTOU window by dropping the reservation we just acquired.
         return Ok(DisplayAllocation {
             name: format!(":{display}"),
             lock_path,
@@ -121,10 +121,15 @@ fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
 }
 
 fn display_socket_exists(display: u16) -> bool {
-    let x11_unix_dir = env::var_os("X11_UNIX_DIR")
+    x11_socket_dir().join(format!("X{display}")).exists()
+}
+
+fn x11_socket_dir() -> PathBuf {
+    env::var_os(EATME_X11_SOCKET_DIR_ENV)
+        .filter(|value| !value.is_empty())
+        .or_else(|| env::var_os(X11_UNIX_DIR_ENV).filter(|value| !value.is_empty()))
         .map(PathBuf::from)
-        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"));
-    x11_unix_dir.join(format!("X{display}")).exists()
+        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"))
 }
 
 #[cfg(test)]

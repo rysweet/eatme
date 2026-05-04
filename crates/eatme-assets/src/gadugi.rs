@@ -257,6 +257,7 @@ fn expected_stdout(scenario: &EatmeScenarioAsset, step_id: &str) -> Vec<String> 
         return vec![
             format!("\"scenario_id\": \"{}\"", scenario.id),
             "\"failure_category\": null".into(),
+            "\"real_alice_execution_evidence\"".into(),
             "\"passed\": true".into(),
         ];
     }

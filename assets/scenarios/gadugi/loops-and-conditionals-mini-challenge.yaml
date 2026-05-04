@@ -62,6 +62,7 @@ steps:
     stdout_contains:
     - '"scenario_id": "loops-and-conditionals-mini-challenge"'
     - '"failure_category": null'
+    - '"real_alice_execution_evidence"'
     - '"passed": true'
   timeout: 900000
 assertions:
