@@ -58,15 +58,15 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
         json: true,
         no_memory: true,
         offline_package: true,
-        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+        scenario: LaunchSmokeScenario::new("hour-of-code-studio-kickoff"),
     })
     .unwrap();
 
-    assert_eq!(manifest.scenario_id, "code-editor-first-run");
+    assert_eq!(manifest.scenario_id, "hour-of-code-studio-kickoff");
     assert!(
         fixture
             .root
-            .join("runs/code-editor-first-run/lesson-run/manifest.json")
+            .join("runs/hour-of-code-studio-kickoff/lesson-run/manifest.json")
             .is_file()
     );
 }
