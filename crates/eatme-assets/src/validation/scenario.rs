@@ -111,16 +111,15 @@ fn validate_eatme_scenario(
     } else if !matches!(
         scenario.kind.as_str(),
         "alice_lesson_smoke" | "instructor_agentic_flow"
-    ) {
-        if let Some(personas) = &scenario.personas {
-            validate_scenario_personas(
-                &scenario.id,
-                personas,
-                persona_index,
-                persona_diagnostics,
-                &mut errors,
-            );
-        }
+    ) && let Some(personas) = &scenario.personas
+    {
+        validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            &mut errors,
+        );
     }
     if portability::is_class_portability_scenario(scenario)
         && scenario.kind != "alice_class_portability_smoke"
