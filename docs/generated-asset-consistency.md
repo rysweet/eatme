@@ -34,7 +34,9 @@ assets/scenarios/gadugi/
 
 Most Gadugi scenario assets are generated adapters whose matching source files
 live under `assets/scenarios/eatme/`. A small number may be hand-authored
-regression assets, such as validation CLI contract tests.
+regression assets, such as validation CLI contract tests. Hand-authored Gadugi
+regression assets are still scenario assets and still contribute to validation
+counts, but they are not generated adapter targets.
 
 The `scenario_asset_count` value is derived by discovering every `.yaml` and
 `.yml` scenario file under:
@@ -55,7 +57,8 @@ The current inventory has 37 scenario YAML files:
 | Generated Gadugi adapters | 18 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
-Generated adapters use that discovered count in their validation expectations:
+CLI-backed generated adapters use that discovered count in their validation
+expectations:
 
 ```yaml
 expect:
@@ -65,11 +68,16 @@ expect:
     - '"scenario_asset_count": 37'
 ```
 
+Instructor agentic generated adapters still run `assets validate --json`, but
+they assert the relevant instructor scenario id instead of embedding
+`scenario_asset_count`.
+
 When scenario assets are added, removed, or renamed, the generated adapters must
-be regenerated so the committed expectation matches the discovered inventory.
-For removals and renames, remove the obsolete generated adapter file as part of
-the same change; the generator rewrites expected adapters but does not prune
-orphaned Gadugi files.
+be regenerated so committed expectations match the discovered inventory. For
+removals and renames, remove the obsolete generated adapter file as part of the
+same change. The generator compares and rewrites expected adapter targets; it
+does not prune or report orphaned Gadugi files that no longer have a canonical
+source.
 
 ## Usage
 
@@ -170,9 +178,9 @@ Output fields:
 | --- | --- |
 | `schema_version` | Generation report schema, currently `eatme.assets/gadugi-adapter-generation/v1` |
 | `root` | Repository root used for discovery |
-| `generated_count` | Number of adapters the generator would produce from canonical eatme scenarios |
+| `generated_count` | Number of adapter targets the generator would produce from canonical eatme scenarios |
 | `checked_count` | Number of generated adapter targets compared in check mode |
-| `changed` | Adapter paths that are stale, missing, or would be rewritten |
+| `changed` | Expected adapter target paths that are stale, missing, or would be rewritten |
 | `passed` | `true` only when committed adapters exactly match generated output |
 | `errors` | Blocking freshness errors |
 
@@ -180,8 +188,13 @@ Exit behavior:
 
 | Result | Exit code | Output contract |
 | --- | --- | --- |
-| Adapters are fresh | `0` | JSON report with `passed: true` and empty `changed` |
-| Adapter is stale or missing | Non-zero | JSON report with `passed: false`, changed path, and regeneration guidance |
+| Expected adapter targets are fresh | `0` | JSON report with `passed: true` and empty `changed` |
+| Expected adapter target is stale or missing | Non-zero | JSON report with `passed: false`, changed path, and regeneration guidance |
+
+Check mode does not validate extra Gadugi YAML files that are not expected
+generated targets. Run `assets validate --json` to validate the full scenario
+inventory, and manually delete obsolete generated adapters when a canonical
+scenario is removed or renamed.
 
 ### `assets generate-gadugi --json`
 
@@ -191,8 +204,9 @@ Regenerates Gadugi adapters in place from canonical eatme scenarios.
 cargo run -q -p eatme-cli -- assets generate-gadugi --json
 ```
 
-The command writes only generated adapter output under
-`assets/scenarios/gadugi/`. It does not rewrite canonical eatme scenarios.
+The command writes expected generated adapter targets under
+`assets/scenarios/gadugi/`. It does not rewrite canonical eatme scenarios, and
+it does not delete obsolete generated adapters.
 
 ## Configuration
 
@@ -249,7 +263,8 @@ includes:
 }
 ```
 
-Generated Gadugi adapters for that same inventory expect the same count:
+CLI-backed generated Gadugi adapters for that same inventory expect the same
+count:
 
 ```yaml
 stdout_contains:
@@ -260,9 +275,9 @@ stdout_contains:
 ### Stale adapter check
 
 If the scenario inventory changes and adapters are not regenerated, check mode
-reports generated adapters whose committed expectations no longer match. When a
-new canonical scenario has no generated adapter yet, check mode reports the new
-target as missing:
+reports expected generated adapter targets whose committed expectations no
+longer match. When a new canonical scenario has no generated adapter yet, check
+mode reports the new target as missing:
 
 ```json
 {
@@ -321,8 +336,9 @@ Use this workflow when adding, removing, or renaming a canonical scenario.
    together.
 
 For removals and renames, also delete the obsolete generated adapter under
-`assets/scenarios/gadugi/`; `generate-gadugi` does not delete files that no
-longer have a canonical source.
+`assets/scenarios/gadugi/`. `generate-gadugi` does not delete files that no
+longer have a canonical source, and check mode compares only the adapter targets
+that should be generated from the remaining canonical scenarios.
 
 Do not hand-edit `scenario_asset_count` in generated adapters. A hand edit may
 make one file pass locally while leaving the generator and committed output out

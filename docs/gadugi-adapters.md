@@ -38,7 +38,10 @@ Use the check mode in CI and before opening a PR:
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
-The command fails when generated files would differ from committed files.
+The command compares one expected generated adapter target per canonical eatme
+scenario and fails when any expected target is stale or missing. It does not
+prune extra Gadugi YAML files; remove obsolete generated adapters manually when
+their canonical source is removed or renamed.
 See [Generated Asset Consistency](generated-asset-consistency.md) for the
 `scenario_asset_count` source of truth, generator freshness contract, and
 validation exit-code behavior.

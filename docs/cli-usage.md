@@ -67,8 +67,10 @@ cargo run -q -p eatme-cli -- assets generate-gadugi \
   --json
 ```
 
-`--check` exits with a failure when an adapter would change. That makes it the
-right command for CI and pre-PR validation.
+`--check` exits with a failure when an expected generated adapter target is
+stale or missing. That makes it the right command for CI and pre-PR validation.
+It does not delete or report extra Gadugi YAML files, so remove obsolete
+generated adapters manually when their canonical source is removed or renamed.
 
 The adapter generator derives validation expectations from the actual scenario
 asset inventory. See
