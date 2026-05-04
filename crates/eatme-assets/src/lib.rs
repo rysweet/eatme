@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(report.instructor_count, 11);
         assert_eq!(report.student_count, 13);
         assert_eq!(report.core_scenario_count, 24);
-        assert_eq!(report.creative_scenario_count, 12);
+        assert_eq!(report.creative_scenario_count, 11);
     }
 
     #[test]

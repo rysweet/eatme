@@ -78,6 +78,7 @@ steps:
     evidence:
       - manifest scenario_id equals variables-scorekeeper-timekeeper
       - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
       - manifest assertions all pass
       - screenshot or window evidence exists and is non-empty
       - log exists and is non-empty
