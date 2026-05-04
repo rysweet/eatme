@@ -17,13 +17,14 @@ environment:
     - EATME_REAL_ALICE
   optional:
     - RUN_ID
+    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
     type: "system"
     config:
       shell: "bash"
-      cwd: "/home/azureuser/src/eatme"
+      cwd: "."
       timeout: 1800000
       capture_output: true
 
@@ -32,7 +33,7 @@ steps:
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
-      command: "cd /home/azureuser/src/eatme && cargo run -q -p eatme-cli -- assets validate --json"
+      command: "cargo run -q -p eatme-cli -- assets validate --json"
     expect:
       exit_code: 0
       stdout_contains:
@@ -45,7 +46,7 @@ steps:
     action: "execute_command"
     params:
       command: |
-        cd /home/azureuser/src/eatme
+        cd "${EATME_REPO:-.}"
         export RUN_ID="${RUN_ID:-gadugi-first-lessons-real-ui-actions}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
