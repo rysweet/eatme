@@ -1,6 +1,7 @@
 use anyhow::{Result, bail};
 use eatme_core::{CommandOutput, CommandRunner, CommandSpec};
 use serde::Serialize;
+use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
@@ -55,9 +56,7 @@ pub fn discover_alice(alice_home: &Path, runner: &impl CommandRunner) -> Result<
         git_commit,
         java_version: first_non_empty(&java_version.stderr, &java_version.stdout),
         maven_version: first_non_empty(&maven_version.stdout, &maven_version.stderr),
-        alice_ide_jar_exists: alice_home
-            .join("alice-ide/target/alice-ide-9.1.0-SNAPSHOT.jar")
-            .exists(),
+        alice_ide_jar_exists: alice_ide_jar_exists(alice_home),
         target_lib_exists: alice_home.join("alice-ide/target/lib").is_dir(),
         starter_project_exists: alice_home
             .join("core/resources/target/distribution/application/starter-projects/africa.a3p")
@@ -73,6 +72,27 @@ pub fn first_non_empty(primary: &str, fallback: &str) -> String {
         .unwrap_or("")
         .trim()
         .to_string()
+}
+
+fn alice_ide_jar_exists(alice_home: &Path) -> bool {
+    let target = alice_home.join("alice-ide/target");
+    fs::read_dir(target)
+        .ok()
+        .into_iter()
+        .flat_map(|entries| entries.filter_map(Result::ok))
+        .any(|entry| {
+            entry
+                .path()
+                .file_name()
+                .and_then(|name| name.to_str())
+                .map(|name| {
+                    name.starts_with("alice-ide-")
+                        && name.ends_with(".jar")
+                        && !name.contains("-sources")
+                        && !name.contains("-javadoc")
+                })
+                .unwrap_or(false)
+        })
 }
 
 fn ensure_success(output: &CommandOutput, action: &str) -> Result<()> {

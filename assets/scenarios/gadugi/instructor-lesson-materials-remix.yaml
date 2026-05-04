@@ -35,7 +35,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 28'
+        - '"scenario_asset_count": 30'
         - '"instructor-lesson-materials-remix"'
     timeout: 60000
 

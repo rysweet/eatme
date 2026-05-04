@@ -198,6 +198,8 @@ pub(crate) struct ScenarioAgenticFollowOn {
     pub(crate) personality_assets: Vec<String>,
     #[serde(default)]
     pub(crate) deterministic_gate: String,
+    #[serde(default)]
+    pub(crate) required_observables: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

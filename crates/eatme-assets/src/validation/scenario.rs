@@ -194,6 +194,15 @@ fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<Str
             "agentic_follow_on.deterministic_gate",
             errors,
         );
+        if follow_on
+            .required_observables
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            errors.push(
+                "agentic_follow_on.required_observables must contain non-empty values".into(),
+            );
+        }
     }
 }
 
