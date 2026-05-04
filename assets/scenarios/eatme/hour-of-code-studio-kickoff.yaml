@@ -1,0 +1,146 @@
+schema_version: eatme.scenario/v1
+id: hour-of-code-studio-kickoff
+title: Hour of Code Studio Kickoff
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Hour of Code lesson
+    url: https://www.alice.org/resources/lessons/hour-of-code/
+  - name: Alice.org Building a Scene lesson
+    url: https://www.alice.org/resources/lessons/building-a-scene/
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+purpose: >-
+  Prove that the Hour of Code studio kickoff lane launches through the real
+  Alice desktop harness before instructor/student agents judge setup readiness,
+  novice first-scene creation, first animation evidence, and reflection.
+launcher:
+  command: alice launch-smoke
+  scenario: hour-of-code-studio-kickoff
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - classroom-orchestrator
+    - studio-facilitator
+    - concept-cartographer
+  students:
+    - curious-novice
+    - creative-storyteller
+    - reflective-debugger
+persona_assets:
+  instructor_setup:
+    card: hour-of-code-studio-kickoff-card
+    editable_prompt: >-
+      Start with a launch/readiness check, name fallbacks for blocked devices,
+      then run a studio cycle: storyboard a tiny moment, build first scene, run
+      first animation, collect evidence, reflect, and choose one next change.
+    evidence:
+      - readiness status or fallback role is visible before build time starts
+      - kickoff stays scoped to a 60-minute Hour of Code session
+  novice_student:
+    card: hour-of-code-novice-reflection-card
+    editable_prompt: >-
+      Build a tiny Alice world with two meaningful objects or roles. Make one
+      thing move, turn, speak, or otherwise animate. Record what you expected,
+      what happened, and one small next change.
+    evidence:
+      - first scene exists
+      - first animation runs or window evidence confirms the run-ready state
+      - reflection links a visible behavior to a student-authored choice
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+studio_cycle:
+  setup:
+    - validate assets and desktop dependencies
+    - confirm Alice launches or assign fallback pair/planner role
+  build:
+    - create a tiny scene with at least two purposeful objects or roles
+    - add one first animation using a procedure or run-ready behavior
+  evidence_reflection:
+    - capture manifest evidence before agentic judgment
+    - capture screenshot or window-list evidence when available
+    - write a novice reflection connecting a visible change to an Alice choice
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the hour-of-code-studio-kickoff scenario is launched through eatme
+    then: the manifest identifies scenario_id hour-of-code-studio-kickoff
+  - given: a mixed-readiness Hour of Code classroom
+    when: instructor agents prepare the kickoff
+    then: each learner has a real launch path or named fallback studio role
+  - given: a novice student completes the first build cycle
+    when: instructor/student agents inspect the result
+    then: evidence includes a first scene, first animation, and cause/effect reflection
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario hour-of-code-studio-kickoff
+    evidence:
+      - manifest scenario_id equals hour-of-code-studio-kickoff
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#hour-of-code-studio-kickoff
+  personality_assets:
+    - hour-of-code-studio-kickoff-card
+    - hour-of-code-novice-reflection-card
+    - socratic-scaffold-card
+    - prediction-observation-reflection-card
+  deterministic_gate: >-
+    Run this smoke lane before asking instructor/student agents to judge whether
+    an Hour of Code participant moved from setup through first scene, first
+    animation, evidence capture, and reflection.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/hour-of-code-studio-kickoff/${RUN_ID}/manifest.json
+  screenshot: runs/hour-of-code-studio-kickoff/${RUN_ID}/screenshots/startup.png
+  log: runs/hour-of-code-studio-kickoff/${RUN_ID}/alice.log
+  window_list: runs/hour-of-code-studio-kickoff/${RUN_ID}/window-list.txt
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly and assign a fallback studio
+  role. Do not silently skip, mock Alice, or treat setup failure as student
+  failure.

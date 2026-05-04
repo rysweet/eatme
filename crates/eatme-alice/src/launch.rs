@@ -1,10 +1,14 @@
 use crate::deps::check_dependencies;
-use crate::discover::{discover_alice, first_non_empty};
+use crate::discover::discover_alice;
+use crate::evidence::{
+    artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
+    scan_fatal_logs,
+};
 use crate::package::{PackageOptions, package_alice};
 use anyhow::{Context, Result, bail};
 use eatme_core::{
     ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
-    RealCommandRunner, file_size, sha256_file,
+    RealCommandRunner,
 };
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -33,7 +37,7 @@ impl LaunchSmokeScenario {
     }
 
     pub fn accepts_window_evidence(&self) -> bool {
-        self.id != "real-alice-launch-smoke"
+        true
     }
 }
 
@@ -125,52 +129,52 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category = Some("alice_process_exited".into());
     }
 
-    let window_list = capture_window_list(&runner, &display, &run_dir).unwrap_or_default();
-    let window_evidence_ok = !window_list.trim().is_empty();
-    let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
+    let (window_text, window_list_error) =
+        capture_text_or_error(capture_window_list(&runner, &display, &run_dir));
+    let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
+    let window_list_error = combine_errors([window_list_error, window_info_error]);
+    let window_evidence_ok = has_alice_window_evidence(&window_text);
+    let (screenshot, screenshot_error) =
+        capture_artifact_or_error(capture_screenshot(&runner, &display, &run_dir));
     let screenshot_ok = screenshot
         .as_ref()
         .map(|artifact| artifact.size_bytes > 0)
         .unwrap_or(false);
-    let smoke_ready_visual_evidence =
-        screenshot_ok || (options.scenario.accepts_window_evidence() && window_evidence_ok);
+    let smoke_ready_visual_evidence = screenshot_ok || window_evidence_ok;
+    let visual_evidence_detail = visual_evidence_detail(
+        screenshot_ok,
+        window_evidence_ok,
+        screenshot_error.as_deref(),
+        window_list_error.as_deref(),
+    );
     assertions.insert(
         "startup_screenshot".into(),
-        bool_assert(
-            smoke_ready_visual_evidence,
-            if options.scenario.accepts_window_evidence() {
-                "startup screenshot exists or window evidence was captured"
-            } else {
-                "startup screenshot exists and is non-empty"
-            },
-        ),
+        bool_assert(smoke_ready_visual_evidence, visual_evidence_detail.clone()),
     );
-    if options.scenario.accepts_window_evidence() {
-        assertions.insert(
-            "startup_window_or_screenshot".into(),
-            bool_assert(
-                smoke_ready_visual_evidence,
-                "startup screenshot or window evidence exists",
-            ),
-        );
-    }
+    assertions.insert(
+        "startup_window_or_screenshot".into(),
+        bool_assert(smoke_ready_visual_evidence, visual_evidence_detail),
+    );
     if !smoke_ready_visual_evidence && failure_category.is_none() {
         failure_category = Some("screenshot_missing".into());
     }
 
-    let fatal_log_scan = scan_fatal_logs(&log_path);
+    let (fatal_log_scan, log_scan_error) = capture_text_or_error(scan_fatal_logs(&log_path));
     assertions.insert(
         "no_fatal_logs".into(),
         bool_assert(
-            fatal_log_scan.is_empty(),
-            format!("{} fatal log lines found", fatal_log_scan.len()),
+            log_scan_error.is_none() && fatal_log_scan.is_empty(),
+            fatal_log_detail(&fatal_log_scan, log_scan_error.as_deref()),
         ),
     );
-    if !fatal_log_scan.is_empty() && failure_category.is_none() {
+    if log_scan_error.is_some() && failure_category.is_none() {
+        failure_category = Some("log_unreadable".into());
+    } else if !fatal_log_scan.is_empty() && failure_category.is_none() {
         failure_category = Some("fatal_log".into());
     }
 
-    let log = artifact_info(&log_path).ok();
+    let (log, log_artifact_error) = artifact_or_error(&log_path);
+    let log_error = combine_errors([log_scan_error, log_artifact_error]);
     let launch_command = format!("java {}", launch_args.join(" "));
     let manifest = LaunchSmokeManifest {
         schema_version: "eatme.launch-smoke/v1".into(),
@@ -189,8 +193,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         xvfb_pid: Some(xvfb.id()),
         alice_pid: Some(alice.id()),
         timeout_seconds: options.timeout_seconds,
+        window_list,
+        window_list_error,
         screenshot,
+        screenshot_error,
         log,
+        log_error,
         fatal_log_scan,
         assertions,
         failure_category,
@@ -362,96 +370,72 @@ fn wait_for_display(runner: &impl CommandRunner, display: &str, timeout: Duratio
     false
 }
 
-fn capture_window_list(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<String> {
-    let output = runner.run(
-        &CommandSpec::new("wmctrl")
-            .args(["-lx"])
-            .env("DISPLAY", display)
-            .timeout(Duration::from_secs(5))
-            .retries(2, Duration::from_millis(100)),
-    )?;
-    if output.exit_status != Some(0) {
-        bail!(
-            "capturing window list failed with {:?}\n{}{}",
-            output.exit_status,
-            output.stdout,
-            output.stderr
-        );
-    }
-    let combined = first_non_empty(&output.stdout, &output.stderr);
-    fs::write(run_dir.join("window-list.txt"), &combined)?;
-    Ok(combined)
-}
-
-fn capture_screenshot(
-    runner: &impl CommandRunner,
-    display: &str,
-    run_dir: &Path,
-) -> Result<ArtifactInfo> {
-    let path = run_dir.join("screenshots/startup.png");
-    let scrot = CommandSpec::new("scrot")
-        .args([path.display().to_string()])
-        .env("DISPLAY", display)
-        .timeout(Duration::from_secs(10))
-        .retries(2, Duration::from_millis(100));
-    let output = runner.run(&scrot)?;
-    if output.exit_status != Some(0) {
-        let fallback = runner.run(
-            &CommandSpec::new("import")
-                .args(["-window".into(), "root".into(), path.display().to_string()])
-                .env("DISPLAY", display)
-                .timeout(Duration::from_secs(10))
-                .retries(2, Duration::from_millis(100)),
-        )?;
-        if fallback.exit_status != Some(0) {
-            bail!(
-                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
-                output.exit_status,
-                fallback.exit_status,
-                output.stdout,
-                output.stderr,
-                fallback.stdout,
-                fallback.stderr
-            );
-        }
-    }
-    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
-}
-
-fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
-    Ok(ArtifactInfo {
-        path: path.display().to_string(),
-        size_bytes: file_size(path)?,
-        sha256: sha256_file(path)?,
-    })
-}
-
-fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
-    let content = fs::read_to_string(log_path).unwrap_or_default();
-    let patterns = [
-        "Unable to open DISPLAY",
-        "No X11 DISPLAY",
-        "SEVERE",
-        "Exception in thread",
-        "HeadlessException",
-        "GLException",
-    ];
-    content
-        .lines()
-        .filter(|line| patterns.iter().any(|pattern| line.contains(pattern)))
-        .map(str::to_string)
-        .collect()
-}
-
 fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
     runner
         .run(&spec)
         .map(|output| output.exit_status == Some(0))
         .unwrap_or(false)
+}
+
+fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
+    match result {
+        Ok(value) => (value, None),
+        Err(error) => (T::default(), Some(format!("{error:#}"))),
+    }
+}
+
+fn capture_artifact_or_error<T>(result: Result<T>) -> (Option<T>, Option<String>) {
+    match result {
+        Ok(value) => (Some(value), None),
+        Err(error) => (None, Some(format!("{error:#}"))),
+    }
+}
+
+fn artifact_or_error(path: &Path) -> (Option<ArtifactInfo>, Option<String>) {
+    capture_artifact_or_error(artifact_info(path))
+}
+
+fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<String> {
+    let errors = errors.into_iter().flatten().collect::<Vec<_>>();
+    if errors.is_empty() {
+        None
+    } else {
+        Some(errors.join("\n"))
+    }
+}
+
+fn visual_evidence_detail(
+    screenshot_ok: bool,
+    window_evidence_ok: bool,
+    screenshot_error: Option<&str>,
+    window_list_error: Option<&str>,
+) -> String {
+    if screenshot_ok {
+        return "startup screenshot exists and is non-empty".into();
+    }
+    if window_evidence_ok {
+        return "Alice-specific window identity was captured".into();
+    }
+
+    let mut details = vec![
+        "startup requires a non-empty screenshot or Alice-specific window identity".to_string(),
+    ];
+    match screenshot_error {
+        Some(error) => details.push(format!("screenshot error: {error}")),
+        None => details.push("startup screenshot is missing or empty".into()),
+    }
+    match window_list_error {
+        Some(error) => details.push(format!("window list error: {error}")),
+        None => details.push("no Alice-specific window identity found".into()),
+    }
+    details.join("; ")
+}
+
+fn fatal_log_detail(fatal_lines: &[String], log_error: Option<&str>) -> String {
+    if let Some(error) = log_error {
+        return format!("Alice log could not be read: {error}");
+    }
+    format!("{} fatal log lines found", fatal_lines.len())
 }
 
 fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
@@ -495,5 +479,4 @@ fn shutdown(child: &mut Child) {
 }
 
 #[cfg(test)]
-#[path = "launch_tests.rs"]
 mod tests;
