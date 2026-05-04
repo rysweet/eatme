@@ -35,6 +35,10 @@ impl LaunchSmokeScenario {
     pub fn accepts_window_evidence(&self) -> bool {
         self.id != "real-alice-launch-smoke"
     }
+
+    pub fn requires_real_ui_actions(&self) -> bool {
+        self.id == "first-lessons-real-ui-actions"
+    }
 }
 
 impl Default for LaunchSmokeScenario {
@@ -61,14 +65,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
-    let discovery = discover_alice(&options.alice_home, &runner)?;
-    let package = package_alice(
-        PackageOptions {
-            alice_home: &options.alice_home,
-            offline: options.offline_package,
-        },
-        &runner,
-    )?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
     let run_dir = options
         .runs_dir
@@ -89,6 +85,26 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     } else {
         Some("missing_dependency".to_string())
     };
+    if !deps.all_required_available {
+        return write_preflight_blocked_manifest(
+            options,
+            &run_dir,
+            deps.tools,
+            eatme_commit,
+            "missing_dependency",
+            "preflight blocked: one or more required desktop dependencies are unavailable",
+            assertions,
+        );
+    }
+
+    let discovery = discover_alice(&options.alice_home, &runner)?;
+    let package = package_alice(
+        PackageOptions {
+            alice_home: &options.alice_home,
+            offline: options.offline_package,
+        },
+        &runner,
+    )?;
 
     let display = choose_display();
     let mut xvfb = start_xvfb(&display, &run_dir)?;
@@ -127,6 +143,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
 
     let window_list = capture_window_list(&runner, &display, &run_dir).unwrap_or_default();
     let window_evidence_ok = !window_list.trim().is_empty();
+    let specific_alice_window_ok = specific_alice_window_detected(&window_list);
+    let window_list_artifact = artifact_info(&run_dir.join("window-list.txt")).ok();
     let screenshot = capture_screenshot(&runner, &display, &run_dir).ok();
     let screenshot_ok = screenshot
         .as_ref()
@@ -157,6 +175,18 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if !smoke_ready_visual_evidence && failure_category.is_none() {
         failure_category = Some("screenshot_missing".into());
     }
+    if options.scenario.requires_real_ui_actions() {
+        assertions.insert(
+            "specific_alice_window_detected".into(),
+            bool_assert(
+                specific_alice_window_ok,
+                "wmctrl window list contains an Alice Stage IDE window",
+            ),
+        );
+        if !specific_alice_window_ok && failure_category.is_none() {
+            failure_category = Some("alice_window_not_detected".into());
+        }
+    }
 
     let fatal_log_scan = scan_fatal_logs(&log_path);
     assertions.insert(
@@ -171,6 +201,53 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
 
     let log = artifact_info(&log_path).ok();
+    let ui_action_contract = if options.scenario.requires_real_ui_actions() {
+        let artifact = write_ui_action_contract(
+            &run_dir,
+            specific_alice_window_ok,
+            smoke_ready_visual_evidence,
+            log.as_ref()
+                .map(|artifact| artifact.size_bytes > 0)
+                .unwrap_or(false),
+        )?;
+        assertions.insert(
+            "place_object_ui_action".into(),
+            AssertionResult::fail(
+                "blocked: no supported Alice desktop automation can add/place an object yet",
+            ),
+        );
+        assertions.insert(
+            "edit_procedure_ui_action".into(),
+            AssertionResult::fail(
+                "blocked: no supported Alice desktop automation can edit a procedure or code block yet",
+            ),
+        );
+        assertions.insert(
+            "run_world_ui_action".into(),
+            AssertionResult::fail(
+                "blocked: no supported Alice desktop automation can run the world yet",
+            ),
+        );
+        assertions.insert(
+            "save_project_ui_action".into(),
+            AssertionResult::fail(
+                "blocked: no supported Alice desktop automation can save the project yet",
+            ),
+        );
+        assertions.insert(
+            "ui_action_artifact_captured".into(),
+            bool_assert(
+                artifact.size_bytes > 0,
+                "ui action contract artifact exists and is non-empty",
+            ),
+        );
+        if failure_category.is_none() {
+            failure_category = Some("ui_action_automation_unimplemented".into());
+        }
+        Some(artifact)
+    } else {
+        None
+    };
     let launch_command = format!("java {}", launch_args.join(" "));
     let manifest = LaunchSmokeManifest {
         schema_version: "eatme.launch-smoke/v1".into(),
@@ -190,6 +267,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         alice_pid: Some(alice.id()),
         timeout_seconds: options.timeout_seconds,
         screenshot,
+        window_list: window_list_artifact,
+        ui_action_contract,
         log,
         fatal_log_scan,
         assertions,
@@ -214,6 +293,84 @@ fn prepare_run_dir(run_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+fn write_preflight_blocked_manifest(
+    options: &LaunchSmokeOptions,
+    run_dir: &Path,
+    dependency_checks: BTreeMap<String, bool>,
+    eatme_commit: String,
+    failure_category: &str,
+    detail: &str,
+    mut assertions: BTreeMap<String, AssertionResult>,
+) -> Result<LaunchSmokeManifest> {
+    let log_path = run_dir.join("alice.log");
+    fs::write(&log_path, format!("{detail}\n"))?;
+    if options.scenario.requires_real_ui_actions() {
+        assertions.insert(
+            "specific_alice_window_detected".into(),
+            AssertionResult::fail("preflight blocked before an Alice window could be verified"),
+        );
+        assertions.insert(
+            "place_object_ui_action".into(),
+            AssertionResult::fail("preflight blocked before add/place object automation could run"),
+        );
+        assertions.insert(
+            "edit_procedure_ui_action".into(),
+            AssertionResult::fail(
+                "preflight blocked before procedure/code-block editing could run",
+            ),
+        );
+        assertions.insert(
+            "run_world_ui_action".into(),
+            AssertionResult::fail("preflight blocked before world execution could run"),
+        );
+        assertions.insert(
+            "save_project_ui_action".into(),
+            AssertionResult::fail("preflight blocked before project save could run"),
+        );
+    }
+    let log = artifact_info(&log_path).ok();
+    let ui_action_contract = if options.scenario.requires_real_ui_actions() {
+        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some())?;
+        assertions.insert(
+            "ui_action_artifact_captured".into(),
+            bool_assert(
+                artifact.size_bytes > 0,
+                "ui action contract artifact exists and is non-empty",
+            ),
+        );
+        Some(artifact)
+    } else {
+        None
+    };
+    let manifest = LaunchSmokeManifest {
+        schema_version: "eatme.launch-smoke/v1".into(),
+        scenario_id: options.scenario.id.clone(),
+        run_id: options.run_id.clone(),
+        alice_home: options.alice_home.display().to_string(),
+        alice_git_commit: "unknown".into(),
+        eatme_git_commit: eatme_commit,
+        java_version: "unknown".into(),
+        maven_version: "unknown".into(),
+        dependency_checks,
+        build_command: String::new(),
+        build_exit_status: None,
+        launch_command: String::new(),
+        display: String::new(),
+        xvfb_pid: None,
+        alice_pid: None,
+        timeout_seconds: options.timeout_seconds,
+        screenshot: None,
+        window_list: None,
+        ui_action_contract,
+        log,
+        fatal_log_scan: vec![detail.to_string()],
+        assertions,
+        failure_category: Some(failure_category.to_string()),
+    };
+    write_manifest(run_dir, &manifest)?;
+    Ok(manifest)
+}
+
 fn validate_scenario_name(name: &str) -> Result<()> {
     if name.is_empty()
         || name.starts_with('-')
@@ -235,6 +392,13 @@ fn choose_display() -> String {
         }
     }
     ":99".into()
+}
+
+fn specific_alice_window_detected(window_list: &str) -> bool {
+    window_list.lines().any(|line| {
+        let lower = line.to_ascii_lowercase();
+        lower.contains("org.alice.stageide") || lower.contains("alice")
+    })
 }
 
 fn start_xvfb(display: &str, run_dir: &Path) -> Result<Child> {
@@ -428,6 +592,49 @@ fn artifact_info(path: &Path) -> Result<ArtifactInfo> {
         size_bytes: file_size(path)?,
         sha256: sha256_file(path)?,
     })
+}
+
+fn write_ui_action_contract(
+    run_dir: &Path,
+    specific_alice_window_detected: bool,
+    visual_evidence_captured: bool,
+    log_captured: bool,
+) -> Result<ArtifactInfo> {
+    let path = run_dir.join("ui-action-contract.json");
+    let json = serde_json::json!({
+        "schema_version": "eatme.ui-action-contract/v1",
+        "status": "blocked",
+        "blocking_reason": "No supported deterministic Alice desktop automation is wired for object placement, procedure editing, world run, or project save yet.",
+        "preflight_evidence": {
+            "specific_alice_window_detected": specific_alice_window_detected,
+            "visual_evidence_captured": visual_evidence_captured,
+            "log_captured": log_captured
+        },
+        "required_actions": [
+            {
+                "id": "verify-specific-alice-window",
+                "required_evidence": "wmctrl output identifies an Alice Stage IDE window"
+            },
+            {
+                "id": "place-object",
+                "required_evidence": "artifact proves an object was added to the scene and placed"
+            },
+            {
+                "id": "edit-procedure-or-code-block",
+                "required_evidence": "artifact proves a procedure or code block was edited"
+            },
+            {
+                "id": "run-world",
+                "required_evidence": "artifact proves the world run control was invoked"
+            },
+            {
+                "id": "save-project",
+                "required_evidence": "saved .a3p project artifact exists and is non-empty"
+            }
+        ]
+    });
+    fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
+    artifact_info(&path)
 }
 
 fn scan_fatal_logs(log_path: &Path) -> Vec<String> {
