@@ -1,0 +1,26 @@
+workstream: alice.eatme
+title: Test Persona Crew
+purpose: Regression fixture for scenario persona reference validation.
+personas:
+  instructors:
+    - id: debug-coach
+      role: instructor
+      archetype: Debug Coach
+      goals: [Help learners debug visibly.]
+      constraints: [Keep feedback learner-owned.]
+      educational_intent: [Debugging as hypothesis testing.]
+      observable_behaviors: [Asks for expected and observed behavior.]
+      anti_behaviors: [Does not take over the project.]
+      evidence: [Learner records a next test.]
+  students:
+    - id: curious-novice
+      role: student
+      archetype: Curious Novice
+      goals: [Learn the first Alice workflow.]
+      constraints: [Limited prior programming experience.]
+      educational_intent: [Prediction before execution.]
+      observable_behaviors: [States a prediction before running.]
+      anti_behaviors: [Does not copy without reflection.]
+      evidence: [Reflection links action to visible outcome.]
+core_scenarios_from_existing_alice_resources: []
+creative_new_teaching_learning_scenarios: []

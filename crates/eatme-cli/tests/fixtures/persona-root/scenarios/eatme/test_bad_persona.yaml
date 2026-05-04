@@ -1,0 +1,44 @@
+schema_version: eatme.scenario/v1
+id: test-bad-persona
+title: Test Bad Persona Ref
+kind: alice_lesson_smoke
+owner: eatme
+purpose: Testing persona validation
+resource_basis:
+  - name: Test
+    url: https://example.com
+launcher:
+  command: alice launch-smoke
+  scenario: test-bad-persona
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - nonexistent-instructor
+  students:
+    - curious-novice
+capabilities:
+  required:
+    - rust-cli
+adapter:
+  targets:
+    - eatme-cli
+smoke_ready:
+  evidence:
+    - manifest
+acceptance_criteria:
+  - given: test
+    when: test
+    then: test
+steps:
+  - id: launch-smoke
+    command: eatme alice launch-smoke --scenario test-bad-persona
+    evidence:
+      - manifest assertions.real_alice_execution_evidence exists
+timeouts:
+  launch_seconds: 120
+artifacts:
+  manifest: runs/test/manifest.json
+  screenshot: runs/test/screenshot.png
+  log: runs/test/alice.log
+unsupported_policy: fail

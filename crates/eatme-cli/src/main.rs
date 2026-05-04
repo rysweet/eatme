@@ -6,6 +6,7 @@ use eatme_alice::{
 };
 use eatme_core::RealCommandRunner;
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
@@ -216,6 +217,22 @@ fn print_scenario_validation_result(
 fn is_scenario_asset_path(path: &Path) -> bool {
     path.components()
         .any(|component| component.as_os_str().to_string_lossy() == "scenarios")
+        || file_declares_eatme_scenario(path)
+}
+
+fn file_declares_eatme_scenario(path: &Path) -> bool {
+    fs::read_to_string(path)
+        .map(|content| {
+            content.lines().any(|line| {
+                matches!(
+                    line.trim(),
+                    "schema_version: eatme.scenario/v1"
+                        | "schema_version: \"eatme.scenario/v1\""
+                        | "schema_version: 'eatme.scenario/v1'"
+                )
+            })
+        })
+        .unwrap_or(false)
 }
 
 fn ensure_real_alice_gate(scenario: &str) -> Result<()> {

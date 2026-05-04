@@ -15,6 +15,13 @@ launcher:
   scenario: building-a-scene-first-world
 real_alice:
   gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - concept-cartographer
+    - studio-facilitator
+  students:
+    - curious-novice
+    - creative-storyteller
 capabilities:
   required:
     - rust-cli

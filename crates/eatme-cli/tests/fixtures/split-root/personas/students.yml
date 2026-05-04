@@ -1,0 +1,17 @@
+workstream: alice.eatme
+title: Test Students
+purpose: Regression fixture for split persona discovery.
+personas:
+  instructors: []
+  students:
+    - id: curious-novice
+      role: student
+      archetype: Curious Novice
+      goals: [Learn the first Alice workflow.]
+      constraints: [Limited prior programming experience.]
+      educational_intent: [Prediction before execution.]
+      observable_behaviors: [States a prediction before running.]
+      anti_behaviors: [Does not copy without reflection.]
+      evidence: [Reflection links action to visible outcome.]
+core_scenarios_from_existing_alice_resources: []
+creative_new_teaching_learning_scenarios: []

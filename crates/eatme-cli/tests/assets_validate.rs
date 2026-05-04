@@ -11,7 +11,7 @@ fn committed_assets_validation_exits_zero() {
         .unwrap();
 
     assert_exit_code(&output, 0);
-    assert_stdout_contains(&output.stdout, "\"passed\": true");
+    assert_stdout_contains(&output.stdout, r#""passed": true"#);
 }
 
 #[test]
@@ -30,14 +30,14 @@ title: ""
     .unwrap();
 
     let output = Command::new(eatme_bin())
-        .args(["assets", "validate", "--path"])
+        .args(["assets", "validate", "--json", "--path"])
         .arg(&scenario_path)
         .output()
         .unwrap();
 
     assert_exit_code(&output, 1);
     assert!(!output.status.success());
-    assert_stdout_contains(&output.stdout, "\"passed\": false");
+    assert_stdout_contains(&output.stdout, r#""passed": false"#);
 }
 
 #[test]
@@ -46,14 +46,14 @@ fn missing_scenario_root_exits_nonzero() {
     copy_committed_persona_asset(&root);
 
     let output = Command::new(eatme_bin())
-        .args(["assets", "validate"])
+        .args(["assets", "validate", "--json"])
         .current_dir(&root)
         .output()
         .unwrap();
 
     assert_exit_code(&output, 1);
     assert!(!output.status.success());
-    assert_stdout_contains(&output.stdout, "\"passed\": false");
+    assert_stdout_contains(&output.stdout, r#""passed": false"#);
     assert_stdout_contains(&output.stdout, "assets/scenarios");
 }
 
@@ -64,17 +64,114 @@ fn empty_scenario_root_exits_nonzero() {
     fs::create_dir_all(root.join("assets/scenarios")).unwrap();
 
     let output = Command::new(eatme_bin())
-        .args(["assets", "validate"])
+        .args(["assets", "validate", "--json"])
         .current_dir(&root)
         .output()
         .unwrap();
 
     assert_exit_code(&output, 1);
     assert!(!output.status.success());
-    assert_stdout_contains(&output.stdout, "\"passed\": false");
+    assert_stdout_contains(&output.stdout, r#""passed": false"#);
     assert_stdout_contains(
         &output.stdout,
         "must contain at least one .yaml or .yml scenario asset",
+    );
+}
+
+#[test]
+fn assets_validate_rejects_bad_persona_reference_from_real_path() {
+    let scenario_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/persona-root/scenarios/eatme/test_bad_persona.yaml");
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .expect("run eatme-cli assets validate");
+
+    assert_exit_code(&output, 1);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("validation output is JSON");
+    assert_eq!(report["passed"], false);
+
+    let errors = report["errors"]
+        .as_array()
+        .expect("errors is an array")
+        .iter()
+        .filter_map(|error| error.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        errors.contains("missing instructor persona nonexistent-instructor"),
+        "errors: {errors}"
+    );
+}
+
+#[test]
+fn assets_validate_accepts_custom_crew_filename_outside_scenarios_dir() {
+    let scenario_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/flexible-root/flows/eatme/test_custom_persona.yaml");
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .expect("run eatme-cli assets validate");
+
+    assert_exit_code(&output, 0);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("validation output is JSON");
+    assert_eq!(
+        report["passed"],
+        true,
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn assets_validate_combines_multiple_persona_crews() {
+    let scenario_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/split-root/flows/eatme/test_split_personas.yaml");
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .expect("run eatme-cli assets validate");
+
+    assert_exit_code(&output, 0);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("validation output is JSON");
+    assert_eq!(
+        report["passed"],
+        true,
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
+#[test]
+fn assets_validate_reports_malformed_discovered_persona_yaml() {
+    let scenario_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/malformed-root/flows/eatme/test_malformed_persona.yaml");
+
+    let output = Command::new(eatme_bin())
+        .args(["assets", "validate", "--json", "--path"])
+        .arg(&scenario_path)
+        .output()
+        .expect("run eatme-cli assets validate");
+
+    assert!(
+        !output.status.success(),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("parsing persona crew YAML") && stderr.contains("bad-crew.yaml"),
+        "stderr: {stderr}"
     );
 }
 
