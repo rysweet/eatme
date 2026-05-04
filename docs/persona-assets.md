@@ -4,7 +4,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative new scenarios.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, agentic review behavior for instructor flows, and CLI contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
@@ -47,13 +47,13 @@ reject_if:
 
 ## Editable personality assets
 
-`assets/personas/alice-user-crew.yaml` now includes top-level
-`personality_assets` for instructor prompt cards, student reflection cards, and
-pairing patterns. They are intentionally editable YAML prompts: agents can tune
-teaching voice, learner reflection shape, and pairing strategy without changing
-Rust or the launch harness.
+`assets/personas/alice-user-crew.yaml` defines top-level `personality_assets`
+for instructor prompt cards, student reflection cards, and pairing patterns.
+They are intentionally editable YAML prompts: agents can tune teaching voice,
+learner reflection shape, and pairing strategy without changing Rust or the
+launch harness.
 
-## Initial persona roster
+## Persona roster
 
 ### Instructor crew
 
@@ -135,55 +135,32 @@ requires persona and scenario references for:
 | Alice 2 migration | `alice-2-migration-bridge` |
 | Teacher-community sharing | `teacher-community-sharing-loop` |
 
-## Alice.org-grounded smoke scenario assets
+## Desktop smoke and outside-in scenario assets
 
-Editable eatme + gadugi scenario assets now cover:
+Editable eatme + gadugi scenario assets define the deterministic desktop
+boundary for Alice.org-grounded lessons, student creative lanes, and explicit QA
+contracts.
 
-1. `building-a-scene-first-world`
-2. `code-editor-first-run`
-3. `reusable-methods-and-parameters`
-4. `functions-as-questions-about-the-world`
-5. `loops-and-conditionals-mini-challenge`
-6. `events-collision-proximity-game`
-7. `game-score-timer-win-lose-loop`
-8. `modified-class-portability`
-9. `hour-of-code-studio-kickoff`
-10. `starter-project-open-save-export-preflight`
-11. `vr-camera-locomotion-journey`
+| Scenario IDs | User-facing outcome |
+| --- | --- |
+| `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `hour-of-code-studio-kickoff` | Alice.org lesson lanes that prove the real desktop harness can start Alice before agents judge lesson intent. |
+| `starter-project-open-save-export-preflight` | Starter-project preflight that opens the bundled project before save, reopen, or export coverage is claimed. |
+| `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state lanes for visible variables, score/time rules, arrays, item order, and boundary tests. |
+| `mythic-choice-event-tree` | Student interactive narrative lane for player triggers, state or condition checks, feedback, and alternate path playtests. |
+| `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective lanes that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |
+| `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window and fails with `ui_action_automation_unimplemented` until object placement, code editing, running, and saving are automated. |
+| `modified-class-portability` | Class portability contract requiring before-export, destination-import, and after-import behavior evidence before a shared modified class is trusted. |
 
-## Expanded smoke scenario assets
-
-Added editable eatme + gadugi scenario assets for Alice.org-grounded and
-student creative outside-in lanes:
-
-1. `reusable-methods-and-parameters`
-2. `functions-as-questions-about-the-world`
-3. `loops-and-conditionals-mini-challenge`
-4. `events-collision-proximity-game`
-5. `variables-scorekeeper-timekeeper`
-6. `arrays-collection-choreography`
-7. `mythic-choice-event-tree`
-8. `vr-camera-perspective-tour`
-
-Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
-
-The starter-project preflight tightens the gap toward open/save/export QA by
-proving Alice opens the bundled starter project before any agent or manual pass
-claims save/reopen/export coverage.
-
-The VR camera lane records whether real VR execution is available; when it is
-not, expected evidence is the desktop launch manifest plus camera-marker,
-viewpoint, and locomotion-comfort artifacts rather than a silent VR skip.
-
-`modified-class-portability` adds an editable instructor/student portability
-lane for modified class export/import/share across Alice projects. Its contract
-requires before-export evidence, destination-project import evidence, and
-post-import behavior evidence showing the modified class still behaves the same
-after import.
+Each scenario routes runtime through
+`EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
+and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
+the user outcome agents must judge; the launch smoke provides deterministic
+desktop evidence and does not substitute for unimplemented UI, VR, or
+export/import automation.
 
 ## Instructor agentic flow assets
 
-Added editable eatme + gadugi agentic-flow assets for the instructor goals the
+Editable eatme + gadugi agentic-flow assets cover the instructor goals the
 Alice modernization lane should pressure first:
 
 | Scenario ID | Instructor goal | Grounding |
@@ -199,7 +176,7 @@ Each asset exposes `resource_basis`, `agentic_test_prompt`,
 agentic outputs as YAML. The paired gadugi adapters run asset validation and an
 `agentic_test` step instead of owning Alice desktop runtime details.
 
-## 11 creative new scenarios
+## Creative scenario roster
 
 1. `weather-wizard-conditional-theater`
 2. `lost-robot-debug-museum`

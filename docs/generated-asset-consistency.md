@@ -49,7 +49,7 @@ Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
 and any hand-authored Gadugi regression scenarios.
 
-The current inventory has 45 scenario YAML files:
+The committed feature inventory has 45 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
@@ -121,7 +121,7 @@ Output fields:
 
 | Field | Meaning |
 | --- | --- |
-| `schema_version` | Validation report schema, currently `eatme.assets/validation/v1` |
+| `schema_version` | Validation report schema: `eatme.assets/validation/v1` |
 | `asset_path` | Root path that was validated |
 | `passed` | `true` only when no validation errors were found |
 | `instructor_count` | Instructor personas discovered from the persona crew asset |
@@ -154,7 +154,7 @@ Scenario output fields:
 
 | Field | Meaning |
 | --- | --- |
-| `schema_version` | Scenario validation report schema, currently `eatme.assets/scenario-validation/v1` |
+| `schema_version` | Scenario validation report schema: `eatme.assets/scenario-validation/v1` |
 | `asset_path` | Scenario file that was validated |
 | `asset_kind` | `eatme` for canonical scenarios, `gadugi` for Gadugi scenario assets |
 | `id` | Scenario id or generated Gadugi scenario name |
@@ -176,7 +176,7 @@ Output fields:
 
 | Field | Meaning |
 | --- | --- |
-| `schema_version` | Generation report schema, currently `eatme.assets/gadugi-adapter-generation/v1` |
+| `schema_version` | Generation report schema: `eatme.assets/gadugi-adapter-generation/v1` |
 | `root` | Repository root used for discovery |
 | `generated_count` | Number of adapter targets the generator would produce from canonical eatme scenarios |
 | `checked_count` | Number of generated adapter targets compared in check mode |
@@ -380,9 +380,8 @@ their kind.
 ## Real UI action contract
 
 `first-lessons-real-ui-actions` is an explicit real Alice UI action contract.
-Its current adapter behavior is not a passing UI automation run. The adapter
-expects eatme to launch real Alice, collect deterministic evidence, and fail
-loudly with:
+Its generated adapter is not a passing UI automation run. The adapter expects
+eatme to launch real Alice, collect deterministic evidence, and fail loudly with:
 
 ```json
 {

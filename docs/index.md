@@ -6,7 +6,7 @@ those assets before they are trusted, generates Gadugi adapter scenarios from th
 canonical eatme scenarios, and records deterministic evidence when real Alice is
 launched.
 
-The finished system has three layers:
+Eatme has three layers:
 
 | Layer | Purpose |
 | --- | --- |
@@ -51,14 +51,14 @@ A passing launch smoke records:
 
 ## What eatme does not pretend to prove
 
-The current real Alice lesson lanes are launch-smoke lanes. They prove
-smoke-ready evidence for a scenario-labeled Alice run. They do not claim full
-in-lesson UI automation, grade learner creativity, or inspect private Alice
-implementation details.
+The real Alice lesson lanes are launch-smoke lanes. They prove smoke-ready
+evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
+automation, grade learner creativity, or inspect private Alice implementation
+details.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
-today and which parts are evidence expectations for human or agent review.
+and which parts are evidence expectations for human or agent review.
 
 ## Main workflows
 
