@@ -1,10 +1,12 @@
 mod alice_cmd;
+mod assertions;
 mod display;
 mod evidence;
 mod manifest;
 mod run_dir;
 
 use self::alice_cmd::{DEFAULT_STARTER_PROJECT, alice_launch_args, start_alice};
+use self::assertions::{bool_assert, fatal_log_detail, visual_evidence_detail};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
 use self::evidence::{
     artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
@@ -14,11 +16,11 @@ use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::prepare_run_dir;
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
+use crate::launch_ui_actions::{record_ui_action_blockers, write_ui_action_contract};
 use crate::package::{PackageOptions, package_alice};
 use anyhow::{Result, bail};
 use eatme_core::{
-    ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, LaunchSmokeManifest,
-    RealCommandRunner,
+    ArtifactInfo, CommandRunner, CommandSpec, LaunchSmokeManifest, RealCommandRunner,
 };
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -49,6 +51,10 @@ impl LaunchSmokeScenario {
 
     pub fn accepts_window_evidence(&self) -> bool {
         self.id != "real-alice-launch-smoke"
+    }
+
+    pub fn requires_real_ui_actions(&self) -> bool {
+        self.id == "first-lessons-real-ui-actions"
     }
 
     pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
@@ -286,8 +292,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));
     let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
     let window_list_error = combine_errors([window_list_error, window_info_error]);
-    let window_evidence_ok =
-        options.scenario.accepts_window_evidence() && has_alice_window_evidence(&window_text);
+    let specific_alice_window_ok = has_alice_window_evidence(&window_text);
+    let window_evidence_ok = options.scenario.accepts_window_evidence() && specific_alice_window_ok;
     let (screenshot, screenshot_error) =
         capture_artifact_or_error(capture_screenshot(&runner, display.name(), &run_dir));
     let screenshot_ok = screenshot
@@ -313,6 +319,18 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     }
     if !smoke_ready_visual_evidence && failure_category.is_none() {
         failure_category = Some("screenshot_missing".into());
+    }
+    if options.scenario.requires_real_ui_actions() {
+        assertions.insert(
+            "specific_alice_window_detected".into(),
+            bool_assert(
+                specific_alice_window_ok,
+                "wmctrl window list contains an Alice Stage IDE window",
+            ),
+        );
+        if !specific_alice_window_ok && failure_category.is_none() {
+            failure_category = Some("alice_window_not_detected".into());
+        }
     }
 
     let (fatal_log_scan, log_scan_error) = capture_text_or_error(scan_fatal_logs(&log_path));
@@ -347,6 +365,21 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if !real_alice_execution_evidence && failure_category.is_none() {
         failure_category = Some("real_alice_evidence_missing".into());
     }
+    let ui_action_contract = if options.scenario.requires_real_ui_actions() {
+        let artifact = write_ui_action_contract(
+            &run_dir,
+            specific_alice_window_ok,
+            smoke_ready_visual_evidence,
+            log_ok,
+        )?;
+        record_ui_action_blockers(&mut assertions, &artifact);
+        if failure_category.is_none() {
+            failure_category = Some("ui_action_automation_unimplemented".into());
+        }
+        Some(artifact)
+    } else {
+        None
+    };
     let launch_command = format!("java {}", launch_args.join(" "));
     let manifest = build_manifest(
         options,
@@ -362,6 +395,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         window_list_error,
         screenshot,
         screenshot_error,
+        ui_action_contract,
         log,
         log_error,
         fatal_log_scan,
@@ -429,48 +463,6 @@ fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<St
         None
     } else {
         Some(errors.join("\n"))
-    }
-}
-
-fn visual_evidence_detail(
-    screenshot_ok: bool,
-    window_evidence_ok: bool,
-    screenshot_error: Option<&str>,
-    window_list_error: Option<&str>,
-) -> String {
-    if screenshot_ok {
-        return "startup screenshot exists and is non-empty".into();
-    }
-    if window_evidence_ok {
-        return "Alice-specific window identity was captured".into();
-    }
-
-    let mut details = vec![
-        "startup requires a non-empty screenshot or Alice-specific window identity".to_string(),
-    ];
-    match screenshot_error {
-        Some(error) => details.push(format!("screenshot error: {error}")),
-        None => details.push("startup screenshot is missing or empty".into()),
-    }
-    match window_list_error {
-        Some(error) => details.push(format!("window list error: {error}")),
-        None => details.push("no Alice-specific window identity found".into()),
-    }
-    details.join("; ")
-}
-
-fn fatal_log_detail(fatal_lines: &[String], log_error: Option<&str>) -> String {
-    if let Some(error) = log_error {
-        return format!("Alice log could not be read: {error}");
-    }
-    format!("{} fatal log lines found", fatal_lines.len())
-}
-
-fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
-    if passed {
-        AssertionResult::pass(detail)
-    } else {
-        AssertionResult::fail(detail)
     }
 }
 

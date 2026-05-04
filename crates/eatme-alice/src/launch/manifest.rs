@@ -2,6 +2,9 @@ use super::LaunchSmokeOptions;
 use super::evidence::artifact_info;
 use crate::deps::DependencyReport;
 use crate::discover::AliceDiscovery;
+use crate::launch_ui_actions::{
+    record_preflight_ui_action_blockers, record_ui_action_artifact, write_ui_action_contract,
+};
 use crate::package::PackageResult;
 use anyhow::Result;
 use eatme_core::{ArtifactInfo, AssertionResult, LaunchSmokeManifest};
@@ -30,6 +33,14 @@ pub(super) fn write_blocked_manifest(
         AssertionResult::fail(diagnostic),
     );
     let log = artifact_info(&run_dir.join("alice.log")).ok();
+    let ui_action_contract = if options.scenario.requires_real_ui_actions() {
+        record_preflight_ui_action_blockers(&mut assertions);
+        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some())?;
+        record_ui_action_artifact(&mut assertions, &artifact);
+        Some(artifact)
+    } else {
+        None
+    };
     let manifest = build_manifest(
         options,
         deps,
@@ -44,6 +55,7 @@ pub(super) fn write_blocked_manifest(
         None,
         None,
         None,
+        ui_action_contract,
         log,
         None,
         Vec::new(),
@@ -69,6 +81,7 @@ pub(super) fn build_manifest(
     window_list_error: Option<String>,
     screenshot: Option<ArtifactInfo>,
     screenshot_error: Option<String>,
+    ui_action_contract: Option<ArtifactInfo>,
     log: Option<ArtifactInfo>,
     log_error: Option<String>,
     fatal_log_scan: Vec<String>,
@@ -106,6 +119,7 @@ pub(super) fn build_manifest(
         window_list_error,
         screenshot,
         screenshot_error,
+        ui_action_contract,
         log,
         log_error,
         fatal_log_scan,

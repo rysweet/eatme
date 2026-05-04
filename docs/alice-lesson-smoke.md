@@ -15,6 +15,7 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+first-lessons-real-ui-actions
 game-score-timer-win-lose-loop
 modified-class-portability
 hour-of-code-studio-kickoff
@@ -48,10 +49,18 @@ readiness from deterministic harness evidence:
   `screenshot` manifest artifact when available.
 - The run artifacts are stored under a scenario-specific run directory.
 
-The lanes do not perform deep in-lesson UI automation. They intentionally stop
-at launch-ready evidence so lesson smokes remain stable in normal developer and
-CI environments. They do not yet prove learner-visible lesson steps such as
-placing objects, editing procedures, saving a world, or writing a reflection.
+Most lanes intentionally stop at launch-ready evidence so lesson smokes remain
+stable in normal developer and CI environments. For the Hour of Code studio
+kickoff, learner-visible first-scene, first-animation, evidence, and reflection
+expectations live in editable YAML as agentic follow-on contracts; runtime smoke
+still stops at deterministic launch-ready evidence.
+
+The `first-lessons-real-ui-actions` lane is different: it is an executable
+harness contract for the first real UI actions. It launches Alice, verifies an
+Alice Stage IDE window from window-manager evidence, writes
+`ui-action-contract.json`, and fails loudly with
+`ui_action_automation_unimplemented` until deterministic automation can place an
+object, edit a procedure/code block, run the world, and save a project.
 
 The `vr-camera-locomotion-journey` lane adds an explicit VR preflight contract:
 real headset or Alice Player VR execution is optional, but availability must be
@@ -77,6 +86,7 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
 assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
 assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
@@ -108,6 +118,7 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml
 assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
@@ -215,6 +226,27 @@ eatme alice launch-smoke \
   [--no-memory] \
   [--offline-package]
 ```
+
+### Real UI action contract
+
+Use the action contract lane when the expected evidence is user-visible Alice
+behavior rather than manifest-only startup:
+
+```bash
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario first-lessons-real-ui-actions \
+  --run-id local-first-lessons-real-ui-actions \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+Until real UI automation is wired, this command is expected to exit non-zero
+after writing a manifest and `ui-action-contract.json`. Treat that explicit
+failure as the current contract, not as passing coverage.
 
 | Option | Description |
 | --- | --- |

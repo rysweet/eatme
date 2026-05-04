@@ -35,6 +35,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
+    - '"scenario_asset_count": 36'
   timeout: 60000
 - name: Launch Portability Smoke
   agent: eatme-cli-agent
@@ -49,7 +50,8 @@ steps:
     stdout_contains:
     - '"scenario_id": "modified-class-portability"'
     - '"failure_category": null'
-    - '"real_alice_execution_evidence"'
+    - '"real_alice_execution_evidence": {'
+    - '"startup_window_or_screenshot": {'
     - '"passed": true'
   timeout: 900000
 - name: Verify Portability Evidence
@@ -62,7 +64,9 @@ steps:
       cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/modified-class-portability.yaml --json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - '"passed": true'
+    - '"id": "modified-class-portability"'
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

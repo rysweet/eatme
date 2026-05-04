@@ -1,0 +1,111 @@
+schema_version: eatme.scenario/v1
+id: first-lessons-real-ui-actions
+title: First Lessons Real UI Actions Contract
+kind: alice_real_ui_action_contract
+owner: eatme
+resource_basis:
+  - name: Alice 3 desktop first lessons
+    url: https://www.alice.org/resources/alice-3-lessons/
+  - name: Alice 3 starter project flow
+    url: https://www.alice.org/get-alice/alice-3/
+purpose: >-
+  Move the first Alice lesson checks beyond manifest-only smoke by launching the
+  real Alice desktop, verifying a specific Alice window, and requiring explicit
+  evidence for object placement, procedure/code editing, world run, project save,
+  and a captured contract artifact. Until deterministic UI manipulation is wired,
+  the harness must fail loudly with a preflight/action contract instead of
+  reporting a silent pass.
+launcher:
+  command: alice launch-smoke
+  scenario: first-lessons-real-ui-actions
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - concept-cartographer
+    - debug-coach
+  students:
+    - curious-novice
+    - creative-storyteller
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - specific_alice_window_detected
+    - ui_action_contract_artifact
+    - explicit_failure_when_ui_actions_are_not_automated
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the first-lessons-real-ui-actions scenario is launched through eatme
+    then: the manifest identifies scenario_id first-lessons-real-ui-actions
+  - given: Alice reaches a desktop session under Xvfb
+    when: the harness inspects window-manager evidence
+    then: manifest assertions include specific_alice_window_detected passed=true for an Alice Stage IDE window
+  - given: deterministic Alice UI manipulation is not wired yet
+    when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
+    then: the manifest fails loudly with ui_action_automation_unimplemented and writes ui-action-contract.json
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-real-ui-action-contract
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario first-lessons-real-ui-actions
+    evidence:
+      - manifest scenario_id equals first-lessons-real-ui-actions
+      - manifest assertions.real_alice_execution_evidence is present
+      - manifest assertions include specific_alice_window_detected
+      - manifest assertions include place_object_ui_action
+      - manifest assertions include edit_procedure_ui_action
+      - manifest assertions include run_world_ui_action
+      - manifest assertions include save_project_ui_action
+      - manifest assertions include ui_action_artifact_captured
+      - manifest failure_category is ui_action_automation_unimplemented until actions are automated
+      - ui-action-contract.json exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#building-a-scene-first-world
+  deterministic_gate: >-
+    Do not claim object placement, procedure editing, world run, or save coverage
+    unless this scenario produces passing action assertions and a saved artifact.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/first-lessons-real-ui-actions/${RUN_ID}/manifest.json
+  screenshot: runs/first-lessons-real-ui-actions/${RUN_ID}/screenshots/startup.png
+  log: runs/first-lessons-real-ui-actions/${RUN_ID}/alice.log
+  window_list: runs/first-lessons-real-ui-actions/${RUN_ID}/window-list.txt
+  ui_action_contract: runs/first-lessons-real-ui-actions/${RUN_ID}/ui-action-contract.json
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. If Alice launches but real UI
+  actions are not automated, fail with ui_action_automation_unimplemented and
+  capture ui-action-contract.json rather than silently passing.

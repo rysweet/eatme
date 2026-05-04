@@ -11,6 +11,8 @@ use std::path::Path;
 
 mod gadugi_scenario;
 use self::gadugi_scenario::validate_gadugi_scenario;
+mod real_ui_action_contract;
+use self::real_ui_action_contract::validate_real_ui_action_contract;
 
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
     let persona_discovery = discover_scenario_personas(path)?;
@@ -97,6 +99,10 @@ fn validate_eatme_scenario(
         "alice_lesson_smoke" => {
             validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors)
         }
+        "alice_real_ui_action_contract" => {
+            validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
+            validate_real_ui_action_contract(scenario, &mut errors);
+        }
         "alice_class_portability_smoke" => {
             portability::validate_class_portability_scenario(scenario, &mut errors)
         }
@@ -106,14 +112,14 @@ fn validate_eatme_scenario(
         }
         "" => errors.push("kind must be defined".into()),
         other => errors.push(format!(
-            "kind must be alice_lesson_smoke, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
+            "kind must be alice_lesson_smoke, alice_real_ui_action_contract, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
         )),
     }
     if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
         validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
     } else if !matches!(
         scenario.kind.as_str(),
-        "alice_lesson_smoke" | "instructor_agentic_flow"
+        "alice_lesson_smoke" | "alice_real_ui_action_contract" | "instructor_agentic_flow"
     ) && let Some(personas) = &scenario.personas
     {
         validate_scenario_personas(

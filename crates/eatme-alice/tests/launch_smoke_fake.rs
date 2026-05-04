@@ -149,6 +149,54 @@ fn lesson_smoke_rejects_unrelated_window_without_screenshot() {
 }
 
 #[test]
+fn real_ui_action_contract_fails_loudly_when_actions_are_not_automated() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "ui-action-contract-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("first-lessons-real-ui-actions"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("ui_action_automation_unimplemented")
+    );
+    assert!(
+        manifest
+            .assertions
+            .get("specific_alice_window_detected")
+            .expect("window assertion should exist")
+            .passed
+    );
+    assert!(
+        !manifest
+            .assertions
+            .get("place_object_ui_action")
+            .expect("object placement assertion should exist")
+            .passed
+    );
+    assert!(manifest.ui_action_contract.is_some());
+    assert!(
+        fixture
+            .root
+            .join(
+                "runs/first-lessons-real-ui-actions/ui-action-contract-run/ui-action-contract.json"
+            )
+            .is_file()
+    );
+}
+
+#[test]
 fn missing_desktop_dependency_writes_blocking_manifest() {
     let fixture = TestFixture::new();
     fixture.write_missing_xvfb_probe();
