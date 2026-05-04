@@ -22,7 +22,7 @@ agents:
     type: "system"
     config:
       shell: "bash"
-      cwd: .
+      cwd: "."
       timeout: 1800000
       capture_output: true
 

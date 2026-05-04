@@ -1,8 +1,9 @@
-name: "Eatme Reusable Methods And Parameters Smoke"
+name: "Eatme VR Camera Locomotion Journey Smoke"
 description: |
-  Gadugi-compatible CLI scenario for the Reusable Methods and Parameters lesson smoke lane.
+  Gadugi-compatible CLI scenario for the VR camera locomotion outside-in lane.
   Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
-  commands and checks manifest-level evidence only.
+  commands, records VR availability expectations, and checks manifest-level
+  evidence only.
 version: "1.0.0"
 
 config:
@@ -17,6 +18,9 @@ environment:
   optional:
     - EATME_REPO
     - RUN_ID
+    - EATME_REAL_VR
+    - ALICE_PLAYER_HOME
+    - VR_HEADSET_AVAILABLE
 
 agents:
   - name: "eatme-cli-agent"
@@ -55,13 +59,34 @@ steps:
         - '"all_required_available": true'
     timeout: 60000
 
-  - name: "Launch Reusable Methods and Parameters lane under Xvfb"
+  - name: "Record VR execution preflight expectations"
     agent: "eatme-cli-agent"
     action: "execute_command"
     params:
       command: |
         cd "${EATME_REPO:-.}"
-        export RUN_ID="${RUN_ID:-gadugi-reusable-methods-and-parameters}"
+        if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then
+          test -n "${ALICE_PLAYER_HOME:-}" || { echo "ALICE_PLAYER_HOME required when EATME_REAL_VR=1" >&2; exit 1; }
+          printf 'real_vr_available=true\n'
+          printf 'required_evidence=alice-player-or-headset-capture,comfort-notes,observer-log\n'
+        else
+          printf 'real_vr_available=false\n'
+          printf 'required_evidence=camera-marker-plan,viewpoint-choice,locomotion-comfort-check,desktop-launch-manifest\n'
+        fi
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - 'real_vr_available='
+        - 'required_evidence='
+    timeout: 60000
+
+  - name: "Launch VR Camera Locomotion lane under Xvfb"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: |
+        cd "${EATME_REPO:-.}"
+        export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
         EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
           --alice-home "${ALICE_HOME}" \
           --run-id "${RUN_ID}" \
@@ -70,11 +95,11 @@ steps:
           --json \
           --no-memory \
           --offline-package \
-          --scenario reusable-methods-and-parameters
+          --scenario vr-camera-locomotion-journey
     expect:
       exit_code: 0
       stdout_contains:
-        - '"scenario_id": "reusable-methods-and-parameters"'
+        - '"scenario_id": "vr-camera-locomotion-journey"'
         - '"failure_category": null'
         - '"startup_window_or_screenshot": {'
         - '"passed": true'
@@ -95,11 +120,20 @@ assertions:
       required_strings:
         - '"all_required_available": true'
 
-  - name: "Reusable Methods and Parameters Launches"
+  - name: "VR Preflight Recorded"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Record VR execution preflight expectations"
+      required_strings:
+        - "real_vr_available="
+        - "required_evidence="
+
+  - name: "VR Camera Locomotion Launches"
     type: "command_success"
     agent: "eatme-cli-agent"
     params:
-      step: "Launch Reusable Methods and Parameters lane under Xvfb"
+      step: "Launch VR Camera Locomotion lane under Xvfb"
 
 metadata:
   tags:
@@ -107,7 +141,9 @@ metadata:
     - "eatme"
     - "desktop"
     - "xvfb"
-    - "methods-parameters"
+    - "vr"
+    - "camera"
+    - "locomotion"
     - "outside-in"
   priority: "critical"
   author: "eatme"
