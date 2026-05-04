@@ -1,4 +1,6 @@
-use super::{contextualize_scenario_errors, require_list, require_nonempty, validate_id};
+use super::{
+    contextualize_scenario_errors, portability, require_list, require_nonempty, validate_id,
+};
 use crate::report::ScenarioAssetValidationReport;
 use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset};
 use anyhow::{Context, Result};
@@ -141,79 +143,8 @@ fn validate_eatme_scenario(
         }
     }
 
-    let is_class_portability = scenario.id == "modified-class-portability"
-        || scenario.kind == "alice_class_portability_smoke";
-    if is_class_portability {
-        if scenario.kind != "alice_class_portability_smoke" {
-            errors.push("kind must be alice_class_portability_smoke".into());
-        }
-        if scenario.owner != "eatme" {
-            errors.push("owner must be eatme".into());
-        }
-        match &scenario.real_alice {
-            Some(real_alice) if real_alice.gated_by == "EATME_REAL_ALICE=1" => {}
-            Some(real_alice) => errors.push(format!(
-                "real_alice.gated_by must be EATME_REAL_ALICE=1, got {}",
-                real_alice.gated_by
-            )),
-            None => errors.push("real_alice.gated_by must be EATME_REAL_ALICE=1".into()),
-        }
-        match &scenario.smoke_ready {
-            Some(smoke_ready) => {
-                require_list(&smoke_ready.evidence, "smoke_ready.evidence", &mut errors)
-            }
-            None => errors.push("smoke_ready.evidence must be defined".into()),
-        }
-        if scenario.acceptance_criteria.is_empty() {
-            errors.push("acceptance_criteria must contain at least one criterion".into());
-        }
-        for (index, criterion) in scenario.acceptance_criteria.iter().enumerate() {
-            require_nonempty(
-                &criterion.given,
-                &format!("acceptance_criteria[{index}].given"),
-                &mut errors,
-            );
-            require_nonempty(
-                &criterion.when,
-                &format!("acceptance_criteria[{index}].when"),
-                &mut errors,
-            );
-            require_nonempty(
-                &criterion.then,
-                &format!("acceptance_criteria[{index}].then"),
-                &mut errors,
-            );
-        }
-        match &scenario.portability {
-            Some(portability) => {
-                require_nonempty(
-                    &portability.source_project,
-                    "portability.source_project",
-                    &mut errors,
-                );
-                require_nonempty(
-                    &portability.destination_project,
-                    "portability.destination_project",
-                    &mut errors,
-                );
-                require_nonempty(
-                    &portability.modified_class,
-                    "portability.modified_class",
-                    &mut errors,
-                );
-                require_nonempty(
-                    &portability.share_channel,
-                    "portability.share_channel",
-                    &mut errors,
-                );
-                require_list(
-                    &portability.evidence_after_import,
-                    "portability.evidence_after_import",
-                    &mut errors,
-                );
-            }
-            None => errors.push("portability.evidence_after_import must be defined".into()),
-        }
+    if portability::is_class_portability_scenario(scenario) {
+        portability::validate_class_portability_scenario(scenario, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
@@ -317,9 +248,8 @@ fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut
 mod tests {
     use super::*;
     use crate::schema::{
-        EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioPortability,
-        EatmeScenarioRealAlice, EatmeScenarioSmokeReady, EatmeScenarioStep,
-        GadugiScenarioAssertion, GadugiScenarioStep,
+        EatmeScenarioAcceptanceCriterion, EatmeScenarioLauncher, EatmeScenarioRealAlice,
+        EatmeScenarioSmokeReady, EatmeScenarioStep, GadugiScenarioAssertion, GadugiScenarioStep,
     };
     use std::collections::BTreeMap;
 
@@ -457,78 +387,6 @@ mod tests {
                 .iter()
                 .any(|error| error.contains("kind must be alice_lesson_smoke"))
         );
-    }
-
-    #[test]
-    fn class_portability_requires_import_persistence_evidence() {
-        let scenario = EatmeScenarioAsset {
-            schema_version: "eatme.scenario/v1".into(),
-            id: "modified-class-portability".into(),
-            title: "Modified Class Portability".into(),
-            kind: "alice_class_portability_smoke".into(),
-            owner: "eatme".into(),
-            purpose: "exports a modified class and proves behavior survives import".into(),
-            launcher: Some(EatmeScenarioLauncher {
-                command: "alice launch-smoke".into(),
-                scenario: "modified-class-portability".into(),
-            }),
-            real_alice: Some(EatmeScenarioRealAlice {
-                gated_by: "EATME_REAL_ALICE=1".into(),
-            }),
-            smoke_ready: Some(EatmeScenarioSmokeReady {
-                evidence: vec!["manifest assertions".into()],
-            }),
-            acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
-                given: "a modified class is exported from a source project".into(),
-                when: "a different Alice project imports and runs it".into(),
-                then: "the imported behavior is still visible".into(),
-            }],
-            steps: vec![EatmeScenarioStep {
-                id: "launch-smoke".into(),
-                command: "eatme alice launch-smoke --scenario modified-class-portability".into(),
-                evidence: vec!["manifest scenario_id matches".into()],
-            }],
-            timeouts: BTreeMap::from([("launch_seconds".into(), 120)]),
-            artifacts: BTreeMap::from([
-                (
-                    "manifest".into(),
-                    "runs/modified-class-portability/manifest.json".into(),
-                ),
-                (
-                    "screenshot".into(),
-                    "runs/modified-class-portability/screenshots/startup.png".into(),
-                ),
-                (
-                    "log".into(),
-                    "runs/modified-class-portability/alice.log".into(),
-                ),
-            ]),
-            unsupported_policy: "fail loudly when prerequisites are unavailable".into(),
-            ..EatmeScenarioAsset::default()
-        };
-        let report = validate_eatme_scenario(Path::new("modified-class.yaml"), &scenario);
-
-        assert!(!report.passed);
-        assert!(
-            report
-                .errors
-                .iter()
-                .any(|error| error.contains("portability.evidence_after_import"))
-        );
-
-        let scenario = EatmeScenarioAsset {
-            portability: Some(EatmeScenarioPortability {
-                source_project: "source".into(),
-                destination_project: "destination".into(),
-                modified_class: "helper-character".into(),
-                share_channel: "exported class package".into(),
-                evidence_after_import: vec!["post-import run shows the modified behavior".into()],
-            }),
-            ..scenario
-        };
-        let report = validate_eatme_scenario(Path::new("modified-class.yaml"), &scenario);
-
-        assert!(report.passed, "{:?}", report.errors);
     }
 
     #[test]
