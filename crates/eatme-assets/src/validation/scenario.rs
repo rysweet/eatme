@@ -74,7 +74,6 @@ fn validate_eatme_scenario(
     if !scenario.owner.is_empty() && scenario.owner != "eatme" {
         errors.push(format!("owner must be eatme, got {}", scenario.owner));
     }
-
     if let Some(launcher) = &scenario.launcher {
         require_nonempty(&launcher.command, "launcher.command", &mut errors);
         if launcher.scenario != scenario.id {
@@ -84,74 +83,52 @@ fn validate_eatme_scenario(
             ));
         }
     }
+    validate_eatme_steps(scenario, &mut errors);
 
-    if scenario.steps.is_empty() && scenario.launcher.is_none() {
-        errors.push("scenario must define launcher or steps".into());
-    }
-    for step in &scenario.steps {
-        validate_id(&step.id, "step", &mut errors);
-        require_nonempty(&step.command, &format!("{}.command", step.id), &mut errors);
-        require_list(
-            &step.evidence,
-            &format!("{}.evidence", step.id),
-            &mut errors,
-        );
-    }
-
-    let launch_command = scenario
-        .launcher
-        .as_ref()
-        .map(|launcher| launcher.command.as_str())
-        .unwrap_or("");
-    let has_launch_smoke = launch_command.contains("alice launch-smoke")
-        || scenario
-            .steps
-            .iter()
-            .any(|step| step.command.contains("alice launch-smoke"));
-    if !has_launch_smoke {
-        errors.push("scenario must route runtime through alice launch-smoke".into());
-    }
-
-    for artifact in ["manifest", "screenshot", "log"] {
-        if !scenario.artifacts.contains_key(artifact) {
-            errors.push(format!("artifacts.{artifact} must be defined"));
-        }
-    }
-    if scenario.timeouts.is_empty() {
-        errors.push("timeouts must define at least one timeout".into());
-    }
-    require_nonempty(
-        &scenario.unsupported_policy,
-        "unsupported_policy",
-        &mut errors,
-    );
-
-    let is_known_lesson_smoke = matches!(
-        scenario.id.as_str(),
-        "building-a-scene-first-world" | "code-editor-first-run"
-    );
+    let is_known_lesson_smoke = known_lesson_smoke(&scenario.id);
     if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
         errors.push("kind must be alice_lesson_smoke".into());
     }
 
-    if scenario.kind == "alice_lesson_smoke" || is_known_lesson_smoke {
-        validate_lesson_smoke_fields(scenario, persona_index, persona_diagnostics, &mut errors);
-    } else if let Some(personas) = &scenario.personas {
-        validate_scenario_personas(
-            &scenario.id,
-            personas,
-            persona_index,
-            persona_diagnostics,
-            &mut errors,
-        );
+    match scenario.kind.as_str() {
+        "alice_lesson_smoke" => {
+            validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors)
+        }
+        "alice_class_portability_smoke" => {
+            portability::validate_class_portability_scenario(scenario, &mut errors)
+        }
+        "instructor_agentic_flow" => validate_instructor_agentic_flow(scenario, &mut errors),
+        "" if scenario.id == "real-alice-launch-smoke" => {
+            validate_legacy_launch_smoke(scenario, &mut errors)
+        }
+        "" => errors.push("kind must be defined".into()),
+        other => errors.push(format!(
+            "kind must be alice_lesson_smoke, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
+        )),
     }
-
-    if portability::is_class_portability_scenario(scenario) {
+    if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
+        validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
+    } else if !matches!(
+        scenario.kind.as_str(),
+        "alice_lesson_smoke" | "instructor_agentic_flow"
+    ) {
+        if let Some(personas) = &scenario.personas {
+            validate_scenario_personas(
+                &scenario.id,
+                personas,
+                persona_index,
+                persona_diagnostics,
+                &mut errors,
+            );
+        }
+    }
+    if portability::is_class_portability_scenario(scenario)
+        && scenario.kind != "alice_class_portability_smoke"
+    {
         portability::validate_class_portability_scenario(scenario, &mut errors);
     }
 
     let errors = contextualize_scenario_errors(path, &scenario.id, errors);
-
     ScenarioAssetValidationReport {
         schema_version: "eatme.assets/scenario-validation/v1".into(),
         asset_path: path.display().to_string(),
@@ -165,38 +142,39 @@ fn validate_eatme_scenario(
     }
 }
 
+fn known_lesson_smoke(id: &str) -> bool {
+    matches!(
+        id,
+        "hour-of-code-studio-kickoff"
+            | "building-a-scene-first-world"
+            | "code-editor-first-run"
+            | "events-collision-proximity-game"
+            | "functions-as-questions-about-the-world"
+            | "loops-and-conditionals-mini-challenge"
+            | "reusable-methods-and-parameters"
+    )
+}
+
 fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
-    if scenario.resource_basis.is_empty() {
-        errors.push("resource_basis must contain at least one named resource".into());
-    }
-    for (index, resource) in scenario.resource_basis.iter().enumerate() {
-        require_nonempty(
-            &resource.name,
-            &format!("resource_basis[{index}].name"),
-            errors,
-        );
-        require_nonempty(
-            &resource.url,
-            &format!("resource_basis[{index}].url"),
-            errors,
-        );
-    }
-    match &scenario.capabilities {
-        Some(capabilities) => {
-            require_list(&capabilities.required, "capabilities.required", errors);
-            if capabilities
-                .optional
-                .iter()
-                .any(|value| value.trim().is_empty())
-            {
-                errors.push("capabilities.optional must contain non-empty values".into());
+    validate_resource_basis_names(scenario, errors);
+    if scenario.kind != "instructor_agentic_flow" {
+        match &scenario.capabilities {
+            Some(capabilities) => {
+                require_list(&capabilities.required, "capabilities.required", errors);
+                if capabilities
+                    .optional
+                    .iter()
+                    .any(|value| value.trim().is_empty())
+                {
+                    errors.push("capabilities.optional must contain non-empty values".into());
+                }
             }
+            None => errors.push("capabilities.required must be defined".into()),
         }
-        None => errors.push("capabilities.required must be defined".into()),
-    }
-    match &scenario.adapter {
-        Some(adapter) => require_list(&adapter.targets, "adapter.targets", errors),
-        None => errors.push("adapter.targets must be defined".into()),
+        match &scenario.adapter {
+            Some(adapter) => require_list(&adapter.targets, "adapter.targets", errors),
+            None => errors.push("adapter.targets must be defined".into()),
+        }
     }
     if let Some(follow_on) = &scenario.agentic_follow_on {
         require_nonempty(
@@ -220,12 +198,42 @@ fn validate_eatme_doc_fields(scenario: &EatmeScenarioAsset, errors: &mut Vec<Str
     }
 }
 
-fn validate_lesson_smoke_fields(
+fn validate_resource_basis_names(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.resource_basis.is_empty() {
+        errors.push("resource_basis must contain at least one named resource".into());
+    }
+    for (index, resource) in scenario.resource_basis.iter().enumerate() {
+        require_nonempty(
+            &resource.name,
+            &format!("resource_basis[{index}].name"),
+            errors,
+        );
+        require_nonempty(
+            &resource.url,
+            &format!("resource_basis[{index}].url"),
+            errors,
+        );
+    }
+}
+
+fn validate_eatme_steps(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.steps.is_empty() && scenario.launcher.is_none() {
+        errors.push("scenario must define launcher or steps".into());
+    }
+    for step in &scenario.steps {
+        validate_id(&step.id, "step", errors);
+        require_nonempty(&step.command, &format!("{}.command", step.id), errors);
+        require_list(&step.evidence, &format!("{}.evidence", step.id), errors);
+    }
+}
+
+fn validate_lesson_smoke(
     scenario: &EatmeScenarioAsset,
     persona_index: Option<&PersonaReferenceIndex>,
     persona_diagnostics: &[String],
     errors: &mut Vec<String>,
 ) {
+    validate_launch_smoke_contract(scenario, errors);
     if scenario.owner != "eatme" {
         errors.push("owner must be eatme".into());
     }
@@ -251,10 +259,114 @@ fn validate_lesson_smoke_fields(
         ),
         None => errors.push("personas.instructors and personas.students must be defined".into()),
     }
-    if scenario.acceptance_criteria.is_empty() {
+    validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+}
+
+fn validate_legacy_launch_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    validate_launch_smoke_contract(scenario, errors);
+}
+
+fn validate_launch_smoke_contract(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    let launch_command = scenario
+        .launcher
+        .as_ref()
+        .map(|launcher| launcher.command.as_str())
+        .unwrap_or("");
+    let has_launch_smoke = launch_command.contains("alice launch-smoke")
+        || scenario
+            .steps
+            .iter()
+            .any(|step| step.command.contains("alice launch-smoke"));
+    if !has_launch_smoke {
+        errors.push("scenario must route runtime through alice launch-smoke".into());
+    }
+    for artifact in ["manifest", "screenshot", "log"] {
+        if !scenario.artifacts.contains_key(artifact) {
+            errors.push(format!("artifacts.{artifact} must be defined"));
+        }
+    }
+    require_timeout_and_policy(scenario, errors);
+}
+
+fn validate_instructor_agentic_flow(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.launcher.is_some() || scenario.real_alice.is_some() {
+        errors.push(
+            "instructor_agentic_flow must use agentic steps, not a real-Alice launcher".into(),
+        );
+    }
+    validate_instructor_resource_basis(scenario, errors);
+    validate_agentic_personas(scenario, errors);
+    match &scenario.agentic_flow {
+        Some(flow) => {
+            require_nonempty(&flow.focus, "agentic_flow.focus", errors);
+            require_nonempty(
+                &flow.instructor_goal,
+                "agentic_flow.instructor_goal",
+                errors,
+            );
+            require_nonempty(&flow.prompt_source, "agentic_flow.prompt_source", errors);
+            require_list(
+                &flow.non_coder_editable,
+                "agentic_flow.non_coder_editable",
+                errors,
+            );
+            require_list(
+                &flow.expected_outputs,
+                "agentic_flow.expected_outputs",
+                errors,
+            );
+        }
+        None => errors.push("agentic_flow must be defined".into()),
+    }
+    require_nonempty(&scenario.agentic_test_prompt, "agentic_test_prompt", errors);
+    require_list(&scenario.acceptance_probes, "acceptance_probes", errors);
+    require_list(&scenario.avoid, "avoid", errors);
+    validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+    validate_rubric(&scenario.rubric, errors);
+    if scenario.artifacts.is_empty() {
+        errors.push("artifacts must name the instructor-maintainable outputs".into());
+    }
+    require_timeout_and_policy(scenario, errors);
+    if !scenario
+        .steps
+        .iter()
+        .any(|step| step.command.contains("agentic"))
+    {
+        errors.push("instructor_agentic_flow steps must include an agentic evaluation step".into());
+    }
+    for step in &scenario.steps {
+        validate_instructor_flow_boundary(&step.id, &step.command, errors);
+    }
+}
+
+fn validate_instructor_resource_basis(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    for (index, resource) in scenario.resource_basis.iter().enumerate() {
+        require_nonempty(
+            &resource.use_note,
+            &format!("resource_basis[{index}].use"),
+            errors,
+        );
+    }
+}
+
+fn validate_agentic_personas(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    match &scenario.personas {
+        Some(personas) => {
+            require_list(&personas.instructors, "personas.instructors", errors);
+            require_list(&personas.students, "personas.students", errors);
+        }
+        None => errors.push("personas must define instructor and student viewpoints".into()),
+    }
+}
+
+fn validate_acceptance_criteria(
+    criteria: &[crate::schema::EatmeScenarioAcceptanceCriterion],
+    errors: &mut Vec<String>,
+) {
+    if criteria.is_empty() {
         errors.push("acceptance_criteria must contain at least one criterion".into());
     }
-    for (index, criterion) in scenario.acceptance_criteria.iter().enumerate() {
+    for (index, criterion) in criteria.iter().enumerate() {
         require_nonempty(
             &criterion.given,
             &format!("acceptance_criteria[{index}].given"),
@@ -270,6 +382,23 @@ fn validate_lesson_smoke_fields(
             &format!("acceptance_criteria[{index}].then"),
             errors,
         );
+    }
+}
+
+fn validate_rubric(
+    rubric: &[crate::schema::EatmeScenarioRubricCriterion],
+    errors: &mut Vec<String>,
+) {
+    if rubric.is_empty() {
+        errors.push("rubric must contain at least one criterion".into());
+    }
+    for (index, item) in rubric.iter().enumerate() {
+        require_nonempty(
+            &item.criterion,
+            &format!("rubric[{index}].criterion"),
+            errors,
+        );
+        require_list(&item.evidence, &format!("rubric[{index}].evidence"), errors);
     }
 }
 
@@ -317,176 +446,35 @@ fn validate_scenario_personas(
     }
 }
 
-fn validate_gadugi_scenario(
-    path: &Path,
-    scenario: &GadugiScenarioAsset,
-) -> ScenarioAssetValidationReport {
-    let mut errors = Vec::new();
-    let warnings = Vec::new();
-
-    require_nonempty(&scenario.name, "name", &mut errors);
-    require_nonempty(&scenario.description, "description", &mut errors);
-    require_nonempty(&scenario.version, "version", &mut errors);
-    validate_gadugi_doc_fields(scenario, &mut errors);
-    if scenario.steps.is_empty() {
-        errors.push("steps must contain at least one step".into());
+fn require_timeout_and_policy(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario.timeouts.is_empty() {
+        errors.push("timeouts must define at least one timeout".into());
     }
-    for step in &scenario.steps {
-        require_nonempty(&step.name, "step.name", &mut errors);
-        require_nonempty(&step.agent, &format!("{}.agent", step.name), &mut errors);
-        require_nonempty(&step.action, &format!("{}.action", step.name), &mut errors);
-        if step.action == "execute_command" {
-            match step.params.get("command").and_then(|value| value.as_str()) {
-                Some(command) => require_nonempty(
-                    command,
-                    &format!("{}.params.command", step.name),
-                    &mut errors,
-                ),
-                None => errors.push(format!("{}.params.command must be a string", step.name)),
-            }
-        }
-        if let Some(command) = step.params.get("command").and_then(|value| value.as_str()) {
-            validate_gadugi_runtime_boundary(&step.name, command, &mut errors);
-        }
-        match &step.expect {
-            Some(expect) => {
-                if expect.exit_code.is_none() {
-                    errors.push(format!("{}.expect.exit_code must be defined", step.name));
-                }
-                require_list(
-                    &expect.stdout_contains,
-                    &format!("{}.expect.stdout_contains", step.name),
-                    &mut errors,
-                );
-            }
-            None => errors.push(format!("{}.expect must be defined", step.name)),
-        }
-        if step.timeout == 0 {
-            errors.push(format!("{}.timeout must be greater than zero", step.name));
-        }
-    }
-    if scenario.assertions.is_empty() {
-        errors.push("assertions must contain at least one assertion".into());
-    }
-    for assertion in &scenario.assertions {
-        require_nonempty(&assertion.name, "assertion.name", &mut errors);
-        require_nonempty(
-            &assertion.assertion_type,
-            &format!("{}.type", assertion.name),
-            &mut errors,
-        );
-        require_nonempty(
-            &assertion.agent,
-            &format!("{}.agent", assertion.name),
-            &mut errors,
-        );
-        if assertion.params.is_empty() {
-            errors.push(format!("{}.params must be defined", assertion.name));
-        }
-    }
-
-    let errors = contextualize_scenario_errors(path, &scenario.name, errors);
-
-    ScenarioAssetValidationReport {
-        schema_version: "eatme.assets/scenario-validation/v1".into(),
-        asset_path: path.display().to_string(),
-        asset_kind: "gadugi".into(),
-        id: scenario.name.clone(),
-        passed: errors.is_empty(),
-        step_count: scenario.steps.len(),
-        assertion_count: scenario.assertions.len(),
-        errors,
-        warnings,
-    }
+    require_nonempty(&scenario.unsupported_policy, "unsupported_policy", errors);
 }
 
-fn validate_gadugi_doc_fields(scenario: &GadugiScenarioAsset, errors: &mut Vec<String>) {
-    match &scenario.config {
-        Some(config) if config.timeout > 0 => {
-            if config.retries != 0 {
-                errors.push("config.retries must be 0 for deterministic validation".into());
-            }
-            if config.parallel {
-                errors.push("config.parallel must be false for deterministic validation".into());
-            }
-        }
-        Some(_) => errors.push("config.timeout must be greater than zero".into()),
-        None => errors.push("config must be defined".into()),
-    }
-    match &scenario.environment {
-        Some(environment) => {
-            require_list(&environment.requires, "environment.requires", errors);
-            if environment
-                .optional
-                .iter()
-                .any(|value| value.trim().is_empty())
-            {
-                errors.push("environment.optional must contain non-empty values".into());
-            }
-        }
-        None => errors.push("environment.requires must be defined".into()),
-    }
-    if scenario.agents.is_empty() {
-        errors.push("agents must contain at least one agent".into());
-    }
-    for agent in &scenario.agents {
-        require_nonempty(&agent.name, "agent.name", errors);
-        require_nonempty(&agent.agent_type, &format!("{}.type", agent.name), errors);
-        require_nonempty(
-            &agent.config.shell,
-            &format!("{}.config.shell", agent.name),
-            errors,
-        );
-        require_nonempty(
-            &agent.config.cwd,
-            &format!("{}.config.cwd", agent.name),
-            errors,
-        );
-        if agent.config.timeout == 0 {
-            errors.push(format!(
-                "{}.config.timeout must be greater than zero",
-                agent.name
-            ));
-        }
-        if !agent.config.capture_output {
-            errors.push(format!("{}.config.capture_output must be true", agent.name));
-        }
-    }
-    match &scenario.metadata {
-        Some(metadata) => {
-            require_list(&metadata.tags, "metadata.tags", errors);
-            require_nonempty(&metadata.priority, "metadata.priority", errors);
-            require_nonempty(&metadata.author, "metadata.author", errors);
-            require_nonempty(&metadata.test_type, "metadata.test_type", errors);
-        }
-        None => errors.push("metadata must be defined".into()),
-    }
-}
-
-fn validate_gadugi_runtime_boundary(step_name: &str, command: &str, errors: &mut Vec<String>) {
+fn validate_instructor_flow_boundary(step_id: &str, command: &str, errors: &mut Vec<String>) {
     let direct_runtime_markers = [
         "Xvfb",
         "org.alice.stageide",
         "java org.alice",
-        "java -",
-        "scrot",
-        "import -window",
         "wmctrl",
         "xwd",
     ];
-    if command.contains("alice launch-smoke") {
-        return;
-    }
-    if direct_runtime_markers
-        .iter()
-        .any(|marker| command.contains(marker))
+    if command.contains("alice launch-smoke")
+        || direct_runtime_markers
+            .iter()
+            .any(|marker| command.contains(marker))
     {
         errors.push(format!(
-            "{step_name}: gadugi scenario must invoke eatme CLI alice launch-smoke and inspect manifest evidence only; it must not own Alice runtime concerns"
+            "{step_id}: instructor_agentic_flow must stay at the editable asset/agentic evidence boundary, not own Alice desktop runtime"
         ));
     }
 }
 
+#[path = "gadugi.rs"]
+mod gadugi;
+use gadugi::validate_gadugi_scenario;
 #[cfg(test)]
 #[path = "scenario_tests.rs"]
 mod scenario_tests;

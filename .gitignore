@@ -3,3 +3,4 @@
 .claude/runtime/
 .claude/logs/
 worktrees/
+.cargo-tmp/

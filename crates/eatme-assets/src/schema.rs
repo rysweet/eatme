@@ -115,15 +115,15 @@ pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) owner: String,
     #[serde(default)]
-    pub(crate) resource_basis: Vec<ScenarioResourceBasis>,
+    pub(crate) resource_basis: Vec<EatmeScenarioResource>,
     #[serde(default)]
     pub(crate) purpose: String,
+    #[serde(default)]
+    pub(crate) personas: Option<ScenarioPersonas>,
     #[serde(default)]
     pub(crate) launcher: Option<EatmeScenarioLauncher>,
     #[serde(default)]
     pub(crate) real_alice: Option<EatmeScenarioRealAlice>,
-    #[serde(default)]
-    pub(crate) personas: Option<ScenarioPersonas>,
     #[serde(default)]
     #[allow(dead_code)]
     pub(crate) persona_assets: Option<Value>,
@@ -134,7 +134,17 @@ pub(crate) struct EatmeScenarioAsset {
     #[serde(default)]
     pub(crate) smoke_ready: Option<EatmeScenarioSmokeReady>,
     #[serde(default)]
+    pub(crate) agentic_flow: Option<EatmeScenarioAgenticFlow>,
+    #[serde(default)]
+    pub(crate) agentic_test_prompt: String,
+    #[serde(default)]
     pub(crate) acceptance_criteria: Vec<EatmeScenarioAcceptanceCriterion>,
+    #[serde(default)]
+    pub(crate) acceptance_probes: Vec<String>,
+    #[serde(default)]
+    pub(crate) rubric: Vec<EatmeScenarioRubricCriterion>,
+    #[serde(default)]
+    pub(crate) avoid: Vec<String>,
     #[serde(default)]
     pub(crate) steps: Vec<EatmeScenarioStep>,
     #[serde(default)]
@@ -154,11 +164,13 @@ pub(crate) struct EatmeScenarioAsset {
 
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct ScenarioResourceBasis {
+pub(crate) struct EatmeScenarioResource {
     #[serde(default)]
     pub(crate) name: String,
     #[serde(default)]
     pub(crate) url: String,
+    #[serde(default, rename = "use")]
+    pub(crate) use_note: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -207,6 +219,30 @@ pub(crate) struct EatmeScenarioRealAlice {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct EatmeScenarioSmokeReady {
+    #[serde(default)]
+    pub(crate) evidence: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EatmeScenarioAgenticFlow {
+    #[serde(default)]
+    pub(crate) focus: String,
+    #[serde(default)]
+    pub(crate) instructor_goal: String,
+    #[serde(default)]
+    pub(crate) prompt_source: String,
+    #[serde(default)]
+    pub(crate) non_coder_editable: Vec<String>,
+    #[serde(default)]
+    pub(crate) expected_outputs: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EatmeScenarioRubricCriterion {
+    #[serde(default)]
+    pub(crate) criterion: String,
     #[serde(default)]
     pub(crate) evidence: Vec<String>,
 }
@@ -313,6 +349,10 @@ pub(crate) struct GadugiAgentConfig {
     pub(crate) timeout: u64,
     #[serde(default)]
     pub(crate) capture_output: bool,
+    #[serde(default)]
+    pub(crate) persona_asset: String,
+    #[serde(default)]
+    pub(crate) scenario_asset: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -339,6 +379,8 @@ pub(crate) struct GadugiStepExpect {
     pub(crate) exit_code: Option<i64>,
     #[serde(default)]
     pub(crate) stdout_contains: Vec<String>,
+    #[serde(default)]
+    pub(crate) output_contains: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
