@@ -495,7 +495,7 @@ CLI smoke command:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home /path/to/alice3-modernization \
+  --alice-home "${ALICE_HOME}" \
   --scenario code-editor-first-run \
   --run-id local-code-editor-first-run \
   --runs-dir runs \
