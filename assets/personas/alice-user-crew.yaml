@@ -37,6 +37,15 @@ source_basis:
     - name: Alice 3 download/setup page
       url: https://www.alice.org/get-alice/alice-3/
       use: 'Setup constraints: desktop/laptop, graphics, Java/OpenGL/Linux details, video-driver problems, Chromebook caveats.'
+    - name: Alice 3 Design Process Virtual Reality lesson
+      url: https://www.alice.org/resources/lessons/design-process-virtual-reality/
+      use: VR sickness, locomotion, object interaction, and common VR mechanics design considerations.
+    - name: Alice 3 Moving The Camera how-to
+      url: https://www.alice.org/resources/how-tos/moving-the-camera/
+      use: Camera navigation controllers, camera one-shots, and coordinate-based camera setup.
+    - name: Alice 3 Using Camera Markers how-to
+      url: https://www.alice.org/resources/how-tos/using-camera-markers/
+      use: Camera markers for saving viewpoint position/orientation and moving the camera to a marker from code.
 asset_shapes:
   persona:
     id: string-kebab-case
@@ -631,6 +640,38 @@ core_scenarios_from_existing_alice_resources:
       - Student can name trigger, response, and one revision after testing.
     avoid:
       - Requiring exact input device details or specific collision implementation internals.
+  - id: vr-camera-locomotion-journey
+    origin: existing-alice-resource
+    coverage: [lessons, world-creation, run-debug, classroom-use]
+    user_story: As a creative-storyteller, I want to choose a first-person or over-the-shoulder camera journey, so that classmates can experience an Alice world with comfortable VR-inspired locomotion.
+    personas:
+      instructors: [studio-facilitator, debug-coach, classroom-orchestrator]
+      students: [creative-storyteller, reflective-debugger, accessibility-advocate]
+    educational_intent:
+      concepts: [camera marker, viewpoint, locomotion, event, comfort constraint, VR sickness]
+      habits: [spatial reasoning, accessibility, prediction, observation, comfort testing]
+    constraints:
+      - Real VR headset or Alice Player execution may not be available in ordinary CI or classroom environments.
+      - Camera movement can cause disorientation; learners need small, testable moves and a stable orientation cue.
+    observable_behaviors:
+      instructor:
+        - Connects Alice.org VR design concerns to camera markers, camera moves, and learner comfort checks.
+        - Requires explicit preflight evidence when real VR execution is unavailable instead of accepting a silent skip.
+      student:
+        - Chooses first-person or over-the-shoulder perspective and explains how the camera supports the world goal.
+        - Tests movement with a comfort constraint such as short moves, stable horizon, teleport/marker jump, or pause/recenter cue.
+      system_or_artifact:
+        - World or design evidence shows the selected viewpoint, camera marker or camera move plan, locomotion trigger, and VR availability record.
+    agentic_test_prompt: >-
+      Design an Alice VR-inspired camera and locomotion journey grounded in Alice.org VR design, moving-camera, and camera-marker guidance. The learner may use first-person or over-the-shoulder perspective. Require preflight evidence for whether real VR execution is available; if it is not available, require desktop launch manifest evidence plus camera-marker, viewpoint, and locomotion-comfort artifacts.
+    acceptance_probes:
+      - Given real VR is unavailable, when the lane is judged, then evidence explicitly records real_vr_available=false and names the desktop fallback artifacts.
+      - Given a learner chooses a viewpoint, when the journey runs or is reviewed, then camera marker or camera movement evidence explains orientation and comfort.
+      - Given locomotion is included, when a peer or reviewer evaluates the journey, then the learner identifies the movement trigger and a comfort/safety constraint.
+    avoid:
+      - Claiming headset success without VR preflight evidence.
+      - Requiring exact camera coordinates, exact model choice, or undocumented Alice internals.
+      - Treating fast continuous motion as acceptable without a comfort check.
   - id: variables-scorekeeper-timekeeper
     origin: existing-alice-resource
     coverage: [lessons, run-debug]

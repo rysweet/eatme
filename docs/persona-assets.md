@@ -77,9 +77,9 @@ Rust or the launch harness.
 | Coverage area | Scenario IDs |
 | --- | --- |
 | Setup | `setup-preflight-ready-to-create` |
-| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
-| World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `audio-camera-and-export-sharecase` |
-| Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
+| Lessons | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper` |
+| World creation | `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase` |
+| Run/debug | `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
 | Classroom use | `setup-preflight-ready-to-create`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
 
@@ -91,8 +91,12 @@ Added editable eatme + gadugi scenario assets for:
 2. `functions-as-questions-about-the-world`
 3. `loops-and-conditionals-mini-challenge`
 4. `events-collision-proximity-game`
+5. `vr-camera-locomotion-journey`
 
 Each routes runtime through `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>` and keeps gadugi at the manifest-evidence boundary.
+The VR camera lane also records whether real VR execution is available; when it
+is not, expected evidence is the desktop launch manifest plus camera-marker,
+viewpoint, and locomotion-comfort artifacts rather than a silent VR skip.
 
 ## 10 creative new scenarios
 
@@ -116,4 +120,8 @@ Grounded in official Alice resource themes:
 - Alice 3 lessons: <https://www.alice.org/resources/alice-3-lessons>
 - Building A Scene: <https://www.alice.org/resources/lessons/building-a-scene/>
 - Programming in Alice: <https://www.alice.org/resources/lessons/programming-in-alice/>
+- Design Process Virtual Reality: <https://www.alice.org/resources/lessons/design-process-virtual-reality/>
+- Moving The Camera how-to: <https://www.alice.org/resources/how-tos/moving-the-camera/>
+- Using Camera Markers how-to: <https://www.alice.org/resources/how-tos/using-camera-markers/>
+- Using Camera Views how-to: <https://www.alice.org/resources/how-tos/using-camera-views/>
 - Alice 3 setup/download: <https://www.alice.org/get-alice/alice-3/>
