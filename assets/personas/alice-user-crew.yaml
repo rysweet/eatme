@@ -40,6 +40,15 @@ source_basis:
     - name: Alice 3 download/setup page
       url: https://www.alice.org/get-alice/alice-3/
       use: 'Setup constraints: desktop/laptop, graphics, Java/OpenGL/Linux details, video-driver problems, Chromebook caveats.'
+    - name: Alice 3 Design Process Virtual Reality lesson
+      url: https://www.alice.org/resources/lessons/design-process-virtual-reality/
+      use: VR sickness, locomotion, object interaction, and common VR mechanics design considerations.
+    - name: Alice 3 Moving The Camera how-to
+      url: https://www.alice.org/resources/how-tos/moving-the-camera/
+      use: Camera navigation controllers, camera one-shots, and coordinate-based camera setup.
+    - name: Alice 3 Using Camera Markers how-to
+      url: https://www.alice.org/resources/how-tos/using-camera-markers/
+      use: Camera markers for saving viewpoint position/orientation and moving the camera to a marker from code.
 constituency_coverage:
   - id: curriculum-designers
     label: Curriculum designers
@@ -193,6 +202,15 @@ personality_assets:
       evidence:
         - Learner keeps control of the project and records the hypothesis.
         - Environmental launch problems are separated from learner code bugs.
+    - id: score-timer-game-loop-card
+      editable_by: instructor-agent
+      purpose: Scaffold a playable Alice game loop with score, timer, and win/lose end state.
+      prompt_frame: >-
+        Ask learners to name the trigger, starting score/time, arithmetic update,
+        visible display, and win/lose condition before they tune assets or polish.
+      evidence:
+        - Instructor prompt ties collision or proximity to a visible variable update.
+        - Feedback checks the timer and end state through play evidence, not hidden code.
     - id: portability-studio-card
       editable_by: instructor-agent
       purpose: Frame modified class export/import/share as a transfer-of-behavior studio check.
@@ -241,6 +259,16 @@ personality_assets:
       evidence:
         - Peer feedback causes a visible revision.
         - Student names trigger, response, state, or audience cue involved.
+    - id: score-timer-outcome-reflection-card
+      editable_by: student-agent
+      purpose: Make game-state reasoning visible after a score/timer playtest.
+      prompt_frame: >-
+        My game starts with score..., time..., and ends when.... A collision or
+        proximity event changes the score by.... I tested win by..., lose by...,
+        and my next revision is....
+      evidence:
+        - Reflection names initial values, arithmetic update, timer, and end state.
+        - Reflection uses playtest evidence for both success and failure paths.
     - id: class-remix-transfer-card
       editable_by: student-agent
       purpose: Make class portability evidence visible when a modified class moves between projects.
@@ -268,6 +296,10 @@ personality_assets:
       instructors: [debug-coach, assessment-curator]
       students: [systems-puzzle-solver, collaborative-peer-mentor]
       use_for: Events, collisions, proximity, variables, loops, and conditionals.
+    - id: stateful-game-loop
+      instructors: [concept-cartographer, assessment-curator, debug-coach]
+      students: [systems-puzzle-solver, reflective-debugger, collaborative-peer-mentor]
+      use_for: Score, timer, arithmetic updates, win/lose states, and reflection-backed game playtests.
     - id: inclusion-to-revision
       instructors: [studio-facilitator, classroom-orchestrator]
       students: [accessibility-advocate, reflective-debugger]
@@ -903,6 +935,38 @@ core_scenarios_from_existing_alice_resources:
       - Student can name trigger, response, and one revision after testing.
     avoid:
       - Requiring exact input device details or specific collision implementation internals.
+  - id: vr-camera-locomotion-journey
+    origin: existing-alice-resource
+    coverage: [lessons, world-creation, run-debug, classroom-use]
+    user_story: As a creative-storyteller, I want to choose a first-person or over-the-shoulder camera journey, so that classmates can experience an Alice world with comfortable VR-inspired locomotion.
+    personas:
+      instructors: [studio-facilitator, debug-coach, classroom-orchestrator]
+      students: [creative-storyteller, reflective-debugger, accessibility-advocate]
+    educational_intent:
+      concepts: [camera marker, viewpoint, locomotion, event, comfort constraint, VR sickness]
+      habits: [spatial reasoning, accessibility, prediction, observation, comfort testing]
+    constraints:
+      - Real VR headset or Alice Player execution may not be available in ordinary CI or classroom environments.
+      - Camera movement can cause disorientation; learners need small, testable moves and a stable orientation cue.
+    observable_behaviors:
+      instructor:
+        - Connects Alice.org VR design concerns to camera markers, camera moves, and learner comfort checks.
+        - Requires explicit preflight evidence when real VR execution is unavailable instead of accepting a silent skip.
+      student:
+        - Chooses first-person or over-the-shoulder perspective and explains how the camera supports the world goal.
+        - Tests movement with a comfort constraint such as short moves, stable horizon, teleport/marker jump, or pause/recenter cue.
+      system_or_artifact:
+        - World or design evidence shows the selected viewpoint, camera marker or camera move plan, locomotion trigger, and VR availability record.
+    agentic_test_prompt: >-
+      Design an Alice VR-inspired camera and locomotion journey grounded in Alice.org VR design, moving-camera, and camera-marker guidance. The learner may use first-person or over-the-shoulder perspective. Require preflight evidence for whether real VR execution is available; if it is not available, require desktop launch manifest evidence plus camera-marker, viewpoint, and locomotion-comfort artifacts.
+    acceptance_probes:
+      - Given real VR is unavailable, when the lane is judged, then evidence explicitly records real_vr_available=false and names the desktop fallback artifacts.
+      - Given a learner chooses a viewpoint, when the journey runs or is reviewed, then camera marker or camera movement evidence explains orientation and comfort.
+      - Given locomotion is included, when a peer or reviewer evaluates the journey, then the learner identifies the movement trigger and a comfort/safety constraint.
+    avoid:
+      - Claiming headset success without VR preflight evidence.
+      - Requiring exact camera coordinates, exact model choice, or undocumented Alice internals.
+      - Treating fast continuous motion as acceptable without a comfort check.
   - id: variables-scorekeeper-timekeeper
     origin: existing-alice-resource
     coverage: [lessons, run-debug]
@@ -1467,6 +1531,45 @@ creative_new_teaching_learning_scenarios:
       - Student revises based on tester observation.
     avoid:
       - Requiring exact sensor values or specific planet assets.
+  - id: game-score-timer-win-lose-loop
+    origin: creative-new
+    coverage: [lessons, run-debug, classroom-use]
+    user_story: As a systems-puzzle-solver, I want my Alice game to keep score, count down time, and end with a win or lose state, so that interaction has a clear playable goal.
+    personas:
+      instructors: [concept-cartographer, assessment-curator, debug-coach]
+      students: [systems-puzzle-solver, reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [collision, proximity event, variable, arithmetic expression, timer, comparison, end state]
+      habits: [state tracking, edge-case testing, peer playtesting, reflection]
+    constraints:
+      - The game loop must stay small enough to test in a short classroom turn.
+      - Win and lose evidence must be visible without inspecting hidden implementation details.
+      - Timer feedback should be understandable without relying only on sound or color.
+    observable_behaviors:
+      instructor:
+        - Frames score and time as variables whose values change through simple rules.
+        - Separates collision or proximity trigger, arithmetic update, timer check, and end-state feedback.
+        - Requires students to test both win and lose outcomes before polish.
+      student:
+        - Creates a collision or proximity event that updates a visible score.
+        - Uses a timer or countdown to change play state and stop or conclude the game.
+        - Reflects on initial values, update rules, and evidence from win and lose playtests.
+      system_or_artifact:
+        - Playable world displays changing score/time and a visible win or lose state.
+        - Peer can trigger the scoring interaction and recognize when the game is over.
+    agentic_test_prompt: >-
+      Design an outside-in Alice mini-game lane where learners add a visible score,
+      timer, and win/lose end state to a collision or proximity game. Use agentic
+      classroom evidence: instructor scaffold, student playtest notes, artifact
+      behavior, and reflection. Do not require exact Alice UI selectors, asset names,
+      variable names, or hidden code inspection.
+    acceptance_probes:
+      - A collision or proximity event changes score through an arithmetic rule visible to a player.
+      - A timer or countdown visibly changes over time and contributes to a win or lose end state.
+      - Student reflection names starting values, update rule, timer behavior, and evidence from both win and lose tests.
+    avoid:
+      - Exact UI coordinates, specific object models, fixed variable names, or brittle timing assertions.
+      - Treating a screenshot alone as proof that score, timer, and end-state logic work.
   - id: creature-choreography-loop-lab
     origin: creative-new
     coverage: [lessons, world-creation, export-share]

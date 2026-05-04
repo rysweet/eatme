@@ -16,7 +16,9 @@ reusable-methods-and-parameters
 functions-as-questions-about-the-world
 loops-and-conditionals-mini-challenge
 events-collision-proximity-game
+game-score-timer-win-lose-loop
 modified-class-portability
+vr-camera-locomotion-journey
 ```
 
 They are based on Alice.org lesson/tutorial resource families and prove that the
@@ -32,7 +34,8 @@ smoke readiness from deterministic harness evidence:
 - Alice was launched through the existing `eatme-alice` launch smoke path.
 - The manifest identifies `scenario_id` as the selected lesson lane, such as
   `hour-of-code-studio-kickoff`, `building-a-scene-first-world`,
-  `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids.
+  `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids,
+  including the score/timer game lane.
 - The deterministic launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - Alice log and window-list files are captured as artifacts when available.
@@ -47,6 +50,13 @@ CI environments. For the Hour of Code studio kickoff, learner-visible first-scen
 first-animation, evidence, and reflection expectations live in editable YAML as
 agentic follow-on contracts; runtime smoke still stops at deterministic
 launch-ready evidence.
+
+The `vr-camera-locomotion-journey` lane adds an explicit VR preflight contract:
+real headset or Alice Player VR execution is optional, but availability must be
+recorded. If real VR is unavailable, evidence must state
+`real_vr_available=false` and include the desktop launch manifest plus
+camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
+outside-in and evidence-based instead of silently skipping unavailable hardware.
 
 ## Scenario assets
 
@@ -66,7 +76,9 @@ assets/scenarios/eatme/reusable-methods-and-parameters.yaml
 assets/scenarios/eatme/functions-as-questions-about-the-world.yaml
 assets/scenarios/eatme/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/eatme/events-collision-proximity-game.yaml
+assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
+assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -95,7 +107,9 @@ assets/scenarios/gadugi/reusable-methods-and-parameters.yaml
 assets/scenarios/gadugi/functions-as-questions-about-the-world.yaml
 assets/scenarios/gadugi/loops-and-conditionals-mini-challenge.yaml
 assets/scenarios/gadugi/events-collision-proximity-game.yaml
+assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
@@ -194,6 +208,7 @@ eatme alice launch-smoke \
   --run-id <run-id> \
   [--scenario <scenario-id>] \
   [--runs-dir <path>] \
+  [--starter-project <path>] \
   [--timeout <seconds>] \
   [--json] \
   [--no-memory] \
@@ -206,6 +221,7 @@ eatme alice launch-smoke \
 | `--run-id <run-id>` | Stable id for this run. Use a descriptive id for local or CI traces. |
 | `--scenario <scenario-id>` | Scenario id to record in the manifest and run directory. Defaults to `real-alice-launch-smoke`; it does not load scenario YAML at runtime yet. |
 | `--runs-dir <path>` | Root directory for run artifacts. Defaults to `runs`. |
+| `--starter-project <path>` | Starter project to open. Relative paths resolve from `--alice-home`; defaults to Alice's `africa.a3p`. |
 | `--timeout <seconds>` | Maximum launch wait before the smoke fails. |
 | `--json` | Accepted compatibility flag. Output is currently pretty JSON whether or not this flag is present. |
 | `--no-memory` | Disable memory writes for the run. |
@@ -253,6 +269,9 @@ The baseline launch smoke uses:
 runs/real-alice-launch-smoke/<run-id>/
 ```
 
+If a run reuses the same `--run-id`, the previous evidence directory is archived
+next to the new run as `<run-id>.previous-...` instead of being deleted.
+
 ## Manifest reference
 
 Every launch smoke manifest includes the launch evidence needed by eatme and
@@ -261,7 +280,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, or `events-collision-proximity-game`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, or `vr-camera-locomotion-journey`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -467,6 +486,7 @@ Use the gadugi assets when a gadugi runner needs to exercise a lane:
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
 assets/scenarios/gadugi/code-editor-first-run.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 The adapter performs three kinds of work:
@@ -481,16 +501,14 @@ window evidence, and passing assertions. It does not reimplement or configure
 Alice launch internals.
 
 The committed gadugi adapters are generated from the canonical eatme scenario
-assets and avoid checkout-specific paths. Regenerate or verify them with:
+assets and portable: the agent config uses `cwd: .` and shell commands begin
+with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO` without baking
+in a checkout-specific path. Regenerate or verify them with:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --root .
 cargo run -q -p eatme-cli -- assets generate-gadugi --root . --check
 ```
-
-At runtime, adapters start in `.` and shell commands begin with
-`cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO` without baking in a
-checkout-specific path.
 
 ## Testing expectations
 
