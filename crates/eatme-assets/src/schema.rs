@@ -6,9 +6,26 @@ pub(crate) struct CrewAsset {
     pub(crate) workstream: String,
     pub(crate) title: String,
     pub(crate) purpose: String,
+    #[serde(default)]
+    pub(crate) constituency_coverage: Vec<ConstituencyCoverage>,
     pub(crate) personas: PersonaGroups,
     pub(crate) core_scenarios_from_existing_alice_resources: Vec<Scenario>,
     pub(crate) creative_new_teaching_learning_scenarios: Vec<Scenario>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct ConstituencyCoverage {
+    pub(crate) id: String,
+    #[serde(default)]
+    pub(crate) label: String,
+    #[serde(default)]
+    pub(crate) editable_by: String,
+    #[serde(default)]
+    pub(crate) persona_ids: Vec<String>,
+    #[serde(default)]
+    pub(crate) scenario_ids: Vec<String>,
+    #[serde(default)]
+    pub(crate) evidence: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

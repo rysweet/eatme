@@ -1,5 +1,6 @@
 use anyhow::{Context, Result, bail};
 use eatme_core::{CommandRunner, CommandSpec};
+use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
@@ -120,7 +121,10 @@ fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
 }
 
 fn display_socket_exists(display: u16) -> bool {
-    Path::new(&format!("/tmp/.X11-unix/X{display}")).exists()
+    let x11_unix_dir = env::var_os("X11_UNIX_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| env::temp_dir().join(".X11-unix"));
+    x11_unix_dir.join(format!("X{display}")).exists()
 }
 
 #[cfg(test)]
