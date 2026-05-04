@@ -1,0 +1,93 @@
+schema_version: eatme.scenario/v1
+id: instructor-student-outcomes-rubric
+title: Instructor Student Outcomes Rubric
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use lessons, exercises, projects, textbooks, curriculums, and how-tos as assessment context.
+  - name: Alice.org Building A Scene lesson
+    url: https://www.alice.org/resources/lessons/building-a-scene/
+    use: >-
+      Use scene artifact evidence such as object choice, positioning, camera, markers, and saving.
+purpose: >-
+  Check Alice student outcomes with a rubric that values concept evidence, creativity, process, and reflection.
+personas:
+  instructors: [assessment-curator, studio-facilitator]
+  students: [reflective-debugger, accessibility-advocate]
+agentic_flow:
+  focus: checking-student-outcomes-rubrics
+  instructor_goal: >-
+    Check Alice student outcomes with a rubric that values concept evidence, creativity, process, and reflection.
+  prompt_source: assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - student_outcomes_rubric
+    - feedback_frame
+    - revision_next_step
+agentic_test_prompt: >-
+  Act as an instructor QA agent reviewing student outcomes. Produce a simple rubric and feedback frame for an Alice artifact. Grade concept evidence, creative communication, debugging/process, and reflection. Ask for observable artifact behavior and student explanation; do not reward visual polish alone.
+acceptance_criteria:
+  - given: >-
+      students submit Alice artifacts and reflections
+    when: >-
+      the agent applies the rubric
+    then: >-
+      feedback names concept evidence, process evidence, and one next revision
+  - given: >-
+      a project is visually polished but concept evidence is weak
+    when: >-
+      the agent scores it
+    then: >-
+      the rubric explains the gap without over-rewarding polish
+acceptance_probes:
+  - Rubric has instructor-friendly levels and student-visible evidence.
+  - Feedback references artifact behavior plus student explanation.
+  - Outcome checks include creativity, debugging process, reflection, and accessibility/audience when relevant.
+rubric:
+  - criterion: Concept evidence
+    evidence:
+      - Student points to a visible behavior caused by the target Alice concept.
+      - Explanation uses the concept vocabulary accurately.
+  - criterion: Creative communication
+    evidence:
+      - World/story/game choice helps an audience understand the idea.
+      - Creativity does not hide whether the concept works.
+  - criterion: Process and reflection
+    evidence:
+      - Student records prediction, observation, change, and rerun.
+      - Revision is specific and testable.
+avoid:
+  - Exact UI coordinates, menu paths, or private implementation details.
+  - Single correct creative answer; preserve student ownership.
+  - Visual polish as a substitute for concept evidence.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes instructor-student-outcomes-rubric
+  - id: agentic-instructor-review
+    command: agentic instructor QA review using assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  student_outcomes_rubric: agentic://instructor/outcomes-rubric
+  feedback_frame: agentic://instructor/feedback-frame
+  revision_next_step: agentic://instructor/revision-next-step
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or
+  the cited Alice.org resource basis, fail visibly and report the missing
+  evidence. Do not replace instructor judgment with brittle UI assertions.

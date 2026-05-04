@@ -37,7 +37,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 19'
+        - '"scenario_asset_count": 29'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
