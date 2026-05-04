@@ -1,0 +1,122 @@
+name: "Eatme Hour of Code Studio Kickoff Smoke"
+description: |
+  Gadugi-compatible CLI scenario for the Hour of Code studio kickoff lane.
+  Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme
+  commands and checks manifest-level evidence only before any instructor/student
+  agent evaluates setup, first scene, first animation, evidence, or reflection.
+version: "1.0.0"
+
+config:
+  timeout: 1800000
+  retries: 0
+  parallel: false
+
+environment:
+  requires:
+    - ALICE_HOME
+    - EATME_REPO
+    - EATME_REAL_ALICE
+  optional:
+    - RUN_ID
+
+agents:
+  - name: "eatme-cli-agent"
+    type: "system"
+    config:
+      shell: "bash"
+      cwd: .
+      timeout: 1800000
+      capture_output: true
+
+steps:
+  - name: "Validate editable Alice scenario assets"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- assets validate --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"passed": true'
+        - '"scenario_asset_count": 16'
+    timeout: 60000
+
+  - name: "Check desktop launch dependencies"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: "cd \"${EATME_REPO:-.}\" && cargo run -q -p eatme-cli -- deps check --json"
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"all_required_available": true'
+    timeout: 60000
+
+  - name: "Launch Hour of Code studio kickoff lane under Xvfb"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: |
+        cd "${EATME_REPO:-.}"
+        export RUN_ID="${RUN_ID:-gadugi-hour-of-code-studio-kickoff}"
+        EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+          --alice-home "${ALICE_HOME}" \
+          --run-id "${RUN_ID}" \
+          --runs-dir runs \
+          --timeout 900 \
+          --json \
+          --no-memory \
+          --offline-package \
+          --scenario hour-of-code-studio-kickoff
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
+        - '"failure_category": null'
+        - '"startup_window_or_screenshot": {'
+        - '"passed": true'
+    timeout: 1800000
+
+assertions:
+  - name: "Assets Validate"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Validate editable Alice scenario assets"
+
+  - name: "Dependencies Available"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Check desktop launch dependencies"
+      required_strings:
+        - '"all_required_available": true'
+
+  - name: "Hour of Code Studio Kickoff Launches"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+
+  - name: "Manifest Boundary Only"
+    type: "output_contains_all"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Launch Hour of Code studio kickoff lane under Xvfb"
+      required_strings:
+        - '"scenario_id": "hour-of-code-studio-kickoff"'
+        - '"failure_category": null'
+        - '"passed": true'
+
+metadata:
+  tags:
+    - "alice"
+    - "eatme"
+    - "desktop"
+    - "xvfb"
+    - "hour-of-code"
+    - "studio-kickoff"
+    - "outside-in"
+  priority: "critical"
+  author: "eatme"
+  test_type: "launch-smoke"
