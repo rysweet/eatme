@@ -19,6 +19,7 @@ game-score-timer-win-lose-loop
 modified-class-portability
 hour-of-code-studio-kickoff
 starter-project-open-save-export-preflight
+vr-camera-locomotion-journey
 ```
 
 They are based on Alice.org lesson/tutorial resource families and Alice desktop
@@ -52,6 +53,13 @@ at launch-ready evidence so lesson smokes remain stable in normal developer and
 CI environments. They do not yet prove learner-visible lesson steps such as
 placing objects, editing procedures, saving a world, or writing a reflection.
 
+The `vr-camera-locomotion-journey` lane adds an explicit VR preflight contract:
+real headset or Alice Player VR execution is optional, but availability must be
+recorded. If real VR is unavailable, evidence must state
+`real_vr_available=false` and include the desktop launch manifest plus
+camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
+outside-in and evidence-based instead of silently skipping unavailable hardware.
+
 ## Scenario assets
 
 Canonical lesson scenarios live under:
@@ -73,6 +81,7 @@ assets/scenarios/eatme/game-score-timer-win-lose-loop.yaml
 assets/scenarios/eatme/modified-class-portability.yaml
 assets/scenarios/eatme/hour-of-code-studio-kickoff.yaml
 assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
+assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
 ```
 
 These files are the editable design contracts for lesson smokes. Lesson copy,
@@ -103,6 +112,7 @@ assets/scenarios/gadugi/game-score-timer-win-lose-loop.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 Gadugi scenarios may invoke the eatme CLI and inspect manifest-level evidence.
@@ -267,7 +277,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, or `starter-project-open-save-export-preflight`. |
+| `scenario_id` | Scenario selected for the run, such as `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `starter-project-open-save-export-preflight`, or `vr-camera-locomotion-journey`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |
@@ -479,6 +489,7 @@ assets/scenarios/gadugi/code-editor-first-run.yaml
 assets/scenarios/gadugi/modified-class-portability.yaml
 assets/scenarios/gadugi/hour-of-code-studio-kickoff.yaml
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
+assets/scenarios/gadugi/vr-camera-locomotion-journey.yaml
 ```
 
 The adapter performs three kinds of work:
@@ -492,9 +503,9 @@ the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
 window evidence, `real_alice_execution_evidence`, and passing assertions. It
 does not reimplement or configure Alice launch internals.
 
-The committed gadugi adapters are portable: the agent `cwd` is `.` and shell
-commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO`
-without baking in a checkout-specific path.
+The committed gadugi adapters are portable: the agent config uses `cwd: "."`
+and shell commands begin with `cd "${EATME_REPO:-.}"`, so a runner may set
+`EATME_REPO` without baking in a checkout-specific path.
 
 ## Testing expectations
 

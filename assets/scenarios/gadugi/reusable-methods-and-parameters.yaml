@@ -16,7 +16,6 @@ environment:
     - EATME_REAL_ALICE
   optional:
     - RUN_ID
-    - EATME_REPO
 
 agents:
   - name: "eatme-cli-agent"
@@ -39,7 +38,7 @@ steps:
       exit_code: 0
       stdout_contains:
         - '"passed": true'
-        - '"scenario_asset_count": 32'
+        - '"scenario_asset_count": 34'
     timeout: 60000
 
   - name: "Check desktop launch dependencies"
