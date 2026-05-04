@@ -1,0 +1,80 @@
+name: "Eatme Instructor Lesson Materials Remix Agentic Flow"
+description: |
+  Gadugi-compatible instructor QA adapter for Instructor Lesson Materials Remix. It keeps the
+  scenario at the editable asset and agentic evidence boundary so non-coders can
+  maintain prompts, probes, and rubrics without changing Rust.
+version: "1.0.0"
+
+config:
+  timeout: 900000
+  retries: 0
+  parallel: false
+
+agents:
+  - name: "eatme-cli-agent"
+    type: "system"
+    config:
+      shell: "bash"
+      cwd: "."
+      timeout: 60000
+      capture_output: true
+  - name: "instructor-qa-agent"
+    type: "agentic"
+    config:
+      persona_asset: "assets/personas/alice-user-crew.yaml"
+      scenario_asset: "assets/scenarios/eatme/instructor-lesson-materials-remix.yaml"
+      timeout: 900000
+
+steps:
+  - name: "Validate editable Alice instructor assets"
+    agent: "eatme-cli-agent"
+    action: "execute_command"
+    params:
+      command: 'cd "${EATME_REPO:-.}" && cargo run -q -p eatme-cli -- assets validate --json'
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"passed": true'
+        - '"scenario_asset_count": 30'
+        - '"instructor-lesson-materials-remix"'
+    timeout: 60000
+
+  - name: "Run instructor agentic QA review"
+    agent: "instructor-qa-agent"
+    action: "agentic_test"
+    params:
+      asset: "assets/scenarios/eatme/instructor-lesson-materials-remix.yaml"
+      prompt: "Use the asset agentic_test_prompt, personas, resource_basis, and rubric to produce the expected_outputs."
+      acceptance_probes: "Check every acceptance_probes entry and reject brittle UI/runtime assertions."
+    expect:
+      output_contains:
+        - "preparing-lesson-materials"
+        - "acceptance_probes"
+        - "rubric"
+    timeout: 900000
+
+assertions:
+  - name: "Assets Validate"
+    type: "command_success"
+    agent: "eatme-cli-agent"
+    params:
+      step: "Validate editable Alice instructor assets"
+
+  - name: "Instructor Agentic Review Covers Probes"
+    type: "agentic_acceptance"
+    agent: "instructor-qa-agent"
+    params:
+      step: "Run instructor agentic QA review"
+      asset: "assets/scenarios/eatme/instructor-lesson-materials-remix.yaml"
+
+metadata:
+  tags:
+    - "alice"
+    - "eatme"
+    - "instructor"
+    - "outside-in"
+    - "agentic"
+    - "preparing-lesson-materials"
+  priority: "high"
+  author: "eatme"
+  test_type: "instructor-agentic-flow"
