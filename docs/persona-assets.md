@@ -4,7 +4,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 10 creative new scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline plus Alice.org-grounded lesson lanes.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior and check manifest-level evidence only.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
@@ -59,6 +59,11 @@ Rust or the launch harness.
 | `debug-coach` | Turns run/debug into prediction, observation, hypothesis, revision. |
 | `assessment-curator` | Assesses concept evidence, creativity, process, and reflection. |
 | `classroom-orchestrator` | Handles setup, sharing, fallback plans, and classroom logistics. |
+| `curriculum-pathway-designer` | Sequences Alice resources into editable units and concept progressions. |
+| `setup-support-specialist` | Coordinates install, launch, graphics, storage, and fallback readiness. |
+| `workshop-facilitator` | Runs short workshop/studio blocks with checkpoints, helpers, and share-outs. |
+| `alice-2-migration-mentor` | Bridges Alice 2 lesson intent into current Alice 3 workflows. |
+| `teacher-community-curator` | Packages shareable/remixable teacher-community assets with context and attribution. |
 
 ### Student crew
 
@@ -71,6 +76,26 @@ Rust or the launch harness.
 | `reflective-debugger` | Practices expected-vs-actual reasoning and small repair tests. |
 | `collaborative-peer-mentor` | Helps peers through questions and evidence, not takeover. |
 | `accessibility-advocate` | Tests whether worlds communicate across audience needs and constraints. |
+| `vr-player-tester` | Playtests worlds for comfort, orientation, discoverability, and fallback access. |
+| `media-audio-creator` | Uses audio, camera, timing, captions, and media cues for audience meaning. |
+| `model-texture-importer` | Imports or falls back from external models/textures responsibly. |
+
+## Constituency coverage
+
+`constituency_coverage` in `assets/personas/alice-user-crew.yaml` is validated so
+non-coder editors can add or revise personas/scenarios without touching Rust. It
+requires persona and scenario references for:
+
+| Constituency | Persona | Scenario |
+| --- | --- | --- |
+| Curriculum designers | `curriculum-pathway-designer` | `curriculum-sequence-remix-pack` |
+| IT/setup support | `setup-support-specialist` | `setup-support-lab-readiness` |
+| Workshop facilitators | `workshop-facilitator` | `workshop-facilitator-live-studio` |
+| VR/player users | `vr-player-tester` | `vr-player-comfort-playtest` |
+| Media/audio creators | `media-audio-creator` | `media-audio-cue-storyboard` |
+| Model/texture import users | `model-texture-importer` | `model-texture-import-checkpoint` |
+| Alice 2 migration users | `alice-2-migration-mentor` | `alice-2-migration-bridge` |
+| Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop` |
 
 ## Core scenario coverage
 
@@ -82,6 +107,14 @@ Rust or the launch harness.
 | Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `lost-robot-debug-museum` |
 | Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
 | Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission` |
+| Curriculum design | `curriculum-sequence-remix-pack` |
+| IT/setup support | `setup-support-lab-readiness` |
+| Workshops | `workshop-facilitator-live-studio` |
+| VR/player experience | `vr-player-comfort-playtest` |
+| Media/audio creation | `media-audio-cue-storyboard` |
+| Model/texture import | `model-texture-import-checkpoint` |
+| Alice 2 migration | `alice-2-migration-bridge` |
+| Teacher-community sharing | `teacher-community-sharing-loop` |
 
 ## Hour of Code studio kickoff
 
