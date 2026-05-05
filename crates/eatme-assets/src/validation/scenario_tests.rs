@@ -355,6 +355,27 @@ fn instructor_agentic_flow_rejects_automated_creative_or_learner_world_grading_c
     );
 }
 
+#[test]
+fn live_studio_instructor_flow_rejects_missing_classroom_evidence_contract() {
+    let scenario = instructor_agentic_scenario("workshop-facilitator-live-studio");
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/workshop-facilitator-live-studio.yaml"),
+        &scenario,
+        None,
+        &[],
+    );
+
+    assert!(!report.passed);
+    for required in super::instructor_agentic_flow::LIVE_STUDIO_REQUIRED_EVIDENCE {
+        assert!(
+            report.errors.iter().any(|error| error.contains(required)),
+            "live-studio validation must report missing {required:?}; got {:?}",
+            report.errors
+        );
+    }
+}
+
 #[path = "scenario/gadugi_tests.rs"]
 mod gadugi_tests;
 

@@ -41,7 +41,7 @@ agentic_flow:
     - student_handout
     - exit_ticket
 agentic_test_prompt: >-
-  Act as an instructor QA agent preparing lesson materials. Produce a one-page
+  Act as an instructor acceptance agent preparing lesson materials. Produce a one-page
   teacher plan, student handout, and exit ticket for an Alice lesson grounded in
   the listed resources and this instructor-lesson-materials-remix scenario.
   Include setup assumptions, concept vocabulary, predicted visible world
@@ -91,7 +91,7 @@ rubric:
       - Materials identify the scenario-labeled lesson-material remix path.
       - Agentic probes review teacher plan, student handout, and exit ticket without grading learner worlds.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
   - Automated creative grading or learner-world assessment claims.
@@ -102,7 +102,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes instructor-lesson-materials-remix
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/instructor-lesson-materials-remix.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-lesson-materials-remix.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -115,5 +115,5 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions,
+  evidence. Do not replace instructor judgment with brittle user interface assertions,
   automated creative grading, or learner-world assessment.

@@ -5,6 +5,26 @@ use super::{
 use crate::schema::EatmeScenarioAsset;
 use crate::validation::{require_list, require_nonempty};
 
+pub(super) const LIVE_STUDIO_REQUIRED_EVIDENCE: &[&str] = &[
+    "setup checklist",
+    "timing plan",
+    "observation points",
+    "intervention cues",
+    "checkpoint artifacts",
+    "share-out support",
+    "instructor-facing acceptance probes",
+    "student prompt cards",
+    "help signals",
+    "peer feedback",
+    "revision behavior",
+    "reflection",
+    "share-out artifacts",
+    "not full Alice user interface automation",
+    "not creative assessment",
+    "not learner-world grading",
+    "not complete Alice coverage",
+];
+
 pub(super) fn validate_instructor_agentic_flow(
     scenario: &EatmeScenarioAsset,
     errors: &mut Vec<String>,
@@ -48,6 +68,7 @@ pub(super) fn validate_instructor_agentic_flow(
     }
     require_timeout_and_policy(scenario, errors);
     validate_instructor_grading_boundary(scenario, errors);
+    validate_live_studio_classroom_evidence_contract(scenario, errors);
     if !scenario
         .steps
         .iter()
@@ -57,6 +78,85 @@ pub(super) fn validate_instructor_agentic_flow(
     }
     for step in &scenario.steps {
         validate_instructor_flow_boundary(&step.id, &step.command, errors);
+    }
+}
+
+fn validate_live_studio_classroom_evidence_contract(
+    scenario: &EatmeScenarioAsset,
+    errors: &mut Vec<String>,
+) {
+    if scenario.id != "workshop-facilitator-live-studio" {
+        return;
+    }
+
+    let evidence_text = normalized_scenario_evidence_text(scenario);
+    for required in LIVE_STUDIO_REQUIRED_EVIDENCE {
+        if !evidence_text.contains(required) {
+            errors.push(format!(
+                "workshop-facilitator-live-studio must include {required}"
+            ));
+        }
+    }
+}
+
+fn normalized_scenario_evidence_text(scenario: &EatmeScenarioAsset) -> String {
+    let mut text = String::new();
+    push_normalized_part(&mut text, &scenario.purpose);
+    push_normalized_part(&mut text, &scenario.agentic_test_prompt);
+    push_normalized_part(&mut text, &scenario.unsupported_policy);
+
+    for resource in &scenario.resource_basis {
+        push_normalized_part(&mut text, &resource.use_note);
+    }
+    if let Some(flow) = &scenario.agentic_flow {
+        push_normalized_part(&mut text, &flow.focus);
+        push_normalized_part(&mut text, &flow.instructor_goal);
+        push_normalized_part(&mut text, &flow.prompt_source);
+        for item in &flow.non_coder_editable {
+            push_normalized_part(&mut text, item);
+        }
+        for item in &flow.expected_outputs {
+            push_normalized_part(&mut text, item);
+        }
+    }
+    for criterion in &scenario.acceptance_criteria {
+        push_normalized_part(&mut text, &criterion.given);
+        push_normalized_part(&mut text, &criterion.when);
+        push_normalized_part(&mut text, &criterion.then);
+    }
+    for probe in &scenario.acceptance_probes {
+        push_normalized_part(&mut text, probe);
+    }
+    for rubric in &scenario.rubric {
+        push_normalized_part(&mut text, &rubric.criterion);
+        for evidence in &rubric.evidence {
+            push_normalized_part(&mut text, evidence);
+        }
+    }
+    for item in &scenario.avoid {
+        push_normalized_part(&mut text, item);
+    }
+    for step in &scenario.steps {
+        push_normalized_part(&mut text, &step.id);
+        push_normalized_part(&mut text, &step.command);
+        for evidence in &step.evidence {
+            push_normalized_part(&mut text, evidence);
+        }
+    }
+    for (name, uri) in &scenario.artifacts {
+        push_normalized_part(&mut text, name);
+        push_normalized_part(&mut text, uri);
+    }
+
+    text
+}
+
+fn push_normalized_part(buffer: &mut String, text: &str) {
+    for word in text.split_whitespace() {
+        if !buffer.is_empty() {
+            buffer.push(' ');
+        }
+        buffer.push_str(word);
     }
 }
 

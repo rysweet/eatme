@@ -35,7 +35,7 @@ agentic_flow:
     - misconception_checks
     - transfer_prompt
 agentic_test_prompt: >-
-  Act as an instructor QA agent building a concept map. Given an Alice lesson idea, produce a concept ladder from visible world behavior to Alice vocabulary to transferable CS vocabulary. Include misconception checks, one prediction question, one debugging question, and one transfer prompt. Prefer agent reasoning over code assertions.
+  Act as an instructor acceptance agent building a concept map. Given an Alice lesson idea, produce a concept ladder from visible world behavior to Alice vocabulary to transferable computer science vocabulary. Include misconception checks, one prediction question, one debugging question, and one transfer prompt. Prefer agent reasoning over code assertions.
 acceptance_criteria:
   - given: >-
       an instructor wants conceptual transfer
@@ -67,7 +67,7 @@ rubric:
       - Concepts move from concrete world behavior to abstract vocabulary.
       - No more than two new terms are introduced at once.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
 steps:
@@ -77,7 +77,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes instructor-alice-concept-map
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/instructor-alice-concept-map.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-alice-concept-map.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -90,4 +90,4 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions.
+  evidence. Do not replace instructor judgment with brittle user interface assertions.

@@ -5,6 +5,8 @@ use std::path::Path;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
+mod live_studio_workshop_tests;
+#[cfg(test)]
 mod outside_in_alice_expansion_tests;
 mod report;
 #[cfg(test)]

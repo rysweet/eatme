@@ -35,7 +35,7 @@ agentic_flow:
     - fallback_plan
     - student_setup_note
 agentic_test_prompt: >-
-  Act as an instructor QA agent preparing classroom setup. Produce a readiness checklist, student-facing setup note, and fallback plan. Include device/graphics constraints from Alice resources, offline/resource alternatives, what evidence confirms readiness, and what to do when launch fails. Keep the plan non-coder editable.
+  Act as an instructor acceptance agent preparing classroom setup. Produce a readiness checklist, student-facing setup note, and fallback plan. Include device/graphics constraints from Alice resources, offline/resource alternatives, what evidence confirms readiness, and what to do when launch fails. Keep the plan non-coder editable.
 acceptance_criteria:
   - given: >-
       an instructor is preparing a lab
@@ -67,7 +67,7 @@ rubric:
       - Student note is concise and non-blaming.
       - Peer support roles are safe and bounded.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
 steps:
@@ -77,7 +77,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes instructor-classroom-setup-readiness
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -90,4 +90,4 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions.
+  evidence. Do not replace instructor judgment with brittle user interface assertions.

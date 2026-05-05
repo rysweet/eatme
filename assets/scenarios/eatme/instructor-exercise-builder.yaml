@@ -35,7 +35,7 @@ agentic_flow:
     - hint_ladder
     - student_evidence_checklist
 agentic_test_prompt: >-
-  Act as an instructor QA agent. Using the resource_basis and persona goals in this YAML, draft a classroom-ready Alice exercise brief. The brief must name one target Alice concept, a starter world or code action, student choice points, hints, stretch options, and visible evidence students can submit. Keep all directions editable by a non-coder and avoid exact UI coordinates.
+  Act as an instructor acceptance agent. Using the resource_basis and persona goals in this YAML, draft a classroom-ready Alice exercise brief. The brief must name one target Alice concept, a starter world or code action, student choice points, hints, stretch options, and visible evidence students can submit. Keep all directions editable by a non-coder and avoid exact user interface coordinates.
 acceptance_criteria:
   - given: >-
       an instructor has an Alice.org lesson concept
@@ -67,7 +67,7 @@ rubric:
       - Submission includes a world behavior plus student explanation.
       - Instructor can judge without opening private code internals.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
 steps:
@@ -77,7 +77,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes instructor-exercise-builder
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/instructor-exercise-builder.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-exercise-builder.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -90,4 +90,4 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions.
+  evidence. Do not replace instructor judgment with brittle user interface assertions.
