@@ -10,8 +10,11 @@ resource_basis:
     url: "${ALICE_DESKTOP_SCENARIOS:-../alice3-modernization/qa/outside-in/alice-desktop/scenarios}"
 purpose: >-
   Prove that the real Alice harness can open the bundled starter project and
-  capture deterministic evidence before instructor/student agents or manual QA
-  attempt save, reopen, or export journeys.
+  capture deterministic real Alice action evidence before instructor/student
+  agents or manual QA attempt save, reopen, or export journeys. The preflight
+  evidence is limited to the opened starter project, manifest/log/window/screenshot
+  evidence, and inspectable action evidence that reviewers can cite without
+  treating it as full save/reopen/export coverage.
 launcher:
   command: alice launch-smoke
   scenario: starter-project-open-save-export-preflight
@@ -56,6 +59,9 @@ acceptance_criteria:
   - given: open/save/export QA still needs user-like interaction evidence
     when: instructor/student agents plan the next save, reopen, or export pass
     then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
+  - given: reviewers need bounded starter-project evidence
+    when: they inspect this scenario's artifacts
+    then: they must treat the result as real Alice action evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -101,4 +107,8 @@ artifacts:
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
-  substitute mocked open/save/export evidence.
+  substitute mocked open/save/export evidence. This scenario records real Alice
+  action evidence for the opened starter project with manifest/log/window/screenshot
+  evidence and inspectable action evidence only; it is not full UI automation,
+  not creative assessment, not learner-world grading, and not complete Alice
+  coverage.
