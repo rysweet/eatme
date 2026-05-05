@@ -31,14 +31,20 @@ For the first real Alice lesson scenario, use
 `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` as the student
 launch/action-contract source of truth. It records scenario-labeled
 manifest/log/window/screenshot evidence and `ui-action-contract.json`
-expectations; it is not full UI automation, not creative assessment, and not
-learner-world grading.
+expectations; it does not drive an entire lesson through the Alice interface,
+score learner creativity, or grade saved learner worlds.
 
 For instructor remix work, use
 `assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
 lesson-material/remix evidence contract. It keeps teacher plan, student handout,
 exit ticket, and review/remix probes discoverable without claiming automated
 creative grading or learner-world assessment.
+
+For workshop facilitation coverage, use
+`assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` and its generated
+Gadugi adapter. The scenario connects workshop facilitator personas to a
+reviewable instructor agentic flow without claiming desktop automation or
+automated grading.
 
 ## QA-team outside-in test shape
 
@@ -176,7 +182,7 @@ contracts.
 | `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window and fails with `ui_action_automation_unimplemented` until object placement, code editing, running, and saving are automated. |
 | `modified-class-portability` | Class portability contract requiring before-export, destination-import, and after-import behavior evidence before a shared modified class is trusted. |
 
-Committed outside-in Alice QA scenario assets and generated Gadugi adapters now
+Standalone outside-in Alice QA scenario assets and generated Gadugi adapters
 include:
 
 | Scenario ID | User-facing outcome |
@@ -192,8 +198,9 @@ and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
 the user outcome agents must judge; the launch smoke provides deterministic
 desktop evidence and does not substitute for unimplemented UI, VR, or
 export/import automation. `real-alice-launch-smoke` remains the baseline
-manifest/log/window/screenshot proof only; it is not full UI automation, not
-creative assessment, and not learner-world grading.
+manifest/log/window/screenshot proof only; it does not drive an entire lesson
+through the Alice interface, score learner creativity, or grade saved learner
+worlds.
 
 ## Instructor agentic flow assets
 
@@ -208,15 +215,15 @@ Alice modernization work pressures first:
 | `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
 
-Committed instructor/student flow assets now include these additional outside-in
-scenarios:
+The persona crew also defines these additional outside-in coverage areas:
 
-| Scenario ID | Instructor goal | Grounding |
-| --- | --- | --- |
-| `setup-support-lab-readiness` | Prepare a lab readiness runbook with explicit dependency, graphics, storage, and fallback evidence. | Alice 3 setup/download; Alice resources overview. |
-| `alice-2-migration-bridge` | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
-| `vr-player-comfort-playtest` | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
-| `model-texture-import-checkpoint` | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
+| Scenario ID | Implementation role | Instructor goal | Grounding |
+| --- | --- | --- | --- |
+| `setup-support-lab-readiness` | Existing standalone scenario | Prepare a lab readiness runbook with explicit dependency, graphics, storage, and fallback evidence. | Alice 3 setup/download; Alice resources overview. |
+| `alice-2-migration-bridge` | Existing standalone scenario | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
+| `vr-player-comfort-playtest` | Existing standalone scenario | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
+| `model-texture-import-checkpoint` | Existing standalone scenario | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
+| `workshop-facilitator-live-studio` | Existing standalone scenario | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected

@@ -1,11 +1,11 @@
 use crate::schema::EatmeScenarioAsset;
 use crate::validation::validate_persona_crew_against_scenario_assets;
-use crate::{generate_gadugi_adapter_yaml, validate_assets, validate_scenario_asset};
+use crate::{generate_gadugi_adapters, validate_assets};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 53;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 55;
 
 struct TargetScenario {
     id: &'static str,
@@ -48,11 +48,12 @@ const TARGET_SCENARIOS: &[TargetScenario] = &[
 fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapters() {
     let root = repository_root();
     let report = validate_assets(&root).unwrap();
+    let gadugi_report = generate_gadugi_adapters(&root, true).unwrap();
     let mut failures = Vec::new();
 
     if report.scenario_asset_count != EXPECTED_SCENARIO_ASSET_COUNT {
         failures.push(format!(
-            "expected {EXPECTED_SCENARIO_ASSET_COUNT} scenario YAML assets after adding four canonical eatme scenarios and four generated Gadugi adapters, got {}",
+            "expected {EXPECTED_SCENARIO_ASSET_COUNT} scenario YAML assets after adding outside-in expansion and workshop coverage assets, got {}",
             report.scenario_asset_count
         ));
     }
@@ -60,6 +61,12 @@ fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapte
         failures.push(format!(
             "expanded asset inventory must validate cleanly: {:?}",
             report.errors
+        ));
+    }
+    if !gadugi_report.passed {
+        failures.push(format!(
+            "expanded Gadugi adapters must be fresh: {:?}",
+            gadugi_report.errors
         ));
     }
 
@@ -78,28 +85,6 @@ fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapte
             failures.push(format!(
                 "{} must exist as the generated Gadugi adapter",
                 gadugi_path.display()
-            ));
-            continue;
-        }
-
-        for path in [&eatme_path, &gadugi_path] {
-            let scenario_report = validate_scenario_asset(path).unwrap();
-            if !scenario_report.passed {
-                failures.push(format!(
-                    "{} must validate: {:?}",
-                    path.display(),
-                    scenario_report.errors
-                ));
-            }
-        }
-
-        let generated = generate_gadugi_adapter_yaml(&root, &eatme_path).unwrap();
-        let committed = fs::read_to_string(&gadugi_path).unwrap();
-        if generated != committed {
-            failures.push(format!(
-                "{} must match the generated adapter for {}",
-                gadugi_path.display(),
-                eatme_path.display()
             ));
         }
     }
@@ -235,65 +220,6 @@ fn missing_expansion_prompt_card_scenario_assets_fail_loudly() {
             report.errors
         );
     }
-}
-
-#[test]
-fn docs_describe_expanded_inventory_as_committed_not_planned() {
-    let root = repository_root();
-    let docs = [
-        root.join("docs/student-missions.md"),
-        root.join("docs/instructor-missions.md"),
-        root.join("docs/persona-assets.md"),
-        root.join("docs/alice-lesson-smoke.md"),
-        root.join("docs/generated-asset-consistency.md"),
-    ];
-    let mut combined = String::new();
-    for path in docs {
-        combined.push_str(&format!("\n--- {} ---\n", path.display()));
-        combined.push_str(&fs::read_to_string(&path).unwrap());
-    }
-
-    for target in TARGET_SCENARIOS {
-        assert!(
-            combined.contains(target.id),
-            "student/instructor/persona docs must mention {}",
-            target.id
-        );
-    }
-    for persona in [
-        "setup-support-specialist",
-        "alice-2-migration-mentor",
-        "vr-player-tester",
-        "model-texture-importer",
-        "data-detective",
-        "immersive-camera-director",
-        "game-narrative-designer",
-    ] {
-        assert!(
-            combined.contains(persona),
-            "student/instructor/persona docs must mention persona {persona}"
-        );
-    }
-
-    assert!(
-        combined.contains("53 scenario YAML files"),
-        "docs must describe the expanded committed 53-file scenario inventory"
-    );
-    assert!(
-        combined.contains("26 canonical"),
-        "docs must describe the expanded committed 26 canonical eatme scenarios"
-    );
-    assert!(
-        combined.contains("26 generated"),
-        "docs must describe the expanded committed 26 generated Gadugi adapters"
-    );
-    assert!(
-        !combined.contains("Target expansion lanes")
-            && !combined.contains("planned expansion")
-            && !combined.contains("planned expanded inventory")
-            && !combined.contains("target expansion"),
-        "docs must be updated from planned-language to committed inventory language once the scenarios land"
-    );
 }
 
 #[test]

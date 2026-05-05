@@ -54,10 +54,9 @@ A passing launch smoke records:
 ## What eatme does not pretend to prove
 
 The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
-evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
-automation, grade learner creativity, or inspect private Alice implementation
-details. The first-lesson action contract states this more explicitly: it is not
-full UI automation, not creative assessment, and not learner-world grading.
+evidence for a scenario-labeled Alice run. They do not drive an entire lesson
+through the Alice interface, score learner creativity, inspect private Alice
+implementation details, or grade saved learner worlds.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic

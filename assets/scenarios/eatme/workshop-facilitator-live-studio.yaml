@@ -1,0 +1,115 @@
+schema_version: eatme.scenario/v1
+id: workshop-facilitator-live-studio
+title: Workshop Facilitator Live Studio
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Hour of Code lesson
+    url: https://www.alice.org/resources/lessons/hour-of-code/
+    use: >-
+      Use the short-session pattern for a first scene, first animation, visible evidence, and reflection.
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use lessons, exercises, projects, how-tos, and shareable resources as workshop source material.
+purpose: >-
+  Prepare a short live-studio flow where participants build one visible behavior,
+  get help, revise, and share evidence within a limited session. This non-coder-editable
+  scenario adds persona-to-scenario coverage evidence for workshop facilitation; it is not
+  a claim of comprehensive interface automation, machine-scored creativity, automatic grading
+  of student worlds, or exhaustive Alice coverage.
+personas:
+  instructors: [workshop-facilitator, studio-facilitator]
+  students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
+agentic_flow:
+  focus: facilitating-live-studio-workshops
+  instructor_goal: >-
+    Prepare a two-hour Alice live-studio workshop plan with timeboxed milestones, helper roles,
+    recovery moves, a minimum runnable artifact, optional extension choices, and a final share.
+  prompt_source: assets/scenarios/eatme/workshop-facilitator-live-studio.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - facilitation_plan
+    - participant_checkpoint_board
+    - showcase_notes
+agentic_test_prompt: >-
+  Act as an instructor QA agent preparing an Alice live-studio workshop. Produce a two-hour
+  facilitation plan, participant checkpoint board, and showcase notes grounded in the listed resources and
+  this workshop-facilitator-live-studio scenario. Include launch/readiness checks, timeboxed
+  milestones, helper roles, stuck signals, recovery moves for setup or pacing issues, a minimum
+  runnable artifact, optional extension choices, peer feedback, showcase timing, and one reflection
+  prompt. Keep language editable and workshop-facing. Do not claim comprehensive interface automation,
+  machine-scored creativity, automatic grading of student worlds, or exhaustive Alice coverage.
+acceptance_criteria:
+  - given: >-
+      participants arrive with mixed Alice experience, devices, and goals
+    when: >-
+      the agent prepares the live-studio workshop plan
+    then: >-
+      the output separates launch/readiness, build checkpoints, helper roles, stuck signals, and showcase
+  - given: >-
+      setup or pacing goes sideways during the workshop
+    when: >-
+      the facilitator uses the recovery moves
+    then: >-
+      participants still have a productive way to build, help, observe, revise, or reflect
+  - given: >-
+      participants share their Alice artifacts
+    when: >-
+      the agentic probes are applied to the plan, board, and prompt
+    then: >-
+      the evidence checks visible participant progress and reflection without claiming machine-scored assessment or exhaustive coverage
+acceptance_probes:
+  - Facilitation plan has launch/readiness, make/run/revise checkpoints, helper roles, and showcase timing.
+  - Workshop board names participant evidence, stuck signals, recovery moves, and optional extension choices.
+  - Share-out prompt asks for one visible behavior, one help or revision moment, and one next small change.
+  - Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence.
+  - Output avoids comprehensive interface automation, machine-scored creativity, automatic grading of student worlds, and exhaustive Alice coverage claims.
+rubric:
+  - criterion: Workshop readiness
+    evidence:
+      - Plan states setup assumptions, timeboxes, helper roles, and fallback participation choices.
+      - The plan can be edited as YAML without changing Rust or launcher code.
+  - criterion: Participant progress
+    evidence:
+      - Milestones ask for one visible Alice behavior before optional extensions.
+      - Stuck signals and peer support keep learners in control of their artifacts.
+      - Participant checkpoint board records visible participant progress before the showcase.
+  - criterion: Evidence boundary
+    evidence:
+      - Review checks artifacts, reflections, help queue notes, and share-out prompts.
+      - The scenario does not claim machine grading, hidden code inspection, or exhaustive Alice coverage.
+avoid:
+  - Exact UI coordinates, menu paths, or private implementation details.
+  - Presenter-only demos where participants do not build, run, revise, or share.
+  - Making final polish the only success signal.
+  - Comprehensive interface automation, machine-scored creativity, automatic grading of student worlds, or exhaustive Alice coverage claims.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes workshop-facilitator-live-studio
+  - id: agentic-instructor-review
+    command: agentic instructor QA review using assets/scenarios/eatme/workshop-facilitator-live-studio.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  facilitation_plan: agentic://instructor/facilitation-plan
+  participant_checkpoint_board: agentic://instructor/participant-checkpoint-board
+  showcase_notes: agentic://instructor/showcase-notes
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the cited
+  Alice.org resource basis, fail visibly and report the missing evidence. Do not replace
+  instructor judgment with brittle UI assertions, machine-scored creativity,
+  automatic grading of student worlds, or exhaustive Alice coverage claims.
