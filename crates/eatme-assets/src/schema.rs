@@ -29,17 +29,29 @@ pub(crate) struct CrewAsset {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct StudentOutsideInFlowAssets {
     #[serde(default)]
     pub(crate) prompt_cards: Vec<PromptCard>,
+    #[serde(default)]
+    pub(crate) coverage_map: BTreeMap<String, Vec<String>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct PromptCard {
     #[serde(default)]
     pub(crate) id: String,
     #[serde(default)]
+    pub(crate) editable_by: String,
+    #[serde(default)]
+    pub(crate) purpose: String,
+    #[serde(default)]
+    pub(crate) prompt_frame: String,
+    #[serde(default)]
     pub(crate) scenario_ids: Vec<String>,
+    #[serde(default)]
+    pub(crate) evidence: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -432,60 +444,5 @@ pub(crate) struct GadugiMetadata {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn rejects_unknown_eatme_scenario_fields() {
-        let yaml = r#"
-schema_version: eatme.scenario/v1
-id: strict-test
-title: Strict Test
-purpose: Catch bad edits.
-unknown_field: should-fail
-"#;
-        let error = serde_yaml::from_str::<EatmeScenarioAsset>(yaml).unwrap_err();
-        assert!(error.to_string().contains("unknown field"), "{error}");
-    }
-
-    #[test]
-    fn rejects_unknown_nested_scenario_fields() {
-        let yaml = r#"
-schema_version: eatme.scenario/v1
-id: strict-test
-title: Strict Test
-purpose: Catch bad edits.
-resource_basis:
-  - name: Resource
-    href: https://example.invalid
-"#;
-        let error = serde_yaml::from_str::<EatmeScenarioAsset>(yaml).unwrap_err();
-        assert!(error.to_string().contains("unknown field"), "{error}");
-    }
-
-    #[test]
-    fn rejects_unknown_persona_fields() {
-        let yaml = r#"
-workstream: alice.eatme
-title: Strict Persona Test
-purpose: Catch bad persona edits.
-personas:
-  instructors:
-    - id: concept-cartographer
-      role: instructor
-      archetype: Concept Cartographer
-      goals: [Teach concepts]
-      constraints: [Limited time]
-      educational_intent: [Transfer]
-      observable_behaviors: [Names concepts]
-      anti_behaviors: [Over-prescribes]
-      evidence: [Reflection]
-      nickname: Cartographer
-  students: []
-core_scenarios_from_existing_alice_resources: []
-creative_new_teaching_learning_scenarios: []
-"#;
-        let error = serde_yaml::from_str::<CrewAsset>(yaml).unwrap_err();
-        assert!(error.to_string().contains("unknown field"), "{error}");
-    }
-}
+#[path = "schema_tests.rs"]
+mod tests;

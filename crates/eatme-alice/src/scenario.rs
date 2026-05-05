@@ -6,17 +6,14 @@ const DEFAULT_STARTER_PROJECT: &str =
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
     pub id: String,
-    pub run_dir_name: String,
     pub starter_project: PathBuf,
 }
 
 impl LaunchSmokeScenario {
     pub fn new(id: impl Into<String>) -> Self {
-        let id = id.into();
         Self {
-            run_dir_name: id.clone(),
             starter_project: PathBuf::from(DEFAULT_STARTER_PROJECT),
-            id,
+            id: id.into(),
         }
     }
 

@@ -116,8 +116,8 @@ fn validate_crew(
         &scenario_ids,
         &mut errors,
     );
-    validate_prompt_cards(
-        &crew.student_outside_in_flow_assets.prompt_cards,
+    validate_student_outside_in_flow_assets(
+        &crew.student_outside_in_flow_assets,
         &scenario_ids,
         scenario_asset_ids,
         &mut errors,
@@ -206,6 +206,32 @@ fn validate_constituency_coverage(
     }
 }
 
+fn validate_student_outside_in_flow_assets(
+    flow_assets: &crate::schema::StudentOutsideInFlowAssets,
+    crew_scenario_ids: &BTreeSet<String>,
+    scenario_asset_ids: Option<&BTreeSet<String>>,
+    errors: &mut Vec<String>,
+) {
+    validate_prompt_cards(
+        &flow_assets.prompt_cards,
+        crew_scenario_ids,
+        scenario_asset_ids,
+        errors,
+    );
+    for (coverage_id, persona_ids) in &flow_assets.coverage_map {
+        require_nonempty(
+            coverage_id,
+            "student_outside_in_flow_assets.coverage_map key",
+            errors,
+        );
+        require_list(
+            persona_ids,
+            &format!("student_outside_in_flow_assets.coverage_map.{coverage_id}"),
+            errors,
+        );
+    }
+}
+
 fn validate_prompt_cards(
     prompt_cards: &[PromptCard],
     crew_scenario_ids: &BTreeSet<String>,
@@ -214,9 +240,29 @@ fn validate_prompt_cards(
 ) {
     for prompt_card in prompt_cards {
         validate_id(&prompt_card.id, "prompt card", errors);
+        require_nonempty(
+            &prompt_card.editable_by,
+            &format!("prompt card {}.editable_by", prompt_card.id),
+            errors,
+        );
+        require_nonempty(
+            &prompt_card.purpose,
+            &format!("prompt card {}.purpose", prompt_card.id),
+            errors,
+        );
+        require_nonempty(
+            &prompt_card.prompt_frame,
+            &format!("prompt card {}.prompt_frame", prompt_card.id),
+            errors,
+        );
         require_list(
             &prompt_card.scenario_ids,
             &format!("prompt card {}.scenario_ids", prompt_card.id),
+            errors,
+        );
+        require_list(
+            &prompt_card.evidence,
+            &format!("prompt card {}.evidence", prompt_card.id),
             errors,
         );
         for scenario_id in &prompt_card.scenario_ids {
@@ -417,6 +463,7 @@ mod tests {
         let prompt_cards = vec![PromptCard {
             id: "data-state-card".into(),
             scenario_ids: vec!["neighborhood-data-story".into()],
+            ..Default::default()
         }];
         let crew_scenario_ids = BTreeSet::from(["neighborhood-data-story".into()]);
         let scenario_asset_ids = BTreeSet::from(["variables-scorekeeper-timekeeper".into()]);

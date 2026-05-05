@@ -9,7 +9,7 @@ pub(super) fn alice_launch_args(alice_home: &Path, starter_project: &Path) -> Re
     let target_dir = alice_home.join("alice-ide/target");
     let lib_dir = target_dir.join("lib");
     let fxmp = javafx_module_path(&lib_dir)?;
-    let classpath = alice_classpath(&target_dir, &lib_dir)?;
+    let classpath = alice_classpath(&target_dir)?;
     let starter = starter_project_arg(alice_home, starter_project)?;
 
     Ok(vec![
@@ -81,9 +81,9 @@ fn javafx_module_path(lib_dir: &Path) -> Result<String> {
     path_list(&selected).context("building JavaFX module path")
 }
 
-fn alice_classpath(target_dir: &Path, lib_dir: &Path) -> Result<String> {
+fn alice_classpath(target_dir: &Path) -> Result<String> {
     let alice_jar = relative_target_jar(&find_alice_ide_jar(target_dir)?)?;
-    path_list(&[alice_jar, relative_lib_wildcard(lib_dir)]).context("building classpath")
+    path_list(&[alice_jar, relative_lib_wildcard()]).context("building classpath")
 }
 
 fn starter_project_arg(alice_home: &Path, starter_project: &Path) -> Result<String> {
@@ -154,16 +154,22 @@ fn select_javafx_jar(jars: &[PathBuf], prefix: &str, platform: &str) -> Option<P
 }
 
 fn read_jars(dir: &Path) -> Result<Vec<PathBuf>> {
-    Ok(fs::read_dir(dir)
-        .with_context(|| format!("reading {}", dir.display()))?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| {
-            file_name(path)
-                .map(|name| name.ends_with(".jar"))
-                .unwrap_or(false)
-        })
-        .collect())
+    let mut jars = Vec::new();
+    for entry in fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))? {
+        let path = entry
+            .with_context(|| format!("reading entry in {}", dir.display()))?
+            .path();
+        if is_jar_path(&path) {
+            jars.push(path);
+        }
+    }
+    Ok(jars)
+}
+
+fn is_jar_path(path: &Path) -> bool {
+    file_name(path)
+        .map(|name| name.ends_with(".jar"))
+        .unwrap_or(false)
 }
 
 fn path_list(paths: &[PathBuf]) -> Result<String> {
@@ -204,7 +210,7 @@ fn relative_lib_jar(path: &Path) -> Result<PathBuf> {
     ))
 }
 
-fn relative_lib_wildcard(_lib_dir: &Path) -> PathBuf {
+fn relative_lib_wildcard() -> PathBuf {
     PathBuf::from("alice-ide/target/lib/*")
 }
 

@@ -105,7 +105,7 @@ steps:
 "#,
     )
     .unwrap();
-    fs::write(&target_path, "placeholder: counted before regeneration\n").unwrap();
+    fs::write(&target_path, "stale adapter: counted before regeneration\n").unwrap();
     let generated = Command::new(eatme_bin())
         .args(["assets", "generate-gadugi", "--json", "--root"])
         .arg(&root)

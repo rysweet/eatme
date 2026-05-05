@@ -43,14 +43,13 @@ pub struct LaunchSmokeOptions {
 
 pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManifest> {
     validate_scenario_name(&options.scenario.id)?;
-    validate_scenario_name(&options.scenario.run_dir_name)?;
 
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
     let run_dir = options
         .runs_dir
-        .join(&options.scenario.run_dir_name)
+        .join(&options.scenario.id)
         .join(&options.run_id);
     prepare_run_dir(&run_dir)?;
 
