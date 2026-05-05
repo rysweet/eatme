@@ -154,9 +154,66 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 
 Non-baseline scenarios fail fast unless `EATME_REAL_ALICE=1` is present.
 
+### Lesson-path evidence recipes
+
+Use the baseline when the only claim is that the real Alice launcher works:
+
+```bash
+cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --run-id local-real-alice-launch-smoke \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory
+```
+
+Use the student action-contract lane when the claim includes first-lesson
+evidence for object placement, code/procedure editing, running the world, and
+saving a project:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario first-lessons-real-ui-actions \
+  --run-id local-first-lessons-real-ui-actions \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+The action-contract lane writes manifest/log/window/screenshot evidence and
+`ui-action-contract.json`. Until deterministic UI automation exists, an explicit
+`ui_action_automation_unimplemented` result is expected and should not be
+reported as passing full UI coverage.
+
+Use the instructor remix lane through asset validation and generated adapters,
+not through `alice launch-smoke`, because it is an instructor agentic-flow
+scenario:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate \
+  --path assets/scenarios/eatme/instructor-lesson-materials-remix.yaml \
+  --json
+
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+Instructor remix evidence is a teacher plan, student handout, exit ticket, and
+review/remix probe set. It may cite launch evidence, but it does not grade
+learner worlds or assess creativity automatically.
+
 ## Output contract
 
 Command output is JSON intended for humans, CI, and adapter runners. For smoke
 runs, the manifest is the durable artifact. Consumers should use
 `failure_category` and `assertions` as the source of truth rather than scraping
 terminal text.
+
+For retcon or specification documentation, document only fields and artifacts
+that the scenario contract owns. Do not describe launch smoke as full UI
+automation, creative assessment, or learner-world grading.

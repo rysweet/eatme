@@ -52,6 +52,29 @@ Current instructor mission assets include:
 | `instructor-student-outcomes-rubric` | Rubric for concept, creativity, process, and reflection |
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 
+`instructor-lesson-materials-remix` is the instructor lesson-material/remix
+evidence contract. It verifies that an Alice lesson packet is represented by
+scenario-labeled assets, instructor-facing prompts, acceptance probes, and
+teacher-plan/student-handout/exit-ticket outputs. The instructor flow does not
+grade learner worlds or assess creativity automatically; those remain instructor
+judgment and classroom review tasks.
+
+### Lesson-material/remix packet
+
+The instructor remix packet is complete when it contains these reviewable
+artifacts:
+
+| Artifact | Required contents |
+| --- | --- |
+| Teacher plan | Alice resource grounding, concept focus, timing, setup/fallback notes, facilitation moves, and evidence checkpoints. |
+| Student handout | Plain-language mission, prediction prompt, build/run/revise steps, reflection prompt, and submission shape. |
+| Exit ticket | Short checks for concept vocabulary, observed behavior, revision evidence, and remaining questions. |
+| Remix notes | What changed from the source resource, why the change is classroom-safe, and what must still be judged by the instructor. |
+
+The packet may point to a real Alice launch manifest as setup evidence. It must
+not present that manifest as proof of learner understanding, creative quality, or
+world correctness.
+
 The outside-in Alice QA expansion commits these instructor/student lanes as
 canonical eatme scenarios with generated Gadugi adapters:
 

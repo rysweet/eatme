@@ -64,6 +64,7 @@ steps:
     - '"scenario_id": "first-lessons-real-ui-actions"'
     - '"failure_category": "ui_action_automation_unimplemented"'
     - '"real_alice_execution_evidence": {'
+    - '"startup_screenshot": {'
     - '"specific_alice_window_detected": {'
     - '"place_object_ui_action": {'
     - '"edit_procedure_ui_action": {'
@@ -91,6 +92,7 @@ assertions:
       "scenario_id": "first-lessons-real-ui-actions"
       "failure_category": "ui_action_automation_unimplemented"
       "real_alice_execution_evidence": {
+      "startup_screenshot": {
       "specific_alice_window_detected": {
       "place_object_ui_action": {
       "edit_procedure_ui_action": {

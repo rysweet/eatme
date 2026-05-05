@@ -87,6 +87,15 @@ For an instructor agentic flow, the adapter workflow is:
 4. Evaluate acceptance probes and rubric fields.
 5. Keep the desktop launch boundary in eatme, not in Gadugi.
 
+For real-Alice lesson-path evidence, use the generated adapters as consumers of
+eatme's explicit contracts:
+
+| Canonical scenario | Adapter expectation |
+| --- | --- |
+| `real-alice-launch-smoke` | Run the launch smoke and inspect manifest-level launch evidence. |
+| `first-lessons-real-ui-actions` | Preserve the action-contract boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
+| `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
+
 ## Editing policy
 
 Do not hand-edit generated Gadugi adapters to change mission intent. If a prompt,

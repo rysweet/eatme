@@ -70,12 +70,18 @@ kickoff, learner-visible first-scene, first-animation, evidence, and reflection
 expectations live in editable YAML as agentic follow-on contracts; runtime smoke
 still stops at deterministic launch-ready evidence.
 
+The baseline `real-alice-launch-smoke` lane proves only the scenario-labeled
+launch path and captured manifest/log/window/screenshot evidence. It is not full
+UI automation, not creative assessment, and not learner-world grading.
+
 The `first-lessons-real-ui-actions` lane is different: it is an executable
 harness contract for the first real UI actions. It launches Alice, verifies an
 Alice Stage IDE window from window-manager evidence, writes
 `ui-action-contract.json`, and fails loudly with
 `ui_action_automation_unimplemented` until deterministic automation can place an
 object, edit a procedure/code block, run the world, and save a project.
+This is launch/action-contract evidence only. It is not full UI automation, not
+creative assessment, and not learner-world grading.
 
 The `modified-class-portability` lane is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -97,6 +103,99 @@ manifest proves the selected lane reached a smoke-ready desktop session; it does
 not replace the scenario-specific readiness checklist, migration map, comfort
 notes, import review, fallback artifact, or student reflection required by the
 YAML contract.
+
+Instructor lesson-material evidence is handled separately by
+`instructor-lesson-materials-remix`. That agentic-flow asset verifies
+scenario-labeled prompts, acceptance probes, teacher plan, student handout, exit
+ticket, and instructor review/remix language without claiming automated creative
+grading or learner-world assessment.
+
+## Lesson-path evidence guide
+
+Use lesson-path evidence when a reviewer needs to connect a classroom scenario to
+real Alice startup artifacts and explicit instructor/student deliverables.
+
+| Need | Scenario | What to collect |
+| --- | --- | --- |
+| Prove the harness can launch real Alice for a named lane | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
+| Prove the student first-lesson path has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, and `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations. |
+| Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
+
+The three evidence levels are intentionally separate:
+
+1. Launch evidence proves Alice started for the selected scenario id.
+2. Action-contract evidence records the first UI actions that future automation
+   must perform deterministically.
+3. Mission evidence is the human or agent-reviewed classroom output, such as a
+   learner reflection or instructor handout.
+
+Do not collapse those levels into one pass/fail claim. Passing launch smoke does
+not mean Alice has been driven through a lesson, does not assess creative
+quality, and does not grade a saved world.
+
+### Student first-lesson recipe
+
+Run the action-contract lane when the student scenario requires evidence for the
+first real Alice action path:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_HOME="${ALICE_HOME:-../alice3-modernization}"
+export SCENARIO_ID=first-lessons-real-ui-actions
+export RUN_ID=student-${SCENARIO_ID}
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario "${SCENARIO_ID}" \
+  --run-id "${RUN_ID}" \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+Expected evidence location:
+
+```text
+runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
+|-- manifest.json
+|-- alice.log
+|-- window-list.txt
+|-- ui-action-contract.json
+`-- screenshots/
+    `-- startup.png
+```
+
+The explicit `ui_action_automation_unimplemented` failure is honest evidence
+that the action contract exists but deterministic UI automation is not yet
+claiming a pass. Treat it as a boundary signal, not as completed UI coverage.
+
+### Instructor remix recipe
+
+Use `instructor-lesson-materials-remix` when the evidence is a classroom packet
+rather than desktop automation. Validate the canonical asset and adapter before
+using the prompts:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate \
+  --path assets/scenarios/eatme/instructor-lesson-materials-remix.yaml \
+  --json
+
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+The instructor packet should contain:
+
+| Output | Minimum evidence |
+| --- | --- |
+| Teacher plan | Alice resource grounding, concept goal, setup/fallback notes, facilitation steps, and timing. |
+| Student handout | Learner mission, prediction/run/revise/reflection prompts, and artifact submission shape. |
+| Exit ticket | Short checks for concept understanding, evidence of revision, and remaining questions. |
+| Review/remix notes | What was changed, what stayed aligned with the Alice resource, and what needs instructor judgment. |
+
+This scenario can reference real Alice launch evidence as setup context, but it
+does not perform creative assessment or learner-world grading automatically.
 
 ## Scenario assets
 
@@ -301,7 +400,9 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 
 Until real UI automation is wired, this command is expected to exit non-zero
 after writing a manifest and `ui-action-contract.json`. Treat that explicit
-failure as the contract, not as passing coverage.
+failure as the contract, not as passing coverage. This lane is launch/action-
+contract evidence only; it is not full UI automation, not creative assessment,
+and not learner-world grading.
 
 | Option | Description |
 | --- | --- |

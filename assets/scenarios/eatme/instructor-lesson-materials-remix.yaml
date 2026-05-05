@@ -13,14 +13,20 @@ resource_basis:
     use: >-
       Use lessons, exercises, projects, textbooks, curriculums, how-tos, and audio library as remixable sources.
 purpose: >-
-  Prepare a short Alice lesson packet from existing resources with teacher notes, student handout, and reflection prompt.
+  Prepare a short Alice lesson packet from existing resources with teacher notes,
+  student handout, and reflection prompt. The instructor flow verifies that the
+  lesson-material remix path is represented by scenario-labeled assets and
+  agentic probes. It does not grade learner worlds or assess creativity
+  automatically.
 personas:
   instructors: [studio-facilitator, classroom-orchestrator]
   students: [curious-novice, reflective-debugger]
 agentic_flow:
   focus: preparing-lesson-materials
   instructor_goal: >-
-    Prepare a short Alice lesson packet from existing resources with teacher notes, student handout, and reflection prompt.
+    Prepare a short Alice lesson packet from existing resources with teacher
+    notes, student handout, reflection prompt, and review/remix contract grounded
+    in scenario-labeled Alice lesson assets.
   prompt_source: assets/scenarios/eatme/instructor-lesson-materials-remix.yaml#agentic_test_prompt
   non_coder_editable:
     - resource_basis
@@ -35,7 +41,13 @@ agentic_flow:
     - student_handout
     - exit_ticket
 agentic_test_prompt: >-
-  Act as an instructor QA agent preparing lesson materials. Produce a one-page teacher plan, student handout, and exit ticket for an Alice lesson grounded in the listed resources. Include setup assumptions, concept vocabulary, predicted visible world changes, run/revise checkpoints, and a reflection question. Keep language editable and classroom-facing.
+  Act as an instructor QA agent preparing lesson materials. Produce a one-page
+  teacher plan, student handout, and exit ticket for an Alice lesson grounded in
+  the listed resources and this instructor-lesson-materials-remix scenario.
+  Include setup assumptions, concept vocabulary, predicted visible world
+  changes, run/revise checkpoints, an instructor review/remix note, and a
+  reflection question. Keep language editable and classroom-facing. Do not claim
+  automated creative grading or learner-world assessment.
 acceptance_criteria:
   - given: >-
       an instructor has limited prep time
@@ -49,10 +61,18 @@ acceptance_criteria:
       students run and revise
     then: >-
       the materials ask students to predict, observe, and revise a visible world behavior
+  - given: >-
+      an instructor reviews the generated lesson packet
+    when: >-
+      the agentic probes are applied to the teacher plan, student handout, and exit ticket
+    then: >-
+      the output shows the lesson-material remix path without claiming automated creative grading or learner-world assessment
 acceptance_probes:
   - Teacher plan has a time-boxed launch, make/run/revise cycle, and share-out.
   - Student handout names the Alice concept in learner-friendly language.
   - Exit ticket checks concept understanding, not just completion.
+  - Instructor review/remix note names the scenario-labeled lesson-material path.
+  - Output avoids automated creative grading and learner-world assessment claims.
 rubric:
   - criterion: Teacher readiness
     evidence:
@@ -66,10 +86,15 @@ rubric:
     evidence:
       - At least one official Alice.org resource is named.
       - The remix does not invent unsupported Alice features.
+  - criterion: Instructor review/remix contract
+    evidence:
+      - Materials identify the scenario-labeled lesson-material remix path.
+      - Agentic probes review teacher plan, student handout, and exit ticket without grading learner worlds.
 avoid:
   - Exact UI coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
+  - Automated creative grading or learner-world assessment claims.
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -90,4 +115,5 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions.
+  evidence. Do not replace instructor judgment with brittle UI assertions,
+  automated creative grading, or learner-world assessment.

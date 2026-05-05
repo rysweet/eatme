@@ -14,7 +14,8 @@ purpose: >-
   evidence for object placement, procedure/code editing, world run, project save,
   and a captured contract artifact. Until deterministic UI manipulation is wired,
   the harness must fail loudly with a preflight/action contract instead of
-  reporting a silent pass.
+  reporting a silent pass. This is launch/action-contract evidence only. It is
+  not full UI automation, not creative assessment, and not learner-world grading.
 launcher:
   command: alice launch-smoke
   scenario: first-lessons-real-ui-actions
@@ -45,8 +46,11 @@ adapter:
 smoke_ready:
   evidence:
     - manifest_assertions
+    - scenario_labeled_real_alice_launch_path
+    - manifest_log_window_and_startup_screenshot_evidence
     - specific_alice_window_detected
     - ui_action_contract_artifact
+    - action_contract_expectations_for_place_edit_run_and_save
     - explicit_failure_when_ui_actions_are_not_automated
 acceptance_criteria:
   - given: Alice launch smoke dependencies are available
@@ -58,6 +62,9 @@ acceptance_criteria:
   - given: deterministic Alice UI manipulation is not wired yet
     when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
     then: the manifest fails loudly with ui_action_automation_unimplemented and writes ui-action-contract.json
+  - given: reviewers use this scenario as first-lesson evidence
+    when: they inspect the manifest, Alice log, window list, startup screenshot, and ui-action-contract.json
+    then: they treat the result as launch/action-contract evidence only, not full UI automation, not creative assessment, and not learner-world grading
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -81,6 +88,7 @@ steps:
       --scenario first-lessons-real-ui-actions
     evidence:
       - manifest scenario_id equals first-lessons-real-ui-actions
+      - manifest log, window-list, and startup screenshot artifacts identify the real Alice launch path
       - manifest assertions.real_alice_execution_evidence is present
       - manifest assertions include specific_alice_window_detected
       - manifest assertions include place_object_ui_action
@@ -95,6 +103,13 @@ agentic_follow_on:
   deterministic_gate: >-
     Do not claim object placement, procedure editing, world run, or save coverage
     unless this scenario produces passing action assertions and a saved artifact.
+    This is launch/action-contract evidence only. It is not full UI automation,
+    not creative assessment, and not learner-world grading.
+  required_observables:
+    - scenario-labeled real Alice launch path identifies first-lessons-real-ui-actions
+    - manifest, Alice log, window list, and startup screenshot evidence are present
+    - Alice window detection is explicit
+    - ui-action-contract.json names place object, edit procedure, run world, and save project expectations
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -108,4 +123,6 @@ unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. If Alice launches but real UI
   actions are not automated, fail with ui_action_automation_unimplemented and
-  capture ui-action-contract.json rather than silently passing.
+  capture ui-action-contract.json rather than silently passing. This is
+  launch/action-contract evidence only. It is not full UI automation, not
+  creative assessment, and not learner-world grading.

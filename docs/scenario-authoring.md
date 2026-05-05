@@ -158,3 +158,19 @@ Avoid brittle evidence:
 - screenshots judged only for visual polish
 - one-path-only instructions that prevent learner choice
 - silent fallback behavior when prerequisites are missing
+
+## Lesson-path evidence wording
+
+When writing retcon documentation or scenario prose for real Alice lesson paths,
+describe the finished evidence boundary exactly:
+
+| Claim | Acceptable wording |
+| --- | --- |
+| Launch smoke | "records scenario-labeled launch manifest, log, window, screenshot, and assertion evidence" |
+| Student action path | "records an action contract for first object placement, procedure/code edit, run-world, and save-project automation" |
+| Instructor remix | "produces teacher plan, student handout, exit ticket, review prompts, and remix notes" |
+| Boundary | "not full UI automation, not creative assessment, and not learner-world grading" |
+
+Do not write that the launch smoke completes a lesson, clicks through the Alice
+UI, evaluates a creative project, or grades a learner's world unless a separate
+scenario owns that evidence and validation path.

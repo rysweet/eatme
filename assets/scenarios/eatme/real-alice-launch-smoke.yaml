@@ -9,7 +9,10 @@ resource_basis:
 purpose: >-
   Prove that the harness can package and launch the real Alice desktop
   application under Xvfb, then capture deterministic evidence before any
-  agentic classroom behavior is trusted.
+  agentic classroom behavior is trusted. The baseline launch smoke proves a
+  scenario-labeled launch path with manifest/log/window/screenshot evidence
+  only; it is not full UI automation, not creative assessment, and not
+  learner-world grading.
 capabilities:
   required:
     - rust-cli
@@ -55,11 +58,14 @@ steps:
       --offline-package
       --scenario real-alice-launch-smoke
     evidence:
+      - manifest scenario_id equals real-alice-launch-smoke
       - manifest failure_category is null
       - manifest assertions all pass
       - manifest assertions include real_alice_execution_evidence passed=true
+      - window-list evidence exists when the window manager can report it
       - screenshot exists and is non-empty
       - log exists and is non-empty
+      - manifest/log/window/screenshot evidence does not claim full UI automation, creative assessment, or learner-world grading
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -69,4 +75,6 @@ artifacts:
   log: runs/real-alice-launch-smoke/${RUN_ID}/alice.log
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, or Maven prerequisites are missing, fail
-  loudly with a missing_dependency category. Do not silently skip.
+  loudly with a missing_dependency category. Do not silently skip. This baseline
+  proves launch smoke only: it is not full UI automation, not creative
+  assessment, and not learner-world grading.

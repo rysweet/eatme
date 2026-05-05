@@ -27,6 +27,19 @@ their paired `assets/scenarios/gadugi/` adapters. These flows intentionally
 stay at the natural-language prompt, acceptance probe, and rubric boundary so a
 non-coder can maintain lesson intent without touching Rust.
 
+For the first real Alice lesson path, use
+`assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` as the student
+launch/action-contract source of truth. It records scenario-labeled
+manifest/log/window/screenshot evidence and `ui-action-contract.json`
+expectations; it is not full UI automation, not creative assessment, and not
+learner-world grading.
+
+For instructor remix work, use
+`assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
+lesson-material/remix evidence contract. It keeps teacher plan, student handout,
+exit ticket, and review/remix probes discoverable without claiming automated
+creative grading or learner-world assessment.
+
 ## QA-team outside-in test shape
 
 ```yaml
@@ -178,7 +191,9 @@ Each committed standalone scenario routes runtime through
 and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
 the user outcome agents must judge; the launch smoke provides deterministic
 desktop evidence and does not substitute for unimplemented UI, VR, or
-export/import automation.
+export/import automation. `real-alice-launch-smoke` remains the baseline
+manifest/log/window/screenshot proof only; it is not full UI automation, not
+creative assessment, and not learner-world grading.
 
 ## Instructor agentic flow assets
 

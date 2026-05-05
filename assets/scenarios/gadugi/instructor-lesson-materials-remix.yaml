@@ -48,8 +48,10 @@ steps:
       Teacher plan has a time-boxed launch, make/run/revise cycle, and share-out.
       Student handout names the Alice concept in learner-friendly language.
       Exit ticket checks concept understanding, not just completion.
+      Instructor review/remix note names the scenario-labeled lesson-material path.
+      Output avoids automated creative grading and learner-world assessment claims.
     asset: assets/scenarios/eatme/instructor-lesson-materials-remix.yaml
-    prompt: Act as an instructor QA agent preparing lesson materials. Produce a one-page teacher plan, student handout, and exit ticket for an Alice lesson grounded in the listed resources. Include setup assumptions, concept vocabulary, predicted visible world changes, run/revise checkpoints, and a reflection question. Keep language editable and classroom-facing.
+    prompt: Act as an instructor QA agent preparing lesson materials. Produce a one-page teacher plan, student handout, and exit ticket for an Alice lesson grounded in the listed resources and this instructor-lesson-materials-remix scenario. Include setup assumptions, concept vocabulary, predicted visible world changes, run/revise checkpoints, an instructor review/remix note, and a reflection question. Keep language editable and classroom-facing. Do not claim automated creative grading or learner-world assessment.
   expect:
     output_contains:
     - teacher_plan
