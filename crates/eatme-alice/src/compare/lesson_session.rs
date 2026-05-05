@@ -4,6 +4,15 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+const FIRST_LESSON_REQUIRED_STEPS: &[&str] = &[
+    "instructor selects an Alice lesson objective and starter project",
+    "student opens the configured starter project in Alice",
+    "student places or modifies an object in the scene",
+    "student edits a procedure or code block",
+    "student runs the world and observes the visible result",
+    "student saves the project and records one next revision",
+];
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LessonSessionComparisonContract {
     pub schema_version: String,
@@ -83,17 +92,11 @@ pub fn check_lesson_session_contract(manifest_path: &Path) -> Result<LessonSessi
     );
     require_non_empty(&mut issues, "boundaries", &contract.boundaries);
     if contract.session_kind == "first_lesson_action_contract" {
-        require_fragments(
+        require_entries(
             &mut issues,
             "required_session_steps",
             &contract.required_session_steps,
-            &[
-                "student opens",
-                "student places",
-                "student edits",
-                "student runs",
-                "student saves",
-            ],
+            FIRST_LESSON_REQUIRED_STEPS,
         );
         require_fragments(
             &mut issues,
@@ -139,12 +142,12 @@ pub(super) fn lesson_session_contract(
                 "student opens, changes, runs, saves, and reflects on an Alice project".into(),
             ],
             required_session_steps: vec![
-                "instructor selects an Alice lesson objective and starter project".into(),
-                "student opens the configured starter project in Alice".into(),
-                "student places or modifies an object in the scene".into(),
-                "student edits a procedure or code block".into(),
-                "student runs the world and observes the visible result".into(),
-                "student saves the project and records one next revision".into(),
+                FIRST_LESSON_REQUIRED_STEPS[0].into(),
+                FIRST_LESSON_REQUIRED_STEPS[1].into(),
+                FIRST_LESSON_REQUIRED_STEPS[2].into(),
+                FIRST_LESSON_REQUIRED_STEPS[3].into(),
+                FIRST_LESSON_REQUIRED_STEPS[4].into(),
+                FIRST_LESSON_REQUIRED_STEPS[5].into(),
             ],
             executable_evidence: vec![
                 "comparison manifest records both target runs under the same scenario id".into(),
@@ -213,6 +216,16 @@ fn require_fragments(
         if !entries.iter().any(|entry| entry.contains(fragment)) {
             issues.push(format!(
                 "lesson_session_contract {field} must include {fragment:?}"
+            ));
+        }
+    }
+}
+
+fn require_entries(issues: &mut Vec<String>, field: &str, entries: &[String], required: &[&str]) {
+    for expected in required {
+        if !entries.iter().any(|entry| entry == expected) {
+            issues.push(format!(
+                "lesson_session_contract {field} must include exact entry {expected:?}"
             ));
         }
     }
