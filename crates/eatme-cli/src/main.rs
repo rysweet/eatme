@@ -2,8 +2,8 @@ use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
     AliceComparisonOptions, LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions,
-    check_dependencies, check_lesson_session_contract, discover_alice, package_alice,
-    run_launch_smoke, run_launch_smoke_comparison,
+    check_dependencies, check_lesson_session_contract, check_lesson_session_readiness,
+    discover_alice, package_alice, run_launch_smoke, run_launch_smoke_comparison,
 };
 use eatme_core::RealCommandRunner;
 use std::env;
@@ -52,6 +52,7 @@ enum AliceCommand {
     LaunchSmoke(LaunchSmokeArgs),
     CompareLaunchSmoke(CompareLaunchSmokeArgs),
     CheckLessonSession(CheckLessonSessionArgs),
+    CheckLessonReadiness(CheckLessonSessionArgs),
 }
 
 #[derive(Args)]
@@ -255,6 +256,13 @@ fn main() -> Result<()> {
                 print_result(args.json, &report)?;
                 if !report.passed {
                     bail!("lesson session contract check failed");
+                }
+            }
+            AliceCommand::CheckLessonReadiness(args) => {
+                let report = check_lesson_session_readiness(&args.manifest)?;
+                print_result(args.json, &report)?;
+                if !report.passed {
+                    bail!("lesson session readiness check failed");
                 }
             }
         },

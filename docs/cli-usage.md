@@ -21,6 +21,7 @@ for explicit caller intent and compatibility with scripts and adapters.
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
+| `alice check-lesson-readiness` | Check first-lesson comparison artifacts, including `ui-action-contract.json` |
 
 ## Validate assets
 
@@ -233,6 +234,25 @@ The check fails when `lesson_session_contract` is missing, when its scenario doe
 not match the comparison manifest, or when the first-lesson contract omits the
 open/change/run/save steps, `ui-action-contract.json` evidence, or required
 non-claims.
+
+Check executable first-lesson readiness evidence after running a comparison with
+`--execute`:
+
+```bash
+cargo run -q -p eatme-cli -- alice check-lesson-readiness \
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local-comparison/comparison-manifest.json \
+  --json
+```
+
+This consumes the embedded target launch manifests and each
+`ui-action-contract.json`. It passes only when both comparison targets include
+real Alice execution evidence, specific Alice window evidence, the required
+place/edit/run/save action assertions, and a readable action contract with the
+matching required action ids. A passing readiness report can still have
+`readiness_status=blocked_until_ui_automation`; that means the concrete
+artifacts are present and the only accepted blocker is the current lack of
+deterministic UI actions. It is not full UI automation, not creative assessment,
+and not learner-world grading.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 
