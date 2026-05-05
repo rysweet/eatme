@@ -181,6 +181,11 @@ cargo run -q -p eatme-cli -- alice compare-launch-smoke \
   --execute
 ```
 
+Target definitions can list `required_paths` that must exist under the resolved
+Alice home before launch smoke runs. The default modernized target checks the
+RabbitHole `tweedle-lang` grammar files so a missing submodule is reported as a
+target-preparation problem instead of a Maven package failure.
+
 The output is written under
 `runs/comparisons/<scenario-id>/<run-id>/comparison-manifest.json` and includes
 target metadata, a scorecard summary, timing fields, per-target artifacts when

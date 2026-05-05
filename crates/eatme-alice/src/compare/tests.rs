@@ -105,6 +105,99 @@ targets:
 }
 
 #[test]
+fn execute_blocks_before_launch_when_required_target_paths_are_missing() {
+    let root = unique_test_dir("missing-required-path-comparison");
+    let registry_path = root.join("targets.yaml");
+    let baseline_home = root.join("baseline-home");
+    let modernized_home = root.join("modernized-home");
+    fs::create_dir_all(&baseline_home).unwrap();
+    fs::create_dir_all(&modernized_home).unwrap();
+    fs::write(
+        &registry_path,
+        format!(
+            r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Reference target.
+    alice_home: {}
+    required_paths:
+      - tweedle-lang/Grammar/TweedleLexer.g4
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home: {}
+    required_paths:
+      - tweedle-lang/Grammar/TweedleLexer.g4
+"#,
+            baseline_home.display(),
+            modernized_home.display()
+        ),
+    )
+    .unwrap();
+
+    let manifest = run_launch_smoke_comparison(&AliceComparisonOptions {
+        registry_path,
+        baseline_target: "baseline".into(),
+        modernized_target: "modernized".into(),
+        baseline_home_override: None,
+        modernized_home_override: None,
+        scenario: LaunchSmokeScenario::new("real-alice-launch-smoke"),
+        run_id: "missing-required-path-run".into(),
+        runs_dir: root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        execute: true,
+    })
+    .unwrap();
+
+    for role in ["baseline", "modernized"] {
+        let target = manifest.targets.get(role).unwrap();
+        assert_eq!(target.status, "blocked");
+        assert_eq!(
+            target.failure_category.as_deref(),
+            Some("target_required_path_missing")
+        );
+        assert!(
+            target
+                .detail
+                .contains("tweedle-lang/Grammar/TweedleLexer.g4")
+        );
+        assert!(target.launch_manifest.is_none());
+    }
+    assert_eq!(manifest.scorecard.functionality_result, "incomplete");
+    assert_eq!(manifest.scorecard.timing_result, "incomplete");
+}
+
+#[test]
+fn registry_rejects_required_paths_outside_alice_home() {
+    let root = unique_test_dir("bad-required-path-comparison");
+    let registry_path = root.join("targets.yaml");
+    fs::create_dir_all(&root).unwrap();
+    fs::write(
+        &registry_path,
+        r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home: ./alice-modernized
+    required_paths:
+      - ../outside
+"#,
+    )
+    .unwrap();
+
+    let error = read_target_registry(&registry_path).unwrap_err();
+
+    assert!(error.to_string().contains("required_paths"));
+}
+
+#[test]
 fn registry_rejects_unknown_schema_version() {
     let root = unique_test_dir("bad-schema-comparison");
     let registry_path = root.join("targets.yaml");
@@ -257,6 +350,7 @@ fn target_run_with_assertion(
         metadata: BTreeMap::new(),
         notes: Vec::new(),
         alice_home_env: None,
+        required_paths: Vec::new(),
         resolved_alice_home: None,
         alice_home_source: None,
         run_id: role.into(),
