@@ -383,8 +383,9 @@ eatme alice launch-smoke \
 
 ### Real UI action contract
 
-Use the action contract lane when the intended evidence is user-visible Alice
-behavior rather than manifest-only startup:
+Use the action contract lane when the intended evidence is a declared
+first-action contract toward user-visible Alice behavior rather than
+manifest-only startup:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -704,10 +705,18 @@ The adapter performs three kinds of work:
 2. Run `eatme deps check --json`.
 3. Run `eatme alice launch-smoke --scenario <lesson-id>`.
 
-The adapter asserts command success and manifest-level output such as
-the selected `"scenario_id"`, `"failure_category": null`, startup screenshot or
-window evidence, `real_alice_execution_evidence`, and passing assertions. It
-does not reimplement or configure Alice launch internals.
+Standard launch-smoke adapters assert command success and manifest-level output
+such as the selected `"scenario_id"`, `"failure_category": null`, startup
+screenshot or window evidence, `real_alice_execution_evidence`, and passing
+assertions. They do not reimplement or configure Alice launch internals.
+
+The `first-lessons-real-ui-actions` adapter is the deliberate exception. It
+preserves the current action-contract boundary by expecting the launch step to
+exit `1` with `"failure_category": "ui_action_automation_unimplemented"` after
+real Alice launch evidence and `ui-action-contract.json` have been written. Do
+not reinterpret that non-zero result as completed UI automation; it remains a
+declared first-action contract until deterministic object/place/edit/run/save
+automation exists.
 
 Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
