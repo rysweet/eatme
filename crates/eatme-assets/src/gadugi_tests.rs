@@ -15,12 +15,33 @@ fn generated_gadugi_adapter_has_do_not_edit_header() {
 #[test]
 fn generated_gadugi_adapters_match_committed_assets_and_validate() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    for source_path in scenario_asset_paths(&root.join("assets/scenarios/eatme")).unwrap() {
-        let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-        let scenario = read_eatme_scenario(&source_path).unwrap();
-        let target_path = root
-            .join("assets/scenarios/gadugi")
-            .join(format!("{}.yaml", scenario.id));
+    let scenario_root = root.join("assets/scenarios");
+    let eatme_root = scenario_root.join("eatme");
+    let gadugi_root = scenario_root.join("gadugi");
+    let scenario_paths = scenario_asset_paths(&scenario_root).unwrap();
+    let sources = scenario_paths
+        .iter()
+        .filter(|path| path.starts_with(&eatme_root))
+        .map(|source_path| {
+            let scenario = read_eatme_scenario(source_path).unwrap();
+            let target_path = target_gadugi_path(&gadugi_root, source_path, &scenario).unwrap();
+            (source_path, scenario, target_path)
+        })
+        .collect::<Vec<_>>();
+    let expected_scenario_asset_count = scenario_paths.len()
+        + missing_generated_target_count(
+            &scenario_paths,
+            sources.iter().map(|(_, _, target_path)| target_path),
+        );
+
+    for (source_path, scenario, target_path) in sources {
+        let generated = generate_gadugi_adapter_yaml_for_scenario(
+            &root,
+            source_path,
+            &scenario,
+            expected_scenario_asset_count,
+        )
+        .unwrap();
         let committed = fs::read_to_string(&target_path).unwrap();
 
         assert_portable_gadugi_yaml(&generated, &root);
@@ -41,25 +62,8 @@ fn generated_cli_adapter_counts_all_discovered_scenario_assets() {
     let source_path = root.join("assets/scenarios/eatme/count-contract.yaml");
     let existing_gadugi_path = root.join("assets/scenarios/gadugi/count-contract.yaml");
     let hand_authored_gadugi_path = root.join("assets/scenarios/gadugi/hand-authored.yaml");
-    fs::create_dir_all(source_path.parent().unwrap()).unwrap();
     fs::create_dir_all(existing_gadugi_path.parent().unwrap()).unwrap();
-    fs::write(
-        &source_path,
-        r#"
-schema_version: eatme.scenario/v1
-id: count-contract
-title: Count Contract
-kind: alice_lesson_smoke
-owner: eatme
-purpose: Proves generated adapters use discovered scenario inventory count.
-steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-"#,
-    )
-    .unwrap();
+    write_minimal_eatme_scenario(&source_path, "count-contract");
     fs::write(
         &existing_gadugi_path,
         "stale adapter: counted before regeneration\n",
@@ -76,6 +80,46 @@ steps:
     assert!(
         generated.contains(r#""scenario_asset_count": 3"#),
         "{generated}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn generated_cli_adapter_counts_missing_generated_adapter_before_writing() {
+    let root = scratch_root("generated-cli-adapter-counts-missing-generated-adapter");
+    let source_path = root.join("assets/scenarios/eatme/new-contract.yaml");
+    let hand_authored_gadugi_path = root.join("assets/scenarios/gadugi/hand-authored.yaml");
+    write_minimal_eatme_scenario(&source_path, "new-contract");
+    fs::create_dir_all(hand_authored_gadugi_path.parent().unwrap()).unwrap();
+    fs::write(
+        &hand_authored_gadugi_path,
+        "name: Hand Authored Regression\n",
+    )
+    .unwrap();
+
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+
+    assert!(
+        generated.contains(r#""scenario_asset_count": 3"#),
+        "{generated}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn generator_rejects_scenario_ids_that_escape_gadugi_root() {
+    let root = scratch_root("generator-rejects-path-traversal-id");
+    let source_path = root.join("assets/scenarios/eatme/path-traversal.yaml");
+    let escaped_target = root.join("assets/owned.yaml");
+    write_minimal_eatme_scenario(&source_path, "../../owned");
+
+    let error = generate_gadugi_adapters(&root, false).unwrap_err();
+
+    assert!(error.to_string().contains("must be kebab-case"), "{error}");
+    assert!(
+        !escaped_target.exists(),
+        "{} must not be written",
+        escaped_target.display()
     );
     let _ = fs::remove_dir_all(&root);
 }
@@ -149,4 +193,27 @@ fn scratch_root(name: &str) -> std::path::PathBuf {
     }
     fs::create_dir_all(&root).unwrap();
     root
+}
+
+fn write_minimal_eatme_scenario(path: &Path, id: &str) {
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(
+        path,
+        format!(
+            r#"
+schema_version: eatme.scenario/v1
+id: {id}
+title: Count Contract
+kind: alice_lesson_smoke
+owner: eatme
+purpose: Proves generated adapters use discovered scenario inventory count.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+"#
+        ),
+    )
+    .unwrap();
 }
