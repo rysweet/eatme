@@ -2,6 +2,8 @@ use anyhow::Result;
 use std::collections::BTreeSet;
 use std::path::Path;
 
+#[cfg(test)]
+mod alice_workshop_coverage_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
@@ -106,7 +108,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 53);
+        assert_eq!(report.scenario_asset_count, 55);
     }
 
     #[test]

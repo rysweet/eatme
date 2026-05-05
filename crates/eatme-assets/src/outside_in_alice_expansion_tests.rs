@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 53;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 55;
 
 struct TargetScenario {
     id: &'static str,
@@ -52,7 +52,7 @@ fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapte
 
     if report.scenario_asset_count != EXPECTED_SCENARIO_ASSET_COUNT {
         failures.push(format!(
-            "expected {EXPECTED_SCENARIO_ASSET_COUNT} scenario YAML assets after adding four canonical eatme scenarios and four generated Gadugi adapters, got {}",
+            "expected {EXPECTED_SCENARIO_ASSET_COUNT} scenario YAML assets after adding outside-in expansion and workshop coverage assets, got {}",
             report.scenario_asset_count
         ));
     }
@@ -276,16 +276,16 @@ fn docs_describe_expanded_inventory_as_committed_not_planned() {
     }
 
     assert!(
-        combined.contains("53 scenario YAML files"),
-        "docs must describe the expanded committed 53-file scenario inventory"
+        combined.contains("55 scenario YAML files"),
+        "docs must describe the expanded committed 55-file scenario inventory"
     );
     assert!(
-        combined.contains("26 canonical"),
-        "docs must describe the expanded committed 26 canonical eatme scenarios"
+        combined.contains("27 canonical"),
+        "docs must describe the expanded committed 27 canonical eatme scenarios"
     );
     assert!(
-        combined.contains("26 generated"),
-        "docs must describe the expanded committed 26 generated Gadugi adapters"
+        combined.contains("27 generated"),
+        "docs must describe the expanded committed 27 generated Gadugi adapters"
     );
     assert!(
         !combined.contains("Target expansion lanes")

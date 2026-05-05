@@ -49,12 +49,12 @@ Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
 and any hand-authored Gadugi regression scenarios.
 
-The current committed inventory has 53 scenario YAML files:
+The current committed inventory has 55 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
-| Canonical eatme scenarios | 26 |
-| Generated Gadugi adapters | 26 |
+| Canonical eatme scenarios | 27 |
+| Generated Gadugi adapters | 27 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
@@ -65,17 +65,17 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 53'
+    - '"scenario_asset_count": 55'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
 they assert the relevant instructor scenario id instead of embedding
 `scenario_asset_count`.
 
-The outside-in Alice QA expansion adds four canonical scenarios and their four
-generated Gadugi adapters, so the committed inventory is 53 scenario YAML files:
-26 canonical eatme scenarios, 26 generated Gadugi adapters, and 1 hand-authored
-Gadugi regression scenario.
+The outside-in Alice QA expansion and workshop facilitator coverage add canonical
+scenarios and their generated Gadugi adapters, so the committed inventory is 55
+scenario YAML files: 27 canonical eatme scenarios, 27 generated Gadugi adapters,
+and 1 hand-authored Gadugi regression scenario.
 
 When scenario assets are added, removed, or renamed, the generated adapters must
 be regenerated so committed expectations match the discovered inventory. For

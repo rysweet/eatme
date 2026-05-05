@@ -35,7 +35,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 53'
+    - '"scenario_asset_count": 55'
   timeout: 60000
 - name: Launch Portability Smoke
   agent: eatme-cli-agent
