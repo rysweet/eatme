@@ -1,0 +1,101 @@
+schema_version: eatme.scenario/v1
+id: vr-camera-perspective-tour
+title: VR Camera Perspective Tour
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 lessons
+    url: https://www.alice.org/resources/alice-3-lessons/
+  - name: Alice.org Alice 3 resources
+    url: https://www.alice.org/resources/alice-3/
+purpose: >-
+  Prove the camera and VR-feasible perspective student flow launches through the real Alice smoke harness before agentic evaluation judges audience point of view and fallback evidence.
+launcher:
+  command: alice launch-smoke
+  scenario: vr-camera-perspective-tour
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - studio-facilitator
+    - classroom-orchestrator
+    - assessment-curator
+  students:
+    - immersive-camera-director
+    - creative-storyteller
+    - accessibility-advocate
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the vr-camera-perspective-tour scenario is launched through eatme
+    then: the manifest identifies scenario_id vr-camera-perspective-tour
+  - given: VR or camera features may vary by classroom
+    when: agentic follow-on evaluates this lane
+    then: it judges viewpoint intent, audience clarity, peer observation, and a non-VR fallback
+  - given: gadugi needs to exercise the lane
+    when: the gadugi adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario vr-camera-perspective-tour
+    evidence:
+      - manifest scenario_id equals vr-camera-perspective-tour
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#vr-camera-perspective-tour
+  deterministic_gate: >-
+    Run this smoke lane before asking agents to assess whether a learner used camera or VR perspective with a feasible classroom fallback.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/vr-camera-perspective-tour/${RUN_ID}/manifest.json
+  screenshot: runs/vr-camera-perspective-tour/${RUN_ID}/screenshots/startup.png
+  log: runs/vr-camera-perspective-tour/${RUN_ID}/alice.log
+  window_list: runs/vr-camera-perspective-tour/${RUN_ID}/window-list.txt
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
+  substitute a mocked Alice runtime.

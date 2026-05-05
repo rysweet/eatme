@@ -6,7 +6,7 @@ those assets before they are trusted, generates Gadugi adapter scenarios from th
 canonical eatme scenarios, and records deterministic evidence when real Alice is
 launched.
 
-The finished system has three layers:
+Eatme has three layers:
 
 | Layer | Purpose |
 | --- | --- |
@@ -24,6 +24,7 @@ The finished system has three layers:
 | Using Gadugi | [Gadugi Adapters](gadugi-adapters.md) |
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
+| Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -51,14 +52,14 @@ A passing launch smoke records:
 
 ## What eatme does not pretend to prove
 
-The current real Alice lesson lanes are launch-smoke lanes. They prove
-smoke-ready evidence for a scenario-labeled Alice run. They do not claim full
-in-lesson UI automation, grade learner creativity, or inspect private Alice
-implementation details.
+The real Alice lesson lanes are launch-smoke lanes. They prove smoke-ready
+evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
+automation, grade learner creativity, or inspect private Alice implementation
+details.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
-today and which parts are evidence expectations for human or agent review.
+and which parts are evidence expectations for human or agent review.
 
 ## Main workflows
 
@@ -76,6 +77,9 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 Understand how generated adapter counts stay aligned with the asset inventory:
 [Generated Asset Consistency](generated-asset-consistency.md).
+
+Keep local agent hook runtime files out of commits:
+[Local Hook Artifacts](local-hook-artifacts.md).
 
 Build the docs site:
 

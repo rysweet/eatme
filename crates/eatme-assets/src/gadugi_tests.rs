@@ -62,7 +62,7 @@ steps:
     .unwrap();
     fs::write(
         &existing_gadugi_path,
-        "placeholder: counted before regeneration\n",
+        "stale adapter: counted before regeneration\n",
     )
     .unwrap();
     fs::write(

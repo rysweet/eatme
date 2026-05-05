@@ -1,14 +1,21 @@
 use super::{PersonaReferenceIndex, require_list, require_nonempty, validate_id};
 use crate::report::AssetValidationReport;
-use crate::schema::{ConstituencyCoverage, CrewAsset, Persona, Scenario};
+use crate::schema::{ConstituencyCoverage, CrewAsset, Persona, PromptCard, Scenario};
 use anyhow::{Context, Result};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
 pub fn validate_persona_crew(path: &Path) -> Result<AssetValidationReport> {
+    validate_persona_crew_against_scenario_assets(path, None)
+}
+
+pub(crate) fn validate_persona_crew_against_scenario_assets(
+    path: &Path,
+    scenario_asset_ids: Option<&BTreeSet<String>>,
+) -> Result<AssetValidationReport> {
     let crew = parse_crew(path)?;
-    Ok(validate_crew(path, &crew))
+    Ok(validate_crew(path, &crew, scenario_asset_ids))
 }
 
 pub(crate) fn persona_reference_index(path: &Path) -> Result<PersonaReferenceIndex> {
@@ -45,7 +52,11 @@ fn parse_crew(path: &Path) -> Result<CrewAsset> {
         .with_context(|| format!("parsing persona crew YAML {}", path.display()))
 }
 
-fn validate_crew(path: &Path, crew: &CrewAsset) -> AssetValidationReport {
+fn validate_crew(
+    path: &Path,
+    crew: &CrewAsset,
+    scenario_asset_ids: Option<&BTreeSet<String>>,
+) -> AssetValidationReport {
     let mut errors = Vec::new();
     let warnings = Vec::new();
     require_nonempty(&crew.workstream, "workstream", &mut errors);
@@ -105,7 +116,12 @@ fn validate_crew(path: &Path, crew: &CrewAsset) -> AssetValidationReport {
         &scenario_ids,
         &mut errors,
     );
-
+    validate_student_outside_in_flow_assets(
+        &crew.student_outside_in_flow_assets,
+        &scenario_ids,
+        scenario_asset_ids,
+        &mut errors,
+    );
     AssetValidationReport {
         schema_version: "eatme.assets/persona-crew-validation/v1".into(),
         asset_path: path.display().to_string(),
@@ -186,6 +202,84 @@ fn validate_constituency_coverage(
     for required_id in required_constituencies {
         if !seen_ids.contains(required_id) {
             errors.push(format!("missing constituency coverage {required_id}"));
+        }
+    }
+}
+
+fn validate_student_outside_in_flow_assets(
+    flow_assets: &crate::schema::StudentOutsideInFlowAssets,
+    crew_scenario_ids: &BTreeSet<String>,
+    scenario_asset_ids: Option<&BTreeSet<String>>,
+    errors: &mut Vec<String>,
+) {
+    validate_prompt_cards(
+        &flow_assets.prompt_cards,
+        crew_scenario_ids,
+        scenario_asset_ids,
+        errors,
+    );
+    for (coverage_id, persona_ids) in &flow_assets.coverage_map {
+        require_nonempty(
+            coverage_id,
+            "student_outside_in_flow_assets.coverage_map key",
+            errors,
+        );
+        require_list(
+            persona_ids,
+            &format!("student_outside_in_flow_assets.coverage_map.{coverage_id}"),
+            errors,
+        );
+    }
+}
+
+fn validate_prompt_cards(
+    prompt_cards: &[PromptCard],
+    crew_scenario_ids: &BTreeSet<String>,
+    scenario_asset_ids: Option<&BTreeSet<String>>,
+    errors: &mut Vec<String>,
+) {
+    for prompt_card in prompt_cards {
+        validate_id(&prompt_card.id, "prompt card", errors);
+        require_nonempty(
+            &prompt_card.editable_by,
+            &format!("prompt card {}.editable_by", prompt_card.id),
+            errors,
+        );
+        require_nonempty(
+            &prompt_card.purpose,
+            &format!("prompt card {}.purpose", prompt_card.id),
+            errors,
+        );
+        require_nonempty(
+            &prompt_card.prompt_frame,
+            &format!("prompt card {}.prompt_frame", prompt_card.id),
+            errors,
+        );
+        require_list(
+            &prompt_card.scenario_ids,
+            &format!("prompt card {}.scenario_ids", prompt_card.id),
+            errors,
+        );
+        require_list(
+            &prompt_card.evidence,
+            &format!("prompt card {}.evidence", prompt_card.id),
+            errors,
+        );
+        for scenario_id in &prompt_card.scenario_ids {
+            if !crew_scenario_ids.contains(scenario_id) {
+                errors.push(format!(
+                    "prompt card {} references missing crew scenario {}",
+                    prompt_card.id, scenario_id
+                ));
+            }
+            if let Some(asset_ids) = scenario_asset_ids
+                && !asset_ids.contains(scenario_id)
+            {
+                errors.push(format!(
+                    "prompt card {} references missing scenario asset {}",
+                    prompt_card.id, scenario_id
+                ));
+            }
         }
     }
 }
@@ -357,5 +451,38 @@ fn validate_references(
                 "scenario {scenario_id} references missing {role} persona {id}{suffix}"
             ));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prompt_card_refs_must_have_scenario_assets() {
+        let prompt_cards = vec![PromptCard {
+            id: "data-state-card".into(),
+            scenario_ids: vec!["neighborhood-data-story".into()],
+            ..Default::default()
+        }];
+        let crew_scenario_ids = BTreeSet::from(["neighborhood-data-story".into()]);
+        let scenario_asset_ids = BTreeSet::from(["variables-scorekeeper-timekeeper".into()]);
+        let mut errors = Vec::new();
+
+        validate_prompt_cards(
+            &prompt_cards,
+            &crew_scenario_ids,
+            Some(&scenario_asset_ids),
+            &mut errors,
+        );
+
+        assert!(
+            errors
+                .iter()
+                .any(|error| error.contains(
+                    "prompt card data-state-card references missing scenario asset neighborhood-data-story"
+                )),
+            "expected prompt-card scenario asset reference error, got {errors:?}"
+        );
     }
 }
