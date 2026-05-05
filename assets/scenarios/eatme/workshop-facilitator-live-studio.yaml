@@ -15,9 +15,12 @@ resource_basis:
 purpose: >-
   Prepare a short live-studio classroom flow where instructors can set up the room,
   pace participation, observe student progress, intervene without taking over, and
-  gather reviewable workshop evidence. Students use prompt cards, help signals,
-  peer feedback, revision behavior, reflection, and share-out artifacts to show
-  participation within a limited session. This non-coder-editable scenario is
+  gather reviewable workshop evidence. Students use prompt cards, student-owned
+  Alice action evidence, help signals, peer feedback, revision behavior,
+  reflection, and share-out artifacts to show participation within a limited
+  session. A minimum action note asks each student pair to add or adjust one
+  visible behavior in Alice, run it, record the observed result, and revise one small
+  choice. This non-coder-editable scenario is
   not full Alice user interface automation, not creative assessment, not
   learner-world grading, and not complete Alice coverage.
 personas:
@@ -29,7 +32,8 @@ agentic_flow:
     Prepare a two-hour Alice live-studio workshop plan with a setup checklist,
     timing plan, observation points, intervention cues, checkpoint artifacts,
     share-out support, instructor-facing acceptance probes, student prompt cards,
-    help signals, peer feedback, revision behavior, reflection, and share-out artifacts.
+    student-owned Alice action evidence, help signals, peer feedback, revision
+    behavior, reflection, and share-out artifacts.
   prompt_source: assets/scenarios/eatme/workshop-facilitator-live-studio.yaml#agentic_test_prompt
   non_coder_editable:
     - resource_basis
@@ -49,18 +53,22 @@ agentic_flow:
     - peer_feedback_notes
     - revision_reflection_log
     - share_out_artifacts
+    - real_alice_action_evidence_notes
     - instructor_acceptance_probe_notes
     - showcase_notes
 agentic_test_prompt: >-
   Act as an instructor acceptance agent preparing an Alice live-studio workshop.
   Produce a two-hour facilitation plan, timing plan, observation-intervention guide,
   participant checkpoint board, student prompt cards, help signal board, peer feedback
-  notes, revision-reflection log, share-out artifacts, instructor acceptance probe
-  notes, and showcase notes grounded in the listed resources and this
-  workshop-facilitator-live-studio scenario. Include a setup checklist, observation
-  points, intervention cues, checkpoint artifacts, share-out support,
-  instructor-facing acceptance probes, help signals, peer feedback, revision behavior,
-  reflection, and student-facing prompt cards. Keep language editable and
+  notes, revision-reflection log, share-out artifacts, real Alice action evidence
+  notes, instructor acceptance probe notes, and showcase notes grounded in the
+  listed resources and this workshop-facilitator-live-studio scenario. Include a
+  setup checklist, observation points, intervention cues, checkpoint artifacts,
+  share-out support, instructor-facing acceptance probes, help signals,
+  peer feedback, revision behavior, reflection, student-facing prompt cards,
+  and student-owned Alice action evidence
+  that asks students to add or adjust one visible behavior in Alice, run it,
+  record the observed result, and revise one small choice. Keep language editable and
   workshop-facing. State explicitly that the scenario is not full Alice user
   interface automation, not creative assessment, not learner-world grading, and
   not complete Alice coverage.
@@ -78,14 +86,16 @@ acceptance_criteria:
       the facilitator uses the recovery moves
     then: >-
       participants still have a productive way to use student prompt cards, request help,
-      exchange peer feedback, revise their visible behavior, reflect, or prepare share-out artifacts
+      add or adjust one visible behavior in Alice, run it, record the observed result,
+      exchange peer feedback, revise one small choice, reflect, or prepare share-out artifacts
   - given: >-
       participants share their Alice artifacts
     when: >-
       the instructor-facing acceptance probes are applied to the plan, board, prompt cards, and notes
     then: >-
       the evidence checks visible participant progress, checkpoint artifacts,
-      revision behavior, reflection, and share-out artifacts while stating the scenario is
+      student-owned Alice action evidence, revision behavior, reflection, and share-out artifacts
+      while stating the scenario is
       not full Alice user interface automation, not creative assessment, not
       learner-world grading, and not complete Alice coverage
 acceptance_probes:
@@ -93,6 +103,7 @@ acceptance_probes:
   - Observation-intervention guide names observation points, intervention cues, stuck patterns, and recovery moves for setup or pacing issues.
   - Participant checkpoint board names checkpoint artifacts, help signals, optional extension choices, and student share-out artifacts.
   - Student prompt cards ask for one visible behavior, one help signal, one peer feedback exchange, one revision behavior, and one reflection.
+  - Real Alice action evidence notes ask students to add or adjust one visible behavior in Alice, run it, record the observed result, and revise one small choice.
   - Instructor-facing acceptance probes check the facilitation plan, student prompt cards, checkpoint board, revision-reflection log, and showcase notes.
   - Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence without taking ownership of learner artifacts.
   - Output states the scenario is not full Alice user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
@@ -105,6 +116,7 @@ rubric:
   - criterion: Participant progress
     evidence:
       - Student prompt cards ask for one visible Alice behavior before optional extensions.
+      - Real Alice action evidence notes record one student-owned Alice action, observed run result, and small revision.
       - Help signals, peer feedback, and intervention cues keep learners in control of their artifacts.
       - Participant checkpoint board records checkpoint artifacts, revision behavior, and reflection before the showcase.
   - criterion: Evidence boundary
@@ -139,6 +151,7 @@ artifacts:
   peer_feedback_notes: agentic://student/peer-feedback-notes
   revision_reflection_log: agentic://student/revision-reflection-log
   share_out_artifacts: agentic://student/share-out-artifacts
+  real_alice_action_evidence_notes: agentic://student/real-alice-action-evidence-notes
   instructor_acceptance_probe_notes: agentic://instructor/acceptance-probe-notes
   showcase_notes: agentic://instructor/showcase-notes
 unsupported_policy: >-

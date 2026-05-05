@@ -73,7 +73,8 @@ constituency_coverage:
     scenario_ids: [workshop-facilitator-live-studio]
     evidence:
       - Facilitation plan handles short blocks, rotating helpers, showcase moments, and recovery pauses.
-      - Scenario prompts visible learner progress rather than exact UI choreography.
+      - Scenario asks for a student-owned Alice action note before reflection or showcase review.
+      - Scenario prompts visible learner progress rather than exact user interface choreography.
   - id: vr-player-users
     label: VR/player users
     editable_by: non-coder asset editors
@@ -480,12 +481,13 @@ personas:
         - Facilitation moves, timeboxing, public checkpoints, peer support, and quick recovery loops.
       observable_behaviors:
         - Publishes milestones, helper roles, demo pauses, and optional extension routes.
+        - Asks each student pair to record one Alice action they tried, what happened when they ran it, and one small revision.
         - Uses visible artifacts and participant reflections to decide when to advance.
       anti_behaviors:
         - Turns the workshop into a presenter-only walkthrough.
         - Lets early setup problems consume the entire learning block.
       evidence:
-        - Facilitation board shows schedule, checkpoint evidence, stuck/help signals, and share-out prompts.
+        - Facilitation board shows schedule, checkpoint evidence, Alice action notes, stuck/help signals, and share-out prompts.
     - id: alice-2-migration-mentor
       role: instructor
       archetype: Alice 2 Migration Mentor
@@ -559,7 +561,7 @@ personas:
       anti_behaviors:
         - Adds objects endlessly without runnable behavior.
       evidence:
-        - World has a clear beginning/middle/end and code choices tied to story choices.
+        - World has a clear beginning/middle/end, one recorded run result, and code choices tied to story choices.
     - id: playful-tinkerer
       role: student
       archetype: Playful Tinkerer
@@ -610,7 +612,7 @@ personas:
       anti_behaviors:
         - Deletes/rebuilds everything before isolating the bug.
       evidence:
-        - Debug ticket or journal entry shows prediction, observation, hypothesis, and fix.
+        - Debug ticket or journal entry shows prediction, observation, hypothesis, run result, and fix.
     - id: collaborative-peer-mentor
       role: student
       archetype: Collaborative Peer Mentor
@@ -627,7 +629,7 @@ personas:
       anti_behaviors:
         - Takes the mouse, solves silently, or mocks mistakes.
       evidence:
-        - Peer-feedback notes lead to a revision by the original creator.
+        - Peer-feedback notes lead to a recorded Alice action revision by the original creator.
     - id: accessibility-advocate
       role: student
       archetype: Accessibility Advocate
