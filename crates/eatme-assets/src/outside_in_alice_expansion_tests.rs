@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 55;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 57;
 
 struct TargetScenario {
     id: &'static str,
@@ -332,6 +332,36 @@ fn lesson_path_evidence_contracts_stay_explicit_and_honest() {
             "not creative assessment",
             "not learner-world grading",
             "does not grade learner worlds or assess creativity automatically",
+        ],
+    );
+}
+
+#[test]
+fn teacher_community_sharing_loop_contract_names_handoff_and_honest_boundaries() {
+    let root = repository_root();
+    let contract = fs::read_to_string(scenario_path(
+        &root,
+        "eatme",
+        "teacher-community-sharing-loop",
+    ))
+    .unwrap();
+
+    assert_contains_all(
+        "teacher-community-sharing-loop contract",
+        &contract,
+        &[
+            "teacher-community share card",
+            "classroom handoff note",
+            "editable scenario and persona links",
+            "attribution",
+            "classroom constraints",
+            "student evidence",
+            "remix feedback prompts",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
+            "not a deployed community platform",
         ],
     );
 }
