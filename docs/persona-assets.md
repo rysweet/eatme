@@ -8,6 +8,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson scenarios, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player scenarios, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters generated from canonical eatme scenarios, plus hand-authored CLI regression contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke scenarios.
+- `docs/alice-qa-persona-scenario-coverage.md` — usage, schema contract, configuration, and examples for editable Alice QA persona-to-scenario coverage.
 
 ## How to use with agentic tests
 
@@ -31,14 +32,22 @@ For the first real Alice lesson scenario, use
 `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` as the student
 launch/action-contract source of truth. It records scenario-labeled
 manifest/log/window/screenshot evidence and `ui-action-contract.json`
-expectations; it is not full UI automation, not creative assessment, and not
-learner-world grading.
+expectations; it does not drive an entire lesson through the Alice interface,
+score learner creativity, or grade saved learner worlds.
 
 For instructor remix work, use
 `assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
 lesson-material/remix evidence contract. It keeps teacher plan, student handout,
 exit ticket, and review/remix probes discoverable without claiming automated
 creative grading or learner-world assessment.
+
+For workshop facilitation coverage, use
+`assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` as the editable
+persona-to-scenario evidence contract. It connects `workshop-facilitator` and
+`studio-facilitator` with `creative-storyteller`,
+`collaborative-peer-mentor`, and `reflective-debugger` through checkpoint,
+help-signal, peer-feedback, recovery, and share-out evidence. See
+[Alice QA Persona-to-Scenario Coverage](alice-qa-persona-scenario-coverage.md).
 
 ## QA-team outside-in test shape
 
@@ -185,6 +194,7 @@ include:
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
+| `workshop-facilitator-live-studio` | Workshop facilitation scenario for checkpoints, helper roles, stuck signals, recovery moves, peer feedback, and share-out evidence. |
 
 Each committed standalone scenario routes runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
@@ -192,8 +202,9 @@ and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
 the user outcome agents must judge; the launch smoke provides deterministic
 desktop evidence and does not substitute for unimplemented UI, VR, or
 export/import automation. `real-alice-launch-smoke` remains the baseline
-manifest/log/window/screenshot proof only; it is not full UI automation, not
-creative assessment, and not learner-world grading.
+manifest/log/window/screenshot proof only; it does not drive an entire lesson
+through the Alice interface, score learner creativity, or grade saved learner
+worlds.
 
 ## Instructor agentic flow assets
 
@@ -217,6 +228,7 @@ scenarios:
 | `alice-2-migration-bridge` | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
 | `vr-player-comfort-playtest` | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
 | `model-texture-import-checkpoint` | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
+| `workshop-facilitator-live-studio` | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected

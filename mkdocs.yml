@@ -17,6 +17,7 @@ nav:
   - Validation and Quality Gates: validation-quality-gates.md
   - Local Hook Artifacts: local-hook-artifacts.md
   - Alice Integration: alice-integration.md
+  - Alice QA Persona-to-Scenario Coverage: alice-qa-persona-scenario-coverage.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md
   - GitHub Pages: github-pages.md

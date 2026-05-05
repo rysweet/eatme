@@ -26,6 +26,7 @@ Eatme has three layers:
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
+| Auditing Alice QA persona-to-scenario coverage | [Alice QA Persona-to-Scenario Coverage](alice-qa-persona-scenario-coverage.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
@@ -54,10 +55,9 @@ A passing launch smoke records:
 ## What eatme does not pretend to prove
 
 The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
-evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
-automation, grade learner creativity, or inspect private Alice implementation
-details. The first-lesson action contract states this more explicitly: it is not
-full UI automation, not creative assessment, and not learner-world grading.
+evidence for a scenario-labeled Alice run. They do not drive an entire lesson
+through the Alice interface, score learner creativity, inspect private Alice
+implementation details, or grade saved learner worlds.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
