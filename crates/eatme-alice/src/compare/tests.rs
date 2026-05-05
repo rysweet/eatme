@@ -45,6 +45,10 @@ targets:
     assert!(!manifest.execute_requested);
     assert_eq!(manifest.diff.baseline_status, "not_run");
     assert_eq!(manifest.diff.modernized_status, "not_run");
+    assert_eq!(manifest.scorecard.execution_mode, "manifest_only");
+    assert_eq!(manifest.scorecard.functionality_result, "not_measured");
+    assert_eq!(manifest.scorecard.timing_result, "not_measured");
+    assert_eq!(manifest.scorecard.modernized_minus_baseline_ms, None);
     assert!(Path::new(&manifest.comparison_manifest_path).is_file());
 }
 
@@ -96,6 +100,8 @@ targets:
         );
         assert!(target.launch_manifest.is_none());
     }
+    assert_eq!(manifest.scorecard.functionality_result, "incomplete");
+    assert_eq!(manifest.scorecard.timing_result, "incomplete");
 }
 
 #[test]
@@ -137,6 +143,28 @@ fn status_diff_records_changed_assertions() {
     assert_eq!(diff.assertion_diffs[0].assertion, "no_fatal_logs");
     assert!(diff.assertion_diffs[0].baseline.as_ref().unwrap().passed);
     assert!(!diff.assertion_diffs[0].modernized.as_ref().unwrap().passed);
+}
+
+#[test]
+fn scorecard_summarizes_functionality_and_timing_evidence() {
+    let mut targets = BTreeMap::new();
+    let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
+    baseline.duration_ms = 12;
+    let mut modernized = target_run_with_assertion("modernized", "passed", None, true);
+    modernized.duration_ms = 7;
+    targets.insert("baseline".into(), baseline);
+    targets.insert("modernized".into(), modernized);
+    let diff = compare_status_and_assertions(&targets);
+
+    let scorecard = build_scorecard(true, &targets, &diff);
+
+    assert_eq!(scorecard.execution_mode, "execute_requested");
+    assert_eq!(scorecard.functionality_result, "matched");
+    assert_eq!(scorecard.timing_result, "modernized_faster");
+    assert_eq!(scorecard.baseline_duration_ms, Some(12));
+    assert_eq!(scorecard.modernized_duration_ms, Some(7));
+    assert_eq!(scorecard.modernized_minus_baseline_ms, Some(-5));
+    assert_eq!(scorecard.faster_target.as_deref(), Some("modernized"));
 }
 
 fn target_run_with_assertion(
