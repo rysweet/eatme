@@ -95,7 +95,7 @@ fn has_honest_qualifier(text: &str, phrase_start: usize) -> bool {
     }
 
     let sentence_start = text[..phrase_start]
-        .rfind(|character| matches!(character, '.' | ';' | '!' | '?'))
+        .rfind(['.', ';', '!', '?'])
         .map(|index| index + 1)
         .unwrap_or(0);
     let list_prefix_start = sentence_start.max(phrase_start.saturating_sub(128));
