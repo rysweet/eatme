@@ -403,15 +403,16 @@ fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<Pa
     }
 
     reject_unsafe_relative_path(&path)?;
+    let root = canonical_evidence_root(&evidence_root)?;
     if let Some(parent) = manifest_path.parent() {
         let candidate = parent.join(&path);
         if candidate.exists() {
-            return Ok(candidate);
+            return canonical_artifact_under_root(&candidate, &root);
         }
     }
     let candidate = evidence_root.join(&path);
     if candidate.exists() {
-        return Ok(candidate);
+        return canonical_artifact_under_root(&candidate, &root);
     }
     Ok(candidate)
 }
@@ -434,4 +435,27 @@ fn reject_unsafe_relative_path(path: &Path) -> Result<()> {
         bail!("relative artifact path must not contain parent, current, or root components");
     }
     Ok(())
+}
+
+fn canonical_evidence_root(evidence_root: &Path) -> Result<PathBuf> {
+    evidence_root.canonicalize().with_context(|| {
+        format!(
+            "resolving comparison evidence root {}",
+            evidence_root.display()
+        )
+    })
+}
+
+fn canonical_artifact_under_root(candidate: &Path, root: &Path) -> Result<PathBuf> {
+    let resolved = candidate
+        .canonicalize()
+        .with_context(|| format!("resolving artifact path {}", candidate.display()))?;
+    if !resolved.starts_with(root) {
+        bail!(
+            "artifact path {} must stay under comparison evidence root {}",
+            resolved.display(),
+            root.display()
+        );
+    }
+    Ok(resolved)
 }

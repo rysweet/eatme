@@ -191,6 +191,37 @@ fn lesson_session_readiness_rejects_unsafe_ui_action_contract_path() {
     assert_contract_contains(&report.issues, "must not contain parent");
 }
 
+#[cfg(unix)]
+#[test]
+fn lesson_session_readiness_rejects_symlinked_ui_action_contract_escape() {
+    let root = unique_test_dir("symlink-action-contract-path-check");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let outside = root.join("outside-ui-action-contract.json");
+    fs::write(
+        &outside,
+        serde_json::to_vec_pretty(&ui_action_contract_json(false)).unwrap(),
+    )
+    .unwrap();
+    let evidence_dir = manifest_path.parent().unwrap();
+    let link = evidence_dir.join("linked-ui-action-contract.json");
+    std::os::unix::fs::symlink(&outside, &link).unwrap();
+    let mut value: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    value["targets"]["baseline"]["launch_manifest"]["ui_action_contract"]["path"] =
+        serde_json::json!("linked-ui-action-contract.json");
+    fs::write(
+        &manifest_path,
+        serde_json::to_string_pretty(&value).unwrap(),
+    )
+    .unwrap();
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_contract_contains(&report.issues, "ui-action-contract.path is unsafe");
+    assert_contract_contains(&report.issues, "must stay under comparison evidence root");
+}
+
 #[test]
 fn first_lesson_readiness_sequence_reports_manifest_only_gap() {
     let root = unique_test_dir("first-lesson-sequence-manifest-only");
