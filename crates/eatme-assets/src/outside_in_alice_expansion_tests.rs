@@ -1,6 +1,6 @@
 use crate::schema::EatmeScenarioAsset;
 use crate::validation::validate_persona_crew_against_scenario_assets;
-use crate::{generate_gadugi_adapter_yaml, validate_assets, validate_scenario_asset};
+use crate::{generate_gadugi_adapters, validate_assets};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -48,6 +48,7 @@ const TARGET_SCENARIOS: &[TargetScenario] = &[
 fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapters() {
     let root = repository_root();
     let report = validate_assets(&root).unwrap();
+    let gadugi_report = generate_gadugi_adapters(&root, true).unwrap();
     let mut failures = Vec::new();
 
     if report.scenario_asset_count != EXPECTED_SCENARIO_ASSET_COUNT {
@@ -60,6 +61,12 @@ fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapte
         failures.push(format!(
             "expanded asset inventory must validate cleanly: {:?}",
             report.errors
+        ));
+    }
+    if !gadugi_report.passed {
+        failures.push(format!(
+            "expanded Gadugi adapters must be fresh: {:?}",
+            gadugi_report.errors
         ));
     }
 
@@ -78,28 +85,6 @@ fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapte
             failures.push(format!(
                 "{} must exist as the generated Gadugi adapter",
                 gadugi_path.display()
-            ));
-            continue;
-        }
-
-        for path in [&eatme_path, &gadugi_path] {
-            let scenario_report = validate_scenario_asset(path).unwrap();
-            if !scenario_report.passed {
-                failures.push(format!(
-                    "{} must validate: {:?}",
-                    path.display(),
-                    scenario_report.errors
-                ));
-            }
-        }
-
-        let generated = generate_gadugi_adapter_yaml(&root, &eatme_path).unwrap();
-        let committed = fs::read_to_string(&gadugi_path).unwrap();
-        if generated != committed {
-            failures.push(format!(
-                "{} must match the generated adapter for {}",
-                gadugi_path.display(),
-                eatme_path.display()
             ));
         }
     }
