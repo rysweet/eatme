@@ -11,23 +11,21 @@ pub(super) fn generate_instructor_agentic_adapter(
         .copied()
         .unwrap_or(900)
         * 1000;
-    let focus = scenario
-        .agentic_flow
-        .as_ref()
-        .map(|flow| flow.focus.clone())
+    let agentic_flow = scenario.agentic_flow.as_ref();
+    let focus = agentic_flow
+        .map(|flow| flow.focus.as_str())
         .filter(|focus| !focus.is_empty())
-        .unwrap_or_else(|| scenario.id.clone());
-    let expected_outputs = scenario
-        .agentic_flow
-        .as_ref()
+        .unwrap_or(&scenario.id)
+        .to_owned();
+    let expected_outputs = agentic_flow
         .map(|flow| flow.expected_outputs.clone())
         .unwrap_or_default();
     let validate_step = "Validate editable Alice instructor assets";
-    let agentic_step = "Run instructor agentic QA review";
+    let agentic_step = "Run instructor agentic acceptance review";
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {} Agentic Flow", scenario.title),
         description: format!(
-            "Gadugi-compatible instructor QA adapter generated from {source_asset}. It keeps the scenario at the editable asset and agentic evidence boundary so non-coders can maintain prompts, probes, and rubrics without changing Rust."
+            "Gadugi-compatible instructor acceptance adapter generated from {source_asset}. It keeps the scenario at the editable asset and agentic evidence boundary so non-coders can maintain prompts, probes, and rubrics without changing Rust."
         ),
         version: "1.0.0".into(),
         config: GeneratedConfig {
@@ -53,7 +51,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                 },
             },
             GeneratedAgent {
-                name: "instructor-qa-agent".into(),
+                name: "instructor-acceptance-agent".into(),
                 agent_type: "agentic".into(),
                 config: GeneratedAgentConfig {
                     shell: None,
@@ -89,7 +87,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             },
             GeneratedStep {
                 name: agentic_step.into(),
-                agent: "instructor-qa-agent".into(),
+                agent: "instructor-acceptance-agent".into(),
                 action: "agentic_test".into(),
                 params: BTreeMap::from([
                     ("asset".into(), source_asset.clone()),
@@ -115,9 +113,9 @@ pub(super) fn generate_instructor_agentic_adapter(
                 params: BTreeMap::from([("step".into(), validate_step.into())]),
             },
             GeneratedAssertion {
-                name: "Instructor Agentic Review Covers Probes".into(),
+                name: "Instructor Agentic Acceptance Review Covers Probes".into(),
                 assertion_type: "agentic_acceptance".into(),
-                agent: "instructor-qa-agent".into(),
+                agent: "instructor-acceptance-agent".into(),
                 params: BTreeMap::from([
                     ("step".into(), agentic_step.into()),
                     ("asset".into(), source_asset.clone()),

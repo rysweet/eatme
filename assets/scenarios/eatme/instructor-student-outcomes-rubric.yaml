@@ -35,7 +35,7 @@ agentic_flow:
     - feedback_frame
     - revision_next_step
 agentic_test_prompt: >-
-  Act as an instructor QA agent reviewing student outcomes. Produce a simple rubric and feedback frame for an Alice artifact. Grade concept evidence, creative communication, debugging/process, and reflection. Ask for observable artifact behavior and student explanation; do not reward visual polish alone.
+  Act as an instructor acceptance agent reviewing student outcomes. Produce a simple rubric and feedback frame for an Alice artifact. Grade concept evidence, creative communication, debugging/process, and reflection. Ask for observable artifact behavior and student explanation; do not reward visual polish alone.
 acceptance_criteria:
   - given: >-
       students submit Alice artifacts and reflections
@@ -67,7 +67,7 @@ rubric:
       - Student records prediction, observation, change, and rerun.
       - Revision is specific and testable.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Single correct creative answer; preserve student ownership.
   - Visual polish as a substitute for concept evidence.
 steps:
@@ -77,7 +77,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes instructor-student-outcomes-rubric
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -90,4 +90,4 @@ artifacts:
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or
   the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle UI assertions.
+  evidence. Do not replace instructor judgment with brittle user interface assertions.

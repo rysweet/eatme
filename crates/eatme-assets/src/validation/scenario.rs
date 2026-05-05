@@ -434,5 +434,9 @@ fn require_timeout_and_policy(scenario: &EatmeScenarioAsset, errors: &mut Vec<St
 }
 
 #[cfg(test)]
+#[path = "live_studio_scenario_tests.rs"]
+mod live_studio_scenario_tests;
+
+#[cfg(test)]
 #[path = "scenario_tests.rs"]
 mod scenario_tests;

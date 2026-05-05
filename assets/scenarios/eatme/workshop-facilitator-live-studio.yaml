@@ -13,19 +13,23 @@ resource_basis:
     use: >-
       Use lessons, exercises, projects, how-tos, and shareable resources as workshop source material.
 purpose: >-
-  Prepare a short live-studio flow where participants build one visible behavior,
-  get help, revise, and share evidence within a limited session. This non-coder-editable
-  scenario adds persona-to-scenario coverage evidence for workshop facilitation; it is not
-  a claim of comprehensive interface automation, machine-scored creativity, automatic grading
-  of student worlds, or exhaustive Alice coverage.
+  Prepare a short live-studio classroom flow where instructors can set up the room,
+  pace participation, observe student progress, intervene without taking over, and
+  gather reviewable workshop evidence. Students use prompt cards, help signals,
+  peer feedback, revision behavior, reflection, and share-out artifacts to show
+  participation within a limited session. This non-coder-editable scenario is
+  not full Alice user interface automation, not creative assessment, not
+  learner-world grading, and not complete Alice coverage.
 personas:
   instructors: [workshop-facilitator, studio-facilitator]
   students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
 agentic_flow:
   focus: facilitating-live-studio-workshops
   instructor_goal: >-
-    Prepare a two-hour Alice live-studio workshop plan with timeboxed milestones, helper roles,
-    recovery moves, a minimum runnable artifact, optional extension choices, and a final share.
+    Prepare a two-hour Alice live-studio workshop plan with a setup checklist,
+    timing plan, observation points, intervention cues, checkpoint artifacts,
+    share-out support, instructor-facing acceptance probes, student prompt cards,
+    help signals, peer feedback, revision behavior, reflection, and share-out artifacts.
   prompt_source: assets/scenarios/eatme/workshop-facilitator-live-studio.yaml#agentic_test_prompt
   non_coder_editable:
     - resource_basis
@@ -37,60 +41,81 @@ agentic_flow:
     - avoid
   expected_outputs:
     - facilitation_plan
+    - timing_plan
+    - observation_intervention_guide
     - participant_checkpoint_board
+    - student_prompt_cards
+    - help_signal_board
+    - peer_feedback_notes
+    - revision_reflection_log
+    - share_out_artifacts
+    - instructor_acceptance_probe_notes
     - showcase_notes
 agentic_test_prompt: >-
-  Act as an instructor QA agent preparing an Alice live-studio workshop. Produce a two-hour
-  facilitation plan, participant checkpoint board, and showcase notes grounded in the listed resources and
-  this workshop-facilitator-live-studio scenario. Include launch/readiness checks, timeboxed
-  milestones, helper roles, stuck signals, recovery moves for setup or pacing issues, a minimum
-  runnable artifact, optional extension choices, peer feedback, showcase timing, and one reflection
-  prompt. Keep language editable and workshop-facing. Do not claim comprehensive interface automation,
-  machine-scored creativity, automatic grading of student worlds, or exhaustive Alice coverage.
+  Act as an instructor acceptance agent preparing an Alice live-studio workshop.
+  Produce a two-hour facilitation plan, timing plan, observation-intervention guide,
+  participant checkpoint board, student prompt cards, help signal board, peer feedback
+  notes, revision-reflection log, share-out artifacts, instructor acceptance probe
+  notes, and showcase notes grounded in the listed resources and this
+  workshop-facilitator-live-studio scenario. Include a setup checklist, observation
+  points, intervention cues, checkpoint artifacts, share-out support,
+  instructor-facing acceptance probes, help signals, peer feedback, revision behavior,
+  reflection, and student-facing prompt cards. Keep language editable and
+  workshop-facing. State explicitly that the scenario is not full Alice user
+  interface automation, not creative assessment, not learner-world grading, and
+  not complete Alice coverage.
 acceptance_criteria:
   - given: >-
       participants arrive with mixed Alice experience, devices, and goals
     when: >-
       the agent prepares the live-studio workshop plan
     then: >-
-      the output separates launch/readiness, build checkpoints, helper roles, stuck signals, and showcase
+      the output separates the setup checklist, timing plan, build checkpoints,
+      helper roles, observation points, help signals, intervention cues, and share-out support
   - given: >-
       setup or pacing goes sideways during the workshop
     when: >-
       the facilitator uses the recovery moves
     then: >-
-      participants still have a productive way to build, help, observe, revise, or reflect
+      participants still have a productive way to use student prompt cards, request help,
+      exchange peer feedback, revise their visible behavior, reflect, or prepare share-out artifacts
   - given: >-
       participants share their Alice artifacts
     when: >-
-      the agentic probes are applied to the plan, board, and prompt
+      the instructor-facing acceptance probes are applied to the plan, board, prompt cards, and notes
     then: >-
-      the evidence checks visible participant progress and reflection without claiming machine-scored assessment or exhaustive coverage
+      the evidence checks visible participant progress, checkpoint artifacts,
+      revision behavior, reflection, and share-out artifacts while stating the scenario is
+      not full Alice user interface automation, not creative assessment, not
+      learner-world grading, and not complete Alice coverage
 acceptance_probes:
-  - Facilitation plan has launch/readiness, make/run/revise checkpoints, helper roles, and showcase timing.
-  - Workshop board names participant evidence, stuck signals, recovery moves, and optional extension choices.
-  - Share-out prompt asks for one visible behavior, one help or revision moment, and one next small change.
-  - Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence.
-  - Output avoids comprehensive interface automation, machine-scored creativity, automatic grading of student worlds, and exhaustive Alice coverage claims.
+  - Facilitation plan has a setup checklist, timing plan, make/run/revise checkpoints, helper roles, and share-out support.
+  - Observation-intervention guide names observation points, intervention cues, stuck patterns, and recovery moves for setup or pacing issues.
+  - Participant checkpoint board names checkpoint artifacts, help signals, optional extension choices, and student share-out artifacts.
+  - Student prompt cards ask for one visible behavior, one help signal, one peer feedback exchange, one revision behavior, and one reflection.
+  - Instructor-facing acceptance probes check the facilitation plan, student prompt cards, checkpoint board, revision-reflection log, and showcase notes.
+  - Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence without taking ownership of learner artifacts.
+  - Output states the scenario is not full Alice user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
   - criterion: Workshop readiness
     evidence:
-      - Plan states setup assumptions, timeboxes, helper roles, and fallback participation choices.
+      - Facilitation plan states setup checklist items, timing plan checkpoints, helper roles, and fallback participation choices.
       - The plan can be edited as YAML without changing Rust or launcher code.
+      - Instructor-facing acceptance probes are written for classroom facilitation evidence rather than desktop automation.
   - criterion: Participant progress
     evidence:
-      - Milestones ask for one visible Alice behavior before optional extensions.
-      - Stuck signals and peer support keep learners in control of their artifacts.
-      - Participant checkpoint board records visible participant progress before the showcase.
+      - Student prompt cards ask for one visible Alice behavior before optional extensions.
+      - Help signals, peer feedback, and intervention cues keep learners in control of their artifacts.
+      - Participant checkpoint board records checkpoint artifacts, revision behavior, and reflection before the showcase.
   - criterion: Evidence boundary
     evidence:
-      - Review checks artifacts, reflections, help queue notes, and share-out prompts.
-      - The scenario does not claim machine grading, hidden code inspection, or exhaustive Alice coverage.
+      - Review checks checkpoint artifacts, revision-reflection log entries, help signal notes, peer feedback notes, and share-out artifacts.
+      - The scenario states it is not full Alice user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
 avoid:
-  - Exact UI coordinates, menu paths, or private implementation details.
+  - Exact user interface coordinates, menu paths, or private implementation details.
   - Presenter-only demos where participants do not build, run, revise, or share.
   - Making final polish the only success signal.
-  - Comprehensive interface automation, machine-scored creativity, automatic grading of student worlds, or exhaustive Alice coverage claims.
+  - Full Alice user interface automation, creative assessment, learner-world grading, or complete Alice coverage claims.
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -98,7 +123,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes workshop-facilitator-live-studio
   - id: agentic-instructor-review
-    command: agentic instructor QA review using assets/scenarios/eatme/workshop-facilitator-live-studio.yaml
+    command: agentic instructor acceptance review using assets/scenarios/eatme/workshop-facilitator-live-studio.yaml
     evidence:
       - agent output addresses every acceptance_probe
       - agent output returns the expected_outputs listed in this YAML
@@ -106,10 +131,19 @@ timeouts:
   agentic_seconds: 900
 artifacts:
   facilitation_plan: agentic://instructor/facilitation-plan
+  timing_plan: agentic://instructor/timing-plan
+  observation_intervention_guide: agentic://instructor/observation-intervention-guide
   participant_checkpoint_board: agentic://instructor/participant-checkpoint-board
+  student_prompt_cards: agentic://student/prompt-cards
+  help_signal_board: agentic://student/help-signal-board
+  peer_feedback_notes: agentic://student/peer-feedback-notes
+  revision_reflection_log: agentic://student/revision-reflection-log
+  share_out_artifacts: agentic://student/share-out-artifacts
+  instructor_acceptance_probe_notes: agentic://instructor/acceptance-probe-notes
   showcase_notes: agentic://instructor/showcase-notes
 unsupported_policy: >-
   If the agent cannot read this editable YAML, the persona crew asset, or the cited
   Alice.org resource basis, fail visibly and report the missing evidence. Do not replace
-  instructor judgment with brittle UI assertions, machine-scored creativity,
-  automatic grading of student worlds, or exhaustive Alice coverage claims.
+  instructor judgment with brittle user interface assertions. Do not claim this
+  scenario is full Alice user interface automation, creative assessment,
+  learner-world grading, or complete Alice coverage.
