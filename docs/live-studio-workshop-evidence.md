@@ -37,10 +37,12 @@ The scenario covers a short classroom studio cycle:
 2. Timeboxed build, run, revise, and share checkpoints.
 3. Instructor observation points and intervention cues.
 4. Student prompt cards or equivalent student-facing flows.
-5. Help signals and peer feedback.
-6. Revision behavior and reflection.
-7. Share-out artifacts.
-8. Instructor-facing acceptance probes.
+5. Student-owned Alice action evidence: add or adjust one visible behavior,
+   run it, record the observed result, and revise one small choice.
+6. Help signals and peer feedback.
+7. Revision behavior and reflection.
+8. Share-out artifacts.
+9. Instructor-facing acceptance probes.
 
 The scenario stays at the evidence boundary. It describes what instructors,
 students, and instructor-facing agents must produce and review. It does not
@@ -183,6 +185,7 @@ A complete student evidence packet contains:
 | Artifact | Required contents |
 | --- | --- |
 | `student_prompt_cards` | Plain-language prompts for the minimum runnable artifact, optional extension choices, prediction, run, revise, and share-out. |
+| `real_alice_action_evidence_notes` | Student-owned Alice action evidence that records one added or adjusted visible behavior, the run result, and one small revision. |
 | `help_signal_board` | Student-facing ways to ask for help without losing ownership of the artifact, such as stuck, needs partner review, setup blocked, or ready for stretch. |
 | `peer_feedback_notes` | Feedback that names one observed behavior, one question, and one suggested next change. |
 | `revision_reflection_log` | One meaningful revision based on observation, help, or peer feedback, plus student explanation of expected versus actual behavior and what changed. |

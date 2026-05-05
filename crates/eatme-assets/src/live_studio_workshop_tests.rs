@@ -13,6 +13,11 @@ const REQUIRED_CONTRACT_TEXT: &[&str] = &[
     "share-out support",
     "instructor-facing acceptance probes",
     "student prompt cards",
+    "student-owned Alice action evidence",
+    "add or adjust one visible behavior",
+    "run it",
+    "record the observed result",
+    "revise one small choice",
     "help signals",
     "peer feedback",
     "revision behavior",
@@ -33,6 +38,7 @@ const REQUIRED_OUTPUTS: &[&str] = &[
     "peer_feedback_notes",
     "revision_reflection_log",
     "share_out_artifacts",
+    "real_alice_action_evidence_notes",
     "instructor_acceptance_probe_notes",
 ];
 
