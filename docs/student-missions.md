@@ -64,6 +64,7 @@ Committed student-facing scenario assets currently include:
 | `vr-camera-locomotion-journey` | `vr-player-tester`, `immersive-camera-director`, `accessibility-advocate` | Record VR availability, camera markers, comfort notes, and desktop fallback evidence. |
 | `vr-camera-perspective-tour` | `immersive-camera-director`, `accessibility-advocate` | Design audience viewpoint and non-VR fallback communication. |
 | `modified-class-portability` | `model-texture-importer`, `reflective-debugger` | Prove a shared modified class has before-export, destination-import, and after-import behavior evidence. |
+| `student-reflection-artifact-review` | `reflective-debugger`, `collaborative-peer-mentor` | Pair a student learning artifact with reflection that names one Alice action, visible behavior, run result, and next revision. |
 
 Committed outside-in Alice QA expansion scenarios add these student missions as
 canonical scenario assets with generated Gadugi adapters:

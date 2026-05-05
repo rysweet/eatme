@@ -4,7 +4,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 ## Asset files
 
-- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative scenarios.
+- `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 12 creative scenarios.
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson scenarios, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player scenarios, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters generated from canonical eatme scenarios, plus hand-authored CLI regression contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke scenarios.
@@ -119,6 +119,7 @@ editable by non-coders:
 - `camera-vr-fallback-card` — camera/VR perspective with non-VR classroom fallback.
 - `setup-migration-readiness-card` — setup blockers and Alice 2 migration bridges with learner-safe fallback evidence.
 - `import-fallback-checkpoint-card` — responsible model/texture provenance, visual checks, and fallback asset evidence.
+- `artifact-reflection-review-card` — student-owned Alice action, visible artifact behavior, run result, and next revision evidence.
 
 ## Constituency coverage
 
