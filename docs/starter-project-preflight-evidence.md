@@ -22,12 +22,14 @@ The evidence boundary is intentionally narrow:
 | Assertions | Records deterministic harness assertions, including real Alice execution evidence. |
 | Window or screenshot evidence | Shows that a smoke-ready Alice desktop session was observed. |
 | Logs | Preserve Alice launch output for review and troubleshooting. |
-| Action-contract outputs | Give instructor, student, or adapter reviewers an inspectable boundary for the next user-like action pass. |
+| Inspectable launch-smoke outputs | Give instructor, student, or adapter reviewers setup evidence for later save, reopen, export, or action-contract review. |
 
-This scenario does not provide full UI automation, creative assessment,
-learner-world grading, or complete Alice coverage. It is preflight evidence for
-opening the starter project, not proof that a learner completed save, reopen, or
-export work.
+This scenario does not write `ui-action-contract.json`; that artifact belongs to
+scenarios that explicitly exercise or specify user-like UI actions, such as
+`first-lessons-real-ui-actions`. This scenario also does not provide full UI
+automation, creative assessment, learner-world grading, or complete Alice
+coverage. It is preflight evidence for opening the starter project, not proof
+that a learner completed save, reopen, or export work.
 
 ## Configuration
 
@@ -43,8 +45,8 @@ Real Alice runs are explicit opt-in runs. Non-baseline scenarios require:
 export EATME_REAL_ALICE=1
 ```
 
-When a Node-based runner or wrapper participates in the workflow, use the
-repository memory setting for a larger heap:
+For Node-based wrappers or agent tooling only, a larger heap can avoid wrapper
+runtime limits. The Rust CLI does not require this setting:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -124,7 +126,7 @@ Non-coders can update scenario prose in these existing fields:
 | `purpose` | A short statement of the evidence the scenario owns. |
 | `smoke_ready.evidence` | Observable evidence names. |
 | `acceptance_criteria` | Given/when/then expectations for reviewers. |
-| `steps[*].evidence` | Manifest, log, screenshot, window, and action-contract evidence. |
+| `steps[*].evidence` | Manifest, log, screenshot, and window evidence. |
 | `agentic_follow_on.deterministic_gate` | How instructor, student, or agent reviews should use the preflight evidence. |
 | `unsupported_policy` | Loud-failure behavior and unsupported claims. |
 
@@ -138,8 +140,8 @@ Good wording:
 ```yaml
 purpose: >-
   Prove that the real Alice harness opens the bundled starter project and
-  records manifest, log, screenshot or window, and action-contract evidence for
-  review before save, reopen, or export work is claimed.
+  records manifest, log, and screenshot or window evidence for review before
+  save, reopen, export, or later action-contract work is claimed.
 ```
 
 Good limitation wording:
