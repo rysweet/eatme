@@ -111,9 +111,10 @@ constituency_coverage:
     label: Teacher-community sharing
     editable_by: non-coder asset editors
     persona_ids: [teacher-community-curator]
-    scenario_ids: [teacher-community-sharing-loop]
+    scenario_ids: [teacher-community-sharing-loop, student-artifact-package-share-evidence]
     evidence:
       - Sharing loop includes remix notes, attribution, classroom constraints, classroom handoff note, and feedback prompts.
+      - Student artifact package sharing includes artifact references, student explanation, attribution or classroom context, and human review boundaries.
       - Scenario supports reusable teacher-facing assets without code changes.
 asset_shapes:
   persona:
@@ -1472,6 +1473,36 @@ core_scenarios_from_existing_alice_resources:
       - Feedback loop asks for implementation notes rather than popularity ranking.
     avoid:
       - Orphaned files with no teaching context, hidden code assumptions, or treating sharing as final publication only.
+  - id: student-artifact-package-share-evidence
+    origin: existing-alice-resource
+    coverage: [classroom-use, export-share]
+    user_story: As a teacher-community-curator, I want a shareable evidence packet for one student Alice artifact, so that another reviewer can see the artifact reference, student explanation, attribution or classroom context, and human review boundary.
+    personas:
+      instructors: [teacher-community-curator, assessment-curator, classroom-orchestrator]
+      students: [reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [artifact sharing, attribution, reflection, human review boundary]
+      habits: [evidence-sharing, reflection, revision, peer communication]
+    constraints:
+      - Shared student artifacts need context and consent-aware attribution before classroom review.
+      - Launch or export-preflight evidence supports environment readiness but does not prove student understanding.
+    observable_behaviors:
+      instructor:
+        - Packages one student artifact with artifact reference, context, attribution, student explanation, and review boundary.
+        - Names what another teacher or peer should inspect by human judgment before suggesting a revision.
+      student:
+        - Explains one Alice change, the visible result after running, and one next revision.
+        - Shares enough context for peer or teacher feedback without hidden implementation details.
+      system_or_artifact:
+        - Share packet includes artifact or screenshot reference, reflection, attribution or classroom context, and human review note.
+    agentic_test_prompt: >-
+      Create a shareable classroom evidence packet for one student Alice artifact. Include artifact or screenshot reference, the student Alice change, visible run result, attribution or classroom context, one student-owned revision, and a human review boundary.
+    acceptance_probes:
+      - Packet includes artifact reference, student explanation, visible run result, attribution or classroom context, and next revision.
+      - Review note separates environment evidence from student learning evidence.
+      - Feedback starts from observable artifact behavior and student explanation.
+    avoid:
+      - Hidden code inspection, automatic creative scoring, learner-world grading, or claims of complete Alice coverage.
   - id: hour-of-code-studio-kickoff
     origin: existing-alice-resource
     coverage: [setup, lessons, world-creation, run-debug, classroom-use]
