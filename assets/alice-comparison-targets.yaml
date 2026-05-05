@@ -12,7 +12,11 @@ targets:
     label: Modernized Alice
     description: Modernized Alice checkout used as the comparison target for smoke evidence.
     alice_home_env: ALICE_MODERNIZED_HOME
+    required_paths:
+      - tweedle-lang/Grammar/TweedleLexer.g4
+      - tweedle-lang/Grammar/TweedleParser.g4
     metadata:
       target_kind: candidate
     notes:
       - Set ALICE_MODERNIZED_HOME or pass --modernized-home before executing a comparison.
+      - Initialize the tweedle-lang submodule before executing a comparison.

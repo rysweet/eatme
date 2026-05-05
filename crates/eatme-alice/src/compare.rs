@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod scorecard;
@@ -47,6 +47,8 @@ pub struct AliceTargetDefinition {
     #[serde(default)]
     pub alice_home_env: Option<String>,
     #[serde(default)]
+    pub required_paths: Vec<PathBuf>,
+    #[serde(default)]
     pub metadata: BTreeMap<String, String>,
     #[serde(default)]
     pub notes: Vec<String>,
@@ -78,6 +80,7 @@ pub struct ComparisonTargetRun {
     pub metadata: BTreeMap<String, String>,
     pub notes: Vec<String>,
     pub alice_home_env: Option<String>,
+    pub required_paths: Vec<String>,
     pub resolved_alice_home: Option<String>,
     pub alice_home_source: Option<String>,
     pub run_id: String,
@@ -134,8 +137,11 @@ pub fn read_target_registry(path: &Path) -> Result<AliceTargetRegistry> {
             registry.schema_version
         );
     }
-    for target_id in registry.targets.keys() {
+    for (target_id, target) in &registry.targets {
         validate_id("target id", target_id)?;
+        for required_path in &target.required_paths {
+            validate_required_path(target_id, required_path)?;
+        }
     }
     Ok(registry)
 }
@@ -218,6 +224,11 @@ fn run_target(
         metadata: target.metadata.clone(),
         notes: target.notes.clone(),
         alice_home_env: target.alice_home_env.clone(),
+        required_paths: target
+            .required_paths
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect(),
         resolved_alice_home: home.as_ref().map(|(path, _)| path.display().to_string()),
         alice_home_source: home.as_ref().map(|(_, source)| source.clone()),
         run_id: target_run_id.clone(),
@@ -250,6 +261,20 @@ fn run_target(
         );
         return Ok(run);
     };
+
+    let missing_paths = missing_required_paths(&alice_home, &target.required_paths);
+    if !missing_paths.is_empty() {
+        finish_run(
+            &mut run,
+            "blocked",
+            format!(
+                "target is missing required paths under Alice home: {}",
+                missing_paths.join(", ")
+            ),
+            Some("target_required_path_missing".into()),
+        );
+        return Ok(run);
+    }
 
     let target_options = LaunchSmokeOptions {
         alice_home,
@@ -313,6 +338,14 @@ fn resolve_alice_home(
             }
         })
     })
+}
+
+fn missing_required_paths(alice_home: &Path, required_paths: &[PathBuf]) -> Vec<String> {
+    required_paths
+        .iter()
+        .filter(|path| !alice_home.join(path).exists())
+        .map(|path| path.display().to_string())
+        .collect()
 }
 
 fn finish_run(
@@ -423,6 +456,20 @@ fn validate_id(label: &str, value: &str) -> Result<()> {
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
     {
         bail!("{label} {value:?} must be kebab-case");
+    }
+    Ok(())
+}
+
+fn validate_required_path(target_id: &str, path: &Path) -> Result<()> {
+    if path.as_os_str().is_empty()
+        || path
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        bail!(
+            "target {target_id:?} required_paths entry {:?} must be a relative path inside Alice home",
+            path
+        );
     }
     Ok(())
 }
