@@ -1,8 +1,8 @@
 use super::{LessonSessionContractCheck, check_lesson_session_contract};
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::Serialize;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 const FIRST_LESSON_SCENARIO_ID: &str = "first-lessons-real-ui-actions";
 
@@ -226,32 +226,34 @@ fn inspect_target_evidence(
     let mut ui_action_contract_readable = false;
 
     if let Some(path) = &ui_action_contract_path {
-        let resolved = resolve_artifact_path(manifest_path, path);
-        match fs::read_to_string(&resolved) {
-            Ok(text) => match serde_json::from_str::<serde_json::Value>(&text) {
-                Ok(contract) => {
-                    ui_action_contract_readable = true;
-                    inspect_ui_action_contract(role, &contract, issues);
-                    required_actions = action_ids(&contract);
-                    missing_required_actions = REQUIRED_UI_ACTION_IDS
-                        .iter()
-                        .filter(|id| !required_actions.iter().any(|action| action == **id))
-                        .map(|value| (*value).to_string())
-                        .collect();
-                    for action in &missing_required_actions {
-                        issues.push(format!(
-                            "{role} ui-action-contract.json is missing required action {action:?}"
-                        ));
+        match resolve_artifact_path(manifest_path, path) {
+            Ok(resolved) => match fs::read_to_string(&resolved) {
+                Ok(text) => match serde_json::from_str::<serde_json::Value>(&text) {
+                    Ok(contract) => {
+                        ui_action_contract_readable = true;
+                        inspect_ui_action_contract(role, &contract, issues);
+                        required_actions = action_ids(&contract);
+                        missing_required_actions = REQUIRED_UI_ACTION_IDS
+                            .iter()
+                            .filter(|id| !required_actions.iter().any(|action| action == **id))
+                            .map(|value| (*value).to_string())
+                            .collect();
+                        for action in &missing_required_actions {
+                            issues.push(format!(
+                                "{role} ui-action-contract.json is missing required action {action:?}"
+                            ));
+                        }
                     }
-                }
+                    Err(error) => issues.push(format!(
+                        "{role} ui-action-contract.json is not valid JSON: {error}"
+                    )),
+                },
                 Err(error) => issues.push(format!(
-                    "{role} ui-action-contract.json is not valid JSON: {error}"
+                    "{role} ui-action-contract.json could not be read at {}: {error}",
+                    resolved.display()
                 )),
             },
-            Err(error) => issues.push(format!(
-                "{role} ui-action-contract.json could not be read at {}: {error}",
-                resolved.display()
-            )),
+            Err(error) => issues.push(format!("{role} ui-action-contract.path is unsafe: {error}")),
         }
     } else {
         issues.push(format!(
@@ -372,18 +374,63 @@ fn action_ids(contract: &serde_json::Value) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> PathBuf {
+fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<PathBuf> {
     let path = PathBuf::from(artifact_path);
-    if path.is_absolute() || path.exists() {
-        return path;
+    if path.as_os_str().is_empty() {
+        bail!("artifact path must not be empty");
     }
+    let evidence_root = comparison_evidence_root(manifest_path);
+
+    if path.is_absolute() {
+        let artifact = path
+            .canonicalize()
+            .with_context(|| format!("resolving artifact path {}", path.display()))?;
+        let root = evidence_root.canonicalize().with_context(|| {
+            format!(
+                "resolving comparison evidence root {}",
+                evidence_root.display()
+            )
+        })?;
+        if !artifact.starts_with(&root) {
+            bail!(
+                "absolute artifact path {} must stay under comparison evidence root {}",
+                artifact.display(),
+                root.display()
+            );
+        }
+        return Ok(artifact);
+    }
+
+    reject_unsafe_relative_path(&path)?;
     if let Some(parent) = manifest_path.parent() {
-        for ancestor in parent.ancestors() {
-            let candidate = ancestor.join(&path);
-            if candidate.exists() {
-                return candidate;
-            }
+        let candidate = parent.join(&path);
+        if candidate.exists() {
+            return Ok(candidate);
         }
     }
-    path
+    let candidate = evidence_root.join(&path);
+    if candidate.exists() {
+        return Ok(candidate);
+    }
+    Ok(candidate)
+}
+
+fn comparison_evidence_root(manifest_path: &Path) -> PathBuf {
+    let parent = manifest_path.parent().unwrap_or_else(|| Path::new("."));
+    for ancestor in parent.ancestors() {
+        if ancestor.file_name().and_then(|name| name.to_str()) == Some("comparisons") {
+            return ancestor.parent().unwrap_or(parent).to_path_buf();
+        }
+    }
+    parent.to_path_buf()
+}
+
+fn reject_unsafe_relative_path(path: &Path) -> Result<()> {
+    if path
+        .components()
+        .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        bail!("relative artifact path must not contain parent, current, or root components");
+    }
+    Ok(())
 }

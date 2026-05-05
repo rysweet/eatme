@@ -170,6 +170,27 @@ fn lesson_session_readiness_rejects_incomplete_ui_action_contract() {
     assert_contract_contains(&report.issues, "missing required action \"save-project\"");
 }
 
+#[test]
+fn lesson_session_readiness_rejects_unsafe_ui_action_contract_path() {
+    let root = unique_test_dir("unsafe-action-contract-path-check");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let mut value: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    value["targets"]["baseline"]["launch_manifest"]["ui_action_contract"]["path"] =
+        serde_json::json!("../../outside-ui-action-contract.json");
+    fs::write(
+        &manifest_path,
+        serde_json::to_string_pretty(&value).unwrap(),
+    )
+    .unwrap();
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_contract_contains(&report.issues, "ui-action-contract.path is unsafe");
+    assert_contract_contains(&report.issues, "must not contain parent");
+}
+
 fn write_first_lesson_manifest(root: &Path) -> AliceComparisonManifest {
     let registry_path = root.join("targets.yaml");
     fs::create_dir_all(root).unwrap();
