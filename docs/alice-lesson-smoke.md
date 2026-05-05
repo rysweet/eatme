@@ -6,7 +6,7 @@ smoke harness. A lane does not introduce its own launcher; it passes a scenario
 id to the same packaging, Xvfb, Java process, screenshot, log, and manifest path
 used by the baseline launch smoke, then records that id in the run manifest.
 
-## Desktop lane roster
+## Committed desktop lane roster
 
 | Lane | Role | Runtime contract |
 | --- | --- | --- |
@@ -33,6 +33,15 @@ desktop harness can reach a smoke-ready Alice session for resource-grounded path
 before agentic instructor/student evaluation is trusted. The UI action and class
 portability lanes intentionally add evidence contracts around the launch smoke
 instead of pretending the launch smoke already performs those user actions.
+
+The outside-in Alice QA expansion commits these additional desktop lanes:
+
+| Lane | Role | Runtime contract |
+| --- | --- | --- |
+| `setup-support-lab-readiness` | IT/setup support smoke | Gate install, Java, graphics, storage, account, and fallback readiness on real launch evidence. |
+| `alice-2-migration-bridge` | Alice 2 migration smoke | Gate Alice 2 to Alice 3 lesson mapping on real launch evidence and visible student outcomes. |
+| `vr-player-comfort-playtest` | VR/player comfort smoke | Gate comfort, orientation, discoverability, and desktop fallback claims on recorded availability evidence. |
+| `model-texture-import-checkpoint` | Model/texture import smoke | Gate source, license, scale, orientation, texture visibility, and fallback claims on explicit evidence. |
 
 ## What the desktop lanes verify
 
@@ -82,6 +91,13 @@ recorded. If real VR is unavailable, evidence must state
 camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
 outside-in and evidence-based instead of silently skipping unavailable hardware.
 
+The expanded instructor/student outside-in lanes use the same rule. Real Alice
+execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
+manifest proves the selected lane reached a smoke-ready desktop session; it does
+not replace the scenario-specific readiness checklist, migration map, comfort
+notes, import review, fallback artifact, or student reflection required by the
+YAML contract.
+
 ## Scenario assets
 
 Canonical desktop lane scenarios live under:
@@ -120,13 +136,22 @@ Runtime behavior is intentionally narrower than the YAML contracts:
 supplies the manifest `scenario_id` and run-directory namespace; asset
 validation separately checks that the YAML contract remains well-formed.
 
+The expanded canonical scenario files include:
+
+```text
+assets/scenarios/eatme/setup-support-lab-readiness.yaml
+assets/scenarios/eatme/alice-2-migration-bridge.yaml
+assets/scenarios/eatme/vr-player-comfort-playtest.yaml
+assets/scenarios/eatme/model-texture-import-checkpoint.yaml
+```
+
 Gadugi-compatible adapters live under:
 
 ```text
 assets/scenarios/gadugi/
 ```
 
-The gadugi adapters for these lanes are:
+The gadugi adapters for the committed lanes are:
 
 ```text
 assets/scenarios/gadugi/building-a-scene-first-world.yaml
@@ -153,6 +178,15 @@ management, Swing/Java launch details, screenshot capture, log capture, or
 process lifecycle. The additional
 `assets/scenarios/gadugi/validation-failure-exit-code.yaml` regression adapter
 covers the asset-validation exit-code contract without launching Alice.
+
+Generated adapters for the expanded canonical files are committed at:
+
+```text
+assets/scenarios/gadugi/setup-support-lab-readiness.yaml
+assets/scenarios/gadugi/alice-2-migration-bridge.yaml
+assets/scenarios/gadugi/vr-player-comfort-playtest.yaml
+assets/scenarios/gadugi/model-texture-import-checkpoint.yaml
+```
 
 ## Validate assets
 
@@ -201,8 +235,8 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-For any other lesson lane, use the same command shape with one of the
-scenario ids above and a matching descriptive run id.
+For any other committed lesson lane, use the same command shape with one of the
+committed scenario ids above and a matching descriptive run id.
 
 `ALICE_HOME` must point at the Alice source checkout to package and launch. A
 typical local value is:
@@ -337,7 +371,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Manifest schema version. |
-| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `first-lessons-real-ui-actions`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `hour-of-code-studio-kickoff`, `starter-project-open-save-export-preflight`, `vr-camera-locomotion-journey`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `mythic-choice-event-tree`, or `vr-camera-perspective-tour`. |
+| `scenario_id` | Scenario selected for the run, such as `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `first-lessons-real-ui-actions`, `game-score-timer-win-lose-loop`, `modified-class-portability`, `hour-of-code-studio-kickoff`, `starter-project-open-save-export-preflight`, `vr-camera-locomotion-journey`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `mythic-choice-event-tree`, `vr-camera-perspective-tour`, `setup-support-lab-readiness`, `alice-2-migration-bridge`, `vr-player-comfort-playtest`, or `model-texture-import-checkpoint`. |
 | `run_id` | Caller-provided run id. |
 | `alice_home` | Alice checkout used for packaging and launch. |
 | `alice_git_commit` | Alice source commit when available. |

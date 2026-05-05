@@ -5,8 +5,8 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 ## Asset files
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative scenarios.
-- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, and instructor agentic flows.
-- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters that invoke eatme CLI behavior for deterministic checks, manifest evidence, desktop preflights, agentic review behavior for instructor flows, and CLI contracts such as validation exit codes.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player lanes, and instructor agentic flows.
+- `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters generated from canonical eatme scenarios, plus hand-authored CLI regression contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
 
 ## How to use with agentic tests
@@ -98,12 +98,18 @@ editable by non-coders:
 - `data-state-card` — variables, data types, arrays, and visible state evidence.
 - `interactive-playtest-card` — trigger, state/condition, feedback, and peer revision.
 - `camera-vr-fallback-card` — camera/VR perspective with non-VR classroom fallback.
+- `setup-migration-readiness-card` — setup blockers and Alice 2 migration bridges with learner-safe fallback evidence.
+- `import-fallback-checkpoint-card` — responsible model/texture provenance, visual checks, and fallback asset evidence.
 
 ## Constituency coverage
 
 `constituency_coverage` in `assets/personas/alice-user-crew.yaml` is validated so
-non-coder editors can add or revise personas/scenarios without touching Rust. It
-requires persona and scenario references for:
+non-coder editors can add or revise personas/scenarios without touching Rust. The
+references are validated against the persona crew's own scenario inventory; they
+are coverage markers and do not automatically mean a matching file already exists
+under `assets/scenarios/eatme/`.
+
+It requires persona and scenario references for:
 
 | Constituency | Persona | Scenario |
 | --- | --- | --- |
@@ -116,7 +122,13 @@ requires persona and scenario references for:
 | Alice 2 migration users | `alice-2-migration-mentor` | `alice-2-migration-bridge` |
 | Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop` |
 
-## Core scenario coverage
+## Persona-crew scenario coverage
+
+The following ids are scenario references inside
+`assets/personas/alice-user-crew.yaml`. Some are also committed standalone
+scenario assets under `assets/scenarios/eatme/`; others are design-forward
+coverage markers that should become standalone assets as the outside-in Alice QA
+expansion is built.
 
 | Coverage area | Scenario IDs |
 | --- | --- |
@@ -151,7 +163,17 @@ contracts.
 | `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window and fails with `ui_action_automation_unimplemented` until object placement, code editing, running, and saving are automated. |
 | `modified-class-portability` | Class portability contract requiring before-export, destination-import, and after-import behavior evidence before a shared modified class is trusted. |
 
-Each scenario routes runtime through
+Committed outside-in Alice QA scenario assets and generated Gadugi adapters now
+include:
+
+| Scenario ID | User-facing outcome |
+| --- | --- |
+| `vr-player-comfort-playtest` | VR/player comfort lane for orientation, locomotion comfort, discoverability, peer feedback, and desktop fallback evidence. |
+| `model-texture-import-checkpoint` | Model/texture import lane for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
+| `setup-support-lab-readiness` | IT/setup-support lane for install, Java, graphics, storage, accounts, and fallback readiness. |
+| `alice-2-migration-bridge` | Migration lane that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
+
+Each committed standalone scenario routes runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
 and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
 the user outcome agents must judge; the launch smoke provides deterministic
@@ -161,7 +183,7 @@ export/import automation.
 ## Instructor agentic flow assets
 
 Editable eatme + gadugi agentic-flow assets cover the instructor goals the
-Alice modernization lane should pressure first:
+Alice modernization lane pressures first:
 
 | Scenario ID | Instructor goal | Grounding |
 | --- | --- | --- |
@@ -171,7 +193,17 @@ Alice modernization lane should pressure first:
 | `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
 
-Each asset exposes `resource_basis`, `agentic_test_prompt`,
+Committed instructor/student flow assets now include these additional outside-in
+lanes:
+
+| Scenario ID | Instructor goal | Grounding |
+| --- | --- | --- |
+| `setup-support-lab-readiness` | Prepare a lab readiness runbook with explicit dependency, graphics, storage, and fallback evidence. | Alice 3 setup/download; Alice resources overview. |
+| `alice-2-migration-bridge` | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
+| `vr-player-comfort-playtest` | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
+| `model-texture-import-checkpoint` | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
+
+Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected
 agentic outputs as YAML. The paired gadugi adapters run asset validation and an
 `agentic_test` step instead of owning Alice desktop runtime details.

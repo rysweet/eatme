@@ -49,12 +49,12 @@ Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
 and any hand-authored Gadugi regression scenarios.
 
-The committed feature inventory has 45 scenario YAML files:
+The current committed inventory has 53 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
-| Canonical eatme scenarios | 22 |
-| Generated Gadugi adapters | 22 |
+| Canonical eatme scenarios | 26 |
+| Generated Gadugi adapters | 26 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
@@ -65,12 +65,17 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 45'
+    - '"scenario_asset_count": 53'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
 they assert the relevant instructor scenario id instead of embedding
 `scenario_asset_count`.
+
+The outside-in Alice QA expansion adds four canonical scenarios and their four
+generated Gadugi adapters, so the committed inventory is 53 scenario YAML files:
+26 canonical eatme scenarios, 26 generated Gadugi adapters, and 1 hand-authored
+Gadugi regression scenario.
 
 When scenario assets are added, removed, or renamed, the generated adapters must
 be regenerated so committed expectations match the discovered inventory. For
@@ -251,14 +256,14 @@ The Rust asset validation and generator commands do not require Node. Keeping
 
 ### Valid generated count
 
-When `assets/scenarios/` contains 45 scenario YAML files, validation output
+For the current 53-file inventory, validation output
 includes:
 
 ```json
 {
   "schema_version": "eatme.assets/validation/v1",
   "passed": true,
-  "scenario_asset_count": 45,
+  "scenario_asset_count": 53,
   "errors": []
 }
 ```
@@ -269,7 +274,7 @@ count:
 ```yaml
 stdout_contains:
   - '"passed": true'
-  - '"scenario_asset_count": 45'
+  - '"scenario_asset_count": 53'
 ```
 
 ### Stale adapter check

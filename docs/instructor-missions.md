@@ -52,6 +52,39 @@ Current instructor mission assets include:
 | `instructor-student-outcomes-rubric` | Rubric for concept, creativity, process, and reflection |
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 
+The outside-in Alice QA expansion commits these instructor/student lanes as
+canonical eatme scenarios with generated Gadugi adapters:
+
+| Scenario id | Outcome |
+| --- | --- |
+| `setup-support-lab-readiness` | Lab install, graphics, storage, access, and fallback readiness evidence |
+| `alice-2-migration-bridge` | Alice 2 lesson intent mapped to Alice 3 workflows and visible student evidence |
+| `vr-player-comfort-playtest` | Instructor-ready VR/player comfort playtest with non-VR classroom fallback |
+| `model-texture-import-checkpoint` | Import checkpoint for source, license, scale, orientation, texture visibility, and fallback assets |
+
+## Instructor scenario coverage
+
+Instructor-facing scenarios pressure Alice modernization through classroom
+decisions a teacher or support lead can verify. Committed instructor-facing
+scenario assets currently cover:
+
+| Scenario id | Instructor persona | Classroom outcome |
+| --- | --- | --- |
+| `instructor-exercise-builder` | `exercise-forger` | Exercise plan with one concept focus, scaffolded entry, learner choice, stretch path, and visible evidence. |
+| `instructor-lesson-materials-remix` | `curriculum-pathway-designer`, `teacher-community-curator` | Teacher plan, student handout, and exit ticket derived from Alice.org resources. |
+| `instructor-alice-concept-map` | `concept-cartographer` | Alice actions mapped to transferable CS vocabulary and misconception checks. |
+| `instructor-student-outcomes-rubric` | `assessment-curator` | Rubric that scores concept evidence, creativity, process, reflection, and accessibility. |
+| `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
+
+Committed outside-in Alice expansion lanes add these instructor decisions:
+
+| Scenario id | Instructor persona | Classroom outcome |
+| --- | --- | --- |
+| `setup-support-lab-readiness` | `setup-support-specialist` | Lab readiness runbook separating install, Java, graphics, storage, account, and fallback responsibilities. |
+| `alice-2-migration-bridge` | `alice-2-migration-mentor` | Migration bridge that preserves Alice 2 lesson intent while requiring Alice 3 evidence. |
+| `vr-player-comfort-playtest` | `workshop-facilitator`, `classroom-orchestrator` | Short studio playtest with comfort checkpoints, helpers, share-out, and desktop fallback. |
+| `model-texture-import-checkpoint` | `studio-facilitator`, `assessment-curator` | Import review that accepts responsible fallbacks instead of requiring one third-party model. |
+
 ## Mission design contract
 
 An instructor mission should include:
@@ -85,6 +118,8 @@ An instructor mission should include:
 4. If the mission depends on a real Alice lane, run the relevant launch smoke:
 
    ```bash
+   export NODE_OPTIONS=--max-old-space-size=32768
+
    EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
      --alice-home "${ALICE_HOME}" \
      --scenario building-a-scene-first-world \
@@ -97,6 +132,20 @@ An instructor mission should include:
 5. Use the mission's acceptance probes and rubric to evaluate the instructor
    output.
 
+For expanded outside-in coverage, choose the launch-smoke scenario that matches
+the instructor decision being prepared:
+
+| Instructor decision | Scenario id |
+| --- | --- |
+| Can this lab start Alice with the required desktop dependencies and fallbacks? | `setup-support-lab-readiness` |
+| Can this Alice 2 lesson be taught as an Alice 3 workflow without losing learning intent? | `alice-2-migration-bridge` |
+| Can students test VR comfort and still complete the lesson without a headset? | `vr-player-comfort-playtest` |
+| Can imported models/textures be reviewed responsibly with a fallback asset? | `model-texture-import-checkpoint` |
+
+Real Alice evidence stays explicit and gated. CI can validate assets and Gadugi
+generation without launching Alice; local or lab preflight runs opt in with
+`EATME_REAL_ALICE=1`.
+
 ## Good instructor outputs
 
 A good instructor mission output is concrete enough to run in a classroom and
@@ -106,4 +155,3 @@ setup or hardware is unavailable.
 
 Avoid outputs that depend on exact UI coordinates, hidden implementation
 details, or visual polish alone.
-
