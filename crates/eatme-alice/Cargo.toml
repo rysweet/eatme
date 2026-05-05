@@ -10,6 +10,7 @@ anyhow.workspace = true
 eatme-core = { path = "../eatme-core" }
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 
 [dev-dependencies]
 eatme-test-support = { path = "../eatme-test-support" }

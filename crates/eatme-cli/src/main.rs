@@ -1,8 +1,9 @@
 use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
-    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies, discover_alice,
-    package_alice, run_launch_smoke,
+    AliceComparisonOptions, LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions,
+    check_dependencies, discover_alice, package_alice, run_launch_smoke,
+    run_launch_smoke_comparison,
 };
 use eatme_core::RealCommandRunner;
 use std::env;
@@ -49,6 +50,7 @@ enum AliceCommand {
     Discover(AliceHomeArgs),
     Package(PackageArgs),
     LaunchSmoke(LaunchSmokeArgs),
+    CompareLaunchSmoke(CompareLaunchSmokeArgs),
 }
 
 #[derive(Args)]
@@ -113,6 +115,38 @@ struct LaunchSmokeArgs {
     scenario: String,
     #[arg(long)]
     starter_project: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct CompareLaunchSmokeArgs {
+    #[arg(long, default_value = "assets/alice-comparison-targets.yaml")]
+    registry: PathBuf,
+    #[arg(long, default_value = "baseline")]
+    baseline_target: String,
+    #[arg(long, default_value = "modernized")]
+    modernized_target: String,
+    #[arg(long)]
+    baseline_home: Option<PathBuf>,
+    #[arg(long)]
+    modernized_home: Option<PathBuf>,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, default_value = "runs")]
+    runs_dir: PathBuf,
+    #[arg(long, default_value_t = 120)]
+    timeout: u64,
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    no_memory: bool,
+    #[arg(long)]
+    offline_package: bool,
+    #[arg(long, default_value = "real-alice-launch-smoke")]
+    scenario: String,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
+    #[arg(long)]
+    execute: bool,
 }
 
 fn main() -> Result<()> {
@@ -181,6 +215,31 @@ fn main() -> Result<()> {
                 if let Some(category) = manifest.failure_category {
                     bail!("launch smoke failed: {category}");
                 }
+            }
+            AliceCommand::CompareLaunchSmoke(args) => {
+                if args.execute {
+                    ensure_real_alice_gate(&args.scenario)?;
+                }
+                let mut scenario = LaunchSmokeScenario::new(args.scenario);
+                if let Some(starter_project) = args.starter_project {
+                    scenario = scenario.with_starter_project(starter_project);
+                }
+                let manifest = run_launch_smoke_comparison(&AliceComparisonOptions {
+                    registry_path: args.registry,
+                    baseline_target: args.baseline_target,
+                    modernized_target: args.modernized_target,
+                    baseline_home_override: args.baseline_home,
+                    modernized_home_override: args.modernized_home,
+                    scenario,
+                    run_id: args.run_id,
+                    runs_dir: args.runs_dir,
+                    timeout_seconds: args.timeout,
+                    json: args.json,
+                    no_memory: args.no_memory,
+                    offline_package: args.offline_package,
+                    execute: args.execute,
+                })?;
+                print_result(args.json, &manifest)?;
             }
         },
     }

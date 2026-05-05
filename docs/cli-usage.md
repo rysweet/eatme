@@ -19,6 +19,7 @@ for explicit caller intent and compatibility with scripts and adapters.
 | `alice discover` | Inspect an Alice checkout |
 | `alice package` | Package Alice through Maven |
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
+| `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 
 ## Validate assets
 
@@ -153,6 +154,38 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 | `--offline-package` | Package Alice in offline mode before launching. |
 
 Non-baseline scenarios fail fast unless `EATME_REAL_ALICE=1` is present.
+
+## Compare two Alice targets
+
+The comparison harness reads editable target definitions from
+`assets/alice-comparison-targets.yaml`. The first milestone can write a bounded
+manifest without invoking Alice:
+
+```bash
+cargo run -q -p eatme-cli -- alice compare-launch-smoke \
+  --run-id local-comparison \
+  --json
+```
+
+Use `--execute` only when both target homes are configured:
+
+```bash
+ALICE_BASELINE_HOME=/path/to/alice-reference \
+ALICE_MODERNIZED_HOME=/path/to/alice-candidate \
+cargo run -q -p eatme-cli -- alice compare-launch-smoke \
+  --run-id local-comparison \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package \
+  --execute
+```
+
+The output is written under
+`runs/comparisons/<scenario-id>/<run-id>/comparison-manifest.json` and includes
+target metadata, timing fields, per-target artifacts when execution is requested,
+and assertion/status differences. It does not automate creative assessment or
+grade learner worlds.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 
