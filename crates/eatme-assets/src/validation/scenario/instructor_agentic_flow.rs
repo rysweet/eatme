@@ -1,5 +1,5 @@
 use super::{
-    require_timeout_and_policy, scenario_has_unqualified_automated_grading_claim,
+    honest_boundary::scenario_has_unqualified_automated_grading_claim, require_timeout_and_policy,
     validate_acceptance_criteria, validate_rubric,
 };
 use crate::schema::EatmeScenarioAsset;

@@ -1,6 +1,6 @@
 use crate::schema::EatmeScenarioAsset;
 
-use super::scenario_contains_all_boundary_phrases;
+use super::honest_boundary::scenario_contains_all_boundary_phrases;
 
 pub(super) fn validate_real_ui_action_contract(
     scenario: &EatmeScenarioAsset,
