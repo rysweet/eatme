@@ -7,7 +7,9 @@ mod launch_ui_actions;
 pub mod package;
 pub mod scenario;
 
-pub use compare::{AliceComparisonOptions, run_launch_smoke_comparison};
+pub use compare::{
+    AliceComparisonOptions, check_lesson_session_contract, run_launch_smoke_comparison,
+};
 pub use deps::{DependencyReport, check_dependencies};
 pub use discover::{AliceDiscovery, discover_alice};
 pub use launch::{LaunchSmokeOptions, run_launch_smoke};

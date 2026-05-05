@@ -20,6 +20,7 @@ for explicit caller intent and compatibility with scripts and adapters.
 | `alice package` | Package Alice through Maven |
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
+| `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 
 ## Validate assets
 
@@ -219,6 +220,19 @@ selected scenario's instructor/student boundary explicit:
   session steps, the current `ui-action-contract.json` evidence, and the
   `action_contract_blocked_until_ui_automation` boundary until deterministic
   Alice desktop actions are implemented.
+
+Check a comparison manifest before treating it as lesson-session evidence:
+
+```bash
+cargo run -q -p eatme-cli -- alice check-lesson-session \
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local-comparison/comparison-manifest.json \
+  --json
+```
+
+The check fails when `lesson_session_contract` is missing, when its scenario does
+not match the comparison manifest, or when the first-lesson contract omits the
+open/change/run/save steps, `ui-action-contract.json` evidence, or required
+non-claims.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 

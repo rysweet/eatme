@@ -16,8 +16,10 @@ mod scorecard;
 
 pub use contract::ComparisonContract;
 use contract::comparison_contract;
-pub use lesson_session::LessonSessionComparisonContract;
 use lesson_session::lesson_session_contract;
+pub use lesson_session::{
+    LessonSessionComparisonContract, LessonSessionContractCheck, check_lesson_session_contract,
+};
 pub use scorecard::ComparisonScorecard;
 use scorecard::build_scorecard;
 
