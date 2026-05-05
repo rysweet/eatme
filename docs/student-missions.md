@@ -38,6 +38,42 @@ Student personas include:
 | `vr-player-tester` | Comfort, orientation, and fallback access |
 | `media-audio-creator` | Audio, camera, timing, captions, and media cues |
 | `model-texture-importer` | Responsible import and fallback behavior |
+| `data-detective` | Variables, data types, arrays, and visible world state |
+| `immersive-camera-director` | Camera and VR perspective with audience clarity and fallbacks |
+| `game-narrative-designer` | Small playable stories/games with choices, state, and playtest evidence |
+
+## Student scenario coverage
+
+Student-facing scenarios cover Alice modernization from visible learner outcomes,
+not internal Alice implementation details.
+
+Committed student-facing scenario assets currently include:
+
+| Scenario id | Primary student personas | Student outcome |
+| --- | --- | --- |
+| `building-a-scene-first-world` | `curious-novice`, `creative-storyteller` | Build a small world, predict audience focus, run Alice, revise one visible scene choice. |
+| `code-editor-first-run` | `curious-novice`, `reflective-debugger` | Edit code, predict the world behavior, run Alice, and explain the expected-versus-actual result. |
+| `reusable-methods-and-parameters` | `systems-puzzle-solver`, `collaborative-peer-mentor` | Use reusable behavior with a parameter and describe why reuse changed the project. |
+| `functions-as-questions-about-the-world` | `systems-puzzle-solver`, `reflective-debugger` | Treat functions as world-state questions and test answers against visible behavior. |
+| `loops-and-conditionals-mini-challenge` | `playful-tinkerer`, `reflective-debugger` | Use repetition and choice logic, then debug one surprising visible result. |
+| `events-collision-proximity-game` | `systems-puzzle-solver`, `game-narrative-designer` | Create trigger-driven feedback and test collision or proximity behavior. |
+| `game-score-timer-win-lose-loop` | `systems-puzzle-solver`, `data-detective`, `game-narrative-designer` | Connect score, timer, win/lose state, and reflection to observable game behavior. |
+| `variables-scorekeeper-timekeeper` | `data-detective`, `reflective-debugger` | Show how variables and data types change visible world state. |
+| `arrays-collection-choreography` | `data-detective`, `playful-tinkerer` | Use arrays or lists to control item order, index behavior, and boundary tests. |
+| `mythic-choice-event-tree` | `creative-storyteller`, `game-narrative-designer`, `collaborative-peer-mentor` | Build a playable story branch and revise it from peer playtest evidence. |
+| `vr-camera-locomotion-journey` | `vr-player-tester`, `immersive-camera-director`, `accessibility-advocate` | Record VR availability, camera markers, comfort notes, and desktop fallback evidence. |
+| `vr-camera-perspective-tour` | `immersive-camera-director`, `accessibility-advocate` | Design audience viewpoint and non-VR fallback communication. |
+| `modified-class-portability` | `model-texture-importer`, `reflective-debugger` | Prove a shared modified class has before-export, destination-import, and after-import behavior evidence. |
+
+Committed outside-in Alice QA expansion lanes add these student missions as
+canonical scenario assets with generated Gadugi adapters:
+
+| Scenario id | Primary student personas | Student outcome |
+| --- | --- | --- |
+| `setup-support-lab-readiness` | `collaborative-peer-mentor`, `curious-novice` | Confirm launch readiness or fallback participation without treating environment blockers as learner mistakes. |
+| `alice-2-migration-bridge` | `curious-novice`, `creative-storyteller` | Produce current Alice 3 evidence while preserving the learning intent of an older Alice 2 activity. |
+| `vr-player-comfort-playtest` | `vr-player-tester`, `accessibility-advocate` | Playtest orientation, locomotion comfort, discoverability, and fallback access without assuming headset availability. |
+| `model-texture-import-checkpoint` | `model-texture-importer`, `reflective-debugger`, `creative-storyteller` | Check imported model or texture source, license, scale, orientation, visible texture behavior, and fallback asset choice. |
 
 ## Mission rhythm
 
@@ -68,6 +104,29 @@ Good student evidence includes:
 For VR or hardware-dependent missions, evidence should state whether real
 hardware was available. If it was not, the student should use the documented
 desktop fallback instead of pretending the VR path was tested.
+
+For real Alice lesson lanes, a student or reviewer may attach the gated launch
+manifest as setup evidence:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export SCENARIO_ID=building-a-scene-first-world
+export RUN_ID=student-${SCENARIO_ID}
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario "${SCENARIO_ID}" \
+  --run-id "${RUN_ID}" \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+The manifest proves Alice reached a smoke-ready desktop session for that
+scenario. It does not replace the learner evidence: prediction, visible world
+behavior, revision, and reflection still have to be supplied by the mission.
 
 ## Example student mission
 
@@ -110,4 +169,3 @@ Student missions should not require:
 
 The mission succeeds when the learner can show evidence of thinking and visible
 Alice behavior, not when every student produces the same world.
-

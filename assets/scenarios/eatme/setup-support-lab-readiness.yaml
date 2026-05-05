@@ -1,0 +1,138 @@
+schema_version: eatme.scenario/v1
+id: setup-support-lab-readiness
+title: Setup Support Lab Readiness
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice 3 download/setup page
+    url: https://www.alice.org/get-alice/alice-3/
+    use: >-
+      Use desktop/laptop, graphics, Java/OpenGL/Linux, video-driver, and
+      Chromebook caveats as setup readiness constraints.
+  - name: Alice resources overview
+    url: https://www.alice.org/resources/
+    use: >-
+      Use resource hubs and teacher support paths as fallback planning context.
+purpose: >-
+  Prove the setup-support lab-readiness lane has a real Alice launch gate before
+  instructor and student agents trust install, graphics, storage, account, and
+  fallback handoffs.
+launcher:
+  command: alice launch-smoke
+  scenario: setup-support-lab-readiness
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - setup-support-specialist
+    - classroom-orchestrator
+  students:
+    - collaborative-peer-mentor
+    - curious-novice
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+    - lab-image-access
+    - support-ticket-system
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - lab_readiness_handoff
+    - fallback_role_plan
+acceptance_criteria:
+  - given: a lab has mixed device readiness
+    when: the setup-support-lab-readiness scenario is launched through eatme
+    then: the manifest identifies scenario_id setup-support-lab-readiness
+  - given: a device cannot launch Alice before class
+    when: setup support writes the readiness handoff
+    then: the handoff records blocker category, owner, fallback role, and retest signal without blaming the learner
+  - given: gadugi needs to exercise the lane
+    when: the generated adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+acceptance_probes:
+  - Readiness handoff separates install, graphics, storage, account, and support-owner evidence.
+  - Fallback roles keep learners participating in prediction, observation, peer support, or reflection.
+  - No probe requires private device logs, privileged paths, or exact installer screens.
+rubric:
+  - criterion: Support handoff quality
+    evidence:
+      - Each blocker has an owner, a learner-safe explanation, and a retest signal.
+      - Setup failures are separated from student code or concept mistakes.
+  - criterion: Classroom fallback quality
+    evidence:
+      - Every learner has a real launch path or a productive non-launch role.
+      - Fallback work preserves the lesson concept and evidence expectation.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes setup-support-lab-readiness in the committed scenario set
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true before real Alice desktop launch is attempted
+  - id: record-readiness-handoff
+    command: >-
+      bash -lc 'printf "readiness_fields=install,java,graphics,storage,account,fallback\nrequired_evidence=blocker-category,owner,retest-signal,learner-safe-fallback\n"'
+    evidence:
+      - readiness output names install, Java, graphics, storage, account, and fallback fields
+      - required evidence includes blocker category, owner, retest signal, and learner-safe fallback
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario setup-support-lab-readiness
+    evidence:
+      - manifest scenario_id equals setup-support-lab-readiness
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#setup-support-lab-readiness
+  personality_assets:
+    - socratic-scaffold-card
+    - debug-conference-card
+  deterministic_gate: >-
+    Run this smoke lane before asking agents to judge lab readiness, support
+    handoffs, launch blockers, or fallback participation evidence.
+  required_observables:
+    - lab readiness handoff
+    - fallback role plan
+    - learner-safe support message
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/setup-support-lab-readiness/${RUN_ID}/manifest.json
+  screenshot: runs/setup-support-lab-readiness/${RUN_ID}/screenshots/startup.png
+  log: runs/setup-support-lab-readiness/${RUN_ID}/alice.log
+  window_list: runs/setup-support-lab-readiness/${RUN_ID}/window-list.txt
+  readiness_handoff: runs/setup-support-lab-readiness/${RUN_ID}/lab-readiness-handoff.md
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly and record the blocker. Do
+  not silently skip the setup lane or treat environment failure as learner error.

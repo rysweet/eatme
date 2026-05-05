@@ -1,0 +1,135 @@
+schema_version: eatme.scenario/v1
+id: alice-2-migration-bridge
+title: Alice 2 Migration Bridge
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice resources overview
+    url: https://www.alice.org/resources/
+    use: >-
+      Use current Alice resource categories and teacher supports as the migration
+      destination for older lesson intent.
+  - name: Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use Alice 3 lessons, exercises, projects, textbooks, curriculums, how-tos,
+      and audio library as current teaching assets.
+purpose: >-
+  Prove the Alice 2 migration bridge has a real Alice 3 launch gate before agents
+  judge whether a teacher-owned Alice 2 lesson has been modernized into visible
+  Alice 3 student evidence.
+launcher:
+  command: alice launch-smoke
+  scenario: alice-2-migration-bridge
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - alice-2-migration-mentor
+    - curriculum-pathway-designer
+  students:
+    - curious-novice
+    - creative-storyteller
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+    - legacy-lesson-notes
+    - teacher-community-feedback
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - migration_bridge_card
+    - alice_3_student_evidence
+acceptance_criteria:
+  - given: Alice launch smoke dependencies are available
+    when: the alice-2-migration-bridge scenario is launched through eatme
+    then: the manifest identifies scenario_id alice-2-migration-bridge
+  - given: a teacher brings an Alice 2 activity
+    when: the migration bridge is written
+    then: it names the original learning goal, Alice 3 replacement workflow, changed vocabulary, and current visible student evidence
+  - given: gadugi needs to exercise the lane
+    when: the generated adapter runs commands for this scenario
+    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+acceptance_probes:
+  - Bridge distinguishes keep, adapt, and retire choices for legacy lesson assumptions.
+  - Student evidence is an Alice 3 world, run note, reflection, or artifact rather than nostalgia or screenshots alone.
+  - Migration guidance respects prior teacher expertise and avoids promising automatic conversion.
+rubric:
+  - criterion: Pedagogical preservation
+    evidence:
+      - The original Alice 2 learning goal is explicit.
+      - The Alice 3 activity preserves the concept through visible student evidence.
+  - criterion: Modernization clarity
+    evidence:
+      - Changed workflow and vocabulary are named in teacher-facing language.
+      - Students can explain what felt familiar and what changed.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes alice-2-migration-bridge in the committed scenario set
+  - id: record-migration-bridge
+    command: >-
+      bash -lc 'printf "migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence\nrequired_evidence=keep-adapt-retire,current-artifact,student-reflection\n"'
+    evidence:
+      - migration output names Alice 2 intent, Alice 3 workflow, vocabulary delta, and visible student evidence
+      - required evidence includes keep/adapt/retire decisions and a current artifact or reflection
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario alice-2-migration-bridge
+    evidence:
+      - manifest scenario_id equals alice-2-migration-bridge
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - manifest assertions all pass
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#alice-2-migration-bridge
+  personality_assets:
+    - socratic-scaffold-card
+    - studio-critique-card
+  deterministic_gate: >-
+    Run this smoke lane before asking agents to judge Alice 2-to-Alice 3
+    migration quality, lesson intent preservation, or current student evidence.
+  required_observables:
+    - migration bridge card
+    - Alice 3 activity evidence
+    - student reflection on familiar and changed workflow
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-2-migration-bridge/${RUN_ID}/manifest.json
+  screenshot: runs/alice-2-migration-bridge/${RUN_ID}/screenshots/startup.png
+  log: runs/alice-2-migration-bridge/${RUN_ID}/alice.log
+  window_list: runs/alice-2-migration-bridge/${RUN_ID}/window-list.txt
+  migration_bridge: runs/alice-2-migration-bridge/${RUN_ID}/migration-bridge-card.md
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
+  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not claim modernization
+  from a mocked Alice runtime or promise automatic Alice 2 project conversion.

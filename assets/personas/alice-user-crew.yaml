@@ -803,8 +803,32 @@ student_outside_in_flow_assets:
         non-VR fallback such as camera-marker tour, storyboard, or screen recording.
       scenario_ids:
         - vr-camera-perspective-tour
+        - vr-player-comfort-playtest
       evidence:
         - Perspective choice improves audience understanding and includes a fallback.
+    - id: setup-migration-readiness-card
+      editable_by: instructor-agent
+      purpose: Keep setup support and migration work learner-safe, current, and evidence-based.
+      prompt_frame: >-
+        Name the readiness or migration blocker, separate environment support from
+        learning evidence, assign an owner, and define the current Alice 3 artifact
+        or fallback role the learner can still complete.
+      scenario_ids:
+        - setup-support-lab-readiness
+        - alice-2-migration-bridge
+      evidence:
+        - Readiness or migration output names owner, fallback, current artifact evidence, and learner-safe messaging.
+    - id: import-fallback-checkpoint-card
+      editable_by: student-agent
+      purpose: Keep model and texture import work responsible, visible, and scoped to the learning goal.
+      prompt_frame: >-
+        Record the source and permission, check scale, orientation, and texture
+        visibility, name the issue if import fails, and choose a fallback asset
+        that keeps the world runnable.
+      scenario_ids:
+        - model-texture-import-checkpoint
+      evidence:
+        - Import or fallback evidence includes provenance, visual check, runnable world, and concept link.
   coverage_map:
     curiosity: [curious-novice, playful-tinkerer]
     creativity: [creative-storyteller, game-narrative-designer]

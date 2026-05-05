@@ -4,6 +4,8 @@ use std::path::Path;
 
 mod discovery;
 mod gadugi;
+#[cfg(test)]
+mod outside_in_alice_expansion_tests;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
@@ -104,7 +106,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 45);
+        assert_eq!(report.scenario_asset_count, 53);
     }
 
     #[test]
