@@ -183,9 +183,12 @@ cargo run -q -p eatme-cli -- alice compare-launch-smoke \
 
 The output is written under
 `runs/comparisons/<scenario-id>/<run-id>/comparison-manifest.json` and includes
-target metadata, timing fields, per-target artifacts when execution is requested,
-and assertion/status differences. It does not automate creative assessment or
-grade learner worlds.
+target metadata, a scorecard summary, timing fields, per-target artifacts when
+execution is requested, and assertion/status differences. In manifest-only mode,
+the scorecard marks functionality and timing as not measured. With `--execute`,
+it reports whether both targets produced matching launch-smoke functionality
+evidence and compares target durations only when both targets pass. It does not
+automate creative assessment or grade learner worlds.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 

@@ -10,6 +10,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod scorecard;
+
+pub use scorecard::ComparisonScorecard;
+use scorecard::build_scorecard;
+
 #[derive(Clone, Debug)]
 pub struct AliceComparisonOptions {
     pub registry_path: PathBuf,
@@ -60,6 +65,7 @@ pub struct AliceComparisonManifest {
     pub duration_ms: u128,
     pub comparison_manifest_path: String,
     pub targets: BTreeMap<String, ComparisonTargetRun>,
+    pub scorecard: ComparisonScorecard,
     pub diff: ComparisonDiff,
 }
 
@@ -169,6 +175,7 @@ pub fn run_launch_smoke_comparison(
     targets.insert("modernized".into(), modernized);
     let finished_at = now_ms();
     let diff = compare_status_and_assertions(&targets);
+    let scorecard = build_scorecard(options.execute, &targets, &diff);
     let manifest = AliceComparisonManifest {
         schema_version: "eatme.alice-comparison/v1".into(),
         registry_path: options.registry_path.display().to_string(),
@@ -181,6 +188,7 @@ pub fn run_launch_smoke_comparison(
         duration_ms: finished_at.saturating_sub(started_at),
         comparison_manifest_path: comparison_path.display().to_string(),
         targets,
+        scorecard,
         diff,
     };
     fs::write(&comparison_path, serde_json::to_string_pretty(&manifest)?)?;
