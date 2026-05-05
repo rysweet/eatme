@@ -64,6 +64,12 @@ Run the CLI from source:
 cargo run -q -p eatme-cli -- --help
 ```
 
+Run the CLI from a Git branch with `uvx` for outside-in PR validation:
+
+```bash
+uvx --from git+https://github.com/rysweet/eatme.git@master amplihack --help
+```
+
 For real Alice launch smoke runs, set `ALICE_HOME` to an Alice checkout and make
 sure the host has Java 21, Maven, Xvfb, `xdpyinfo`, `wmctrl`, a screenshot tool,
 and software OpenGL/Mesa support:
