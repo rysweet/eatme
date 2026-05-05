@@ -46,6 +46,14 @@ targets:
         manifest.comparison_contract.schema_version,
         "eatme.alice-comparison-contract/v1"
     );
+    assert_eq!(
+        manifest.lesson_session_contract.schema_version,
+        "eatme.alice-lesson-session-contract/v1"
+    );
+    assert_eq!(
+        manifest.lesson_session_contract.automation_status,
+        "launch_smoke_only"
+    );
     assert_contract_contains(
         &manifest.comparison_contract.inputs,
         "baseline and modernized Alice targets",

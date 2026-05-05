@@ -11,10 +11,13 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contract;
+mod lesson_session;
 mod scorecard;
 
 pub use contract::ComparisonContract;
 use contract::comparison_contract;
+pub use lesson_session::LessonSessionComparisonContract;
+use lesson_session::lesson_session_contract;
 pub use scorecard::ComparisonScorecard;
 use scorecard::build_scorecard;
 
@@ -61,6 +64,7 @@ pub struct AliceTargetDefinition {
 pub struct AliceComparisonManifest {
     pub schema_version: String,
     pub comparison_contract: ComparisonContract,
+    pub lesson_session_contract: LessonSessionComparisonContract,
     pub registry_path: String,
     pub scenario_id: String,
     pub run_id: String,
@@ -189,6 +193,7 @@ pub fn run_launch_smoke_comparison(
     let manifest = AliceComparisonManifest {
         schema_version: "eatme.alice-comparison/v1".into(),
         comparison_contract: comparison_contract(),
+        lesson_session_contract: lesson_session_contract(&options.scenario),
         registry_path: options.registry_path.display().to_string(),
         scenario_id: options.scenario.id.clone(),
         run_id: options.run_id.clone(),
@@ -486,5 +491,7 @@ fn now_ms() -> u128 {
         .as_millis()
 }
 
+#[cfg(test)]
+mod lesson_session_tests;
 #[cfg(test)]
 mod tests;

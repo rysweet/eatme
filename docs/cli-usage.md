@@ -209,6 +209,17 @@ Every comparison manifest carries `comparison_contract`, which defines:
   creation and consumption, perform creative assessment, grade student worlds,
   prove broad Alice compatibility, or prove modernization quality.
 
+Every comparison manifest also carries `lesson_session_contract`, which makes the
+selected scenario's instructor/student boundary explicit:
+
+- `real-alice-launch-smoke` is launch-readiness evidence only;
+- lesson-labeled launch smoke records the same startup evidence under the chosen
+  scenario id;
+- `first-lessons-real-ui-actions` records the required instructor/student
+  session steps, the current `ui-action-contract.json` evidence, and the
+  `action_contract_blocked_until_ui_automation` boundary until deterministic
+  Alice desktop actions are implemented.
+
 ### Outside-in evidence recipes for Alice lesson scenarios
 
 Use the baseline when the only claim is that the real Alice launcher works:
