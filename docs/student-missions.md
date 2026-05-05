@@ -65,7 +65,7 @@ Committed student-facing scenario assets currently include:
 | `vr-camera-perspective-tour` | `immersive-camera-director`, `accessibility-advocate` | Design audience viewpoint and non-VR fallback communication. |
 | `modified-class-portability` | `model-texture-importer`, `reflective-debugger` | Prove a shared modified class has before-export, destination-import, and after-import behavior evidence. |
 
-Committed outside-in Alice QA expansion lanes add these student missions as
+Committed outside-in Alice QA expansion scenarios add these student missions as
 canonical scenario assets with generated Gadugi adapters:
 
 | Scenario id | Primary student personas | Student outcome |
@@ -105,7 +105,7 @@ For VR or hardware-dependent missions, evidence should state whether real
 hardware was available. If it was not, the student should use the documented
 desktop fallback instead of pretending the VR path was tested.
 
-For real Alice lesson lanes, a student or reviewer may attach the gated launch
+For real Alice lesson scenarios, a student or reviewer may attach the gated launch
 manifest as setup evidence:
 
 ```bash
@@ -127,6 +127,33 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 The manifest proves Alice reached a smoke-ready desktop session for that
 scenario. It does not replace the learner evidence: prediction, visible world
 behavior, revision, and reflection still have to be supplied by the mission.
+
+The `first-lessons-real-ui-actions` scenario is the student Alice lesson
+scenario evidence contract for the first real Alice actions. It records a
+scenario-labeled real Alice launch path, manifest/log/window/screenshot evidence,
+Alice window
+detection, and `ui-action-contract.json` expectations for place object, edit
+procedure, run world, and save project. This is launch/action-contract evidence
+only. It is not full UI automation, not creative assessment, and not
+learner-world grading.
+
+### First lesson evidence packet
+
+A complete student packet for the first real Alice lesson scenario includes both
+machine evidence and learner evidence:
+
+| Evidence | Source | Required meaning |
+| --- | --- | --- |
+| Launch manifest | `runs/first-lessons-real-ui-actions/<run-id>/manifest.json` | Alice launched for the scenario id and reported deterministic assertions. |
+| Alice log/window/screenshot artifacts | Run artifact directory | The desktop session produced observable startup evidence. |
+| Action contract | `ui-action-contract.json` | The first object/code/run/save actions are declared for deterministic automation. |
+| Learner prediction | Student response | The learner stated expected visible behavior before running. |
+| Learner observation and revision | Student response or artifact | The learner compared actual behavior and changed one meaningful thing. |
+| Reflection | Student response | The learner explained cause and effect in their own words. |
+
+The first three rows support setup and harness claims. The last three rows are
+the mission evidence. Do not accept a launch manifest alone as proof that the
+student completed or understood the lesson.
 
 ## Example student mission
 

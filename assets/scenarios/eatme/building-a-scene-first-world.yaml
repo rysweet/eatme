@@ -7,7 +7,7 @@ resource_basis:
   - name: Alice.org Building a Scene lesson family
     url: https://www.alice.org/resources/
 purpose: >-
-  Prove that the lesson-specific smoke lane for Building a Scene First World
+  Prove that the lesson-specific smoke scenario for Building a Scene First World
   launches through the same real Alice desktop harness as the baseline launch
   smoke, then captures manifest-level evidence for downstream adapters.
 launcher:
@@ -48,9 +48,9 @@ acceptance_criteria:
     when: the building-a-scene-first-world scenario is launched through eatme
     then: the manifest identifies scenario_id building-a-scene-first-world
   - given: the harness captures desktop evidence
-    when: Alice starts under Xvfb for this lesson lane
+    when: Alice starts under Xvfb for this lesson scenario
     then: the manifest records passing assertions plus screenshot and log artifacts
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:

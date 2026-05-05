@@ -39,10 +39,10 @@ assets/personas/
 | Category | Purpose |
 | --- | --- |
 | `real-alice-launch-smoke` | Baseline deterministic Alice desktop smoke |
-| Alice lesson smoke lanes | Scenario-labeled launch readiness for Alice.org-grounded lesson paths |
+| Alice lesson smoke scenarios | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
 | Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
-Lesson smoke lanes route through:
+Lesson smoke scenarios route through:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -66,7 +66,7 @@ title: Building a Scene First World
 kind: alice_lesson_smoke
 owner: eatme
 purpose: >-
-  Prove that the lesson-specific smoke lane launches through the real Alice
+  Prove that the lesson-specific smoke scenario launches through the real Alice
   desktop harness and records scenario-labeled evidence.
 launcher:
   command: alice launch-smoke
@@ -158,3 +158,19 @@ Avoid brittle evidence:
 - screenshots judged only for visual polish
 - one-path-only instructions that prevent learner choice
 - silent fallback behavior when prerequisites are missing
+
+## Outside-in evidence wording for Alice lesson scenarios
+
+When writing retcon documentation or scenario prose for real Alice lesson scenarios,
+describe the finished evidence boundary exactly:
+
+| Claim | Acceptable wording |
+| --- | --- |
+| Launch smoke | "records scenario-labeled launch manifest, log, window, screenshot, and assertion evidence" |
+| Student action path | "records an action contract for first object placement, procedure/code edit, run-world, and save-project automation" |
+| Instructor remix | "produces teacher plan, student handout, exit ticket, review prompts, and remix notes" |
+| Boundary | "not full UI automation, not creative assessment, and not learner-world grading" |
+
+Do not write that the launch smoke completes a lesson, clicks through the Alice
+UI, evaluates a creative project, or grades a learner's world unless a separate
+scenario owns that evidence and validation path.

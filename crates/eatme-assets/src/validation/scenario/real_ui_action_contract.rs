@@ -1,5 +1,9 @@
 use crate::schema::EatmeScenarioAsset;
 
+use super::honest_boundary::{
+    REAL_UI_ACTION_BOUNDARY_PHRASES, scenario_contains_all_boundary_phrases,
+};
+
 pub(super) fn validate_real_ui_action_contract(
     scenario: &EatmeScenarioAsset,
     errors: &mut Vec<String>,
@@ -24,5 +28,11 @@ pub(super) fn validate_real_ui_action_contract(
         if !mentioned {
             errors.push(format!("real UI action contract must inspect {required}"));
         }
+    }
+    if !scenario_contains_all_boundary_phrases(scenario, REAL_UI_ACTION_BOUNDARY_PHRASES) {
+        errors.push(format!(
+            "real UI action contract must state the current boundary: {}",
+            REAL_UI_ACTION_BOUNDARY_PHRASES.join(", ")
+        ));
     }
 }

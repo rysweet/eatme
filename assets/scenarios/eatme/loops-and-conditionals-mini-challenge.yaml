@@ -9,7 +9,7 @@ resource_basis:
   - name: Alice.org Alice 3 resource categories
     url: https://www.alice.org/resources/alice-3/
 purpose: >-
-  Prove that the loops-and-conditionals lesson lane launches through the real Alice desktop harness before instructor/student agents judge rule-based behavior.
+  Prove that the loops-and-conditionals lesson scenario launches through the real Alice desktop harness before instructor/student agents judge rule-based behavior.
 launcher:
   command: alice launch-smoke
   scenario: loops-and-conditionals-mini-challenge
@@ -46,7 +46,7 @@ acceptance_criteria:
   - given: the real Alice fork starts under the existing Xvfb launch-smoke path
     when: instructor/student agents use this Alice.org-grounded lesson contract
     then: agentic judgment is gated on deterministic manifest evidence before lesson reasoning
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -83,7 +83,7 @@ agentic_follow_on:
     - socratic-scaffold-card
     - prediction-observation-reflection-card
   deterministic_gate: >-
-    Run this smoke lane before asking instructor/student agents to judge whether
+    Run this smoke scenario before asking instructor/student agents to judge whether
     a learner demonstrated loops, conditionals, and testable rules through repetition plus a visible branch based on a rule.
 timeouts:
   scenario_seconds: 1800

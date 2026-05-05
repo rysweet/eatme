@@ -5,9 +5,9 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 ## Asset files
 
 - `assets/personas/alice-user-crew.yaml` — canonical editable YAML: asset shapes, constituency coverage, instructor/student personality prompt cards, persona list, core scenarios grounded in Alice resources, and 11 creative scenarios.
-- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson lanes, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player lanes, and instructor agentic flows.
+- `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson scenarios, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player scenarios, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters generated from canonical eatme scenarios, plus hand-authored CLI regression contracts such as validation exit codes.
-- `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke lanes.
+- `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke scenarios.
 
 ## How to use with agentic tests
 
@@ -18,7 +18,7 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 
 For deterministic desktop smoke coverage, use the editable scenario assets under
 `assets/scenarios/eatme/` and the `alice launch-smoke --scenario <id>` command.
-The lesson lanes are documented in
+The lesson scenarios are documented in
 [`docs/alice-lesson-smoke.md`](alice-lesson-smoke.md).
 
 For instructor modernization pressure, use the editable
@@ -26,6 +26,19 @@ For instructor modernization pressure, use the editable
 their paired `assets/scenarios/gadugi/` adapters. These flows intentionally
 stay at the natural-language prompt, acceptance probe, and rubric boundary so a
 non-coder can maintain lesson intent without touching Rust.
+
+For the first real Alice lesson scenario, use
+`assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` as the student
+launch/action-contract source of truth. It records scenario-labeled
+manifest/log/window/screenshot evidence and `ui-action-contract.json`
+expectations; it is not full UI automation, not creative assessment, and not
+learner-world grading.
+
+For instructor remix work, use
+`assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
+lesson-material/remix evidence contract. It keeps teacher plan, student handout,
+exit ticket, and review/remix probes discoverable without claiming automated
+creative grading or learner-world assessment.
 
 ## QA-team outside-in test shape
 
@@ -150,16 +163,16 @@ expansion is built.
 ## Desktop smoke and outside-in scenario assets
 
 Editable eatme + gadugi scenario assets define the deterministic desktop
-boundary for Alice.org-grounded lessons, student creative lanes, and explicit QA
+boundary for Alice.org-grounded lessons, student creative scenarios, and explicit QA
 contracts.
 
 | Scenario IDs | User-facing outcome |
 | --- | --- |
-| `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `hour-of-code-studio-kickoff` | Alice.org lesson lanes that prove the real desktop harness can start Alice before agents judge lesson intent. |
+| `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `hour-of-code-studio-kickoff` | Alice.org lesson scenarios that prove the real desktop harness can start Alice before agents judge lesson intent. |
 | `starter-project-open-save-export-preflight` | Starter-project preflight that opens the bundled project before save, reopen, or export coverage is claimed. |
-| `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state lanes for visible variables, score/time rules, arrays, item order, and boundary tests. |
-| `mythic-choice-event-tree` | Student interactive narrative lane for player triggers, state or condition checks, feedback, and alternate path playtests. |
-| `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective lanes that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |
+| `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state scenarios for visible variables, score/time rules, arrays, item order, and boundary tests. |
+| `mythic-choice-event-tree` | Student interactive narrative scenario for player triggers, state or condition checks, feedback, and alternate path playtests. |
+| `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective scenarios that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |
 | `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window and fails with `ui_action_automation_unimplemented` until object placement, code editing, running, and saving are automated. |
 | `modified-class-portability` | Class portability contract requiring before-export, destination-import, and after-import behavior evidence before a shared modified class is trusted. |
 
@@ -168,22 +181,24 @@ include:
 
 | Scenario ID | User-facing outcome |
 | --- | --- |
-| `vr-player-comfort-playtest` | VR/player comfort lane for orientation, locomotion comfort, discoverability, peer feedback, and desktop fallback evidence. |
-| `model-texture-import-checkpoint` | Model/texture import lane for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
-| `setup-support-lab-readiness` | IT/setup-support lane for install, Java, graphics, storage, accounts, and fallback readiness. |
-| `alice-2-migration-bridge` | Migration lane that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
+| `vr-player-comfort-playtest` | VR/player comfort scenario for orientation, locomotion comfort, discoverability, peer feedback, and desktop fallback evidence. |
+| `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
+| `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
+| `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
 
 Each committed standalone scenario routes runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
 and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
 the user outcome agents must judge; the launch smoke provides deterministic
 desktop evidence and does not substitute for unimplemented UI, VR, or
-export/import automation.
+export/import automation. `real-alice-launch-smoke` remains the baseline
+manifest/log/window/screenshot proof only; it is not full UI automation, not
+creative assessment, and not learner-world grading.
 
 ## Instructor agentic flow assets
 
-Editable eatme + gadugi agentic-flow assets cover the instructor goals the
-Alice modernization lane pressures first:
+Editable eatme + gadugi agentic-flow assets cover the instructor goals that
+Alice modernization work pressures first:
 
 | Scenario ID | Instructor goal | Grounding |
 | --- | --- | --- |
@@ -194,7 +209,7 @@ Alice modernization lane pressures first:
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
 
 Committed instructor/student flow assets now include these additional outside-in
-lanes:
+scenarios:
 
 | Scenario ID | Instructor goal | Grounding |
 | --- | --- | --- |

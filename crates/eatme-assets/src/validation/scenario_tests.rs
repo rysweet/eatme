@@ -207,6 +207,154 @@ fn instructor_agentic_flow_rejects_desktop_runtime_ownership() {
     );
 }
 
+#[test]
+fn lesson_smoke_rejects_overclaimed_ui_and_assessment_evidence() {
+    let mut scenario = valid_lesson_smoke("real-alice-launch-smoke");
+    scenario.purpose =
+        "Proves full UI automation, creative assessment, and learner-world grading.".into();
+    scenario.smoke_ready = Some(EatmeScenarioSmokeReady {
+        evidence: vec![
+            "full UI automation passed".into(),
+            "creative assessment completed".into(),
+            "learner-world grading completed".into(),
+        ],
+    });
+    scenario
+        .acceptance_criteria
+        .push(EatmeScenarioAcceptanceCriterion {
+            given: "a real Alice launch smoke run".into(),
+            when: "reviewers inspect the manifest".into(),
+            then: "they may treat launch smoke as full UI automation and learner-world grading"
+                .into(),
+        });
+    scenario.steps[0].evidence.push(
+        "manifest assertions prove full UI automation, creative assessment, and learner-world grading"
+            .into(),
+    );
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/real-alice-launch-smoke.yaml"),
+        &scenario,
+        Some(&persona_index_for(&scenario)),
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report.errors.iter().any(|error| {
+            error.contains("launch smoke")
+                && error.contains("full UI automation")
+                && error.contains("creative assessment")
+                && error.contains("learner-world grading")
+        }),
+        "launch-smoke validation must fail loudly when evidence overclaims the boundary: {:?}",
+        report.errors
+    );
+}
+
+#[test]
+fn lesson_smoke_rejects_overclaim_even_with_unrelated_honest_marker() {
+    let mut scenario = valid_lesson_smoke("real-alice-launch-smoke");
+    scenario.purpose =
+        "Do not claim creative assessment without proof. This run proves full UI automation."
+            .into();
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/real-alice-launch-smoke.yaml"),
+        &scenario,
+        Some(&persona_index_for(&scenario)),
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report.errors.iter().any(|error| {
+            error.contains("launch smoke") && error.contains("full UI automation")
+        }),
+        "unrelated honest markers must not hide overclaimed launch-smoke evidence: {:?}",
+        report.errors
+    );
+}
+
+#[test]
+fn real_ui_action_contract_requires_explicit_unimplemented_boundary_language() {
+    let mut scenario = valid_lesson_smoke("first-lessons-real-ui-actions");
+    scenario.kind = "alice_real_ui_action_contract".into();
+    scenario.purpose =
+        "Launches Alice and verifies a student first-lesson object/code/run/save path.".into();
+    scenario.artifacts.insert(
+        "ui_action_contract".into(),
+        "runs/first-lessons/${RUN_ID}/ui-action-contract.json".into(),
+    );
+    scenario.steps[0].id = "launch-real-ui-action-contract".into();
+    scenario.steps[0].evidence = vec![
+        "manifest assertions.real_alice_execution_evidence is present".into(),
+        "manifest assertions include specific_alice_window_detected".into(),
+        "manifest assertions include place_object_ui_action".into(),
+        "manifest assertions include edit_procedure_ui_action".into(),
+        "manifest assertions include run_world_ui_action".into(),
+        "manifest assertions include save_project_ui_action".into(),
+        "manifest assertions include ui_action_artifact_captured".into(),
+        "ui-action-contract.json exists and is non-empty".into(),
+    ];
+    scenario.unsupported_policy = "Fail loudly when prerequisites are unavailable.".into();
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml"),
+        &scenario,
+        Some(&persona_index_for(&scenario)),
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report.errors.iter().any(|error| {
+            error.contains("ui_action_automation_unimplemented")
+                && error.contains("not full UI automation")
+                && error.contains("not creative assessment")
+                && error.contains("not learner-world grading")
+        }),
+        "real UI action contracts must state the current unimplemented boundary explicitly: {:?}",
+        report.errors
+    );
+}
+
+#[test]
+fn instructor_agentic_flow_rejects_automated_creative_or_learner_world_grading_claims() {
+    let mut scenario = instructor_agentic_scenario("instructor-lesson-materials-remix");
+    scenario.purpose =
+        "Automatically grades learner worlds and creative quality for instructor materials.".into();
+    scenario.agentic_test_prompt =
+        "Produce a lesson packet and assign automated creative grades to learner worlds.".into();
+    scenario.acceptance_probes = vec![
+        "Output includes an automated creative assessment score.".into(),
+        "Output grades learner worlds without instructor review.".into(),
+    ];
+    scenario.rubric[0].evidence = vec![
+        "Automated learner-world grading is present.".into(),
+        "Creative assessment is scored by the agent.".into(),
+    ];
+    scenario.avoid = vec!["Avoid missing the automated grade.".into()];
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/instructor-lesson-materials-remix.yaml"),
+        &scenario,
+        None,
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report.errors.iter().any(|error| {
+            error.contains("instructor_agentic_flow")
+                && error.contains("automated creative grading")
+                && error.contains("learner-world assessment")
+        }),
+        "instructor lesson-material flows must reject automated grading claims: {:?}",
+        report.errors
+    );
+}
+
 #[path = "scenario/gadugi_tests.rs"]
 mod gadugi_tests;
 
@@ -323,5 +471,26 @@ fn instructor_agentic_scenario(id: &str) -> EatmeScenarioAsset {
         artifacts: BTreeMap::from([("lesson_brief".into(), "agentic://lesson-brief".into())]),
         unsupported_policy: "Fail visibly if the agent cannot read this editable asset.".into(),
         ..EatmeScenarioAsset::default()
+    }
+}
+
+fn persona_index_for(scenario: &EatmeScenarioAsset) -> PersonaReferenceIndex {
+    let personas = scenario.personas.as_ref().unwrap();
+    let instructors = personas
+        .instructors
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let students = personas.students.iter().cloned().collect::<BTreeSet<_>>();
+    let all = instructors
+        .iter()
+        .chain(students.iter())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+
+    PersonaReferenceIndex {
+        instructors,
+        students,
+        all,
     }
 }

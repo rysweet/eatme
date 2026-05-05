@@ -10,6 +10,8 @@ use std::path::Path;
 
 mod gadugi_scenario;
 use self::gadugi_scenario::validate_gadugi_scenario;
+mod honest_boundary;
+use self::honest_boundary::validate_launch_smoke_boundary_claims;
 mod instructor_agentic_flow;
 use self::instructor_agentic_flow::validate_instructor_agentic_flow;
 mod real_ui_action_contract;
@@ -268,6 +270,7 @@ fn validate_lesson_smoke(
     errors: &mut Vec<String>,
 ) {
     validate_launch_smoke_contract(scenario, errors);
+    validate_launch_smoke_boundary_claims(scenario, errors);
     if scenario.owner != "eatme" {
         errors.push("owner must be eatme".into());
     }

@@ -70,7 +70,7 @@ cargo run -q -p eatme-cli -- assets generate-gadugi \
 
 ## Adapter workflow
 
-For a lesson smoke lane, the adapter workflow is:
+For a lesson smoke scenario, the adapter workflow is:
 
 1. Validate assets.
 2. Check host dependencies.
@@ -86,6 +86,22 @@ For an instructor agentic flow, the adapter workflow is:
 3. Collect instructor-facing outputs.
 4. Evaluate acceptance probes and rubric fields.
 5. Keep the desktop launch boundary in eatme, not in Gadugi.
+
+For outside-in evidence for instructor and student Alice lesson scenarios, use
+the generated adapters as consumers of eatme's explicit contracts:
+
+| Canonical scenario | Adapter expectation |
+| --- | --- |
+| `real-alice-launch-smoke` | Run the launch smoke and inspect manifest-level launch evidence. |
+| `first-lessons-real-ui-actions` | Preserve the action-contract boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
+| `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
+
+Standard launch-smoke adapters expect command success and a `null`
+`failure_category`. The `first-lessons-real-ui-actions` adapter intentionally
+does not: it preserves `expect.exit_code: 1` and
+`"failure_category": "ui_action_automation_unimplemented"` until deterministic
+object placement, procedure editing, world running, and project saving are
+implemented in real Alice UI automation.
 
 ## Editing policy
 

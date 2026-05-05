@@ -202,7 +202,8 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
         description: format!(
-            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme commands and checks manifest-level evidence only."
+            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme commands and checks manifest-level evidence only.{}",
+            generated_boundary_note(scenario)
         ),
         version: "1.0.0".into(),
         config: GeneratedConfig {
@@ -249,6 +250,19 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     };
 
     render_yaml(adapter)
+}
+
+fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
+    let text =
+        format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
+    if text.contains("not full ui automation")
+        && text.contains("not creative assessment")
+        && text.contains("not learner-world grading")
+    {
+        " This adapter preserves the source boundary: not full UI automation, not creative assessment, and not learner-world grading."
+    } else {
+        ""
+    }
 }
 
 fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {

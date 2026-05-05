@@ -29,11 +29,12 @@ Eatme has three layers:
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
+| Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 
 ## What eatme proves
 
 Eatme proves that Alice-facing assets and adapter scenarios are coherent before
-they are used by people or agents. For real Alice smoke lanes, it also proves
+they are used by people or agents. For real Alice smoke scenarios, it also proves
 that the desktop application can be packaged, launched, observed, and reported
 through deterministic artifacts.
 
@@ -52,14 +53,30 @@ A passing launch smoke records:
 
 ## What eatme does not pretend to prove
 
-The real Alice lesson lanes are launch-smoke lanes. They prove smoke-ready
+The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
 evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
 automation, grade learner creativity, or inspect private Alice implementation
-details.
+details. The first-lesson action contract states this more explicitly: it is not
+full UI automation, not creative assessment, and not learner-world grading.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
 and which parts are evidence expectations for human or agent review.
+
+## Outside-in evidence for Alice lesson scenarios
+
+This evidence connects instructor and student Alice lesson scenarios to a real
+Alice launch path without overstating what the launch smoke proves.
+
+| Scenario | Audience | Evidence contract |
+| --- | --- | --- |
+| `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
+| `first-lessons-real-ui-actions` | Students and reviewers | Scenario-labeled launch plus Alice window detection and `ui-action-contract.json` expectations for first object/code/run/save actions. |
+| `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
+
+Use the manifest from a real Alice run as setup evidence, then use the mission
+artifact requirements to review learner or instructor work. A launch manifest is
+not a creative assessment and does not grade a learner world.
 
 ## Main workflows
 

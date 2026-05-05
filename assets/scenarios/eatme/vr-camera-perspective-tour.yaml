@@ -50,9 +50,9 @@ acceptance_criteria:
     when: the vr-camera-perspective-tour scenario is launched through eatme
     then: the manifest identifies scenario_id vr-camera-perspective-tour
   - given: VR or camera features may vary by classroom
-    when: agentic follow-on evaluates this lane
+    when: agentic follow-on evaluates this scenario
     then: it judges viewpoint intent, audience clarity, peer observation, and a non-VR fallback
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -86,7 +86,7 @@ steps:
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#vr-camera-perspective-tour
   deterministic_gate: >-
-    Run this smoke lane before asking agents to assess whether a learner used camera or VR perspective with a feasible classroom fallback.
+    Run this smoke scenario before asking agents to assess whether a learner used camera or VR perspective with a feasible classroom fallback.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

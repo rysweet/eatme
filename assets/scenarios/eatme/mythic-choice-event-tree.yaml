@@ -49,9 +49,9 @@ acceptance_criteria:
     when: the mythic-choice-event-tree scenario is launched through eatme
     then: the manifest identifies scenario_id mythic-choice-event-tree
   - given: students need playable narrative evidence
-    when: agentic follow-on evaluates this lane
+    when: agentic follow-on evaluates this scenario
     then: it judges player trigger, state or condition, feedback, and tested alternate paths
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -85,7 +85,7 @@ steps:
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#mythic-choice-event-tree
   deterministic_gate: >-
-    Run this smoke lane before asking agents to assess whether a learner built a small interactive narrative or game with visible branching.
+    Run this smoke scenario before asking agents to assess whether a learner built a small interactive narrative or game with visible branching.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

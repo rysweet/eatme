@@ -296,6 +296,89 @@ fn docs_describe_expanded_inventory_as_committed_not_planned() {
     );
 }
 
+#[test]
+fn lesson_path_evidence_contracts_stay_explicit_and_honest() {
+    let root = repository_root();
+    let student_contract = fs::read_to_string(scenario_path(
+        &root,
+        "eatme",
+        "first-lessons-real-ui-actions",
+    ))
+    .unwrap();
+    let instructor_contract = fs::read_to_string(scenario_path(
+        &root,
+        "eatme",
+        "instructor-lesson-materials-remix",
+    ))
+    .unwrap();
+    let launch_contract =
+        fs::read_to_string(scenario_path(&root, "eatme", "real-alice-launch-smoke")).unwrap();
+    let docs = [
+        root.join("docs/alice-lesson-smoke.md"),
+        root.join("docs/student-missions.md"),
+        root.join("docs/instructor-missions.md"),
+        root.join("docs/persona-assets.md"),
+        root.join("docs/index.md"),
+    ]
+    .into_iter()
+    .map(|path| fs::read_to_string(path).unwrap())
+    .collect::<Vec<_>>()
+    .join("\n");
+
+    assert_contains_all(
+        "first-lessons-real-ui-actions contract",
+        &student_contract,
+        &[
+            "scenario-labeled real Alice launch path",
+            "manifest, Alice log, window list, and startup screenshot evidence",
+            "Alice window detection",
+            "ui-action-contract.json",
+            "This is launch/action-contract evidence only.",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+        ],
+    );
+    assert_contains_all(
+        "instructor-lesson-materials-remix contract",
+        &instructor_contract,
+        &[
+            "lesson-material remix path",
+            "scenario-labeled assets",
+            "agentic probes",
+            "does not grade learner worlds",
+            "assess creativity automatically",
+            "automated creative grading",
+            "learner-world assessment",
+        ],
+    );
+    assert_contains_all(
+        "real-alice-launch-smoke contract",
+        &launch_contract,
+        &[
+            "scenario-labeled launch path",
+            "manifest/log/window/screenshot evidence",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+        ],
+    );
+    assert_contains_all(
+        "lesson evidence docs",
+        &docs,
+        &[
+            "first-lessons-real-ui-actions",
+            "instructor-lesson-materials-remix",
+            "real-alice-launch-smoke",
+            "launch/action-contract evidence only",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+            "does not grade learner worlds or assess creativity automatically",
+        ],
+    );
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -309,4 +392,21 @@ fn scenario_path(root: &Path, lane: &str, id: &str) -> PathBuf {
 fn read_eatme_scenario(path: &Path) -> EatmeScenarioAsset {
     let content = fs::read_to_string(path).unwrap();
     serde_yaml::from_str(&content).unwrap()
+}
+
+fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
+    let normalized_text = normalize_whitespace(text);
+    let missing = needles
+        .iter()
+        .filter(|needle| !normalized_text.contains(&normalize_whitespace(needle)))
+        .copied()
+        .collect::<Vec<_>>();
+    assert!(
+        missing.is_empty(),
+        "{label} is missing required evidence language: {missing:?}"
+    );
+}
+
+fn normalize_whitespace(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }

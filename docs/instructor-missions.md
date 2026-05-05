@@ -8,7 +8,7 @@ scenario assets so mission intent can change without rewriting Rust.
 
 Instructor missions help educators:
 
-- choose an Alice lesson lane
+- choose an Alice lesson scenario
 - map Alice actions to transferable programming concepts
 - prepare setup and fallback plans
 - create student-facing instructions
@@ -52,7 +52,30 @@ Current instructor mission assets include:
 | `instructor-student-outcomes-rubric` | Rubric for concept, creativity, process, and reflection |
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 
-The outside-in Alice QA expansion commits these instructor/student lanes as
+`instructor-lesson-materials-remix` is the instructor lesson-material/remix
+evidence contract. It verifies that an Alice lesson packet is represented by
+scenario-labeled assets, instructor-facing prompts, acceptance probes, and
+teacher-plan/student-handout/exit-ticket outputs. The instructor flow does not
+grade learner worlds or assess creativity automatically; those remain instructor
+judgment and classroom review tasks.
+
+### Lesson-material/remix packet
+
+The instructor remix packet is complete when it contains these reviewable
+artifacts:
+
+| Artifact | Required contents |
+| --- | --- |
+| Teacher plan | Alice resource grounding, concept focus, timing, setup/fallback notes, facilitation moves, and evidence checkpoints. |
+| Student handout | Plain-language mission, prediction prompt, build/run/revise steps, reflection prompt, and submission shape. |
+| Exit ticket | Short checks for concept vocabulary, observed behavior, revision evidence, and remaining questions. |
+| Remix notes | What changed from the source resource, why the change is classroom-safe, and what must still be judged by the instructor. |
+
+The packet may point to a real Alice launch manifest as setup evidence. It must
+not present that manifest as proof of learner understanding, creative quality, or
+world correctness.
+
+The outside-in Alice QA expansion commits these instructor/student scenarios as
 canonical eatme scenarios with generated Gadugi adapters:
 
 | Scenario id | Outcome |
@@ -76,7 +99,7 @@ scenario assets currently cover:
 | `instructor-student-outcomes-rubric` | `assessment-curator` | Rubric that scores concept evidence, creativity, process, reflection, and accessibility. |
 | `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
 
-Committed outside-in Alice expansion lanes add these instructor decisions:
+Committed outside-in Alice expansion scenarios add these instructor decisions:
 
 | Scenario id | Instructor persona | Classroom outcome |
 | --- | --- | --- |
@@ -115,7 +138,7 @@ An instructor mission should include:
    cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
    ```
 
-4. If the mission depends on a real Alice lane, run the relevant launch smoke:
+4. If the mission depends on a real Alice scenario, run the relevant launch smoke:
 
    ```bash
    export NODE_OPTIONS=--max-old-space-size=32768
