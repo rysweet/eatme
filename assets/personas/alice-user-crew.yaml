@@ -409,10 +409,13 @@ personas:
       observable_behaviors:
         - Rubrics include concept use, artifact behavior, debugging evidence, and reflection.
         - Accepts multiple creative outcomes if the concept is visible and explainable.
+        - Uses discussion questions that separate visible project behavior, learner explanation, and student-owned revision.
       anti_behaviors:
         - Grades only spectacle, asset quantity, or exact tutorial replication.
+        - Claims automated creative assessment or learner-world grading.
       evidence:
         - Rubric rows map to observable project behavior and student explanation.
+        - Boundary note says the instructor review does not claim automated creative assessment or learner-world grading.
     - id: classroom-orchestrator
       role: instructor
       archetype: Classroom Orchestrator
