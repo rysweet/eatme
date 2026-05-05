@@ -10,8 +10,11 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod contract;
 mod scorecard;
 
+pub use contract::ComparisonContract;
+use contract::comparison_contract;
 pub use scorecard::ComparisonScorecard;
 use scorecard::build_scorecard;
 
@@ -57,6 +60,7 @@ pub struct AliceTargetDefinition {
 #[derive(Clone, Debug, Serialize)]
 pub struct AliceComparisonManifest {
     pub schema_version: String,
+    pub comparison_contract: ComparisonContract,
     pub registry_path: String,
     pub scenario_id: String,
     pub run_id: String,
@@ -184,6 +188,7 @@ pub fn run_launch_smoke_comparison(
     let scorecard = build_scorecard(options.execute, &targets, &diff);
     let manifest = AliceComparisonManifest {
         schema_version: "eatme.alice-comparison/v1".into(),
+        comparison_contract: comparison_contract(),
         registry_path: options.registry_path.display().to_string(),
         scenario_id: options.scenario.id.clone(),
         run_id: options.run_id.clone(),
