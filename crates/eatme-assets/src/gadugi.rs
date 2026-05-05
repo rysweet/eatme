@@ -255,6 +255,12 @@ fn generate_gadugi_adapter_yaml_for_scenario(
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
     let text =
         format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
+    if text.contains("real alice action evidence")
+        && text.contains("opened starter project")
+        && text.contains("not complete alice coverage")
+    {
+        return " This adapter preserves the source boundary: real Alice action evidence for the opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence only; not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage.";
+    }
     if text.contains("not full ui automation")
         && text.contains("not creative assessment")
         && text.contains("not learner-world grading")

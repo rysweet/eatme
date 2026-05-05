@@ -223,6 +223,37 @@ fn missing_expansion_prompt_card_scenario_assets_fail_loudly() {
 }
 
 #[test]
+fn starter_project_preflight_contract_names_real_action_evidence_without_overclaiming() {
+    let root = repository_root();
+    let contract = fs::read_to_string(scenario_path(
+        &root,
+        "eatme",
+        "starter-project-open-save-export-preflight",
+    ))
+    .unwrap();
+
+    assert_contains_all(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &[
+            "real Alice action evidence",
+            "opened starter project",
+            "manifest/log/window/screenshot evidence",
+            "inspectable action evidence",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
+        ],
+    );
+    assert_not_contains_any(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &["lane", "lesson-path"],
+    );
+}
+
+#[test]
 fn lesson_path_evidence_contracts_stay_explicit_and_honest() {
     let root = repository_root();
     let student_contract = fs::read_to_string(scenario_path(
@@ -330,6 +361,19 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     assert!(
         missing.is_empty(),
         "{label} is missing required evidence language: {missing:?}"
+    );
+}
+
+fn assert_not_contains_any(label: &str, text: &str, needles: &[&str]) {
+    let normalized_text = normalize_whitespace(text).to_lowercase();
+    let present = needles
+        .iter()
+        .filter(|needle| normalized_text.contains(&normalize_whitespace(needle).to_lowercase()))
+        .copied()
+        .collect::<Vec<_>>();
+    assert!(
+        present.is_empty(),
+        "{label} contains non-portable wording: {present:?}"
     );
 }
 

@@ -196,6 +196,36 @@ fn generated_lesson_path_adapters_preserve_honest_boundary_language() {
     }
 }
 
+#[test]
+fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundaries() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let normalized = generated.split_whitespace().collect::<Vec<_>>().join(" ");
+
+    for required in [
+        "real Alice action evidence",
+        "opened starter project",
+        "manifest/log/window/screenshot evidence",
+        "inspectable action evidence",
+        "not full UI automation",
+        "not creative assessment",
+        "not learner-world grading",
+        "not complete Alice coverage",
+    ] {
+        assert!(
+            normalized.contains(required),
+            "{source} generated adapter must preserve {required:?}:\n{generated}"
+        );
+    }
+    for blocked in ["lane", "lesson-path"] {
+        assert!(
+            !normalized.to_lowercase().contains(blocked),
+            "{source} generated adapter must not use internal {blocked:?} shorthand:\n{generated}"
+        );
+    }
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 
