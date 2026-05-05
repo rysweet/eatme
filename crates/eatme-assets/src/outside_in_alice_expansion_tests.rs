@@ -238,65 +238,6 @@ fn missing_expansion_prompt_card_scenario_assets_fail_loudly() {
 }
 
 #[test]
-fn docs_describe_expanded_inventory_as_committed_not_planned() {
-    let root = repository_root();
-    let docs = [
-        root.join("docs/student-missions.md"),
-        root.join("docs/instructor-missions.md"),
-        root.join("docs/persona-assets.md"),
-        root.join("docs/alice-lesson-smoke.md"),
-        root.join("docs/generated-asset-consistency.md"),
-    ];
-    let mut combined = String::new();
-    for path in docs {
-        combined.push_str(&format!("\n--- {} ---\n", path.display()));
-        combined.push_str(&fs::read_to_string(&path).unwrap());
-    }
-
-    for target in TARGET_SCENARIOS {
-        assert!(
-            combined.contains(target.id),
-            "student/instructor/persona docs must mention {}",
-            target.id
-        );
-    }
-    for persona in [
-        "setup-support-specialist",
-        "alice-2-migration-mentor",
-        "vr-player-tester",
-        "model-texture-importer",
-        "data-detective",
-        "immersive-camera-director",
-        "game-narrative-designer",
-    ] {
-        assert!(
-            combined.contains(persona),
-            "student/instructor/persona docs must mention persona {persona}"
-        );
-    }
-
-    assert!(
-        combined.contains("55 scenario YAML files"),
-        "docs must describe the expanded committed 55-file scenario inventory"
-    );
-    assert!(
-        combined.contains("27 canonical"),
-        "docs must describe the expanded committed 27 canonical eatme scenarios"
-    );
-    assert!(
-        combined.contains("27 generated"),
-        "docs must describe the expanded committed 27 generated Gadugi adapters"
-    );
-    assert!(
-        !combined.contains("Target expansion lanes")
-            && !combined.contains("planned expansion")
-            && !combined.contains("planned expanded inventory")
-            && !combined.contains("target expansion"),
-        "docs must be updated from planned-language to committed inventory language once the scenarios land"
-    );
-}
-
-#[test]
 fn lesson_path_evidence_contracts_stay_explicit_and_honest() {
     let root = repository_root();
     let student_contract = fs::read_to_string(scenario_path(

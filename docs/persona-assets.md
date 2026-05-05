@@ -8,7 +8,6 @@ Editable outside-in design assets for an instructor/student Alice crew. These as
 - `assets/scenarios/eatme/*.yaml` — canonical editable eatme scenarios for the real-Alice launch smoke baseline, Alice.org-grounded lesson scenarios, desktop journey preflights, current outside-in lesson coverage, setup/migration/import/VR-player scenarios, and instructor agentic flows.
 - `assets/scenarios/gadugi/*.yaml` — gadugi-compatible adapters generated from canonical eatme scenarios, plus hand-authored CLI regression contracts such as validation exit codes.
 - `docs/alice-lesson-smoke.md` — usage, CLI, schema, configuration, and tutorial documentation for lesson smoke scenarios.
-- `docs/alice-qa-persona-scenario-coverage.md` — usage, schema contract, configuration, and examples for editable Alice QA persona-to-scenario coverage.
 
 ## How to use with agentic tests
 
@@ -41,12 +40,11 @@ lesson-material/remix evidence contract. It keeps teacher plan, student handout,
 exit ticket, and review/remix probes discoverable without claiming automated
 creative grading or learner-world assessment.
 
-For workshop facilitation coverage, the persona crew defines the
-`workshop-facilitator-live-studio` marker. Build the feature by promoting that
-marker into `assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` and
-generating the paired Gadugi adapter. See
-[Alice QA Persona-to-Scenario Coverage](alice-qa-persona-scenario-coverage.md)
-for the required contract.
+For workshop facilitation coverage, use
+`assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` and its generated
+Gadugi adapter. The scenario connects workshop facilitator personas to a
+reviewable instructor agentic flow without claiming desktop automation or
+automated grading.
 
 ## QA-team outside-in test shape
 
@@ -217,9 +215,7 @@ Alice modernization work pressures first:
 | `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
 
-The persona crew also defines these additional outside-in coverage areas. The
-workshop row is the planned promotion from persona marker to standalone
-scenario:
+The persona crew also defines these additional outside-in coverage areas:
 
 | Scenario ID | Implementation role | Instructor goal | Grounding |
 | --- | --- | --- | --- |
@@ -227,7 +223,7 @@ scenario:
 | `alice-2-migration-bridge` | Existing standalone scenario | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
 | `vr-player-comfort-playtest` | Existing standalone scenario | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
 | `model-texture-import-checkpoint` | Existing standalone scenario | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
-| `workshop-facilitator-live-studio` | Planned standalone scenario | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
+| `workshop-facilitator-live-studio` | Existing standalone scenario | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected

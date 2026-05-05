@@ -72,11 +72,6 @@ Instructor agentic generated adapters still run `assets validate --json`, but
 they assert the relevant instructor scenario id instead of embedding
 `scenario_asset_count`.
 
-The outside-in Alice QA expansion and workshop facilitator coverage add canonical
-scenarios and their generated Gadugi adapters, so the committed inventory is 55
-scenario YAML files: 27 canonical eatme scenarios, 27 generated Gadugi adapters,
-and 1 hand-authored Gadugi regression scenario.
-
 When scenario assets are added, removed, or renamed, the generated adapters must
 be regenerated so committed expectations match the discovered inventory. For
 removals and renames, remove the obsolete generated adapter file as part of the

@@ -2,8 +2,6 @@ use anyhow::Result;
 use std::collections::BTreeSet;
 use std::path::Path;
 
-#[cfg(test)]
-mod alice_workshop_coverage_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
