@@ -103,7 +103,7 @@ mod tests {
         assert!(report.passed, "{:?}", report.errors);
         assert_eq!(report.instructor_count, 11);
         assert_eq!(report.student_count, 13);
-        assert_eq!(report.core_scenario_count, 24);
+        assert_eq!(report.core_scenario_count, 25);
         assert_eq!(report.creative_scenario_count, 12);
     }
 
@@ -112,7 +112,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 61);
+        assert_eq!(report.scenario_asset_count, 63);
     }
 
     #[test]
