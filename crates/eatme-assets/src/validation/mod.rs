@@ -6,7 +6,7 @@ mod scenario;
 pub(crate) use crew::persona_reference_index;
 pub use crew::validate_persona_crew;
 pub(crate) use crew::validate_persona_crew_against_scenario_assets;
-pub(crate) use persona_discovery::{PersonaDiscovery, discover_scenario_personas};
+pub(crate) use persona_discovery::discover_scenario_personas;
 pub use scenario::validate_scenario_asset;
 pub(crate) use scenario::validate_scenario_asset_with_personas;
 

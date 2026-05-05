@@ -1,7 +1,6 @@
 use super::{
-    PersonaDiscovery, PersonaReferenceIndex, contextualize_scenario_errors,
-    discover_scenario_personas, portability, require_list, require_nonempty, validate_id,
-    validate_reference_list,
+    PersonaReferenceIndex, contextualize_scenario_errors, discover_scenario_personas, portability,
+    require_list, require_nonempty, validate_id, validate_reference_list,
 };
 use crate::report::ScenarioAssetValidationReport;
 use crate::schema::{EatmeScenarioAsset, GadugiScenarioAsset, ScenarioPersonas};
@@ -18,25 +17,24 @@ use self::real_ui_action_contract::validate_real_ui_action_contract;
 
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
     let persona_discovery = discover_scenario_personas(path)?;
-    validate_scenario_asset_inner(path, persona_discovery)
+    validate_scenario_asset_inner(
+        path,
+        persona_discovery.index.as_ref(),
+        &persona_discovery.diagnostics,
+    )
 }
 
 pub(crate) fn validate_scenario_asset_with_personas(
     path: &Path,
     persona_index: &PersonaReferenceIndex,
 ) -> Result<ScenarioAssetValidationReport> {
-    validate_scenario_asset_inner(
-        path,
-        PersonaDiscovery {
-            index: Some(persona_index.clone()),
-            diagnostics: Vec::new(),
-        },
-    )
+    validate_scenario_asset_inner(path, Some(persona_index), &[])
 }
 
 fn validate_scenario_asset_inner(
     path: &Path,
-    persona_discovery: PersonaDiscovery,
+    persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
 ) -> Result<ScenarioAssetValidationReport> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading scenario asset {}", path.display()))?;
@@ -57,8 +55,8 @@ fn validate_scenario_asset_inner(
         Ok(validate_eatme_scenario(
             path,
             &scenario,
-            persona_discovery.index.as_ref(),
-            &persona_discovery.diagnostics,
+            persona_index,
+            persona_diagnostics,
         ))
     }
 }
