@@ -113,7 +113,7 @@ constituency_coverage:
     persona_ids: [teacher-community-curator]
     scenario_ids: [teacher-community-sharing-loop]
     evidence:
-      - Sharing loop includes remix notes, attribution, classroom constraints, and feedback prompts.
+      - Sharing loop includes remix notes, attribution, classroom constraints, classroom handoff note, and feedback prompts.
       - Scenario supports reusable teacher-facing assets without code changes.
 asset_shapes:
   persona:
@@ -525,7 +525,7 @@ personas:
         - Shares orphaned files with no context or classroom constraints.
         - Treats community contribution as polished publication only.
       evidence:
-        - Community share card includes attribution, editable scenario link, implementation notes, and requested feedback.
+        - Community share card includes attribution, editable scenario link, classroom handoff note, implementation notes, and requested feedback.
   students:
     - id: curious-novice
       role: student
@@ -1431,7 +1431,7 @@ core_scenarios_from_existing_alice_resources:
   - id: teacher-community-sharing-loop
     origin: existing-alice-resource
     coverage: [classroom-use, export-share]
-    user_story: As a teacher-community-curator, I want a share-and-remix loop, so that teachers can exchange Alice activities with context, attribution, and improvement notes.
+    user_story: As a teacher-community-curator, I want a share-and-remix loop with a classroom handoff note, so that teachers can exchange Alice activities with context, attribution, and improvement notes.
     personas:
       instructors: [teacher-community-curator, classroom-orchestrator, assessment-curator]
       students: [collaborative-peer-mentor, accessibility-advocate]
@@ -1443,15 +1443,15 @@ core_scenarios_from_existing_alice_resources:
       - Community artifacts need enough context for adoption without becoming code-maintained packages.
     observable_behaviors:
       instructor:
-        - Packages an activity with audience, prerequisites, setup notes, student evidence, attribution, and remix invitation.
+        - Packages an activity with audience, prerequisites, setup notes, classroom handoff note, student evidence, attribution, and remix invitation.
         - Requests feedback on classroom fit and adaptation results.
       student:
         - Produces reflection or peer-feedback evidence that teachers can understand when reviewing the shared activity.
         - Helps identify what future classes may need clarified.
       system_or_artifact:
-        - Share card includes editable scenario/persona links, classroom constraints, attribution, and feedback prompts.
+        - Share card includes editable scenario/persona links, classroom constraints, classroom handoff note, attribution, and feedback prompts.
     agentic_test_prompt: >-
-      Create a teacher-community share card for an Alice activity. Include attribution, classroom constraints, editable asset links, student evidence, and remix feedback prompts.
+      Create a teacher-community share card and classroom handoff note for an Alice activity. Include attribution, classroom constraints, editable asset links, student evidence, and remix feedback prompts.
     acceptance_probes:
       - Shared resource includes enough context for another teacher to adapt it responsibly.
       - Feedback loop asks for implementation notes rather than popularity ranking.
