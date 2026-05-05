@@ -8,7 +8,8 @@ pub mod package;
 pub mod scenario;
 
 pub use compare::{
-    AliceComparisonOptions, check_lesson_session_contract, run_launch_smoke_comparison,
+    AliceComparisonOptions, check_lesson_session_contract, check_lesson_session_readiness,
+    run_launch_smoke_comparison,
 };
 pub use deps::{DependencyReport, check_dependencies};
 pub use discover::{AliceDiscovery, discover_alice};
