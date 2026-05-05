@@ -340,9 +340,9 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn scenario_path(root: &Path, lane: &str, id: &str) -> PathBuf {
+fn scenario_path(root: &Path, scenario_collection: &str, id: &str) -> PathBuf {
     root.join("assets/scenarios")
-        .join(lane)
+        .join(scenario_collection)
         .join(format!("{id}.yaml"))
 }
 
