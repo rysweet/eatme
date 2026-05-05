@@ -18,7 +18,7 @@ resource_basis:
     use: Layout/top/side/front views for orienting objects and camera perspective while authoring.
 purpose: >-
   Prove that a VR-inspired first-person or over-the-shoulder camera and
-  locomotion journey has an editable outside-in lane before instructor/student
+  locomotion journey has an editable outside-in scenario before instructor/student
   agents judge comfort, viewpoint, and movement evidence.
 launcher:
   command: alice launch-smoke
@@ -60,15 +60,15 @@ acceptance_criteria:
     when: the vr-camera-locomotion-journey scenario is launched through eatme
     then: the manifest identifies scenario_id vr-camera-locomotion-journey
   - given: a real VR headset or Alice Player VR execution path is not available
-    when: the lane is evaluated outside-in
+    when: the scenario is evaluated outside-in
     then: evidence explicitly records real_vr_available=false plus the required desktop camera-marker, viewpoint, and locomotion-comfort artifacts
   - given: a real VR headset or Alice Player VR execution path is available
-    when: the lane is evaluated with EATME_REAL_VR=1 and VR_HEADSET_AVAILABLE=1
+    when: the scenario is evaluated with EATME_REAL_VR=1 and VR_HEADSET_AVAILABLE=1
     then: evidence records the player/headset preflight, an exported-world or player run artifact, comfort notes, and any capture or observer log
   - given: learners choose first-person or over-the-shoulder perspective
     when: they test locomotion in the Alice world
     then: they explain how camera markers, camera moves, events, or object movement support comfort and orientation
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI, records VR preflight expectations, and inspects manifest-level evidence only
 steps:
@@ -125,7 +125,7 @@ agentic_follow_on:
     - debug-conference-card
     - creative-ownership-card
   deterministic_gate: >-
-    Run this smoke lane and record VR availability before asking instructor/student
+    Run this smoke scenario and record VR availability before asking instructor/student
     agents to judge camera perspective, locomotion comfort, viewpoint orientation,
     or VR-readiness evidence.
 timeouts:
@@ -141,6 +141,6 @@ artifacts:
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice
-  Player VR execution is unavailable, do not fail the desktop lane; record
+  Player VR execution is unavailable, do not fail the desktop scenario; record
   real_vr_available=false and require the listed camera-marker, viewpoint, and
   locomotion-comfort evidence before agentic VR claims are accepted.

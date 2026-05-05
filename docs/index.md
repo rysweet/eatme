@@ -34,7 +34,7 @@ Eatme has three layers:
 ## What eatme proves
 
 Eatme proves that Alice-facing assets and adapter scenarios are coherent before
-they are used by people or agents. For real Alice smoke lanes, it also proves
+they are used by people or agents. For real Alice smoke scenarios, it also proves
 that the desktop application can be packaged, launched, observed, and reported
 through deterministic artifacts.
 
@@ -53,7 +53,7 @@ A passing launch smoke records:
 
 ## What eatme does not pretend to prove
 
-The real Alice lesson lanes are launch-smoke lanes. They prove smoke-ready
+The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
 evidence for a scenario-labeled Alice run. They do not claim full in-lesson UI
 automation, grade learner creativity, or inspect private Alice implementation
 details. The first-lesson action contract states this more explicitly: it is not

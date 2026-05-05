@@ -39,10 +39,10 @@ assets/personas/
 | Category | Purpose |
 | --- | --- |
 | `real-alice-launch-smoke` | Baseline deterministic Alice desktop smoke |
-| Alice lesson smoke lanes | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
+| Alice lesson smoke scenarios | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
 | Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
-Lesson smoke lanes route through:
+Lesson smoke scenarios route through:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -66,7 +66,7 @@ title: Building a Scene First World
 kind: alice_lesson_smoke
 owner: eatme
 purpose: >-
-  Prove that the lesson-specific smoke lane launches through the real Alice
+  Prove that the lesson-specific smoke scenario launches through the real Alice
   desktop harness and records scenario-labeled evidence.
 launcher:
   command: alice launch-smoke

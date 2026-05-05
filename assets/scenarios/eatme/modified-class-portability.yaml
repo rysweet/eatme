@@ -63,7 +63,7 @@ acceptance_criteria:
   - given: the destination project runs after import
     when: the imported class behavior is triggered
     then: manifest, artifact, or reflection evidence confirms the same learner-visible behavior persists after import
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
 steps:
@@ -101,7 +101,7 @@ agentic_follow_on:
     - portability-studio-card
     - class-remix-transfer-card
   deterministic_gate: >-
-    Run this smoke lane before asking instructor/student agents to judge whether
+    Run this smoke scenario before asking instructor/student agents to judge whether
     a shared modified class remained behaviorally intact after import into a peer project.
 timeouts:
   scenario_seconds: 1800

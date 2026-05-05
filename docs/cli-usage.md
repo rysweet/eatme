@@ -168,7 +168,7 @@ cargo run -q -p eatme-cli -- alice launch-smoke \
   --no-memory
 ```
 
-Use the student action-contract lane when the claim includes first-lesson
+Use the student action-contract scenario when the claim includes first-lesson
 evidence for object placement, code/procedure editing, running the world, and
 saving a project:
 
@@ -186,12 +186,12 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The action-contract lane writes manifest/log/window/screenshot evidence and
+The action-contract scenario writes manifest/log/window/screenshot evidence and
 `ui-action-contract.json`. Until deterministic UI automation exists, an explicit
 `ui_action_automation_unimplemented` result is expected and should not be
 reported as passing full UI coverage.
 
-Use the instructor remix lane through asset validation and generated adapters,
+Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow
 scenario:
 

@@ -11,7 +11,7 @@ resource_basis:
   - name: Alice.org Programming in Alice lesson family
     url: https://www.alice.org/resources/lessons/programming-in-alice/
 purpose: >-
-  Prove that the Hour of Code studio kickoff lane launches through the real
+  Prove that the Hour of Code studio kickoff scenario launches through the real
   Alice desktop harness before instructor/student agents judge setup readiness,
   novice first-scene creation, first animation evidence, and reflection.
 launcher:
@@ -90,7 +90,7 @@ acceptance_criteria:
   - given: a novice student completes the first build cycle
     when: instructor/student agents inspect the result
     then: evidence includes a first scene, first animation, and cause/effect reflection
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -129,7 +129,7 @@ agentic_follow_on:
     - socratic-scaffold-card
     - prediction-observation-reflection-card
   deterministic_gate: >-
-    Run this smoke lane before asking instructor/student agents to judge whether
+    Run this smoke scenario before asking instructor/student agents to judge whether
     an Hour of Code participant moved from setup through first scene, first
     animation, evidence capture, and reflection.
 timeouts:

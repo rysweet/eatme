@@ -163,9 +163,9 @@ The Alice log and `window-list.txt` are diagnostic artifacts, not independent
 pass/fail assertions in the current harness. Agentic annotations may be attached
 later, but they do not decide pass/fail in Milestone 0.
 
-## Milestone 1: canonical assets and lesson smoke lanes
+## Milestone 1: canonical assets and lesson smoke scenarios
 
-Milestone 1 layers lesson-specific smoke lanes on top of the real Alice launch
+Milestone 1 layers lesson-specific smoke scenarios on top of the real Alice launch
 smoke harness:
 
 - `eatme-assets` validates editable persona and scenario YAML.
@@ -176,7 +176,7 @@ smoke harness:
 - Scenario YAML is validated separately; `launch-smoke` currently records the
   scenario id and run namespace but does not load YAML fields as runtime inputs.
 
-The first two lesson smoke lanes are Alice.org resource-specific:
+The first two lesson smoke scenarios are Alice.org resource-specific:
 
 - `building-a-scene-first-world`
   - resource basis: Building a Scene + Scene Editor Overview

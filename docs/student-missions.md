@@ -65,7 +65,7 @@ Committed student-facing scenario assets currently include:
 | `vr-camera-perspective-tour` | `immersive-camera-director`, `accessibility-advocate` | Design audience viewpoint and non-VR fallback communication. |
 | `modified-class-portability` | `model-texture-importer`, `reflective-debugger` | Prove a shared modified class has before-export, destination-import, and after-import behavior evidence. |
 
-Committed outside-in Alice QA expansion lanes add these student missions as
+Committed outside-in Alice QA expansion scenarios add these student missions as
 canonical scenario assets with generated Gadugi adapters:
 
 | Scenario id | Primary student personas | Student outcome |
@@ -105,7 +105,7 @@ For VR or hardware-dependent missions, evidence should state whether real
 hardware was available. If it was not, the student should use the documented
 desktop fallback instead of pretending the VR path was tested.
 
-For real Alice lesson lanes, a student or reviewer may attach the gated launch
+For real Alice lesson scenarios, a student or reviewer may attach the gated launch
 manifest as setup evidence:
 
 ```bash

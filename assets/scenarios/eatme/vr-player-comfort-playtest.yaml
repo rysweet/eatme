@@ -13,7 +13,7 @@ resource_basis:
     url: https://www.alice.org/resources/how-tos/moving-the-camera/
     use: Use camera movement and one-shot viewpoints as non-VR fallback evidence.
 purpose: >-
-  Prove the VR/player comfort playtest lane has a real Alice desktop launch gate
+  Prove the VR/player comfort playtest scenario has a real Alice desktop launch gate
   and explicit VR availability evidence before agents judge comfort,
   discoverability, orientation, and fallback access.
 launcher:
@@ -66,7 +66,7 @@ acceptance_criteria:
   - given: a player tests an interaction
     when: feedback is collected
     then: the creator records comfort signal, confusion point, discoverability cue, and one revision or justified non-change
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the generated adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 acceptance_probes:
@@ -122,7 +122,7 @@ agentic_follow_on:
     - debug-conference-card
     - creative-ownership-card
   deterministic_gate: >-
-    Run this smoke lane and record VR availability before asking agents to judge
+    Run this smoke scenario and record VR availability before asking agents to judge
     comfort, orientation, player discoverability, or non-VR fallback claims.
   required_observables:
     - VR availability record
@@ -142,4 +142,4 @@ unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice
   Player VR execution is unavailable, record real_vr_available=false and require
-  desktop fallback playtest evidence instead of silently skipping the lane.
+  desktop fallback playtest evidence instead of silently skipping the scenario.

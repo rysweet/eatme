@@ -70,7 +70,7 @@ cargo run -q -p eatme-cli -- assets generate-gadugi \
 
 ## Adapter workflow
 
-For a lesson smoke lane, the adapter workflow is:
+For a lesson smoke scenario, the adapter workflow is:
 
 1. Validate assets.
 2. Check host dependencies.

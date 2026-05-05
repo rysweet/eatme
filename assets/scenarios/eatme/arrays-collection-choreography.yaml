@@ -49,9 +49,9 @@ acceptance_criteria:
     when: the arrays-collection-choreography scenario is launched through eatme
     then: the manifest identifies scenario_id arrays-collection-choreography
   - given: students need collection evidence
-    when: agentic follow-on evaluates this lane
+    when: agentic follow-on evaluates this scenario
     then: it judges visible list/array behavior, item order, and boundary tests rather than exact syntax
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -85,7 +85,7 @@ steps:
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#arrays-collection-choreography
   deterministic_gate: >-
-    Run this smoke lane before asking agents to assess whether a learner made arrays, list items, and indexes visible in a collection-based world.
+    Run this smoke scenario before asking agents to assess whether a learner made arrays, list items, and indexes visible in a collection-based world.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

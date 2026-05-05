@@ -49,9 +49,9 @@ acceptance_criteria:
     when: the variables-scorekeeper-timekeeper scenario is launched through eatme
     then: the manifest identifies scenario_id variables-scorekeeper-timekeeper
   - given: students need state evidence
-    when: agentic follow-on evaluates this lane
+    when: agentic follow-on evaluates this scenario
     then: it judges visible state changes, data-type explanation, and score/timer rules rather than private code names
-  - given: gadugi needs to exercise the lane
+  - given: gadugi needs to exercise the scenario
     when: the gadugi adapter runs commands for this scenario
     then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
@@ -85,7 +85,7 @@ steps:
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#variables-scorekeeper-timekeeper
   deterministic_gate: >-
-    Run this smoke lane before asking agents to assess whether a learner used variables, data types, and visible state changes in a scorekeeper or timer.
+    Run this smoke scenario before asking agents to assess whether a learner used variables, data types, and visible state changes in a scorekeeper or timer.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
