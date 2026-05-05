@@ -831,10 +831,22 @@ student_outside_in_flow_assets:
         - model-texture-import-checkpoint
       evidence:
         - Import or fallback evidence includes provenance, visual check, runnable world, and concept link.
+    - id: artifact-reflection-review-card
+      editable_by: instructor-agent
+      purpose: Make student reflection after using Alice reviewable without taking over the learner artifact.
+      prompt_frame: >-
+        Ask the student to name one Alice action they used, point to the visible
+        artifact behavior it caused, describe what changed after running, and
+        choose one small revision they still own.
+      scenario_ids:
+        - student-reflection-artifact-review
+      evidence:
+        - Reflection connects one student-owned Alice action to artifact behavior, a run result, and a next revision.
   coverage_map:
     curiosity: [curious-novice, playful-tinkerer]
     creativity: [creative-storyteller, game-narrative-designer]
     experiential_learning: [curious-novice, reflective-debugger]
+    reflection_artifact_review: [reflective-debugger, collaborative-peer-mentor]
     variables_data_types_arrays: [data-detective, systems-puzzle-solver]
     games_interactive_narrative: [game-narrative-designer, collaborative-peer-mentor]
     vr_camera: [immersive-camera-director, accessibility-advocate]
@@ -1880,3 +1892,34 @@ creative_new_teaching_learning_scenarios:
       - Student explains the branch condition or event trigger.
     avoid:
       - Oversized branching trees or hidden-only outcomes.
+  - id: student-reflection-artifact-review
+    origin: creative-new
+    coverage: [lessons, run-debug, classroom-use]
+    user_story: As a reflective-debugger, I want my instructor to review my Alice artifact and reflection together, so that feedback helps me improve one learner-owned revision.
+    personas:
+      instructors: [assessment-curator, studio-facilitator]
+      students: [reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [cause and effect, debugging, revision, evidence]
+      habits: [reflection, learner ownership, plain-language explanation]
+    constraints:
+      - The review must not treat a screenshot, launch manifest, or visual polish as proof of understanding.
+      - Feedback should name one small next revision the student can still own.
+    observable_behaviors:
+      instructor:
+        - Reviews artifact behavior and learner explanation together before offering feedback.
+        - Separates concept evidence, process evidence, and next revision in plain language.
+      student:
+        - Names one Alice action they used and the visible behavior it caused.
+        - Explains what changed after running and chooses one next revision.
+      system_or_artifact:
+        - Reflection evidence card, instructor review note, and revision prompt can be edited without Rust changes.
+    agentic_test_prompt: >-
+      Create an instructor/student review scenario for an Alice artifact after the student has used Alice. Require a reflection evidence card, instructor review note, and student revision prompt. The student must explain one Alice action, the visible artifact behavior it caused, what changed after running, and one learner-owned next revision.
+    acceptance_probes:
+      - Student reflection connects one Alice action to visible artifact behavior and a run result.
+      - Instructor review uses artifact behavior and learner explanation without grading creative quality automatically.
+      - Revision prompt leaves the next change with the student and avoids hidden implementation details.
+    avoid:
+      - Full user interface automation claims, automated creative scoring, learner-world grading, complete Alice coverage, or deployed-service claims.
+      - Taking ownership of the learner artifact or replacing student reflection with instructor judgment.

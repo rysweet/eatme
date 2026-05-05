@@ -51,6 +51,7 @@ Current instructor mission assets include:
 | `instructor-alice-concept-map` | Alice action to CS vocabulary map with misconception checks |
 | `instructor-student-outcomes-rubric` | Rubric for concept, creativity, process, and reflection |
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
+| `student-reflection-artifact-review` | Review note and revision prompt for a student learning artifact plus reflection |
 
 `instructor-lesson-materials-remix` is the instructor lesson-material/remix
 evidence contract. It verifies that an Alice lesson packet is represented by
@@ -98,6 +99,7 @@ scenario assets currently cover:
 | `instructor-alice-concept-map` | `concept-cartographer` | Alice actions mapped to transferable CS vocabulary and misconception checks. |
 | `instructor-student-outcomes-rubric` | `assessment-curator` | Rubric that scores concept evidence, creativity, process, reflection, and accessibility. |
 | `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
+| `student-reflection-artifact-review` | `assessment-curator`, `studio-facilitator` | Instructor review of artifact behavior and learner explanation with one student-owned revision. |
 
 Committed outside-in Alice expansion scenarios add these instructor decisions:
 
