@@ -188,12 +188,26 @@ target-preparation problem instead of a Maven package failure.
 
 The output is written under
 `runs/comparisons/<scenario-id>/<run-id>/comparison-manifest.json` and includes
-target metadata, a scorecard summary, timing fields, per-target artifacts when
-execution is requested, and assertion/status differences. In manifest-only mode,
-the scorecard marks functionality and timing as not measured. With `--execute`,
-it reports whether both targets produced matching launch-smoke functionality
-evidence and compares target durations only when both targets pass. It does not
-automate creative assessment or grade learner worlds.
+the comparison contract, target metadata, a scorecard summary, timing fields,
+per-target artifacts when execution is requested, and assertion/status
+differences. In manifest-only mode, the scorecard marks functionality and timing
+as not measured. With `--execute`, it reports whether both targets produced
+matching launch-smoke functionality evidence and compares target durations only
+when both targets pass.
+
+Every comparison manifest carries `comparison_contract`, which defines:
+
+- required inputs: target registry, baseline and modernized targets, scenario id,
+  run id, resolved homes for execution, and declared target-required paths;
+- expected outputs: comparison manifest, target statuses and durations, target
+  launch-smoke manifests when execution runs, scorecard, and diff;
+- pass/fail semantics: `matched`, `different`, `incomplete`, and
+  `not_measured`;
+- timing rules: duration scope and the requirement for repeated same-machine
+  samples before making speed claims;
+- non-claims: the launch-smoke comparison does not automate full Alice lesson
+  creation and consumption, perform creative assessment, grade student worlds,
+  prove broad Alice compatibility, or prove modernization quality.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 

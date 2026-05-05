@@ -42,6 +42,38 @@ targets:
     .unwrap();
 
     assert_eq!(manifest.schema_version, "eatme.alice-comparison/v1");
+    assert_eq!(
+        manifest.comparison_contract.schema_version,
+        "eatme.alice-comparison-contract/v1"
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.inputs,
+        "baseline and modernized Alice targets",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.outputs,
+        "comparison manifest is written",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.functionality_rules,
+        "matched means target statuses",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.functionality_rules,
+        "failed display_responsive assertions",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.timing_rules,
+        "repeated same-machine samples",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.non_claims,
+        "does not automate full Alice lesson creation and consumption",
+    );
+    assert_contract_contains(
+        &manifest.comparison_contract.next_capabilities,
+        "instructor creates an assignment",
+    );
     assert!(!manifest.execute_requested);
     assert_eq!(manifest.diff.baseline_status, "not_run");
     assert_eq!(manifest.diff.modernized_status, "not_run");
@@ -325,6 +357,13 @@ fn failed_display_responsive_assertions_still_create_functionality_difference() 
     assert_eq!(diff.assertion_diffs.len(), 1);
     assert_eq!(diff.assertion_diffs[0].assertion, "display_responsive");
     assert_eq!(scorecard.functionality_result, "different");
+}
+
+fn assert_contract_contains(entries: &[String], expected: &str) {
+    assert!(
+        entries.iter().any(|entry| entry.contains(expected)),
+        "contract entries should contain {expected:?}: {entries:?}"
+    );
 }
 
 fn target_run_with_assertion(
