@@ -103,6 +103,7 @@ fn live_studio_touched_assets_and_generator_avoid_rejected_internal_shorthand() 
     let paths = [
         scenario_path(&root, "eatme"),
         scenario_path(&root, "gadugi"),
+        root.join("docs/live-studio-workshop-evidence.md"),
         root.join("crates/eatme-assets/src/gadugi_instructor.rs"),
     ];
     let mut violations = Vec::new();
@@ -141,9 +142,9 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn scenario_path(root: &Path, lane: &str) -> PathBuf {
+fn scenario_path(root: &Path, scenario_collection: &str) -> PathBuf {
     root.join("assets/scenarios")
-        .join(lane)
+        .join(scenario_collection)
         .join(format!("{LIVE_STUDIO_ID}.yaml"))
 }
 
