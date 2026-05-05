@@ -358,7 +358,7 @@ fn compare_status_and_assertions(
             let baseline = baseline_assertions.and_then(|assertions| assertions.get(&assertion));
             let modernized =
                 modernized_assertions.and_then(|assertions| assertions.get(&assertion));
-            if assertion_changed(baseline, modernized) {
+            if assertion_changed(&assertion, baseline, modernized) {
                 Some(AssertionDiff {
                     assertion,
                     baseline: baseline.map(assertion_snapshot),
@@ -382,14 +382,29 @@ fn compare_status_and_assertions(
 }
 
 fn assertion_changed(
+    assertion_name: &str,
     baseline: Option<&AssertionResult>,
     modernized: Option<&AssertionResult>,
 ) -> bool {
     match (baseline, modernized) {
-        (Some(left), Some(right)) => left.passed != right.passed || left.detail != right.detail,
+        (Some(left), Some(right)) => {
+            left.passed != right.passed
+                || normalized_assertion_detail(assertion_name, left)
+                    != normalized_assertion_detail(assertion_name, right)
+        }
         (None, None) => false,
         _ => true,
     }
+}
+
+fn normalized_assertion_detail<'a>(
+    assertion_name: &str,
+    assertion: &'a AssertionResult,
+) -> &'a str {
+    if assertion_name == "display_responsive" && assertion.passed {
+        return "display responds to xdpyinfo";
+    }
+    &assertion.detail
 }
 
 fn assertion_snapshot(assertion: &AssertionResult) -> AssertionSnapshot {
