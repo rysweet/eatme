@@ -169,6 +169,33 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
     );
 }
 
+#[test]
+fn generated_lesson_path_adapters_preserve_honest_boundary_language() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let lesson_path_sources = [
+        "assets/scenarios/eatme/real-alice-launch-smoke.yaml",
+        "assets/scenarios/eatme/first-lessons-real-ui-actions.yaml",
+    ];
+
+    for source in lesson_path_sources {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let normalized = generated.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            normalized.contains("not full UI automation"),
+            "{source} generated adapter must preserve the full-UI-automation limitation:\n{generated}"
+        );
+        assert!(
+            normalized.contains("not creative assessment"),
+            "{source} generated adapter must preserve the creative-assessment limitation:\n{generated}"
+        );
+        assert!(
+            normalized.contains("not learner-world grading"),
+            "{source} generated adapter must preserve the learner-world-grading limitation:\n{generated}"
+        );
+    }
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 

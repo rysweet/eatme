@@ -1,4 +1,7 @@
-use super::{require_timeout_and_policy, validate_acceptance_criteria, validate_rubric};
+use super::{
+    require_timeout_and_policy, scenario_has_unqualified_automated_grading_claim,
+    validate_acceptance_criteria, validate_rubric,
+};
 use crate::schema::EatmeScenarioAsset;
 use crate::validation::{require_list, require_nonempty};
 
@@ -44,6 +47,7 @@ pub(super) fn validate_instructor_agentic_flow(
         errors.push("artifacts must name the instructor-maintainable outputs".into());
     }
     require_timeout_and_policy(scenario, errors);
+    validate_instructor_grading_boundary(scenario, errors);
     if !scenario
         .steps
         .iter()
@@ -53,6 +57,15 @@ pub(super) fn validate_instructor_agentic_flow(
     }
     for step in &scenario.steps {
         validate_instructor_flow_boundary(&step.id, &step.command, errors);
+    }
+}
+
+fn validate_instructor_grading_boundary(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
+    if scenario_has_unqualified_automated_grading_claim(scenario) {
+        errors.push(
+            "instructor_agentic_flow must not claim automated creative grading or learner-world assessment; keep those as instructor review tasks"
+                .into(),
+        );
     }
 }
 
