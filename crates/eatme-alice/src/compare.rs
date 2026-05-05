@@ -11,17 +11,18 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contract;
+mod first_lesson;
 mod lesson_readiness;
 mod lesson_session;
 mod scorecard;
 
 pub use contract::ComparisonContract;
-use contract::comparison_contract;
+pub use first_lesson::*;
 pub use lesson_readiness::*;
-use lesson_session::lesson_session_contract;
 pub use lesson_session::*;
 pub use scorecard::ComparisonScorecard;
 use scorecard::build_scorecard;
+use {contract::comparison_contract, lesson_session::lesson_session_contract};
 
 #[derive(Clone, Debug)]
 pub struct AliceComparisonOptions {
