@@ -24,6 +24,7 @@ Eatme has three layers:
 | Using Gadugi | [Gadugi Adapters](gadugi-adapters.md) |
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
+| Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -76,6 +77,9 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 Understand how generated adapter counts stay aligned with the asset inventory:
 [Generated Asset Consistency](generated-asset-consistency.md).
+
+Keep local agent hook runtime files out of commits:
+[Local Hook Artifacts](local-hook-artifacts.md).
 
 Build the docs site:
 

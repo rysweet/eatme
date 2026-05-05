@@ -5,6 +5,8 @@ use std::path::Path;
 mod discovery;
 mod gadugi;
 mod report;
+#[cfg(test)]
+mod repository_policy_tests;
 mod schema;
 mod validation;
 

@@ -15,6 +15,7 @@ nav:
   - Gadugi Adapters: gadugi-adapters.md
   - Generated Asset Consistency: generated-asset-consistency.md
   - Validation and Quality Gates: validation-quality-gates.md
+  - Local Hook Artifacts: local-hook-artifacts.md
   - Alice Integration: alice-integration.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md
