@@ -29,7 +29,7 @@ Eatme has three layers:
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
-| Auditing real Alice lesson-path evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
+| Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 
 ## What eatme proves
 
@@ -63,10 +63,10 @@ Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
 and which parts are evidence expectations for human or agent review.
 
-## Real Alice lesson-path evidence
+## Outside-in evidence for Alice lesson scenarios
 
-The lesson-path evidence feature connects instructor and student scenarios to a
-real Alice launch path without overstating what the launch smoke proves.
+This evidence connects instructor and student Alice lesson scenarios to a real
+Alice launch path without overstating what the launch smoke proves.
 
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |

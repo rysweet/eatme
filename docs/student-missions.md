@@ -128,9 +128,10 @@ The manifest proves Alice reached a smoke-ready desktop session for that
 scenario. It does not replace the learner evidence: prediction, visible world
 behavior, revision, and reflection still have to be supplied by the mission.
 
-The `first-lessons-real-ui-actions` scenario is the student lesson-path evidence
-contract for the first real Alice actions. It records a scenario-labeled real
-Alice launch path, manifest/log/window/screenshot evidence, Alice window
+The `first-lessons-real-ui-actions` scenario is the student Alice lesson
+scenario evidence contract for the first real Alice actions. It records a
+scenario-labeled real Alice launch path, manifest/log/window/screenshot evidence,
+Alice window
 detection, and `ui-action-contract.json` expectations for place object, edit
 procedure, run world, and save project. This is launch/action-contract evidence
 only. It is not full UI automation, not creative assessment, and not
@@ -138,7 +139,7 @@ learner-world grading.
 
 ### First lesson evidence packet
 
-A complete student packet for the first real Alice lesson path includes both
+A complete student packet for the first real Alice lesson scenario includes both
 machine evidence and learner evidence:
 
 | Evidence | Source | Required meaning |

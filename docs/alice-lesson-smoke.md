@@ -110,15 +110,16 @@ scenario-labeled prompts, acceptance probes, teacher plan, student handout, exit
 ticket, and instructor review/remix language without claiming automated creative
 grading or learner-world assessment.
 
-## Lesson-path evidence guide
+## Outside-in evidence guide for Alice lesson scenarios
 
-Use lesson-path evidence when a reviewer needs to connect a classroom scenario to
-real Alice startup artifacts and explicit instructor/student deliverables.
+Use outside-in evidence for instructor and student Alice lesson scenarios when a
+reviewer needs to connect a classroom scenario to real Alice startup artifacts
+and explicit instructor/student deliverables.
 
 | Need | Scenario | What to collect |
 | --- | --- | --- |
 | Prove the harness can launch real Alice for a named lane | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson path has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, and `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations. |
+| Prove the student first-lesson scenario has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, and `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
 The three evidence levels are intentionally separate:

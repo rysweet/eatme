@@ -39,7 +39,7 @@ assets/personas/
 | Category | Purpose |
 | --- | --- |
 | `real-alice-launch-smoke` | Baseline deterministic Alice desktop smoke |
-| Alice lesson smoke lanes | Scenario-labeled launch readiness for Alice.org-grounded lesson paths |
+| Alice lesson smoke lanes | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
 | Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
 Lesson smoke lanes route through:
@@ -159,9 +159,9 @@ Avoid brittle evidence:
 - one-path-only instructions that prevent learner choice
 - silent fallback behavior when prerequisites are missing
 
-## Lesson-path evidence wording
+## Outside-in evidence wording for Alice lesson scenarios
 
-When writing retcon documentation or scenario prose for real Alice lesson paths,
+When writing retcon documentation or scenario prose for real Alice lesson scenarios,
 describe the finished evidence boundary exactly:
 
 | Claim | Acceptable wording |

@@ -154,7 +154,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 
 Non-baseline scenarios fail fast unless `EATME_REAL_ALICE=1` is present.
 
-### Lesson-path evidence recipes
+### Outside-in evidence recipes for Alice lesson scenarios
 
 Use the baseline when the only claim is that the real Alice launcher works:
 

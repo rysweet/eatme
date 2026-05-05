@@ -87,8 +87,8 @@ For an instructor agentic flow, the adapter workflow is:
 4. Evaluate acceptance probes and rubric fields.
 5. Keep the desktop launch boundary in eatme, not in Gadugi.
 
-For real-Alice lesson-path evidence, use the generated adapters as consumers of
-eatme's explicit contracts:
+For outside-in evidence for instructor and student Alice lesson scenarios, use
+the generated adapters as consumers of eatme's explicit contracts:
 
 | Canonical scenario | Adapter expectation |
 | --- | --- |
