@@ -1,10 +1,11 @@
-use super::{LessonSessionContractCheck, check_lesson_session_contract};
+use super::{
+    LessonSessionContractCheck, check_lesson_session_contract,
+    first_lesson::FIRST_LESSON_SCENARIO_ID,
+};
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
-
-const FIRST_LESSON_SCENARIO_ID: &str = "first-lessons-real-ui-actions";
 
 const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",

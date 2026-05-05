@@ -22,6 +22,7 @@ for explicit caller intent and compatibility with scripts and adapters.
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 | `alice check-lesson-readiness` | Check first-lesson comparison artifacts, including `ui-action-contract.json` |
+| `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
 ## Validate assets
 
@@ -253,6 +254,31 @@ matching required action ids. A passing readiness report can still have
 artifacts are present and the only accepted blocker is the current lack of
 deterministic UI actions. It is not full UI automation, not creative assessment,
 and not learner-world grading.
+
+Run the first-lesson comparison and readiness check as one bounded sequence:
+
+```bash
+EATME_REAL_ALICE=1 \
+ALICE_BASELINE_HOME=/path/to/alice-reference \
+ALICE_MODERNIZED_HOME=/path/to/alice-candidate \
+cargo run -q -p eatme-cli -- alice run-first-lesson-readiness \
+  --run-id local-first-lesson-readiness \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package \
+  --execute
+```
+
+The command fixes the scenario to `first-lessons-real-ui-actions`, writes
+`runs/comparisons/first-lessons-real-ui-actions/<run-id>/comparison-manifest.json`,
+then immediately runs the same readiness check against that manifest. Without
+`--execute` it still writes a manifest and returns an incomplete report that says
+target launch evidence is missing. With `--execute`, non-baseline Alice scenarios
+still require `EATME_REAL_ALICE=1`. The command preserves the same boundaries:
+it does not create a complete instructor assignment, consume a complete student
+lesson, perform creative assessment, grade learner worlds, or claim broad Alice
+compatibility.
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 

@@ -1,14 +1,18 @@
 use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
-    AliceComparisonOptions, LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions,
-    check_dependencies, check_lesson_session_contract, check_lesson_session_readiness,
-    discover_alice, package_alice, run_launch_smoke, run_launch_smoke_comparison,
+    AliceComparisonOptions, FIRST_LESSON_SCENARIO_ID, FirstLessonReadinessOptions,
+    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies,
+    check_lesson_session_contract, check_lesson_session_readiness, discover_alice, package_alice,
+    run_first_lesson_readiness_sequence, run_launch_smoke, run_launch_smoke_comparison,
 };
 use eatme_core::RealCommandRunner;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+mod first_lesson;
+use first_lesson::RunFirstLessonReadinessArgs;
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -53,6 +57,7 @@ enum AliceCommand {
     CompareLaunchSmoke(CompareLaunchSmokeArgs),
     CheckLessonSession(CheckLessonSessionArgs),
     CheckLessonReadiness(CheckLessonSessionArgs),
+    RunFirstLessonReadiness(RunFirstLessonReadinessArgs),
 }
 
 #[derive(Args)]
@@ -263,6 +268,30 @@ fn main() -> Result<()> {
                 print_result(args.json, &report)?;
                 if !report.passed {
                     bail!("lesson session readiness check failed");
+                }
+            }
+            AliceCommand::RunFirstLessonReadiness(args) => {
+                if args.execute {
+                    ensure_real_alice_gate(FIRST_LESSON_SCENARIO_ID)?;
+                }
+                let report = run_first_lesson_readiness_sequence(&FirstLessonReadinessOptions {
+                    registry_path: args.registry,
+                    baseline_target: args.baseline_target,
+                    modernized_target: args.modernized_target,
+                    baseline_home_override: args.baseline_home,
+                    modernized_home_override: args.modernized_home,
+                    run_id: args.run_id,
+                    runs_dir: args.runs_dir,
+                    timeout_seconds: args.timeout,
+                    json: args.json,
+                    no_memory: args.no_memory,
+                    offline_package: args.offline_package,
+                    execute: args.execute,
+                    starter_project: args.starter_project,
+                })?;
+                print_result(args.json, &report)?;
+                if !report.passed {
+                    bail!("first-lesson readiness sequence incomplete");
                 }
             }
         },

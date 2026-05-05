@@ -191,6 +191,53 @@ fn lesson_session_readiness_rejects_unsafe_ui_action_contract_path() {
     assert_contract_contains(&report.issues, "must not contain parent");
 }
 
+#[test]
+fn first_lesson_readiness_sequence_reports_manifest_only_gap() {
+    let root = unique_test_dir("first-lesson-sequence-manifest-only");
+    let registry_path = root.join("targets.yaml");
+    fs::create_dir_all(&root).unwrap();
+    fs::write(
+        &registry_path,
+        r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Reference target.
+    alice_home: ./alice-baseline
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home: ./alice-modernized
+"#,
+    )
+    .unwrap();
+
+    let report = run_first_lesson_readiness_sequence(&FirstLessonReadinessOptions {
+        registry_path,
+        baseline_target: "baseline".into(),
+        modernized_target: "modernized".into(),
+        baseline_home_override: None,
+        modernized_home_override: None,
+        run_id: "first-lesson-sequence".into(),
+        runs_dir: root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        execute: false,
+        starter_project: None,
+    })
+    .unwrap();
+
+    assert!(!report.passed);
+    assert_eq!(report.scenario_id, FIRST_LESSON_SCENARIO_ID);
+    assert_eq!(report.readiness_status, "incomplete");
+    assert!(Path::new(&report.comparison_manifest_path).is_file());
+    assert_contract_contains(&report.issues, "must be produced with --execute");
+    assert_contract_contains(&report.limitations, "does not grade student worlds");
+}
+
 fn write_first_lesson_manifest(root: &Path) -> AliceComparisonManifest {
     let registry_path = root.join("targets.yaml");
     fs::create_dir_all(root).unwrap();
