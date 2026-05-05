@@ -4,15 +4,16 @@ Alice QA persona-to-scenario coverage connects editable instructor and student
 personas from `assets/personas/alice-user-crew.yaml` to standalone scenario
 assets under `assets/scenarios/eatme/`.
 
-The `workshop-facilitator-live-studio` scenario is the canonical workshop
-coverage slice. It promotes the Alice crew's workshop marker into an editable
-`kind: instructor_agentic_flow` scenario with a generated Gadugi adapter. The
-scenario gives instructors and agents reviewable workshop evidence without
-changing Rust code.
+The `workshop-facilitator-live-studio` scenario is the intended canonical
+workshop coverage slice. The Alice crew already contains the workshop marker;
+the implementation must promote that marker into an editable
+`kind: instructor_agentic_flow` scenario and generate its Gadugi adapter. That
+pair gives instructors and agents reviewable workshop evidence without changing
+Rust code.
 
 ## Contents
 
-- [What exists](#what-exists)
+- [Status and required assets](#status-and-required-assets)
 - [Usage](#usage)
 - [Scenario asset API](#scenario-asset-api)
 - [Generated adapter API](#generated-adapter-api)
@@ -20,17 +21,19 @@ changing Rust code.
 - [Example tutorial](#example-tutorial)
 - [Boundaries](#boundaries)
 
-## What exists
+## Status and required assets
 
-The finished feature has these editable and generated assets:
+The current repository already has the persona-crew marker in
+`assets/personas/alice-user-crew.yaml`. The scenario implementation is not
+complete until both standalone scenario files are committed:
 
-| Asset | Purpose |
-| --- | --- |
-| `assets/personas/alice-user-crew.yaml` | Source persona crew and scenario marker inventory. |
-| `assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` | Canonical eatme scenario for workshop facilitation coverage. |
-| `assets/scenarios/gadugi/workshop-facilitator-live-studio.yaml` | Generated Gadugi adapter derived from the canonical scenario. |
+| Asset | Status | Purpose |
+| --- | --- | --- |
+| `assets/personas/alice-user-crew.yaml` | Present | Source persona crew and scenario marker inventory. |
+| `assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` | Required | Canonical eatme scenario for workshop facilitation coverage. |
+| `assets/scenarios/gadugi/workshop-facilitator-live-studio.yaml` | Required generated output | Gadugi adapter derived from the canonical scenario. |
 
-The canonical scenario explicitly connects these personas:
+The required canonical scenario should explicitly connect these personas:
 
 | Role | Persona ids |
 | --- | --- |
@@ -43,10 +46,11 @@ peer feedback, and share a tiny outcome before the session ends.
 
 ## Usage
 
-Use the scenario when a reviewer needs evidence that workshop facilitation is
-represented as an editable Alice QA asset.
+Use the scenario after the required standalone assets land, when a reviewer
+needs evidence that workshop facilitation is represented as an editable Alice QA
+asset.
 
-1. Read the canonical scenario:
+1. Read the canonical scenario after it is committed:
 
    ```text
    assets/scenarios/eatme/workshop-facilitator-live-studio.yaml
@@ -75,13 +79,13 @@ represented as an editable Alice QA asset.
 5. Use the scenario's `agentic_test_prompt`, `acceptance_probes`, and `rubric`
    to review an instructor-facing workshop plan.
 
-The scenario is an instructor agentic flow. It validates editable asset
+The intended scenario is an instructor agentic flow. It validates editable asset
 coverage, prompts, probes, rubrics, and review outputs. It does not need a real
 Alice desktop launch to run the agentic review.
 
 ## Scenario asset API
 
-`workshop-facilitator-live-studio.yaml` uses the existing
+`workshop-facilitator-live-studio.yaml` must use the existing
 `eatme.scenario/v1` schema.
 
 | Field | Value or contract |
@@ -123,14 +127,14 @@ decisions, peer feedback, and final share criteria.
 
 ## Generated adapter API
 
-The generated Gadugi adapter lives at:
+The generated Gadugi adapter must live at:
 
 ```text
 assets/scenarios/gadugi/workshop-facilitator-live-studio.yaml
 ```
 
-It is generated from the canonical eatme scenario. Do not hand-edit it to change
-mission intent.
+It must be generated from the canonical eatme scenario. Do not hand-edit it to
+change mission intent.
 
 The adapter contract is:
 
@@ -176,7 +180,7 @@ Generated Gadugi adapters also support:
 
 ## Example tutorial
 
-Use this workflow to review a workshop plan against the scenario.
+Use this workflow to review a workshop plan after the scenario asset exists.
 
 1. Choose the scenario:
 

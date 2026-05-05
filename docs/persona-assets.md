@@ -41,13 +41,12 @@ lesson-material/remix evidence contract. It keeps teacher plan, student handout,
 exit ticket, and review/remix probes discoverable without claiming automated
 creative grading or learner-world assessment.
 
-For workshop facilitation coverage, use
-`assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` as the editable
-persona-to-scenario evidence contract. It connects `workshop-facilitator` and
-`studio-facilitator` with `creative-storyteller`,
-`collaborative-peer-mentor`, and `reflective-debugger` through checkpoint,
-help-signal, peer-feedback, recovery, and share-out evidence. See
-[Alice QA Persona-to-Scenario Coverage](alice-qa-persona-scenario-coverage.md).
+For workshop facilitation coverage, the persona crew already defines the
+`workshop-facilitator-live-studio` marker. The next asset step is to promote it
+into `assets/scenarios/eatme/workshop-facilitator-live-studio.yaml` and generate
+the paired Gadugi adapter. See
+[Alice QA Persona-to-Scenario Coverage](alice-qa-persona-scenario-coverage.md)
+for the required contract.
 
 ## QA-team outside-in test shape
 
@@ -194,7 +193,6 @@ include:
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
-| `workshop-facilitator-live-studio` | Workshop facilitation scenario for checkpoints, helper roles, stuck signals, recovery moves, peer feedback, and share-out evidence. |
 
 Each committed standalone scenario routes runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
@@ -219,16 +217,17 @@ Alice modernization work pressures first:
 | `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
 
-Committed instructor/student flow assets now include these additional outside-in
-scenarios:
+The persona crew also defines these additional outside-in coverage areas. Four
+already have committed standalone assets; the workshop row remains a required
+promotion from persona marker to standalone scenario:
 
-| Scenario ID | Instructor goal | Grounding |
-| --- | --- | --- |
-| `setup-support-lab-readiness` | Prepare a lab readiness runbook with explicit dependency, graphics, storage, and fallback evidence. | Alice 3 setup/download; Alice resources overview. |
-| `alice-2-migration-bridge` | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
-| `vr-player-comfort-playtest` | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
-| `model-texture-import-checkpoint` | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
-| `workshop-facilitator-live-studio` | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
+| Scenario ID | Status | Instructor goal | Grounding |
+| --- | --- | --- | --- |
+| `setup-support-lab-readiness` | Committed | Prepare a lab readiness runbook with explicit dependency, graphics, storage, and fallback evidence. | Alice 3 setup/download; Alice resources overview. |
+| `alice-2-migration-bridge` | Committed | Convert Alice 2 lesson intent into Alice 3 classroom steps and visible evidence. | Alice resources overview; Alice 3 resource categories. |
+| `vr-player-comfort-playtest` | Committed | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
+| `model-texture-import-checkpoint` | Committed | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
+| `workshop-facilitator-live-studio` | Required standalone scenario | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected
