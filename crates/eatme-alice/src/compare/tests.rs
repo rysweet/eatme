@@ -167,6 +167,73 @@ fn scorecard_summarizes_functionality_and_timing_evidence() {
     assert_eq!(scorecard.faster_target.as_deref(), Some("modernized"));
 }
 
+#[test]
+fn passing_display_responsive_details_do_not_create_functionality_difference() {
+    let mut targets = BTreeMap::new();
+    let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
+    baseline
+        .launch_manifest
+        .as_mut()
+        .unwrap()
+        .assertions
+        .insert(
+            "display_responsive".into(),
+            AssertionResult::pass(":99 responds to xdpyinfo"),
+        );
+    let mut modernized = target_run_with_assertion("modernized", "passed", None, true);
+    modernized
+        .launch_manifest
+        .as_mut()
+        .unwrap()
+        .assertions
+        .insert(
+            "display_responsive".into(),
+            AssertionResult::pass(":100 responds to xdpyinfo"),
+        );
+    targets.insert("baseline".into(), baseline);
+    targets.insert("modernized".into(), modernized);
+
+    let diff = compare_status_and_assertions(&targets);
+    let scorecard = build_scorecard(true, &targets, &diff);
+
+    assert!(diff.assertion_diffs.is_empty());
+    assert_eq!(scorecard.functionality_result, "matched");
+}
+
+#[test]
+fn failed_display_responsive_assertions_still_create_functionality_difference() {
+    let mut targets = BTreeMap::new();
+    let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
+    baseline
+        .launch_manifest
+        .as_mut()
+        .unwrap()
+        .assertions
+        .insert(
+            "display_responsive".into(),
+            AssertionResult::pass(":99 responds to xdpyinfo"),
+        );
+    let mut modernized = target_run_with_assertion("modernized", "passed", None, true);
+    modernized
+        .launch_manifest
+        .as_mut()
+        .unwrap()
+        .assertions
+        .insert(
+            "display_responsive".into(),
+            AssertionResult::fail(":100 did not respond to xdpyinfo"),
+        );
+    targets.insert("baseline".into(), baseline);
+    targets.insert("modernized".into(), modernized);
+
+    let diff = compare_status_and_assertions(&targets);
+    let scorecard = build_scorecard(true, &targets, &diff);
+
+    assert_eq!(diff.assertion_diffs.len(), 1);
+    assert_eq!(diff.assertion_diffs[0].assertion, "display_responsive");
+    assert_eq!(scorecard.functionality_result, "different");
+}
+
 fn target_run_with_assertion(
     role: &str,
     status: &str,
