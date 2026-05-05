@@ -1,0 +1,18 @@
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Existing Alice checkout used as the reference target for smoke evidence.
+    alice_home_env: ALICE_BASELINE_HOME
+    metadata:
+      target_kind: reference
+    notes:
+      - Set ALICE_BASELINE_HOME or pass --baseline-home before executing a comparison.
+  modernized:
+    label: Modernized Alice
+    description: Modernized Alice checkout used as the comparison target for smoke evidence.
+    alice_home_env: ALICE_MODERNIZED_HOME
+    metadata:
+      target_kind: candidate
+    notes:
+      - Set ALICE_MODERNIZED_HOME or pass --modernized-home before executing a comparison.
