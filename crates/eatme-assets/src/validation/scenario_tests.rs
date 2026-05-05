@@ -253,6 +253,30 @@ fn lesson_smoke_rejects_overclaimed_ui_and_assessment_evidence() {
 }
 
 #[test]
+fn lesson_smoke_rejects_overclaim_even_with_unrelated_honest_marker() {
+    let mut scenario = valid_lesson_smoke("real-alice-launch-smoke");
+    scenario.purpose =
+        "Do not claim creative assessment without proof. This run proves full UI automation."
+            .into();
+
+    let report = validate_eatme_scenario(
+        Path::new("assets/scenarios/eatme/real-alice-launch-smoke.yaml"),
+        &scenario,
+        Some(&persona_index_for(&scenario)),
+        &[],
+    );
+
+    assert!(!report.passed);
+    assert!(
+        report.errors.iter().any(|error| {
+            error.contains("launch smoke") && error.contains("full UI automation")
+        }),
+        "unrelated honest markers must not hide overclaimed launch-smoke evidence: {:?}",
+        report.errors
+    );
+}
+
+#[test]
 fn real_ui_action_contract_requires_explicit_unimplemented_boundary_language() {
     let mut scenario = valid_lesson_smoke("first-lessons-real-ui-actions");
     scenario.kind = "alice_real_ui_action_contract".into();

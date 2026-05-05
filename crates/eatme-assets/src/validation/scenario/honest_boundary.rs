@@ -1,15 +1,34 @@
 use crate::schema::EatmeScenarioAsset;
 
+const LAUNCH_SMOKE_BOUNDARY_CLAIMS: &[&str] = &[
+    "full UI automation",
+    "creative assessment",
+    "learner-world grading",
+];
+pub(crate) const REAL_UI_ACTION_BOUNDARY_PHRASES: &[&str] = &[
+    "ui_action_automation_unimplemented",
+    "not full UI automation",
+    "not creative assessment",
+    "not learner-world grading",
+];
+const INSTRUCTOR_GRADING_CLAIMS: &[&str] = &[
+    "automated creative grading",
+    "automated creative assessment",
+    "automated learner-world grading",
+    "learner-world assessment",
+    "learner-world grading",
+    "grades learner worlds",
+    "grade learner worlds",
+    "creative assessment is scored",
+    "assign automated creative grades",
+    "automatically grades learner worlds",
+];
+
 pub(crate) fn validate_launch_smoke_boundary_claims(
     scenario: &EatmeScenarioAsset,
     errors: &mut Vec<String>,
 ) {
-    let overclaimed = scenario_text_fields(scenario).iter().any(|text| {
-        has_unqualified_phrase(text, "full UI automation")
-            || has_unqualified_phrase(text, "creative assessment")
-            || has_unqualified_phrase(text, "learner-world grading")
-    });
-    if overclaimed {
+    if scenario_has_unqualified_claim(scenario, LAUNCH_SMOKE_BOUNDARY_CLAIMS) {
         errors.push(
             "launch smoke evidence must not claim full UI automation, creative assessment, or learner-world grading; describe those as explicit limitations instead"
                 .into(),
@@ -32,64 +51,69 @@ pub(crate) fn scenario_contains_all_boundary_phrases(
 pub(crate) fn scenario_has_unqualified_automated_grading_claim(
     scenario: &EatmeScenarioAsset,
 ) -> bool {
+    scenario_has_unqualified_claim(scenario, INSTRUCTOR_GRADING_CLAIMS)
+}
+
+fn scenario_has_unqualified_claim(scenario: &EatmeScenarioAsset, phrases: &[&str]) -> bool {
     scenario_text_fields(scenario).iter().any(|text| {
-        has_unqualified_phrase(text, "automated creative grading")
-            || has_unqualified_phrase(text, "automated creative assessment")
-            || has_unqualified_phrase(text, "automated learner-world grading")
-            || has_unqualified_phrase(text, "learner-world assessment")
-            || has_unqualified_phrase(text, "learner-world grading")
-            || has_unqualified_phrase(text, "grades learner worlds")
-            || has_unqualified_phrase(text, "grade learner worlds")
-            || has_unqualified_phrase(text, "creative assessment is scored")
-            || has_unqualified_phrase(text, "assign automated creative grades")
-            || has_unqualified_phrase(text, "automatically grades learner worlds")
+        phrases
+            .iter()
+            .any(|phrase| has_unqualified_phrase(text, phrase))
     })
 }
 
 fn has_unqualified_phrase(text: &str, phrase: &str) -> bool {
     let text = normalize_claim_text(text);
     let phrase = normalize_claim_text(phrase);
-    if !text.contains(&phrase) {
-        return false;
+    let mut search_start = 0;
+    while let Some(relative_start) = text[search_start..].find(&phrase) {
+        let phrase_start = search_start + relative_start;
+        if !has_honest_qualifier(&text, phrase_start) {
+            return true;
+        }
+        search_start = phrase_start + phrase.len();
+    }
+    false
+}
+
+fn has_honest_qualifier(text: &str, phrase_start: usize) -> bool {
+    let close_prefix_start = phrase_start.saturating_sub(32);
+    let close_prefix = &text[close_prefix_start..phrase_start];
+    if [
+        "not ",
+        "without ",
+        "instead of ",
+        "rather than ",
+        "does not ",
+        "do not ",
+        "must not ",
+    ]
+    .iter()
+    .any(|qualifier| close_prefix.ends_with(qualifier))
+    {
+        return true;
     }
 
-    let broad_honest_markers = [
-        "do not claim",
-        "without claiming",
+    let sentence_start = text[..phrase_start]
+        .rfind(|character| matches!(character, '.' | ';' | '!' | '?'))
+        .map(|index| index + 1)
+        .unwrap_or(0);
+    let list_prefix_start = sentence_start.max(phrase_start.saturating_sub(128));
+    let list_prefix = &text[list_prefix_start..phrase_start];
+    [
+        "avoid ",
+        "avoids ",
         "does not claim",
         "does not grade",
+        "do not claim",
         "do not replace",
-        "must not present",
         "must not claim",
-        "not present",
-        "avoids",
-        "avoid claiming",
-        "avoid automated",
-    ];
-    if broad_honest_markers
-        .iter()
-        .any(|marker| text.contains(marker))
-    {
-        return false;
-    }
-
-    let honest_markers = [
-        format!("not {phrase}"),
-        format!("not claim {phrase}"),
-        format!("does not {phrase}"),
-        format!("do not {phrase}"),
-        format!("do not claim {phrase}"),
-        format!("must not {phrase}"),
-        format!("without {phrase}"),
-        format!("without claiming {phrase}"),
-        format!("avoids {phrase}"),
-        format!("avoid {phrase}"),
-        format!("reject {phrase}"),
-        format!("rejects {phrase}"),
-    ];
-    !honest_markers
-        .iter()
-        .any(|marker| text.contains(marker.as_str()))
+        "reject ",
+        "rejects ",
+        "without claiming",
+    ]
+    .iter()
+    .any(|qualifier| list_prefix.contains(qualifier))
 }
 
 fn scenario_text_fields(scenario: &EatmeScenarioAsset) -> Vec<String> {
