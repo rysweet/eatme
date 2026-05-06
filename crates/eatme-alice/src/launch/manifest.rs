@@ -3,7 +3,8 @@ use super::evidence::artifact_info;
 use crate::deps::DependencyReport;
 use crate::discover::AliceDiscovery;
 use crate::launch_ui_actions::{
-    record_preflight_ui_action_blockers, record_ui_action_artifact, write_ui_action_contract,
+    probe_place_object_preconditions, record_preflight_ui_action_blockers,
+    record_ui_action_artifact, write_ui_action_contract,
 };
 use crate::package::PackageResult;
 use anyhow::Result;
@@ -34,8 +35,17 @@ pub(super) fn write_blocked_manifest(
     );
     let log = artifact_info(&run_dir.join("alice.log")).ok();
     let ui_action_contract = if options.scenario.requires_real_ui_actions() {
-        record_preflight_ui_action_blockers(&mut assertions);
-        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some(), None)?;
+        let place_object_probe =
+            probe_place_object_preconditions(false, false, log.is_some(), None);
+        record_preflight_ui_action_blockers(&mut assertions, &place_object_probe);
+        let artifact = write_ui_action_contract(
+            run_dir,
+            false,
+            false,
+            log.is_some(),
+            None,
+            Some(&place_object_probe),
+        )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)
     } else {

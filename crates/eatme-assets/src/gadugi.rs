@@ -445,6 +445,7 @@ fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioSte
     for assertion in [
         "specific_alice_window_detected",
         "activate_alice_window_ui_action",
+        "place_object_precondition_no_go_probe",
         "place_object_ui_action",
         "edit_procedure_ui_action",
         "run_world_ui_action",

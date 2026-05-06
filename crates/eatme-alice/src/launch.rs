@@ -17,8 +17,8 @@ use self::run_dir::prepare_run_dir;
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::launch_ui_actions::{
-    probe_alice_window_activation, record_alice_window_activation, record_ui_action_blockers,
-    write_ui_action_contract,
+    probe_alice_window_activation, probe_place_object_preconditions,
+    record_alice_window_activation, record_ui_action_blockers, write_ui_action_contract,
 };
 use crate::package::{PackageOptions, package_alice};
 use crate::scenario::LaunchSmokeScenario;
@@ -338,14 +338,21 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         failure_category = Some("real_alice_evidence_missing".into());
     }
     let ui_action_contract = if options.scenario.requires_real_ui_actions() {
+        let place_object_probe = probe_place_object_preconditions(
+            specific_alice_window_ok,
+            smoke_ready_visual_evidence,
+            log_ok,
+            alice_window_activation_probe.as_ref(),
+        );
         let artifact = write_ui_action_contract(
             &run_dir,
             specific_alice_window_ok,
             smoke_ready_visual_evidence,
             log_ok,
             alice_window_activation_probe.as_ref(),
+            Some(&place_object_probe),
         )?;
-        record_ui_action_blockers(&mut assertions, &artifact);
+        record_ui_action_blockers(&mut assertions, &artifact, &place_object_probe);
         if failure_category.is_none() {
             failure_category = Some("ui_action_automation_unimplemented".into());
         }

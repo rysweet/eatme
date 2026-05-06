@@ -1,7 +1,8 @@
 use crate::launch::LaunchSmokeOptions;
 use crate::launch_artifacts::{artifact_info, write_manifest};
 use crate::launch_ui_actions::{
-    record_preflight_ui_action_blockers, record_ui_action_artifact, write_ui_action_contract,
+    probe_place_object_preconditions, record_preflight_ui_action_blockers,
+    record_ui_action_artifact, write_ui_action_contract,
 };
 use anyhow::Result;
 use eatme_core::{AssertionResult, LaunchSmokeManifest};
@@ -20,12 +21,23 @@ pub fn write_preflight_blocked_manifest(
 ) -> Result<LaunchSmokeManifest> {
     let log_path = run_dir.join("alice.log");
     fs::write(&log_path, format!("{detail}\n"))?;
-    if options.scenario.requires_real_ui_actions() {
-        record_preflight_ui_action_blockers(&mut assertions);
-    }
     let log = artifact_info(&log_path).ok();
+    if options.scenario.requires_real_ui_actions() {
+        let place_object_probe =
+            probe_place_object_preconditions(false, false, log.is_some(), None);
+        record_preflight_ui_action_blockers(&mut assertions, &place_object_probe);
+    }
     let ui_action_contract = if options.scenario.requires_real_ui_actions() {
-        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some())?;
+        let place_object_probe =
+            probe_place_object_preconditions(false, false, log.is_some(), None);
+        let artifact = write_ui_action_contract(
+            run_dir,
+            false,
+            false,
+            log.is_some(),
+            None,
+            Some(&place_object_probe),
+        )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)
     } else {
