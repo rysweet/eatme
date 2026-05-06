@@ -48,6 +48,7 @@ pub(super) fn write_blocked_manifest(
             Some(&place_object_probe),
             None,
             None,
+            None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)

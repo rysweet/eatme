@@ -4,7 +4,7 @@ use crate::launch_edit_procedure::{
 use crate::launch_object_placement::{
     UiActionObjectPlacementProbe, missing_object_placement_affordance,
 };
-use crate::launch_run_world::probe_run_world_preconditions;
+use crate::launch_run_world::{UiActionRunWorldProbe, probe_run_world_preconditions};
 use crate::launch_window_targeting::alice_window_id;
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
@@ -57,6 +57,7 @@ pub fn record_ui_action_blockers(
     place_object_precondition_probe: &UiActionNoGoProbe,
     object_placement_probe: &UiActionObjectPlacementProbe,
     edit_procedure_probe: &UiActionEditProcedureProbe,
+    run_world_probe: &UiActionRunWorldProbe,
 ) {
     record_place_object_probe(
         assertions,
@@ -82,16 +83,14 @@ pub fn record_ui_action_blockers(
         let edit_precondition_probe = probe_edit_procedure_preconditions(object_placement_probe);
         record_edit_procedure_precondition_no_go(assertions, &edit_precondition_probe);
     }
-    let run_world_detail = if edit_procedure_probe.proves_edit() {
+    record_run_world_probe(assertions, run_world_probe);
+    if edit_procedure_probe.proves_edit() && !run_world_probe.proves_run() {
         let run_world_probe = probe_run_world_preconditions(edit_procedure_probe);
         record_run_world_precondition_no_go(assertions, &run_world_probe);
-        run_world_probe.blocking_reason
-    } else {
-        "blocked: no supported Alice desktop automation can run the world yet".into()
-    };
+    }
     assertions.insert(
         "run_world_ui_action".into(),
-        AssertionResult::fail(run_world_detail),
+        bool_assert(run_world_probe.proves_run(), run_world_probe.detail.clone()),
     );
     assertions.insert(
         "save_project_ui_action".into(),
@@ -415,6 +414,21 @@ fn record_run_world_precondition_no_go(
                 && precondition_probe.status == "blocked"
                 && precondition_probe.decision == "no_go",
             precondition_probe.blocking_reason.clone(),
+        ),
+    );
+}
+
+fn record_run_world_probe(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    run_world_probe: &UiActionRunWorldProbe,
+) {
+    assertions.insert(
+        "run_world_candidate_hook_probe".into(),
+        bool_assert(
+            run_world_probe.action_id == "run-world"
+                && run_world_probe.id == "alice-side-world-run-command-hook"
+                && ["passed", "blocked", "failed"].contains(&run_world_probe.status.as_str()),
+            run_world_probe.detail.clone(),
         ),
     );
 }
