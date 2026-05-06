@@ -78,8 +78,10 @@ The `first-lessons-real-ui-actions` scenario is different: it is an executable
 harness contract for the first real UI actions. It launches Alice, verifies an
 Alice Stage IDE window from window-manager evidence, writes
 `ui-action-contract.json`, and fails loudly with
-`ui_action_automation_unimplemented` until deterministic automation can place an
-object, edit a procedure/code block, run the world, and save a project.
+`ui_action_automation_unimplemented` until a deterministic
+`deterministic-alice-object-gallery-placement-affordance` can place a named
+object without coordinate guessing, and follow-on automation can edit a
+procedure/code block, run the world, and save a project.
 This is launch/action-contract evidence only. It is not full UI automation, not
 creative assessment, and not learner-world grading.
 
@@ -170,7 +172,10 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
 
 The explicit `ui_action_automation_unimplemented` failure is honest evidence
 that the action contract exists but deterministic UI automation is not yet
-claiming a pass. Treat it as a boundary signal, not as completed UI coverage.
+claiming a pass. For object placement, inspect
+`action_precondition_probes[].missing_affordance` in `ui-action-contract.json`;
+it names the required backend/UI affordance and the next implementation shape.
+Treat the failure as a boundary signal, not as completed UI coverage.
 
 ### Instructor remix recipe
 

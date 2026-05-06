@@ -41,7 +41,17 @@ pub struct UiActionNoGoProbe {
     pub decision: String,
     pub blocking_reason: String,
     pub required_evidence: String,
+    pub missing_affordance: UiActionMissingAffordance,
     pub preconditions: Vec<UiActionPrecondition>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct UiActionMissingAffordance {
+    pub id: String,
+    pub kind: String,
+    pub required_capability: String,
+    pub missing_contract: String,
+    pub next_implementation: String,
 }
 
 pub fn record_ui_action_blockers(
@@ -152,7 +162,13 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "place-object",
-                "required_evidence": "artifact proves an object was added to the scene and placed"
+                "required_evidence": "artifact proves a named object was added to the scene and placed without coordinate guessing",
+                "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance",
+                "contract_required": {
+                    "inputs": ["open_project", "object_identifier"],
+                    "outputs": ["placement_artifact", "scene_or_project_diff"],
+                    "unsafe_until_available": true
+                }
             },
             {
                 "id": "edit-procedure-or-code-block",
@@ -182,8 +198,15 @@ pub fn probe_place_object_preconditions(
         .map(|probe| probe.status == "passed")
         .unwrap_or(false);
     let window_targeting_ready = specific_alice_window_detected && activation_passed;
+    let missing_affordance = UiActionMissingAffordance {
+        id: "deterministic-alice-object-gallery-placement-affordance".into(),
+        kind: "backend_or_ui_affordance".into(),
+        required_capability: "Given an open Alice starter project and a named object identifier, deterministically add that object to the scene without coordinate guessing.".into(),
+        missing_contract: "No Alice backend command, accessibility target, stable menu action, or scene-graph verification hook currently accepts a named object identifier and returns proof of placement.".into(),
+        next_implementation: "Add one stable affordance: either an Alice-side object placement command/test hook, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification.".into(),
+    };
     let blocking_reason = if window_targeting_ready {
-        "blocked: no supported deterministic Alice object placement backend is wired"
+        "blocked: missing deterministic-alice-object-gallery-placement-affordance"
     } else {
         "blocked: Alice window targeting preconditions are incomplete, so object placement would be unsafe"
     };
@@ -195,6 +218,7 @@ pub fn probe_place_object_preconditions(
         decision: "no_go".into(),
         blocking_reason: blocking_reason.into(),
         required_evidence: "artifact proves a named object was added to the Alice scene and placed without coordinate guessing".into(),
+        missing_affordance,
         preconditions: vec![
             UiActionPrecondition {
                 id: "specific-alice-window-detected".into(),
@@ -217,9 +241,9 @@ pub fn probe_place_object_preconditions(
                 detail: "Alice launch log exists and is non-empty".into(),
             },
             UiActionPrecondition {
-                id: "deterministic-object-placement-backend".into(),
+                id: "deterministic-alice-object-gallery-placement-affordance".into(),
                 passed: false,
-                detail: "no supported Alice command or stable UI automation contract can place an object yet".into(),
+                detail: "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement".into(),
             },
         ],
     }
@@ -403,9 +427,25 @@ mod tests {
         assert_eq!(probe.action_id, "place-object");
         assert_eq!(probe.status, "blocked");
         assert_eq!(probe.decision, "no_go");
-        assert!(probe.blocking_reason.contains("no supported deterministic"));
+        assert_eq!(
+            probe.missing_affordance.id,
+            "deterministic-alice-object-gallery-placement-affordance"
+        );
+        assert!(
+            probe
+                .missing_affordance
+                .required_capability
+                .contains("named object identifier")
+        );
+        assert!(
+            probe
+                .missing_affordance
+                .next_implementation
+                .contains("named gallery selector")
+        );
         assert!(probe.preconditions.iter().any(|precondition| {
-            precondition.id == "deterministic-object-placement-backend" && !precondition.passed
+            precondition.id == "deterministic-alice-object-gallery-placement-affordance"
+                && !precondition.passed
         }));
     }
 }
