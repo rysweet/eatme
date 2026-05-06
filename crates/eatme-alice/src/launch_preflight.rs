@@ -37,6 +37,7 @@ pub fn write_preflight_blocked_manifest(
             log.is_some(),
             None,
             Some(&place_object_probe),
+            None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)

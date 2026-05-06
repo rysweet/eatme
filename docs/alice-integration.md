@@ -120,8 +120,11 @@ replaying Alice internals.
 ## Current scope
 
 The real Alice integration proves launch readiness. It does not yet drive a full
-lesson UI path, place objects in a scene, grade a student world, or automate
-creative assessment. Those expectations belong in scenario assets, instructor
-missions, student missions, and future harness work until deterministic support
-exists.
-
+lesson UI path, edit procedures, run the world, save projects, grade a student
+world, or automate creative assessment. The `first-lessons-real-ui-actions`
+scenario now probes one deterministic object-placement candidate:
+`tools/eatme-place-object` inside the Alice checkout. That Alice-side command
+must accept the opened project, named object identifier, and evidence directory,
+then return JSON with non-empty `placement_artifact` and
+`scene_or_project_diff` files before eatme marks object placement as proven.
+Absent or invalid hook evidence remains an explicit blocked result.

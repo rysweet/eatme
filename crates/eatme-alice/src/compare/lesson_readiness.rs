@@ -12,7 +12,7 @@ const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
     "specific_alice_window_detected",
     "activate_alice_window_ui_action",
-    "place_object_precondition_no_go_probe",
+    "place_object_candidate_hook_probe",
     "place_object_ui_action",
     "edit_procedure_ui_action",
     "run_world_ui_action",
@@ -226,8 +226,16 @@ fn inspect_target_evidence(
         issues,
         role,
         launch_manifest,
-        "place_object_precondition_no_go_probe",
+        "place_object_candidate_hook_probe",
     );
+    if !assertion_passed(launch_manifest, "place_object_ui_action") {
+        require_passed_assertion(
+            issues,
+            role,
+            launch_manifest,
+            "place_object_precondition_no_go_probe",
+        );
+    }
     require_passed_assertion(issues, role, launch_manifest, "ui_action_artifact_captured");
 
     let ui_action_contract_path = launch_manifest
@@ -330,6 +338,15 @@ fn require_passed_assertion(
             "{role} launch_manifest assertion {assertion:?} must pass before first-lesson readiness is evidence-ready"
         ));
     }
+}
+
+fn assertion_passed(launch_manifest: &serde_json::Value, assertion: &str) -> bool {
+    launch_manifest
+        .get("assertions")
+        .and_then(|assertions| assertions.get(assertion))
+        .and_then(|entry| entry.get("passed"))
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
 }
 
 fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<PathBuf> {

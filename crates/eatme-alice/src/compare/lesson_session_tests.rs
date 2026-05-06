@@ -365,6 +365,10 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
                 "passed": true,
                 "detail": "blocked: no supported deterministic Alice object placement backend is wired"
             },
+            "place_object_candidate_hook_probe": {
+                "passed": true,
+                "detail": "blocked: Alice checkout does not expose tools/eatme-place-object; object placement remains unproven"
+            },
             "place_object_ui_action": {
                 "passed": false,
                 "detail": "blocked: no supported Alice desktop automation can add/place an object yet"
@@ -449,36 +453,23 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
                 "id": "deterministic-alice-object-gallery-placement-affordance",
                 "kind": "backend_or_ui_affordance",
                 "required_capability": "Given an open Alice starter project and a named object identifier, deterministically add that object to the scene without coordinate guessing.",
-                "missing_contract": "No Alice backend command, accessibility target, stable menu action, or scene-graph verification hook currently accepts a named object identifier and returns proof of placement.",
-                "next_implementation": "Add one stable affordance: either an Alice-side object placement command/test hook, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification."
+                "missing_contract": "No Alice-side command at tools/eatme-place-object, accessibility target, stable menu action, or scene-graph verification hook currently accepts a named object identifier and returns proof of placement.",
+                "next_implementation": "Add one stable affordance: either the Alice-side object placement command hook defined by this contract, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification."
             },
             "preconditions": [
-                {
-                    "id": "specific-alice-window-detected",
-                    "passed": true,
-                    "detail": "wmctrl output identifies an Alice Stage IDE window"
-                },
-                {
-                    "id": "activate-specific-alice-window",
-                    "passed": true,
-                    "detail": "wmctrl -ia succeeds against the detected Alice window id"
-                },
-                {
-                    "id": "visual-evidence-captured",
-                    "passed": true,
-                    "detail": "startup screenshot or window evidence exists"
-                },
-                {
-                    "id": "log-captured",
-                    "passed": true,
-                    "detail": "Alice launch log exists and is non-empty"
-                },
-                {
-                    "id": "deterministic-alice-object-gallery-placement-affordance",
-                    "passed": false,
-                    "detail": "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement"
-                }
+                {"id": "specific-alice-window-detected", "passed": true, "detail": "wmctrl output identifies an Alice Stage IDE window"},
+                {"id": "activate-specific-alice-window", "passed": true, "detail": "wmctrl -ia succeeds against the detected Alice window id"},
+                {"id": "visual-evidence-captured", "passed": true, "detail": "startup screenshot or window evidence exists"},
+                {"id": "log-captured", "passed": true, "detail": "Alice launch log exists and is non-empty"},
+                {"id": "deterministic-alice-object-gallery-placement-affordance", "passed": false, "detail": "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement"}
             ]
+        }],
+        "candidate_affordance_probes": [{
+            "id": "alice-side-object-placement-command-hook", "action_id": "place-object",
+            "status": "blocked", "detail": "blocked: Alice checkout does not expose tools/eatme-place-object; object placement remains unproven",
+            "object_identifier": "alice-gallery://animals/bunny", "candidate_hook_path": "/alice/tools/eatme-place-object",
+            "command": null, "exit_status": null, "stdout": "", "stderr": "",
+            "placement_artifact": null, "scene_or_project_diff": null, "validation_errors": [], "missing_affordance": null
         }],
         "required_actions": actions
     })
