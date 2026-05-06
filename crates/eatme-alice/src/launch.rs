@@ -13,7 +13,7 @@ use self::evidence::{
     capture_screenshot, capture_window_list, has_alice_window_evidence, scan_fatal_logs,
 };
 use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
-use self::run_dir::prepare_run_dir;
+use self::run_dir::{launch_run_dir, prepare_run_dir};
 use self::util::{
     artifact_or_error, capture_artifact_or_error, capture_text_or_error, combine_errors,
     git_commit, shutdown, validate_scenario_name, wait_for_start,
@@ -21,11 +21,12 @@ use self::util::{
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
+use crate::launch_desktop_execution::probe_toolbar_run_and_execution;
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_license::seed_license_preferences_if_requested;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
 use crate::launch_options::LaunchSmokeOptions;
-use crate::launch_run_window::{probe_run_toolbar_sequence, probe_run_window_after_shortcut};
+use crate::launch_run_window::probe_run_window_after_shortcut;
 use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
@@ -43,10 +44,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
-    let run_dir = options
-        .runs_dir
-        .join(&options.scenario.id)
-        .join(&options.run_id);
+    let run_dir = launch_run_dir(&options.runs_dir, &options.scenario.id, &options.run_id)?;
     prepare_run_dir(&run_dir)?;
     let mut assertions = BTreeMap::new();
     assertions.insert(
@@ -397,29 +395,18 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 ),
             );
         }
-        let (desktop_run_toolbar_probe, run_window_after_toolbar_probe) =
-            probe_run_toolbar_sequence(
-                &runner,
-                display.name(),
-                &run_dir,
-                alice_window_activation_probe.as_ref(),
-                &run_window_probe,
-            );
-        if desktop_run_toolbar_probe.status == "passed" {
-            assertions.insert(
-                "run_world_desktop_toolbar_dispatch".into(),
-                bool_assert(true, desktop_run_toolbar_probe.detail.clone()),
-            );
-        }
-        if desktop_run_toolbar_probe.status == "passed" {
-            assertions.insert(
-                "run_world_desktop_toolbar_window_observed".into(),
-                bool_assert(
-                    run_window_after_toolbar_probe.status == "passed",
-                    run_window_after_toolbar_probe.detail.clone(),
-                ),
-            );
-        }
+        let (
+            desktop_run_toolbar_probe,
+            run_window_after_toolbar_probe,
+            desktop_run_execution_probe,
+        ) = probe_toolbar_run_and_execution(
+            &runner,
+            display.name(),
+            &run_dir,
+            alice_window_activation_probe.as_ref(),
+            &run_window_probe,
+            &mut assertions,
+        );
         let run_world_probe = probe_run_world_hook(
             &runner,
             &options.alice_home,
@@ -445,6 +432,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             Some(&run_window_probe),
             Some(&desktop_run_toolbar_probe),
             Some(&run_window_after_toolbar_probe),
+            Some(&desktop_run_execution_probe),
             Some(&place_object_probe),
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),

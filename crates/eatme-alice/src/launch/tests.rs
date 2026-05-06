@@ -37,6 +37,24 @@ fn rejects_non_kebab_case_scenario_names() {
     assert!(validate_scenario_name("building-a-scene-first-world").is_ok());
 }
 
+#[test]
+fn relative_runs_dir_resolves_to_absolute_launch_evidence_path() {
+    let run_dir = launch_run_dir(
+        PathBuf::from("runs").as_path(),
+        "first-lessons-real-ui-actions",
+        "sample-run",
+    )
+    .unwrap();
+
+    assert!(run_dir.is_absolute());
+    assert!(run_dir.ends_with("runs/first-lessons-real-ui-actions/sample-run"));
+}
+
+#[test]
+fn run_id_cannot_escape_launch_evidence_directory() {
+    assert!(launch_run_dir(PathBuf::from("runs").as_path(), "scenario", "../bad").is_err());
+}
+
 fn unique_test_dir(prefix: &str) -> PathBuf {
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)

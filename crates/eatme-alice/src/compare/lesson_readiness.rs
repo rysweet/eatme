@@ -333,6 +333,7 @@ fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAss
         ("run_world_desktop_window_observed", "observe-run-window-after-shortcut"),
         ("run_world_desktop_toolbar_dispatch", "dispatch-run-toolbar-button"),
         ("run_world_desktop_toolbar_window_observed", "observe-run-window-after-toolbar-button"),
+        ("run_world_desktop_execution_observed", "observe-desktop-run-execution-after-toolbar-button"),
         ("place_object_ui_action", "place-object"),
         ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
         ("run_world_ui_action", "run-world"),
@@ -441,6 +442,9 @@ fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<Pa
     let candidate = evidence_root.join(&path);
     if candidate.exists() {
         return canonical_artifact_under_root(&candidate, &root);
+    }
+    if path.exists() {
+        return canonical_artifact_under_root(&path, &root);
     }
     Ok(candidate)
 }

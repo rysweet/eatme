@@ -26,6 +26,7 @@ pub fn write_ui_action_contract(
     run_window_probe: Option<&UiActionProbe>,
     desktop_run_toolbar_probe: Option<&UiActionProbe>,
     run_window_after_toolbar_probe: Option<&UiActionProbe>,
+    desktop_run_execution_probe: Option<&UiActionProbe>,
     place_object_precondition_probe: Option<&UiActionNoGoProbe>,
     object_placement_probe: Option<&UiActionObjectPlacementProbe>,
     edit_procedure_candidate_probe: Option<&UiActionEditProcedureProbe>,
@@ -95,6 +96,7 @@ pub fn write_ui_action_contract(
             .chain(run_window_probe)
             .chain(desktop_run_toolbar_probe)
             .chain(run_window_after_toolbar_probe)
+            .chain(desktop_run_execution_probe)
             .collect::<Vec<_>>(),
         "action_precondition_probes": action_precondition_probes
             .into_iter()
