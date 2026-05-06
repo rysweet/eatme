@@ -172,10 +172,14 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
 
 The explicit `ui_action_automation_unimplemented` failure is honest evidence
 that the action contract exists but deterministic UI automation is not yet
-claiming a pass. For object placement, inspect
-`action_precondition_probes[].missing_affordance` in `ui-action-contract.json`;
-it names the required backend/UI affordance and the next implementation shape.
-Treat the failure as a boundary signal, not as completed UI coverage.
+claiming a full lesson pass. For object placement, inspect both
+`action_precondition_probes[].missing_affordance` and
+`candidate_affordance_probes[]` in `ui-action-contract.json`. The candidate
+probe validates whether the Alice checkout exposes `tools/eatme-place-object`
+and only passes object placement when that Alice-side command returns a
+non-empty placement artifact plus a scene/project diff for the named gallery
+object. Treat every other outcome as a boundary signal, not as completed UI
+coverage.
 
 ### Instructor remix recipe
 

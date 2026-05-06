@@ -56,7 +56,14 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record passed activate-specific-alice-window probe when an Alice window is detected"
         ));
     }
-    if !has_place_object_no_go_probe(contract) {
+    if !has_place_object_candidate_affordance_probe(contract) {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record the Alice-side object placement command hook candidate probe"
+        ));
+    }
+    if !has_passed_place_object_candidate_affordance_probe(contract)
+        && !has_place_object_no_go_probe(contract)
+    {
         issues.push(format!(
             "{role} ui-action-contract.json must record a no-go precondition probe for place-object"
         ));
@@ -126,6 +133,63 @@ fn has_place_object_no_go_probe(contract: &serde_json::Value) -> bool {
         .unwrap_or(false)
 }
 
+fn has_place_object_candidate_affordance_probe(contract: &serde_json::Value) -> bool {
+    contract
+        .get("candidate_affordance_probes")
+        .and_then(serde_json::Value::as_array)
+        .map(|probes| {
+            probes.iter().any(|probe| {
+                probe.get("id").and_then(serde_json::Value::as_str)
+                    == Some("alice-side-object-placement-command-hook")
+                    && probe.get("action_id").and_then(serde_json::Value::as_str)
+                        == Some("place-object")
+                    && probe
+                        .get("object_identifier")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|value| value.starts_with("alice-gallery://"))
+                    && probe
+                        .get("candidate_hook_path")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|value| value.ends_with("tools/eatme-place-object"))
+                    && matches!(
+                        probe.get("status").and_then(serde_json::Value::as_str),
+                        Some("passed" | "blocked" | "failed")
+                    )
+            })
+        })
+        .unwrap_or(false)
+}
+
+fn has_passed_place_object_candidate_affordance_probe(contract: &serde_json::Value) -> bool {
+    contract
+        .get("candidate_affordance_probes")
+        .and_then(serde_json::Value::as_array)
+        .map(|probes| {
+            probes.iter().any(|probe| {
+                probe.get("id").and_then(serde_json::Value::as_str)
+                    == Some("alice-side-object-placement-command-hook")
+                    && probe.get("action_id").and_then(serde_json::Value::as_str)
+                        == Some("place-object")
+                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("passed")
+                    && probe.get("placement_artifact").is_some_and(|artifact| {
+                        artifact
+                            .get("size_bytes")
+                            .and_then(serde_json::Value::as_u64)
+                            .unwrap_or(0)
+                            > 0
+                    })
+                    && probe.get("scene_or_project_diff").is_some_and(|artifact| {
+                        artifact
+                            .get("size_bytes")
+                            .and_then(serde_json::Value::as_u64)
+                            .unwrap_or(0)
+                            > 0
+                    })
+            })
+        })
+        .unwrap_or(false)
+}
+
 fn has_place_object_missing_affordance(value: &serde_json::Value) -> bool {
     value.get("id").and_then(serde_json::Value::as_str)
         == Some("deterministic-alice-object-gallery-placement-affordance")
@@ -141,7 +205,7 @@ fn has_place_object_missing_affordance(value: &serde_json::Value) -> bool {
             .get("missing_contract")
             .and_then(serde_json::Value::as_str)
             .is_some_and(|detail| {
-                detail.contains("No Alice backend command")
+                detail.contains("No Alice-side command")
                     && detail.contains("returns proof of placement")
             })
         && value

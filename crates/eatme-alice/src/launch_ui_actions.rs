@@ -1,4 +1,8 @@
 use crate::launch_artifacts::artifact_info;
+use crate::launch_object_placement::{
+    DEFAULT_OBJECT_PLACEMENT_HOOK, UiActionObjectPlacementProbe,
+    missing_object_placement_affordance,
+};
 use anyhow::Result;
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
@@ -57,13 +61,19 @@ pub struct UiActionMissingAffordance {
 pub fn record_ui_action_blockers(
     assertions: &mut BTreeMap<String, AssertionResult>,
     artifact: &ArtifactInfo,
-    place_object_probe: &UiActionNoGoProbe,
+    place_object_precondition_probe: &UiActionNoGoProbe,
+    object_placement_probe: &UiActionObjectPlacementProbe,
 ) {
-    record_place_object_no_go(assertions, place_object_probe);
+    record_place_object_probe(
+        assertions,
+        place_object_precondition_probe,
+        object_placement_probe,
+    );
     assertions.insert(
         "place_object_ui_action".into(),
-        AssertionResult::fail(
-            "blocked: no supported Alice desktop automation can add/place an object yet",
+        bool_assert(
+            object_placement_probe.proves_placement(),
+            object_placement_probe.detail.clone(),
         ),
     );
     assertions.insert(
@@ -115,7 +125,7 @@ pub fn record_preflight_ui_action_blockers(
         "save_project_ui_action".into(),
         AssertionResult::fail("preflight blocked before project save could run"),
     );
-    record_place_object_no_go(assertions, place_object_probe);
+    record_place_object_precondition_no_go(assertions, place_object_probe);
 }
 
 pub fn record_ui_action_artifact(
@@ -137,20 +147,29 @@ pub fn write_ui_action_contract(
     visual_evidence_captured: bool,
     log_captured: bool,
     activation_probe: Option<&UiActionProbe>,
-    place_object_probe: Option<&UiActionNoGoProbe>,
+    place_object_precondition_probe: Option<&UiActionNoGoProbe>,
+    object_placement_probe: Option<&UiActionObjectPlacementProbe>,
 ) -> Result<ArtifactInfo> {
     let path = run_dir.join("ui-action-contract.json");
+    let placement_status = object_placement_probe
+        .map(|probe| probe.status.as_str())
+        .unwrap_or("blocked");
+    let action_precondition_probes = place_object_precondition_probe
+        .into_iter()
+        .filter(|_| placement_status != "passed")
+        .collect::<Vec<_>>();
     let json = serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
         "status": "blocked",
-        "blocking_reason": "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet.",
+        "blocking_reason": ui_action_blocking_reason(placement_status),
         "preflight_evidence": {
             "specific_alice_window_detected": specific_alice_window_detected,
             "visual_evidence_captured": visual_evidence_captured,
             "log_captured": log_captured
         },
         "executed_action_probes": activation_probe.into_iter().collect::<Vec<_>>(),
-        "action_precondition_probes": place_object_probe.into_iter().collect::<Vec<_>>(),
+        "action_precondition_probes": action_precondition_probes,
+        "candidate_affordance_probes": object_placement_probe.into_iter().collect::<Vec<_>>(),
         "required_actions": [
             {
                 "id": "verify-specific-alice-window",
@@ -165,9 +184,10 @@ pub fn write_ui_action_contract(
                 "required_evidence": "artifact proves a named object was added to the scene and placed without coordinate guessing",
                 "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance",
                 "contract_required": {
-                    "inputs": ["open_project", "object_identifier"],
+                    "candidate_backend": DEFAULT_OBJECT_PLACEMENT_HOOK,
+                    "inputs": ["open_project", "object_identifier", "evidence_dir"],
                     "outputs": ["placement_artifact", "scene_or_project_diff"],
-                    "unsafe_until_available": true
+                    "unsafe_until_available": placement_status != "passed"
                 }
             },
             {
@@ -198,13 +218,7 @@ pub fn probe_place_object_preconditions(
         .map(|probe| probe.status == "passed")
         .unwrap_or(false);
     let window_targeting_ready = specific_alice_window_detected && activation_passed;
-    let missing_affordance = UiActionMissingAffordance {
-        id: "deterministic-alice-object-gallery-placement-affordance".into(),
-        kind: "backend_or_ui_affordance".into(),
-        required_capability: "Given an open Alice starter project and a named object identifier, deterministically add that object to the scene without coordinate guessing.".into(),
-        missing_contract: "No Alice backend command, accessibility target, stable menu action, or scene-graph verification hook currently accepts a named object identifier and returns proof of placement.".into(),
-        next_implementation: "Add one stable affordance: either an Alice-side object placement command/test hook, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification.".into(),
-    };
+    let missing_affordance = missing_object_placement_affordance();
     let blocking_reason = if window_targeting_ready {
         "blocked: missing deterministic-alice-object-gallery-placement-affordance"
     } else {
@@ -324,19 +338,47 @@ pub fn record_alice_window_activation(
     );
 }
 
-fn record_place_object_no_go(
+fn record_place_object_probe(
     assertions: &mut BTreeMap<String, AssertionResult>,
-    probe: &UiActionNoGoProbe,
+    precondition_probe: &UiActionNoGoProbe,
+    object_placement_probe: &UiActionObjectPlacementProbe,
+) {
+    if !object_placement_probe.proves_placement() {
+        record_place_object_precondition_no_go(assertions, precondition_probe);
+    }
+    assertions.insert(
+        "place_object_candidate_hook_probe".into(),
+        bool_assert(
+            object_placement_probe.action_id == "place-object"
+                && object_placement_probe.id == "alice-side-object-placement-command-hook"
+                && ["passed", "blocked", "failed"]
+                    .contains(&object_placement_probe.status.as_str()),
+            object_placement_probe.detail.clone(),
+        ),
+    );
+}
+
+fn record_place_object_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
 ) {
     assertions.insert(
         "place_object_precondition_no_go_probe".into(),
         bool_assert(
-            probe.action_id == "place-object"
-                && probe.status == "blocked"
-                && probe.decision == "no_go",
-            probe.blocking_reason.clone(),
+            precondition_probe.action_id == "place-object"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
         ),
     );
+}
+
+fn ui_action_blocking_reason(placement_status: &str) -> &'static str {
+    if placement_status == "passed" {
+        "Deterministic object placement evidence exists, but procedure editing, world run, and project save automation are not wired yet."
+    } else {
+        "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet."
+    }
 }
 
 pub fn alice_window_id(window_list: &str) -> Option<String> {
