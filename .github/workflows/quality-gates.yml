@@ -18,8 +18,10 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust-quality:
-    name: fmt, clippy, tests, module size, coverage
+  # Keep these parallel jobs in sync with scripts/quality-gates.sh:
+  # fmt, clippy, tests, module size, and coverage are split to reduce wall-clock time.
+  rust-static:
+    name: fmt, clippy, module size
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,7 +41,70 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-static-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Check module size
+        run: |
+          MODULE_MAX_LINES="${MODULE_MAX_LINES:-500}"
+          find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
+            | awk -v max="$MODULE_MAX_LINES" '$2 != "total" && $1 > max { print; bad=1 } END { exit bad }'
+
+  rust-tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-tests-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: cargo test --workspace --all-features
+
+  rust-coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component llvm-tools-preview
+          rustup default stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install cargo-llvm-cov
@@ -48,8 +113,16 @@ jobs:
             cargo install cargo-llvm-cov --locked
           fi
 
-      - name: Run local quality gates
-        run: scripts/quality-gates.sh
+      - name: Check coverage
+        run: cargo llvm-cov --workspace --all-features --fail-under-lines "${COVERAGE_FAIL_UNDER:-70}" --summary-only
+
+  rust-quality:
+    name: fmt, clippy, tests, module size, coverage
+    needs: [rust-static, rust-tests, rust-coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quality gates passed
+        run: echo "parallel quality gates passed"
 
   real-alice-launch-smoke:
     name: manual real Alice launch smoke

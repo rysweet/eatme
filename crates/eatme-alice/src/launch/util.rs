@@ -67,3 +67,16 @@ pub(super) fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<Str
     }
     Ok(output.stdout.trim().to_string())
 }
+
+pub(super) fn validate_scenario_name(name: &str) -> Result<()> {
+    if name.is_empty()
+        || name.starts_with('-')
+        || name.ends_with('-')
+        || !name
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+    {
+        bail!("launch smoke scenario {name:?} must be kebab-case");
+    }
+    Ok(())
+}

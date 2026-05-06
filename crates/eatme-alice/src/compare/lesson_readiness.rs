@@ -324,52 +324,41 @@ fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {
 }
 
 fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAssertionEvidence> {
-    [
-        (
-            "specific_alice_window_detected",
-            "verify-specific-alice-window",
-        ),
-        (
-            "activate_alice_window_ui_action",
-            "activate-specific-alice-window",
-        ),
-        (
-            "save_project_desktop_shortcut_dispatch",
-            "dispatch-save-project-shortcut",
-        ),
-        (
-            "run_world_desktop_shortcut_dispatch",
-            "dispatch-run-world-shortcut",
-        ),
-        (
-            "run_world_desktop_window_observed",
-            "observe-run-window-after-shortcut",
-        ),
+    #[rustfmt::skip]
+    let action_ids = [
+        ("specific_alice_window_detected", "verify-specific-alice-window"),
+        ("activate_alice_window_ui_action", "activate-specific-alice-window"),
+        ("save_project_desktop_shortcut_dispatch", "dispatch-save-project-shortcut"),
+        ("run_world_desktop_shortcut_dispatch", "dispatch-run-world-shortcut"),
+        ("run_world_desktop_window_observed", "observe-run-window-after-shortcut"),
+        ("run_world_desktop_toolbar_dispatch", "dispatch-run-toolbar-button"),
+        ("run_world_desktop_toolbar_window_observed", "observe-run-window-after-toolbar-button"),
         ("place_object_ui_action", "place-object"),
         ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
         ("run_world_ui_action", "run-world"),
         ("save_project_ui_action", "save-project"),
-    ]
-    .into_iter()
-    .filter_map(|(assertion_id, action_id)| {
-        let assertion = launch_manifest
-            .get("assertions")
-            .and_then(|assertions| assertions.get(assertion_id))?;
-        Some(LessonActionAssertionEvidence {
-            assertion_id: assertion_id.into(),
-            action_id: action_id.into(),
-            passed: assertion
-                .get("passed")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-            detail: assertion
-                .get("detail")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("")
-                .into(),
+    ];
+    action_ids
+        .into_iter()
+        .filter_map(|(assertion_id, action_id)| {
+            let assertion = launch_manifest
+                .get("assertions")
+                .and_then(|assertions| assertions.get(assertion_id))?;
+            Some(LessonActionAssertionEvidence {
+                assertion_id: assertion_id.into(),
+                action_id: action_id.into(),
+                passed: assertion
+                    .get("passed")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+                detail: assertion
+                    .get("detail")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("")
+                    .into(),
+            })
         })
-    })
-    .collect()
+        .collect()
 }
 
 fn missing_launch_assertions(launch_manifest: &serde_json::Value) -> Vec<String> {
