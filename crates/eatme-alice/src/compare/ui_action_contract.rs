@@ -78,6 +78,13 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record either passed edit-procedure-or-code-block proof or a no-go precondition probe after object placement passes"
         ));
     }
+    if has_passed_edit_procedure_candidate_affordance_probe(contract)
+        && !has_run_world_no_go_probe(contract)
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record a no-go precondition probe for run-world after edit-procedure-or-code-block passes"
+        ));
+    }
 }
 
 pub(super) fn action_ids(contract: &serde_json::Value) -> Vec<String> {
@@ -272,6 +279,38 @@ fn has_edit_procedure_no_go_probe(contract: &serde_json::Value) -> bool {
         .unwrap_or(false)
 }
 
+fn has_run_world_no_go_probe(contract: &serde_json::Value) -> bool {
+    contract
+        .get("action_precondition_probes")
+        .and_then(serde_json::Value::as_array)
+        .map(|probes| {
+            probes.iter().any(|probe| {
+                probe.get("id").and_then(serde_json::Value::as_str)
+                    == Some("run-world-precondition")
+                    && probe.get("action_id").and_then(serde_json::Value::as_str)
+                        == Some("run-world")
+                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("blocked")
+                    && probe.get("decision").and_then(serde_json::Value::as_str) == Some("no_go")
+                    && probe
+                        .get("missing_affordance")
+                        .is_some_and(has_run_world_missing_affordance)
+                    && probe
+                        .get("preconditions")
+                        .and_then(serde_json::Value::as_array)
+                        .map(|preconditions| {
+                            has_precondition(preconditions, "edit-procedure-or-code-block", true)
+                                && has_precondition(
+                                    preconditions,
+                                    "deterministic-alice-world-run-affordance",
+                                    false,
+                                )
+                        })
+                        .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false)
+}
+
 fn has_precondition(preconditions: &[serde_json::Value], id: &str, expected_passed: bool) -> bool {
     preconditions.iter().any(|precondition| {
         precondition.get("id").and_then(serde_json::Value::as_str) == Some(id)
@@ -334,4 +373,91 @@ fn has_edit_procedure_missing_affordance(value: &serde_json::Value) -> bool {
             .is_some_and(|detail| {
                 detail.contains("procedure edit command") && detail.contains("named editor target")
             })
+}
+
+fn has_run_world_missing_affordance(value: &serde_json::Value) -> bool {
+    value.get("id").and_then(serde_json::Value::as_str)
+        == Some("deterministic-alice-world-run-affordance")
+        && value.get("kind").and_then(serde_json::Value::as_str) == Some("backend_or_ui_affordance")
+        && value
+            .get("required_capability")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("run the world")
+                    && detail.contains("return proof that execution reached")
+            })
+        && value
+            .get("missing_contract")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("No Alice-side command")
+                    && detail.contains("returns world-run proof")
+            })
+        && value
+            .get("next_implementation")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("run-world command") && detail.contains("named run control")
+            })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requires_run_world_no_go_after_edit_proof() {
+        let mut issues = Vec::new();
+
+        inspect_ui_action_contract(
+            "modernized",
+            &contract_after_edit_without_run_no_go(),
+            &mut issues,
+        );
+
+        assert!(
+            issues
+                .iter()
+                .any(|issue| issue.contains("no-go precondition probe for run-world")),
+            "issues should name missing run-world no-go: {issues:?}"
+        );
+    }
+
+    fn contract_after_edit_without_run_no_go() -> serde_json::Value {
+        serde_json::json!({
+            "schema_version": "eatme.ui-action-contract/v1",
+            "status": "blocked",
+            "blocking_reason": "world run remains blocked",
+            "preflight_evidence": {
+                "specific_alice_window_detected": true,
+                "visual_evidence_captured": true,
+                "log_captured": true
+            },
+            "executed_action_probes": [{
+                "id": "activate-specific-alice-window",
+                "status": "passed"
+            }],
+            "candidate_affordance_probes": [
+                {
+                    "id": "alice-side-object-placement-command-hook",
+                    "action_id": "place-object",
+                    "status": "passed",
+                    "object_identifier": "alice-gallery://animals/bunny",
+                    "candidate_hook_path": "/alice/tools/eatme-place-object",
+                    "placement_artifact": {"path": "object-placement/placed-project.a3p", "size_bytes": 2},
+                    "scene_or_project_diff": {"path": "object-placement/scene.diff.json", "size_bytes": 2}
+                },
+                {
+                    "id": "alice-side-procedure-edit-command-hook",
+                    "action_id": "edit-procedure-or-code-block",
+                    "status": "passed",
+                    "procedure_selector": "scene.eatmeFirstLessonStep",
+                    "candidate_hook_path": "/alice/tools/eatme-edit-procedure",
+                    "edited_project_artifact": {"path": "procedure-edit/edited-project.a3p", "size_bytes": 2},
+                    "procedure_or_code_diff": {"path": "procedure-edit/procedure.diff.json", "size_bytes": 2}
+                }
+            ],
+            "required_actions": []
+        })
+    }
 }

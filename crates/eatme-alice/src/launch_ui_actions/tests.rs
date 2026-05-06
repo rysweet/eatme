@@ -138,6 +138,34 @@ fn edit_procedure_precondition_probe_records_no_go_after_object_placement() {
     }));
 }
 
+#[test]
+fn run_world_precondition_probe_records_no_go_after_procedure_edit() {
+    let edited = edit_procedure_probe_with_status("passed");
+
+    let probe = probe_run_world_preconditions(&edited);
+
+    assert_eq!(probe.id, "run-world-precondition");
+    assert_eq!(probe.action_id, "run-world");
+    assert_eq!(probe.status, "blocked");
+    assert_eq!(probe.decision, "no_go");
+    assert_eq!(
+        probe.missing_affordance.id,
+        "deterministic-alice-world-run-affordance"
+    );
+    assert!(
+        probe
+            .missing_affordance
+            .missing_contract
+            .contains("tools/eatme-run-world")
+    );
+    assert!(probe.preconditions.iter().any(|precondition| {
+        precondition.id == "edit-procedure-or-code-block" && precondition.passed
+    }));
+    assert!(probe.preconditions.iter().any(|precondition| {
+        precondition.id == "deterministic-alice-world-run-affordance" && !precondition.passed
+    }));
+}
+
 fn object_placement_probe_with_status(status: &str) -> UiActionObjectPlacementProbe {
     UiActionObjectPlacementProbe {
         id: "alice-side-object-placement-command-hook".into(),
@@ -152,6 +180,26 @@ fn object_placement_probe_with_status(status: &str) -> UiActionObjectPlacementPr
         stderr: String::new(),
         placement_artifact: artifact_if_passed(status, "object-placement/placement.json"),
         scene_or_project_diff: artifact_if_passed(status, "object-placement/scene.diff.json"),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
+fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe {
+    UiActionEditProcedureProbe {
+        id: "alice-side-procedure-edit-command-hook".into(),
+        action_id: "edit-procedure-or-code-block".into(),
+        status: status.into(),
+        detail: "edit probe detail".into(),
+        procedure_selector: "scene.eatmeFirstLessonStep".into(),
+        edit_spec: "append-comment:eatme first lesson edit proof".into(),
+        candidate_hook_path: "tools/eatme-edit-procedure".into(),
+        command: Some("tools/eatme-edit-procedure --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        edited_project_artifact: artifact_if_passed(status, "procedure-edit/edited-project.a3p"),
+        procedure_or_code_diff: artifact_if_passed(status, "procedure-edit/procedure.diff.json"),
         validation_errors: Vec::new(),
         missing_affordance: None,
     }
