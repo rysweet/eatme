@@ -57,9 +57,18 @@ pub struct LessonTargetEvidence {
     pub launch_manifest_present: bool,
     pub ui_action_contract_path: Option<String>,
     pub ui_action_contract_readable: bool,
+    pub action_assertions: Vec<LessonActionAssertionEvidence>,
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
     pub missing_required_actions: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LessonActionAssertionEvidence {
+    pub assertion_id: String,
+    pub action_id: String,
+    pub passed: bool,
+    pub detail: String,
 }
 
 pub fn check_lesson_session_readiness(
@@ -170,6 +179,7 @@ fn inspect_target_evidence(
             launch_manifest_present: false,
             ui_action_contract_path: None,
             ui_action_contract_readable: false,
+            action_assertions: Vec::new(),
             required_actions: Vec::new(),
             missing_assertions: REQUIRED_FIRST_LESSON_ASSERTIONS
                 .iter()
@@ -210,6 +220,7 @@ fn inspect_target_evidence(
     }
 
     let missing_assertions = missing_launch_assertions(launch_manifest);
+    let action_assertions = action_assertions(launch_manifest);
     for assertion in &missing_assertions {
         issues.push(format!(
             "{role} launch_manifest is missing assertion {assertion:?}"
@@ -305,6 +316,7 @@ fn inspect_target_evidence(
         launch_manifest_present: true,
         ui_action_contract_path,
         ui_action_contract_readable,
+        action_assertions,
         required_actions,
         missing_assertions,
         missing_required_actions,
@@ -320,6 +332,43 @@ fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {
         .get(field)
         .and_then(serde_json::Value::as_str)
         .map(str::to_string)
+}
+
+fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAssertionEvidence> {
+    [
+        (
+            "specific_alice_window_detected",
+            "verify-specific-alice-window",
+        ),
+        (
+            "activate_alice_window_ui_action",
+            "activate-specific-alice-window",
+        ),
+        ("place_object_ui_action", "place-object"),
+        ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
+        ("run_world_ui_action", "run-world"),
+        ("save_project_ui_action", "save-project"),
+    ]
+    .into_iter()
+    .filter_map(|(assertion_id, action_id)| {
+        let assertion = launch_manifest
+            .get("assertions")
+            .and_then(|assertions| assertions.get(assertion_id))?;
+        Some(LessonActionAssertionEvidence {
+            assertion_id: assertion_id.into(),
+            action_id: action_id.into(),
+            passed: assertion
+                .get("passed")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            detail: assertion
+                .get("detail")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .into(),
+        })
+    })
+    .collect()
 }
 
 fn missing_launch_assertions(launch_manifest: &serde_json::Value) -> Vec<String> {
