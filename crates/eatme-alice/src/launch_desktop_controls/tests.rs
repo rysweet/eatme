@@ -126,6 +126,24 @@ fn run_window_observation_fails_without_run_window() {
     assert!(probe.detail.contains("no Alice Run window"));
 }
 
+#[test]
+fn run_window_observation_blocks_when_license_modal_is_visible() {
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "xwininfo -root -tree".into(),
+        exit_status: Some(0),
+        stdout: r#"0x60002a "License Agreement (Part 1 of 2): Alice 3"
+0x600007 "Alice 3 ""#
+            .into(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_run_window_after_shortcut(&runner, ":99", &run_shortcut_probe("passed"));
+
+    assert_eq!(probe.status, "blocked");
+    assert!(probe.detail.contains("license agreement"));
+}
+
 fn run_shortcut_probe(status: &str) -> UiActionProbe {
     UiActionProbe {
         id: "dispatch-run-world-shortcut".into(),
