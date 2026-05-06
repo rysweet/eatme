@@ -5,6 +5,7 @@ pub mod launch;
 mod launch_artifacts;
 mod launch_desktop_controls;
 mod launch_edit_procedure;
+mod launch_license;
 mod launch_object_placement;
 mod launch_run_world;
 mod launch_save_project;

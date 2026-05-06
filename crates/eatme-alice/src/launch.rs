@@ -24,6 +24,7 @@ use crate::launch_desktop_controls::{
     probe_desktop_run_shortcut, probe_desktop_save_shortcut, probe_run_window_after_shortcut,
 };
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
+use crate::launch_license::seed_license_preferences_if_requested;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
 use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
@@ -216,6 +217,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 );
             }
         };
+    if let Some(detail) = seed_license_preferences_if_requested(&run_dir)? {
+        assertions.insert(
+            "alice_license_preferences_seeded".into(),
+            bool_assert(true, detail),
+        );
+    }
     let mut alice = match start_alice(
         &options.alice_home,
         display.name(),
