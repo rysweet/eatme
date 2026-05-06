@@ -39,6 +39,135 @@ targets, until a future instructor-specific harness owns that behavior.
 Instructor and teacher mean the same role in this contract unless a future
 scenario explicitly distinguishes them.
 
+## Bounded first-lesson next-action proof
+
+The next first-lesson action is an evidence-gated readiness surface. It prepares
+eatme to consume RabbitHole evidence for the first safe lesson action, then
+reports whether the repository can proceed, is not ready, or is blocked by an
+explicit no-go contract. It is not a lesson-completion implementation.
+
+The proof separates repository-local readiness evidence from RabbitHole-produced
+desktop evidence:
+
+| Evidence class | Accepted source | What it proves |
+| --- | --- | --- |
+| Canonical scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and no-go policy are part of the validated eatme asset set. |
+| Generated adapter evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Gadugi consumers receive the same bounded readiness wording and no-go boundary as the canonical scenario. |
+| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, logs, window lists, screenshots, and `ui-action-contract.json` | The repository can describe, launch, record, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
+| RabbitHole desktop evidence | The modernized comparison target in `comparison-manifest.json`, with referenced launch/runtime artifacts | RabbitHole produced the required desktop signals for the next first-lesson action boundary. |
+
+Repository readiness evidence is necessary but not sufficient for a RabbitHole
+go decision. If RabbitHole evidence is absent, malformed, incomplete, stale,
+or not tied to the `first-lessons-real-ui-actions` scenario, the readiness
+surface returns a no-go result. The no-go result is `status: "not_ready"` for
+missing or invalid evidence, or `status: "blocked"` when valid evidence includes
+accepted action-level `no_go` contracts.
+
+### Required RabbitHole evidence
+
+RabbitHole evidence uses the existing comparison, launch, desktop, and readiness
+artifact model. Do not introduce a separate RabbitHole schema for first-lesson
+readiness.
+
+The modernized target must provide these signals:
+
+| Signal | Existing artifact or assertion | No-go condition |
+| --- | --- | --- |
+| Target identity | `comparison-manifest.json` target with the modernized/RabbitHole role and `scenario_id: "first-lessons-real-ui-actions"` | Missing target, wrong scenario id, unreadable target manifest, or target produced without execution. |
+| Real Alice launch evidence | Target launch manifest with real execution evidence, Alice log, window list, and startup screenshot paths | Missing manifest, empty log, missing window evidence, missing screenshot, or unreadable artifact path. |
+| Specific Alice window evidence | `specific_alice_window_detected` and `activate_alice_window_ui_action` assertions | No specific Alice Stage IDE window, or activation evidence is absent. |
+| Run-window sentinel | `run_world_desktop_window_observed` assertion from the existing Run-window evidence path | No RabbitHole Run-window-created sentinel or only an unstructured claim that a Run window appeared. |
+| Desktop execution sentinel | `run_world_desktop_execution_observed` assertion from the existing desktop execution evidence path | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
+| Action contract artifact | Readable, non-empty `ui-action-contract.json` referenced by target evidence | Missing file, malformed JSON, missing required action ids, or missing explicit no-go contracts for unsupported actions. |
+| Visible runtime artifacts | Screenshot, window list, launch log, and runtime artifact paths referenced by the launch manifest | Empty files, missing files, path traversal, symlink escape, or artifacts outside the expected evidence root. |
+
+The required first-lesson action ids stay the same:
+
+```text
+verify-specific-alice-window
+activate-specific-alice-window
+place-object
+edit-procedure-or-code-block
+run-world
+save-project
+```
+
+The readiness surface validates bounded evidence only. The Run-window sentinel
+records that RabbitHole prepared or opened the desktop Run frame. The desktop
+execution sentinel records that desktop execution started and produced runtime
+statement evidence. Neither sentinel proves rendered output correctness, creative
+quality, learner understanding, saved-world grading, or completed lesson
+execution.
+
+### No-go boundary
+
+Treat these states as no-go for the next first-lesson action:
+
+| Readiness result | Meaning | Required response |
+| --- | --- | --- |
+| `status: "not_ready"` | RabbitHole evidence is absent, incomplete, malformed, outside the expected evidence root, or not linked to the first-lesson scenario. | Do not proceed. Produce or repair the RabbitHole evidence artifact, then rerun readiness. |
+| `status: "blocked"` | Required evidence is readable and coherent, but it contains accepted action-level `no_go` contracts for unsupported desktop affordances. | Do not claim full first-lesson automation. Keep the blocker visible until deterministic affordance evidence replaces the no-go entry. |
+| `status: "ready"` | Required RabbitHole and repository evidence is present, coherent, and free of accepted no-go contracts. | Treat the report as readiness to proceed to the next bounded first-lesson action only. Do not treat it as lesson completion. |
+
+Local validation, launcher readiness, archive recovery, Run-window evidence, and
+desktop execution evidence can make the repository ready to consume RabbitHole
+artifacts. They cannot substitute for RabbitHole evidence. A report that lacks
+the expected RabbitHole artifact set must not imply success.
+
+### Expected RabbitHole evidence shape
+
+RabbitHole evidence is accepted through the existing readiness JSON API. A
+successful consumer can find the modernized target, inspect its launch manifest,
+load `ui-action-contract.json`, and normalize the target evidence:
+
+```json
+{
+  "scenario_id": "first-lessons-real-ui-actions",
+  "status": "blocked",
+  "target_evidence": [
+    {
+      "role": "modernized",
+      "target_status": "failed",
+      "launch_manifest_present": true,
+      "ui_action_contract_readable": true,
+      "action_assertions": [
+        {
+          "id": "specific_alice_window_detected",
+          "passed": true
+        },
+        {
+          "id": "run_world_desktop_window_observed",
+          "passed": true
+        },
+        {
+          "id": "run_world_desktop_execution_observed",
+          "passed": true
+        }
+      ],
+      "required_actions": [
+        "verify-specific-alice-window",
+        "activate-specific-alice-window",
+        "place-object",
+        "edit-procedure-or-code-block",
+        "run-world",
+        "save-project"
+      ],
+      "no_go_contracts": [
+        {
+          "affordance": "object_placement",
+          "decision": "no_go",
+          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
+        }
+      ]
+    }
+  ]
+}
+```
+
+This example is a valid no-go boundary, not a completed lesson pass. It shows
+that the consumer found RabbitHole desktop evidence and preserved the remaining
+unsupported action as an explicit blocker.
+
 ## Usage
 
 ### Validate the canonical assets
@@ -108,6 +237,31 @@ The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
 student first-lesson flow.
+
+### Check the RabbitHole evidence gate
+
+Use the same readiness command for RabbitHole. The comparison manifest must
+include the modernized/RabbitHole target and must reference the target launch
+manifest plus runtime artifacts:
+
+```bash
+cargo run -q -p eatme-cli -- alice check-lesson-readiness \
+  --manifest runs/comparisons/first-lessons-real-ui-actions/rabbithole-next-action/comparison-manifest.json \
+  --json
+```
+
+Interpret the result as a go/no-go boundary:
+
+| Result | RabbitHole evidence state |
+| --- | --- |
+| `status: "not_ready"` | RabbitHole evidence is absent, incomplete, malformed, outside the evidence root, or missing required first-lesson assertions. |
+| `status: "blocked"` | RabbitHole evidence is readable and coherent, but one or more action-level no-go contracts remain. |
+| `status: "ready"` | RabbitHole evidence is present, coherent, and has no accepted no-go contracts for the next bounded action. |
+
+Do not promote repository-only evidence to RabbitHole success. Asset validation,
+adapter freshness, launcher checks, archive recovery, Run-window evidence, and
+desktop execution evidence are useful only when the readiness report can connect
+them to the RabbitHole target in the comparison manifest.
 
 ### Run the bounded first-lesson readiness sequence
 
