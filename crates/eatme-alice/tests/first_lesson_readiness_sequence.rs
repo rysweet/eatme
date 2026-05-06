@@ -50,8 +50,11 @@ targets:
     })
     .unwrap();
 
-    assert!(report.passed, "{:?}", report.issues);
-    assert_eq!(report.readiness_status, "blocked_until_ui_automation");
+    assert!(!report.passed);
+    assert_eq!(report.readiness_status, "incomplete");
+    assert!(report.issues.iter().any(|issue| issue.contains(
+        "missing visible desktop rendering evidence after Run-frame and VM statement execution"
+    )));
     for role in ["baseline", "modernized"] {
         let target = report.target_statuses.get(role).unwrap();
         assert_eq!(
