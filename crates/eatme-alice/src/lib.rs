@@ -6,6 +6,7 @@ mod launch_artifacts;
 mod launch_edit_procedure;
 mod launch_object_placement;
 mod launch_run_world;
+mod launch_save_project;
 mod launch_ui_action_contract;
 mod launch_ui_actions;
 mod launch_window_targeting;

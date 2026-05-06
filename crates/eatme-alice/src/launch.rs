@@ -33,7 +33,6 @@ use eatme_core::{
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Child;
-use std::thread;
 use std::time::{Duration, Instant};
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeOptions {
@@ -366,6 +365,13 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &edit_procedure_probe,
             display.name(),
         );
+        let save_project_probe = crate::launch_save_project::probe_project_save_hook(
+            &runner,
+            &options.alice_home,
+            &run_dir,
+            &run_world_probe,
+            display.name(),
+        );
         let artifact = write_ui_action_contract(
             &run_dir,
             specific_alice_window_ok,
@@ -376,6 +382,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),
             Some(&run_world_probe),
+            Some(&save_project_probe),
         )?;
         record_ui_action_blockers(
             &mut assertions,
@@ -384,6 +391,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &object_placement_probe,
             &edit_procedure_probe,
             &run_world_probe,
+            &save_project_probe,
         );
         if failure_category.is_none() {
             failure_category = Some(ui_action_failure_category(&object_placement_probe).into());
@@ -438,7 +446,7 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
         if let Ok(Some(_)) = child.try_wait() {
             return false;
         }
-        thread::sleep(Duration::from_millis(500));
+        std::thread::sleep(Duration::from_millis(500));
     }
     true
 }

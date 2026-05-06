@@ -6,6 +6,9 @@ use crate::launch_object_placement::{DEFAULT_OBJECT_PLACEMENT_HOOK, UiActionObje
 use crate::launch_run_world::{
     DEFAULT_WORLD_RUN_HOOK, UiActionRunWorldProbe, probe_run_world_preconditions,
 };
+use crate::launch_save_project::{
+    DEFAULT_PROJECT_SAVE_HOOK, UiActionSaveProjectProbe, probe_project_save_preconditions,
+};
 use crate::launch_ui_actions::{UiActionNoGoProbe, UiActionProbe};
 use anyhow::Result;
 use std::fs;
@@ -22,6 +25,7 @@ pub fn write_ui_action_contract(
     object_placement_probe: Option<&UiActionObjectPlacementProbe>,
     edit_procedure_candidate_probe: Option<&UiActionEditProcedureProbe>,
     run_world_candidate_probe: Option<&UiActionRunWorldProbe>,
+    save_project_candidate_probe: Option<&UiActionSaveProjectProbe>,
 ) -> Result<eatme_core::ArtifactInfo> {
     let path = run_dir.join("ui-action-contract.json");
     let placement_status = object_placement_probe
@@ -34,6 +38,8 @@ pub fn write_ui_action_contract(
     let edit_procedure_proven =
         edit_procedure_candidate_probe.is_some_and(UiActionEditProcedureProbe::proves_edit);
     let run_world_proven = run_world_candidate_probe.is_some_and(UiActionRunWorldProbe::proves_run);
+    let save_project_proven =
+        save_project_candidate_probe.is_some_and(UiActionSaveProjectProbe::proves_save);
     let edit_procedure_no_go_probe = object_placement_probe
         .filter(|probe| probe.proves_placement())
         .filter(|_| !edit_procedure_proven)
@@ -44,6 +50,11 @@ pub fn write_ui_action_contract(
         .filter(|_| !run_world_proven)
         .map(probe_run_world_preconditions);
     let run_world_precondition_probes = run_world_no_go_probe.iter().collect::<Vec<_>>();
+    let save_project_no_go_probe = run_world_candidate_probe
+        .filter(|probe| probe.proves_run())
+        .filter(|_| !save_project_proven)
+        .map(probe_project_save_preconditions);
+    let save_project_precondition_probes = save_project_no_go_probe.iter().collect::<Vec<_>>();
     let candidate_affordance_probes = object_placement_probe
         .into_iter()
         .map(serde_json::to_value)
@@ -57,11 +68,16 @@ pub fn write_ui_action_contract(
                 .into_iter()
                 .map(serde_json::to_value),
         )
+        .chain(
+            save_project_candidate_probe
+                .into_iter()
+                .map(serde_json::to_value),
+        )
         .collect::<std::result::Result<Vec<_>, _>>()?;
     let json = serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
         "status": "blocked",
-        "blocking_reason": ui_action_blocking_reason(placement_status, edit_procedure_proven, run_world_proven),
+        "blocking_reason": ui_action_blocking_reason(placement_status, edit_procedure_proven, run_world_proven, save_project_proven),
         "preflight_evidence": {
             "specific_alice_window_detected": specific_alice_window_detected,
             "visual_evidence_captured": visual_evidence_captured,
@@ -72,6 +88,7 @@ pub fn write_ui_action_contract(
             .into_iter()
             .chain(edit_procedure_precondition_probes)
             .chain(run_world_precondition_probes)
+            .chain(save_project_precondition_probes)
             .collect::<Vec<_>>(),
         "candidate_affordance_probes": candidate_affordance_probes,
         "required_actions": [
@@ -118,7 +135,14 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "save-project",
-                "required_evidence": "saved .a3p project artifact exists and is non-empty"
+                "required_evidence": "saved .a3p project artifact exists, is non-empty, and can be read after the first-lesson run proof",
+                "missing_affordance_id": "deterministic-alice-project-save-affordance",
+                "contract_required": {
+                    "candidate_backend": DEFAULT_PROJECT_SAVE_HOOK,
+                    "inputs": ["edited_project", "save_selector", "evidence_dir"],
+                    "outputs": ["saved_project_artifact", "save_artifact"],
+                    "unsafe_until_available": !save_project_proven
+                }
             }
         ]
     });
@@ -130,8 +154,11 @@ fn ui_action_blocking_reason(
     placement_status: &str,
     edit_procedure_proven: bool,
     run_world_proven: bool,
+    save_project_proven: bool,
 ) -> &'static str {
-    if run_world_proven {
+    if save_project_proven {
+        "Deterministic object placement, procedure edit, world run, and project save backend evidence exist, but full desktop lesson automation is not wired yet."
+    } else if run_world_proven {
         "Deterministic object placement, procedure edit, and world run evidence exist, but project save automation is not wired yet."
     } else if edit_procedure_proven {
         "Deterministic object placement and procedure edit evidence exist, but world run and project save automation are not wired yet."
