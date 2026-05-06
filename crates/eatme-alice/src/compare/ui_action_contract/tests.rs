@@ -36,6 +36,22 @@ fn requires_save_project_no_go_after_run_world_proof() {
     );
 }
 
+#[test]
+fn accepts_recorded_failed_run_window_observation_after_shortcut_dispatch() {
+    let mut issues = Vec::new();
+    let mut contract = contract_after_edit_without_run_no_go();
+    contract["executed_action_probes"][3]["status"] = serde_json::json!("failed");
+
+    inspect_ui_action_contract("modernized", &contract, &mut issues);
+
+    assert!(
+        !issues
+            .iter()
+            .any(|issue| issue.contains("observe-run-window-after-shortcut probe")),
+        "recorded failed observation should be accepted as an honest desktop-result boundary: {issues:?}"
+    );
+}
+
 fn contract_after_edit_without_run_no_go() -> serde_json::Value {
     serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
@@ -54,6 +70,9 @@ fn contract_after_edit_without_run_no_go() -> serde_json::Value {
             "status": "passed"
         }, {
             "id": "dispatch-run-world-shortcut",
+            "status": "passed"
+        }, {
+            "id": "observe-run-window-after-shortcut",
             "status": "passed"
         }],
         "candidate_affordance_probes": [

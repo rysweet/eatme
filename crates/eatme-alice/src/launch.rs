@@ -20,7 +20,9 @@ use self::util::{
 };
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
-use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
+use crate::launch_desktop_controls::{
+    probe_desktop_run_shortcut, probe_desktop_save_shortcut, probe_run_window_after_shortcut,
+};
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
 use crate::launch_run_world::probe_run_world_hook;
@@ -385,6 +387,17 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 bool_assert(true, desktop_run_shortcut_probe.detail.clone()),
             );
         }
+        let run_window_probe =
+            probe_run_window_after_shortcut(&runner, display.name(), &desktop_run_shortcut_probe);
+        if desktop_run_shortcut_probe.status == "passed" {
+            assertions.insert(
+                "run_world_desktop_window_observed".into(),
+                bool_assert(
+                    run_window_probe.status == "passed",
+                    run_window_probe.detail.clone(),
+                ),
+            );
+        }
         let run_world_probe = probe_run_world_hook(
             &runner,
             &options.alice_home,
@@ -407,6 +420,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             alice_window_activation_probe.as_ref(),
             desktop_save_shortcut_probe.as_ref(),
             Some(&desktop_run_shortcut_probe),
+            Some(&run_window_probe),
             Some(&place_object_probe),
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),

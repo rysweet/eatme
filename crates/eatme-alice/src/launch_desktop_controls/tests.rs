@@ -83,6 +83,62 @@ fn desktop_run_shortcut_blocks_before_edit_proof() {
     assert!(runner.commands().is_empty());
 }
 
+#[test]
+fn run_window_observation_passes_when_run_window_is_listed() {
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "wmctrl -lx".into(),
+        exit_status: Some(0),
+        stdout: "0x002 host org.alice.stageide.EntryPoint Run...\n".into(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_run_window_after_shortcut(&runner, ":99", &run_shortcut_probe("passed"));
+
+    assert_eq!(probe.status, "passed");
+    assert_eq!(probe.id, "observe-run-window-after-shortcut");
+    assert!(probe.detail.contains("Run window"));
+}
+
+#[test]
+fn run_window_observation_blocks_before_shortcut_dispatch() {
+    let runner = FakeCommandRunner::default();
+
+    let probe = probe_run_window_after_shortcut(&runner, ":99", &run_shortcut_probe("blocked"));
+
+    assert_eq!(probe.status, "blocked");
+    assert!(runner.commands().is_empty());
+}
+
+#[test]
+fn run_window_observation_fails_without_run_window() {
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "wmctrl -lx".into(),
+        exit_status: Some(0),
+        stdout: "0x001 host org.alice.stageide.EntryPoint Alice 3\n".into(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_run_window_after_shortcut(&runner, ":99", &run_shortcut_probe("passed"));
+
+    assert_eq!(probe.status, "failed");
+    assert!(probe.detail.contains("no Alice Run window"));
+}
+
+fn run_shortcut_probe(status: &str) -> UiActionProbe {
+    UiActionProbe {
+        id: "dispatch-run-world-shortcut".into(),
+        status: status.into(),
+        detail: "run shortcut".into(),
+        window_id: Some("0x001".into()),
+        command: Some("xdotool key --window 0x001 --clearmodifiers ctrl+F5".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    }
+}
+
 fn activation_probe(status: &str) -> UiActionProbe {
     UiActionProbe {
         id: "activate-specific-alice-window".into(),

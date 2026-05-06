@@ -47,6 +47,105 @@ pub(crate) fn probe_desktop_run_shortcut(
     )
 }
 
+pub(crate) fn probe_run_window_after_shortcut(
+    runner: &impl CommandRunner,
+    display: &str,
+    run_shortcut_probe: &UiActionProbe,
+) -> UiActionProbe {
+    if run_shortcut_probe.status != "passed" {
+        return blocked_probe(
+            "observe-run-window-after-shortcut",
+            "blocked: desktop Run shortcut dispatch must pass before Run window observation",
+        );
+    }
+    std::thread::sleep(Duration::from_secs(2));
+    match capture_window_text(runner, display) {
+        Ok((command, text)) if has_run_window_evidence(&text) => UiActionProbe {
+            id: "observe-run-window-after-shortcut".into(),
+            status: "passed".into(),
+            detail: "observed an Alice Run window after Ctrl+F5 dispatch; this proves desktop Run window opening, not world completion".into(),
+            window_id: run_shortcut_probe.window_id.clone(),
+            command: Some(command),
+            exit_status: Some(0),
+            stdout: text,
+            stderr: String::new(),
+        },
+        Ok((command, text)) => UiActionProbe {
+            id: "observe-run-window-after-shortcut".into(),
+            status: "failed".into(),
+            detail: "Ctrl+F5 dispatch succeeded, but no Alice Run window was observed".into(),
+            window_id: run_shortcut_probe.window_id.clone(),
+            command: Some(command),
+            exit_status: Some(0),
+            stdout: text,
+            stderr: String::new(),
+        },
+        Err(error) => UiActionProbe {
+            id: "observe-run-window-after-shortcut".into(),
+            status: "failed".into(),
+            detail: format!("could not inspect windows after Ctrl+F5 dispatch: {error}"),
+            window_id: run_shortcut_probe.window_id.clone(),
+            command: Some("wmctrl -lx; xwininfo -root -tree".into()),
+            exit_status: None,
+            stdout: String::new(),
+            stderr: String::new(),
+        },
+    }
+}
+
+fn capture_window_text(
+    runner: &impl CommandRunner,
+    display: &str,
+) -> Result<(String, String), String> {
+    let wmctrl = runner
+        .run(
+            &CommandSpec::new("wmctrl")
+                .args(["-lx"])
+                .env("DISPLAY", display)
+                .timeout(Duration::from_secs(5))
+                .retries(2, Duration::from_millis(100)),
+        )
+        .map_err(|error| format!("{error:#}"))?;
+    if wmctrl.exit_status == Some(0) && !command_text(&wmctrl.stdout, &wmctrl.stderr).is_empty() {
+        return Ok((wmctrl.command, command_text(&wmctrl.stdout, &wmctrl.stderr)));
+    }
+    let xwininfo = runner
+        .run(
+            &CommandSpec::new("xwininfo")
+                .args(["-root", "-tree"])
+                .env("DISPLAY", display)
+                .timeout(Duration::from_secs(5))
+                .retries(2, Duration::from_millis(100)),
+        )
+        .map_err(|error| format!("{error:#}"))?;
+    if xwininfo.exit_status == Some(0) {
+        return Ok((
+            xwininfo.command,
+            command_text(&xwininfo.stdout, &xwininfo.stderr),
+        ));
+    }
+    Err(format!(
+        "wmctrl={:?}; xwininfo={:?}",
+        wmctrl.exit_status, xwininfo.exit_status
+    ))
+}
+
+fn command_text(stdout: &str, stderr: &str) -> String {
+    if stdout.trim().is_empty() {
+        stderr.trim().to_string()
+    } else {
+        stdout.trim().to_string()
+    }
+}
+
+fn has_run_window_evidence(window_text: &str) -> bool {
+    window_text.lines().any(|line| {
+        let normalized = line.to_ascii_lowercase();
+        (normalized.contains(" run") || normalized.contains("\"run"))
+            && !normalized.contains("firefox")
+    })
+}
+
 struct ShortcutProbe {
     id: &'static str,
     action_name: &'static str,
