@@ -11,6 +11,7 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod contract;
+mod desktop_evidence;
 mod first_lesson;
 mod lesson_readiness;
 mod lesson_session;

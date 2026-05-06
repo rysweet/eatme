@@ -61,22 +61,18 @@ targets:
         "does not grade student worlds",
     );
 }
-
 #[test]
 fn lesson_session_contract_check_passes_first_lesson_manifest() {
     let root = unique_test_dir("first-lesson-contract-check");
     let manifest = write_first_lesson_manifest(&root);
-
     let report =
         check_lesson_session_contract(Path::new(&manifest.comparison_manifest_path)).unwrap();
-
     assert!(report.passed, "{:?}", report.issues);
     assert_eq!(
         report.session_kind.as_deref(),
         Some("first_lesson_action_contract")
     );
 }
-
 #[test]
 fn lesson_session_contract_check_fails_when_contract_is_missing() {
     let root = unique_test_dir("missing-lesson-contract-check");
@@ -87,13 +83,10 @@ fn lesson_session_contract_check_fails_when_contract_is_missing() {
         r#"{"schema_version":"eatme.alice-comparison/v1","scenario_id":"first-lessons-real-ui-actions"}"#,
     )
     .unwrap();
-
     let report = check_lesson_session_contract(&manifest_path).unwrap();
-
     assert!(!report.passed);
     assert_contract_contains(&report.issues, "missing lesson_session_contract");
 }
-
 #[test]
 fn lesson_session_contract_check_rejects_placeholder_first_lesson_steps() {
     let root = unique_test_dir("placeholder-lesson-contract-check");
@@ -109,9 +102,7 @@ fn lesson_session_contract_check_rejects_placeholder_first_lesson_steps() {
         "student saves x"
     ]);
     fs::write(manifest_path, serde_json::to_string_pretty(&value).unwrap()).unwrap();
-
     let report = check_lesson_session_contract(manifest_path).unwrap();
-
     assert!(!report.passed);
     assert_contract_contains(
         &report.issues,
@@ -123,10 +114,8 @@ fn lesson_session_contract_check_rejects_placeholder_first_lesson_steps() {
 fn lesson_session_readiness_requires_executable_target_evidence() {
     let root = unique_test_dir("manifest-only-readiness-check");
     let manifest = write_first_lesson_manifest(&root);
-
     let report =
         check_lesson_session_readiness(Path::new(&manifest.comparison_manifest_path)).unwrap();
-
     assert!(!report.passed);
     assert_eq!(report.readiness_status, "incomplete");
     assert_contract_contains(&report.issues, "must be produced with --execute");
@@ -137,9 +126,7 @@ fn lesson_session_readiness_requires_executable_target_evidence() {
 fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
     let root = unique_test_dir("executable-readiness-check");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
-
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
-
     assert!(report.passed, "{:?}", report.issues);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
     assert_eq!(report.execute_requested, Some(true));
@@ -319,7 +306,16 @@ fn write_executable_blocked_first_lesson_manifest(root: &Path, omit_save_action:
             .join("first-lessons-real-ui-actions")
             .join(format!("{role}-first-lesson-run"))
             .join("ui-action-contract.json");
-        fs::create_dir_all(action_contract_path.parent().unwrap()).unwrap();
+        let run_dir = action_contract_path.parent().unwrap();
+        fs::create_dir_all(run_dir).unwrap();
+        if role == "modernized" {
+            fs::create_dir_all(run_dir.join("screenshots")).unwrap();
+            fs::write(
+                run_dir.join("screenshots/run-window-after-dispatch.png"),
+                "png",
+            )
+            .unwrap();
+        }
         fs::write(
             &action_contract_path,
             serde_json::to_vec_pretty(&ui_action_contract_json(omit_save_action)).unwrap(),
@@ -362,6 +358,8 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
                 "detail": "wmctrl activated Alice window 0x001"
             },
             "save_project_desktop_shortcut_dispatch": {"passed": true, "detail": "input dispatch only: xdotool sent Ctrl+S to Alice window 0x001; this does not prove saved project content"},
+            "run_world_desktop_toolbar_window_observed": {"passed": true, "detail": "observed RabbitHole Run-window-created sentinel after Run toolbar click; this records Alice preparing the desktop Run frame, not world completion"},
+            "run_world_desktop_execution_observed": {"passed": true, "detail": "observed RabbitHole desktop Run execution artifact with VM statement events; this proves desktop execution started, not rendering correctness or lesson completion"},
             "place_object_precondition_no_go_probe": {
                 "passed": true,
                 "detail": "blocked: no supported deterministic Alice object placement backend is wired"

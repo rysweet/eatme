@@ -1,12 +1,15 @@
 use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
+    desktop_evidence::{
+        check_visible_desktop_evidence, comparison_evidence_root, resolve_artifact_path,
+    },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
     ui_action_contract::{action_ids, inspect_ui_action_contract},
 };
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use serde::Serialize;
 use std::fs;
-use std::path::{Component, Path, PathBuf};
+use std::path::Path;
 
 const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
@@ -245,6 +248,14 @@ fn inspect_target_evidence(
         );
     }
     require_passed_assertion(issues, role, launch_manifest, "ui_action_artifact_captured");
+    if role == "modernized" {
+        for assertion in [
+            "run_world_desktop_toolbar_window_observed",
+            "run_world_desktop_execution_observed",
+        ] {
+            require_passed_assertion(issues, role, launch_manifest, assertion);
+        }
+    }
 
     let ui_action_contract_path = launch_manifest
         .get("ui_action_contract")
@@ -275,6 +286,15 @@ fn inspect_target_evidence(
                             issues.push(format!(
                                 "{role} ui-action-contract.json is missing required action {action:?}"
                             ));
+                        }
+                        if role == "modernized" {
+                            issues.extend(
+                                check_visible_desktop_evidence(
+                                    &comparison_evidence_root(manifest_path),
+                                    &resolved,
+                                )
+                                .issue_when_missing(),
+                            );
                         }
                     }
                     Err(error) => issues.push(format!(
@@ -402,92 +422,4 @@ fn assertion_passed(launch_manifest: &serde_json::Value, assertion: &str) -> boo
         .and_then(|entry| entry.get("passed"))
         .and_then(serde_json::Value::as_bool)
         == Some(true)
-}
-
-fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<PathBuf> {
-    let path = PathBuf::from(artifact_path);
-    if path.as_os_str().is_empty() {
-        bail!("artifact path must not be empty");
-    }
-    let evidence_root = comparison_evidence_root(manifest_path);
-
-    if path.is_absolute() {
-        let artifact = path
-            .canonicalize()
-            .with_context(|| format!("resolving artifact path {}", path.display()))?;
-        let root = evidence_root.canonicalize().with_context(|| {
-            format!(
-                "resolving comparison evidence root {}",
-                evidence_root.display()
-            )
-        })?;
-        if !artifact.starts_with(&root) {
-            bail!(
-                "absolute artifact path {} must stay under comparison evidence root {}",
-                artifact.display(),
-                root.display()
-            );
-        }
-        return Ok(artifact);
-    }
-
-    reject_unsafe_relative_path(&path)?;
-    let root = canonical_evidence_root(&evidence_root)?;
-    if let Some(parent) = manifest_path.parent() {
-        let candidate = parent.join(&path);
-        if candidate.exists() {
-            return canonical_artifact_under_root(&candidate, &root);
-        }
-    }
-    let candidate = evidence_root.join(&path);
-    if candidate.exists() {
-        return canonical_artifact_under_root(&candidate, &root);
-    }
-    if path.exists() {
-        return canonical_artifact_under_root(&path, &root);
-    }
-    Ok(candidate)
-}
-
-fn comparison_evidence_root(manifest_path: &Path) -> PathBuf {
-    let parent = manifest_path.parent().unwrap_or_else(|| Path::new("."));
-    for ancestor in parent.ancestors() {
-        if ancestor.file_name().and_then(|name| name.to_str()) == Some("comparisons") {
-            return ancestor.parent().unwrap_or(parent).to_path_buf();
-        }
-    }
-    parent.to_path_buf()
-}
-
-fn reject_unsafe_relative_path(path: &Path) -> Result<()> {
-    if path
-        .components()
-        .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        bail!("relative artifact path must not contain parent, current, or root components");
-    }
-    Ok(())
-}
-
-fn canonical_evidence_root(evidence_root: &Path) -> Result<PathBuf> {
-    evidence_root.canonicalize().with_context(|| {
-        format!(
-            "resolving comparison evidence root {}",
-            evidence_root.display()
-        )
-    })
-}
-
-fn canonical_artifact_under_root(candidate: &Path, root: &Path) -> Result<PathBuf> {
-    let resolved = candidate
-        .canonicalize()
-        .with_context(|| format!("resolving artifact path {}", candidate.display()))?;
-    if !resolved.starts_with(root) {
-        bail!(
-            "artifact path {} must stay under comparison evidence root {}",
-            resolved.display(),
-            root.display()
-        );
-    }
-    Ok(resolved)
 }
