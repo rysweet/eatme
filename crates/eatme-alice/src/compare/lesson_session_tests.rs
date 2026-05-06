@@ -327,7 +327,7 @@ fn write_executable_blocked_first_lesson_manifest(root: &Path, omit_save_action:
         .unwrap();
         value["targets"][role]["status"] = serde_json::json!("failed");
         value["targets"][role]["failure_category"] =
-            serde_json::json!("ui_action_automation_unimplemented");
+            serde_json::json!("ui_action_remaining_steps_unimplemented");
         value["targets"][role]["launch_manifest"] = launch_manifest_json(&action_contract_path);
     }
     fs::write(
@@ -342,7 +342,7 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
     serde_json::json!({
         "schema_version": "eatme.launch-smoke/v1",
         "scenario_id": "first-lessons-real-ui-actions",
-        "failure_category": "ui_action_automation_unimplemented",
+            "failure_category": "ui_action_remaining_steps_unimplemented",
         "ui_action_contract": {
             "path": action_contract_path.display().to_string(),
             "size_bytes": 1,

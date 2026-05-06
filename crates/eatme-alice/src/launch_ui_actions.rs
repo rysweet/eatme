@@ -141,6 +141,16 @@ pub fn record_ui_action_artifact(
     );
 }
 
+pub fn ui_action_failure_category(
+    object_placement_probe: &UiActionObjectPlacementProbe,
+) -> &'static str {
+    if object_placement_probe.proves_placement() {
+        "ui_action_remaining_steps_unimplemented"
+    } else {
+        "ui_action_automation_unimplemented"
+    }
+}
+
 pub fn write_ui_action_contract(
     run_dir: &Path,
     specific_alice_window_detected: bool,
@@ -406,88 +416,4 @@ fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use eatme_core::CommandOutput;
-    use eatme_test_support::FakeCommandRunner;
-
-    #[test]
-    fn finds_alice_window_id_from_wmctrl_output() {
-        let window_list = "0x001  0 host org.alice.stageide.EntryPoint Alice 3";
-
-        assert_eq!(alice_window_id(window_list).as_deref(), Some("0x001"));
-    }
-
-    #[test]
-    fn activation_probe_runs_wmctrl_against_detected_window() {
-        let runner = FakeCommandRunner::default();
-        runner.push_output(CommandOutput {
-            command: "wmctrl -ia 0x001".into(),
-            exit_status: Some(0),
-            stdout: String::new(),
-            stderr: String::new(),
-        });
-
-        let probe = probe_alice_window_activation(
-            &runner,
-            ":99",
-            "0x001  0 host org.alice.stageide.EntryPoint Alice 3",
-        );
-
-        assert_eq!(probe.status, "passed");
-        assert_eq!(probe.window_id.as_deref(), Some("0x001"));
-        assert_eq!(runner.commands(), vec!["wmctrl -ia 0x001"]);
-    }
-
-    #[test]
-    fn activation_probe_blocks_without_specific_alice_window() {
-        let runner = FakeCommandRunner::default();
-
-        let probe =
-            probe_alice_window_activation(&runner, ":99", "0x002  0 host firefox.Firefox Firefox");
-
-        assert_eq!(probe.status, "blocked");
-        assert!(runner.commands().is_empty());
-    }
-
-    #[test]
-    fn place_object_precondition_probe_records_no_go_after_window_activation() {
-        let activation_probe = UiActionProbe {
-            id: "activate-specific-alice-window".into(),
-            status: "passed".into(),
-            detail: "wmctrl activated Alice window 0x001".into(),
-            window_id: Some("0x001".into()),
-            command: Some("wmctrl -ia 0x001".into()),
-            exit_status: Some(0),
-            stdout: String::new(),
-            stderr: String::new(),
-        };
-
-        let probe = probe_place_object_preconditions(true, true, true, Some(&activation_probe));
-
-        assert_eq!(probe.id, "place-object-precondition");
-        assert_eq!(probe.action_id, "place-object");
-        assert_eq!(probe.status, "blocked");
-        assert_eq!(probe.decision, "no_go");
-        assert_eq!(
-            probe.missing_affordance.id,
-            "deterministic-alice-object-gallery-placement-affordance"
-        );
-        assert!(
-            probe
-                .missing_affordance
-                .required_capability
-                .contains("named object identifier")
-        );
-        assert!(
-            probe
-                .missing_affordance
-                .next_implementation
-                .contains("named gallery selector")
-        );
-        assert!(probe.preconditions.iter().any(|precondition| {
-            precondition.id == "deterministic-alice-object-gallery-placement-affordance"
-                && !precondition.passed
-        }));
-    }
-}
+mod tests;

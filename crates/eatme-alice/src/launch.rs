@@ -19,7 +19,8 @@ use crate::discover::discover_alice;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
 use crate::launch_ui_actions::{
     probe_alice_window_activation, probe_place_object_preconditions,
-    record_alice_window_activation, record_ui_action_blockers, write_ui_action_contract,
+    record_alice_window_activation, record_ui_action_blockers, ui_action_failure_category,
+    write_ui_action_contract,
 };
 use crate::package::{PackageOptions, package_alice};
 use crate::scenario::LaunchSmokeScenario;
@@ -369,7 +370,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &object_placement_probe,
         );
         if failure_category.is_none() {
-            failure_category = Some("ui_action_automation_unimplemented".into());
+            failure_category = Some(ui_action_failure_category(&object_placement_probe).into());
         }
         Some(artifact)
     } else {

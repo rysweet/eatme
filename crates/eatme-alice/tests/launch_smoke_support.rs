@@ -267,6 +267,33 @@ sleep 30
         fs::create_dir_all(&starter).unwrap();
         fs::write(starter.join("africa.a3p"), "project").unwrap();
     }
+
+    pub fn write_fake_object_placement_hook(&self) {
+        let tools = self.alice_home.join("tools");
+        fs::create_dir_all(&tools).unwrap();
+        self.write_tool_at(
+            &tools.join("eatme-place-object"),
+            r#"#!/bin/sh
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --evidence-dir) shift; evidence_dir="$1" ;;
+  esac
+  shift
+done
+mkdir -p "$evidence_dir"
+echo '{"placed":true}' > "$evidence_dir/placement.json"
+echo '{"added":["bunny"]}' > "$evidence_dir/scene.diff.json"
+printf '%s\n' '{"schema_version":"eatme.alice-object-placement-result/v1","status":"placed","object_identifier":"alice-gallery://animals/bunny","placement_artifact":"placement.json","scene_or_project_diff":"scene.diff.json"}'
+"#,
+        );
+    }
+
+    fn write_tool_at(&self, path: &Path, script: &str) {
+        fs::write(path, script).unwrap();
+        let mut permissions = fs::metadata(path).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(path, permissions).unwrap();
+    }
 }
 
 impl Drop for TestFixture {
