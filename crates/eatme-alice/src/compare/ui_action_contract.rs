@@ -1,4 +1,5 @@
 use crate::launch_edit_procedure::DEFAULT_PROCEDURE_SELECTOR;
+use crate::launch_run_world::DEFAULT_RUN_SELECTOR;
 
 pub(super) fn inspect_ui_action_contract(
     role: &str,
@@ -326,7 +327,7 @@ fn has_passed_run_world_candidate_affordance_probe(contract: &serde_json::Value)
                     && probe
                         .get("run_selector")
                         .and_then(serde_json::Value::as_str)
-                        == Some(DEFAULT_PROCEDURE_SELECTOR)
+                        == Some(DEFAULT_RUN_SELECTOR)
                     && probe
                         .get("candidate_hook_path")
                         .and_then(serde_json::Value::as_str)
