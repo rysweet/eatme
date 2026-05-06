@@ -4,6 +4,7 @@ use crate::launch_edit_procedure::{
 use crate::launch_object_placement::{
     UiActionObjectPlacementProbe, missing_object_placement_affordance,
 };
+use crate::launch_run_world::probe_run_world_preconditions;
 use crate::launch_window_targeting::alice_window_id;
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
@@ -81,11 +82,16 @@ pub fn record_ui_action_blockers(
         let edit_precondition_probe = probe_edit_procedure_preconditions(object_placement_probe);
         record_edit_procedure_precondition_no_go(assertions, &edit_precondition_probe);
     }
+    let run_world_detail = if edit_procedure_probe.proves_edit() {
+        let run_world_probe = probe_run_world_preconditions(edit_procedure_probe);
+        record_run_world_precondition_no_go(assertions, &run_world_probe);
+        run_world_probe.blocking_reason
+    } else {
+        "blocked: no supported Alice desktop automation can run the world yet".into()
+    };
     assertions.insert(
         "run_world_ui_action".into(),
-        AssertionResult::fail(
-            "blocked: no supported Alice desktop automation can run the world yet",
-        ),
+        AssertionResult::fail(run_world_detail),
     );
     assertions.insert(
         "save_project_ui_action".into(),
@@ -391,6 +397,21 @@ fn record_edit_procedure_precondition_no_go(
         "edit_procedure_precondition_no_go_probe".into(),
         bool_assert(
             precondition_probe.action_id == "edit-procedure-or-code-block"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
+        ),
+    );
+}
+
+fn record_run_world_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "run_world_precondition_no_go_probe".into(),
+        bool_assert(
+            precondition_probe.action_id == "run-world"
                 && precondition_probe.status == "blocked"
                 && precondition_probe.decision == "no_go",
             precondition_probe.blocking_reason.clone(),

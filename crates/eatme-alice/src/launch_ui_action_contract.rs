@@ -3,6 +3,7 @@ use crate::launch_edit_procedure::{
     DEFAULT_PROCEDURE_EDIT_HOOK, UiActionEditProcedureProbe, probe_edit_procedure_preconditions,
 };
 use crate::launch_object_placement::{DEFAULT_OBJECT_PLACEMENT_HOOK, UiActionObjectPlacementProbe};
+use crate::launch_run_world::{DEFAULT_WORLD_RUN_HOOK, probe_run_world_preconditions};
 use crate::launch_ui_actions::{UiActionNoGoProbe, UiActionProbe};
 use anyhow::Result;
 use std::fs;
@@ -34,6 +35,10 @@ pub fn write_ui_action_contract(
         .filter(|_| !edit_procedure_proven)
         .map(probe_edit_procedure_preconditions);
     let edit_procedure_precondition_probes = edit_procedure_no_go_probe.iter().collect::<Vec<_>>();
+    let run_world_no_go_probe = edit_procedure_candidate_probe
+        .filter(|probe| probe.proves_edit())
+        .map(probe_run_world_preconditions);
+    let run_world_precondition_probes = run_world_no_go_probe.iter().collect::<Vec<_>>();
     let candidate_affordance_probes = object_placement_probe
         .into_iter()
         .map(serde_json::to_value)
@@ -56,6 +61,7 @@ pub fn write_ui_action_contract(
         "action_precondition_probes": action_precondition_probes
             .into_iter()
             .chain(edit_procedure_precondition_probes)
+            .chain(run_world_precondition_probes)
             .collect::<Vec<_>>(),
         "candidate_affordance_probes": candidate_affordance_probes,
         "required_actions": [
@@ -91,7 +97,14 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "run-world",
-                "required_evidence": "artifact proves the world run control was invoked"
+                "required_evidence": "artifact proves the world run control or equivalent runtime entry point executed after the first-lesson edit",
+                "missing_affordance_id": "deterministic-alice-world-run-affordance",
+                "contract_required": {
+                    "candidate_backend": DEFAULT_WORLD_RUN_HOOK,
+                    "inputs": ["edited_project", "run_selector", "evidence_dir"],
+                    "outputs": ["run_artifact", "runtime_or_log_evidence"],
+                    "unsafe_until_available": true
+                }
             },
             {
                 "id": "save-project",
