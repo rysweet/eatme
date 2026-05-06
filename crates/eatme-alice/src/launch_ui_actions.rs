@@ -1,8 +1,12 @@
 use crate::launch_artifacts::artifact_info;
+use crate::launch_edit_procedure::{
+    DEFAULT_PROCEDURE_EDIT_HOOK, probe_edit_procedure_preconditions,
+};
 use crate::launch_object_placement::{
     DEFAULT_OBJECT_PLACEMENT_HOOK, UiActionObjectPlacementProbe,
     missing_object_placement_affordance,
 };
+use crate::launch_window_targeting::alice_window_id;
 use anyhow::Result;
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
@@ -10,13 +14,6 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
-
-const ALICE_WINDOW_MARKERS: [&str; 4] = [
-    "org.alice.stageide.entrypoint",
-    "org.alice.stageide",
-    "org.alice.ide",
-    "\"alice 3",
-];
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionProbe {
@@ -64,6 +61,7 @@ pub fn record_ui_action_blockers(
     place_object_precondition_probe: &UiActionNoGoProbe,
     object_placement_probe: &UiActionObjectPlacementProbe,
 ) {
+    let edit_procedure_probe = probe_edit_procedure_preconditions(object_placement_probe);
     record_place_object_probe(
         assertions,
         place_object_precondition_probe,
@@ -78,10 +76,11 @@ pub fn record_ui_action_blockers(
     );
     assertions.insert(
         "edit_procedure_ui_action".into(),
-        AssertionResult::fail(
-            "blocked: no supported Alice desktop automation can edit a procedure or code block yet",
-        ),
+        AssertionResult::fail(edit_procedure_probe.blocking_reason.clone()),
     );
+    if object_placement_probe.proves_placement() {
+        record_edit_procedure_precondition_no_go(assertions, &edit_procedure_probe);
+    }
     assertions.insert(
         "run_world_ui_action".into(),
         AssertionResult::fail(
@@ -168,6 +167,10 @@ pub fn write_ui_action_contract(
         .into_iter()
         .filter(|_| placement_status != "passed")
         .collect::<Vec<_>>();
+    let edit_procedure_probe = object_placement_probe
+        .filter(|probe| probe.proves_placement())
+        .map(probe_edit_procedure_preconditions);
+    let edit_procedure_precondition_probes = edit_procedure_probe.iter().collect::<Vec<_>>();
     let json = serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
         "status": "blocked",
@@ -178,7 +181,10 @@ pub fn write_ui_action_contract(
             "log_captured": log_captured
         },
         "executed_action_probes": activation_probe.into_iter().collect::<Vec<_>>(),
-        "action_precondition_probes": action_precondition_probes,
+        "action_precondition_probes": action_precondition_probes
+            .into_iter()
+            .chain(edit_procedure_precondition_probes)
+            .collect::<Vec<_>>(),
         "candidate_affordance_probes": object_placement_probe.into_iter().collect::<Vec<_>>(),
         "required_actions": [
             {
@@ -202,7 +208,14 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "edit-procedure-or-code-block",
-                "required_evidence": "artifact proves a procedure or code block was edited"
+                "required_evidence": "artifact proves a procedure or code block was edited",
+                "missing_affordance_id": "deterministic-alice-procedure-edit-affordance",
+                "contract_required": {
+                    "candidate_backend": DEFAULT_PROCEDURE_EDIT_HOOK,
+                    "inputs": ["project_after_object_placement", "procedure_selector", "edit_spec", "evidence_dir"],
+                    "outputs": ["edited_project_artifact", "procedure_or_code_diff"],
+                    "unsafe_until_available": true
+                }
             },
             {
                 "id": "run-world",
@@ -436,28 +449,27 @@ fn record_place_object_precondition_no_go(
     );
 }
 
+fn record_edit_procedure_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "edit_procedure_precondition_no_go_probe".into(),
+        bool_assert(
+            precondition_probe.action_id == "edit-procedure-or-code-block"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
+        ),
+    );
+}
+
 fn ui_action_blocking_reason(placement_status: &str) -> &'static str {
     if placement_status == "passed" {
-        "Deterministic object placement evidence exists, but procedure editing, world run, and project save automation are not wired yet."
+        "Deterministic object placement evidence exists, but the procedure/code-block edit contract, world run, and project save automation are not wired yet."
     } else {
         "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet."
     }
-}
-
-pub fn alice_window_id(window_list: &str) -> Option<String> {
-    window_list.lines().find_map(|line| {
-        let normalized = line.to_ascii_lowercase();
-        if !ALICE_WINDOW_MARKERS
-            .iter()
-            .any(|marker| normalized.contains(marker))
-        {
-            return None;
-        }
-        line.split_whitespace()
-            .next()
-            .filter(|id| id.starts_with("0x"))
-            .map(str::to_string)
-    })
 }
 
 fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
