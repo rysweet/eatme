@@ -18,6 +18,7 @@ use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
+use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
     probe_alice_window_activation, probe_place_object_preconditions,
@@ -34,7 +35,6 @@ use std::path::{Path, PathBuf};
 use std::process::Child;
 use std::thread;
 use std::time::{Duration, Instant};
-
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeOptions {
     pub alice_home: PathBuf,
@@ -46,10 +46,8 @@ pub struct LaunchSmokeOptions {
     pub offline_package: bool,
     pub scenario: LaunchSmokeScenario,
 }
-
 pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManifest> {
     validate_scenario_name(&options.scenario.id)?;
-
     let runner = RealCommandRunner;
     let deps = check_dependencies(&runner)?;
     let eatme_commit = git_commit(Path::new("."), &runner).unwrap_or_else(|_| "unknown".into());
@@ -58,7 +56,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         .join(&options.scenario.id)
         .join(&options.run_id);
     prepare_run_dir(&run_dir)?;
-
     let mut assertions = BTreeMap::new();
     assertions.insert(
         "dependencies_available".into(),
@@ -362,6 +359,13 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &object_placement_probe,
             display.name(),
         );
+        let run_world_probe = probe_run_world_hook(
+            &runner,
+            &options.alice_home,
+            &run_dir,
+            &edit_procedure_probe,
+            display.name(),
+        );
         let artifact = write_ui_action_contract(
             &run_dir,
             specific_alice_window_ok,
@@ -371,6 +375,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             Some(&place_object_probe),
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),
+            Some(&run_world_probe),
         )?;
         record_ui_action_blockers(
             &mut assertions,
@@ -378,6 +383,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &place_object_probe,
             &object_placement_probe,
             &edit_procedure_probe,
+            &run_world_probe,
         );
         if failure_category.is_none() {
             failure_category = Some(ui_action_failure_category(&object_placement_probe).into());
@@ -408,14 +414,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         assertions,
         failure_category,
     );
-
     let manifest_write = write_manifest(&run_dir, &manifest);
     shutdown(&mut alice);
     shutdown(&mut xvfb);
     manifest_write?;
     Ok(manifest)
 }
-
 fn validate_scenario_name(name: &str) -> Result<()> {
     if name.is_empty()
         || name.starts_with('-')
@@ -428,7 +432,6 @@ fn validate_scenario_name(name: &str) -> Result<()> {
     }
     Ok(())
 }
-
 fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
     let deadline = Instant::now() + Duration::from_secs(seconds.clamp(5, 60));
     while Instant::now() < deadline {
@@ -439,30 +442,25 @@ fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
     }
     true
 }
-
 fn shutdown(child: &mut Child) {
     let _ = child.kill();
     let _ = child.wait();
 }
-
 fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
     match result {
         Ok(value) => (value, None),
         Err(error) => (T::default(), Some(format!("{error:#}"))),
     }
 }
-
 fn capture_artifact_or_error<T>(result: Result<T>) -> (Option<T>, Option<String>) {
     match result {
         Ok(value) => (Some(value), None),
         Err(error) => (None, Some(format!("{error:#}"))),
     }
 }
-
 fn artifact_or_error(path: &Path) -> (Option<ArtifactInfo>, Option<String>) {
     capture_artifact_or_error(artifact_info(path))
 }
-
 fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<String> {
     let errors = errors.into_iter().flatten().collect::<Vec<_>>();
     if errors.is_empty() {
@@ -471,7 +469,6 @@ fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<St
         Some(errors.join("\n"))
     }
 }
-
 fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
     let output = runner.run(
         &CommandSpec::new("git")
@@ -491,6 +488,5 @@ fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
     }
     Ok(output.stdout.trim().to_string())
 }
-
 #[cfg(test)]
 mod tests;

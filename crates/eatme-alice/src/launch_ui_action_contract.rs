@@ -3,7 +3,9 @@ use crate::launch_edit_procedure::{
     DEFAULT_PROCEDURE_EDIT_HOOK, UiActionEditProcedureProbe, probe_edit_procedure_preconditions,
 };
 use crate::launch_object_placement::{DEFAULT_OBJECT_PLACEMENT_HOOK, UiActionObjectPlacementProbe};
-use crate::launch_run_world::{DEFAULT_WORLD_RUN_HOOK, probe_run_world_preconditions};
+use crate::launch_run_world::{
+    DEFAULT_WORLD_RUN_HOOK, UiActionRunWorldProbe, probe_run_world_preconditions,
+};
 use crate::launch_ui_actions::{UiActionNoGoProbe, UiActionProbe};
 use anyhow::Result;
 use std::fs;
@@ -19,6 +21,7 @@ pub fn write_ui_action_contract(
     place_object_precondition_probe: Option<&UiActionNoGoProbe>,
     object_placement_probe: Option<&UiActionObjectPlacementProbe>,
     edit_procedure_candidate_probe: Option<&UiActionEditProcedureProbe>,
+    run_world_candidate_probe: Option<&UiActionRunWorldProbe>,
 ) -> Result<eatme_core::ArtifactInfo> {
     let path = run_dir.join("ui-action-contract.json");
     let placement_status = object_placement_probe
@@ -30,6 +33,7 @@ pub fn write_ui_action_contract(
         .collect::<Vec<_>>();
     let edit_procedure_proven =
         edit_procedure_candidate_probe.is_some_and(UiActionEditProcedureProbe::proves_edit);
+    let run_world_proven = run_world_candidate_probe.is_some_and(UiActionRunWorldProbe::proves_run);
     let edit_procedure_no_go_probe = object_placement_probe
         .filter(|probe| probe.proves_placement())
         .filter(|_| !edit_procedure_proven)
@@ -37,6 +41,7 @@ pub fn write_ui_action_contract(
     let edit_procedure_precondition_probes = edit_procedure_no_go_probe.iter().collect::<Vec<_>>();
     let run_world_no_go_probe = edit_procedure_candidate_probe
         .filter(|probe| probe.proves_edit())
+        .filter(|_| !run_world_proven)
         .map(probe_run_world_preconditions);
     let run_world_precondition_probes = run_world_no_go_probe.iter().collect::<Vec<_>>();
     let candidate_affordance_probes = object_placement_probe
@@ -47,11 +52,16 @@ pub fn write_ui_action_contract(
                 .into_iter()
                 .map(serde_json::to_value),
         )
+        .chain(
+            run_world_candidate_probe
+                .into_iter()
+                .map(serde_json::to_value),
+        )
         .collect::<std::result::Result<Vec<_>, _>>()?;
     let json = serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
         "status": "blocked",
-        "blocking_reason": ui_action_blocking_reason(placement_status),
+        "blocking_reason": ui_action_blocking_reason(placement_status, edit_procedure_proven, run_world_proven),
         "preflight_evidence": {
             "specific_alice_window_detected": specific_alice_window_detected,
             "visual_evidence_captured": visual_evidence_captured,
@@ -103,7 +113,7 @@ pub fn write_ui_action_contract(
                     "candidate_backend": DEFAULT_WORLD_RUN_HOOK,
                     "inputs": ["edited_project", "run_selector", "evidence_dir"],
                     "outputs": ["run_artifact", "runtime_or_log_evidence"],
-                    "unsafe_until_available": true
+                    "unsafe_until_available": !run_world_proven
                 }
             },
             {
@@ -116,8 +126,16 @@ pub fn write_ui_action_contract(
     artifact_info(&path)
 }
 
-fn ui_action_blocking_reason(placement_status: &str) -> &'static str {
-    if placement_status == "passed" {
+fn ui_action_blocking_reason(
+    placement_status: &str,
+    edit_procedure_proven: bool,
+    run_world_proven: bool,
+) -> &'static str {
+    if run_world_proven {
+        "Deterministic object placement, procedure edit, and world run evidence exist, but project save automation is not wired yet."
+    } else if edit_procedure_proven {
+        "Deterministic object placement and procedure edit evidence exist, but world run and project save automation are not wired yet."
+    } else if placement_status == "passed" {
         "Deterministic object placement evidence exists, but the procedure/code-block edit contract, world run, and project save automation are not wired yet."
     } else {
         "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet."
