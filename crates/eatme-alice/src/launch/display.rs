@@ -3,6 +3,7 @@ use eatme_core::{CommandRunner, CommandSpec};
 use std::env;
 use std::fs::{self, File, OpenOptions};
 use std::io::{ErrorKind, Write};
+use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::thread;
@@ -121,7 +122,15 @@ fn command_ok(runner: &impl CommandRunner, spec: CommandSpec) -> bool {
 }
 
 fn display_socket_exists(display: u16) -> bool {
-    x11_socket_dir().join(format!("X{display}")).exists()
+    let socket_path = x11_socket_dir().join(format!("X{display}"));
+    if x11_socket_accepts_connections(&socket_path) {
+        return true;
+    }
+    cleanup_stale_x11_artifacts(
+        &socket_path,
+        &env::temp_dir().join(format!(".X{display}-lock")),
+    );
+    socket_path.exists()
 }
 
 fn x11_socket_dir() -> PathBuf {
@@ -132,9 +141,35 @@ fn x11_socket_dir() -> PathBuf {
         .unwrap_or_else(|| env::temp_dir().join(".X11-unix"))
 }
 
+fn x11_socket_accepts_connections(socket_path: &Path) -> bool {
+    socket_path.exists() && UnixStream::connect(socket_path).is_ok()
+}
+
+fn cleanup_stale_x11_artifacts(socket_path: &Path, lock_path: &Path) {
+    if !socket_path.exists() && !lock_path.exists() {
+        return;
+    }
+    if x11_socket_accepts_connections(socket_path) || x11_lock_pid_is_alive(lock_path) {
+        return;
+    }
+    let _ = fs::remove_file(socket_path);
+    let _ = fs::remove_file(lock_path);
+}
+
+fn x11_lock_pid_is_alive(lock_path: &Path) -> bool {
+    let Ok(contents) = fs::read_to_string(lock_path) else {
+        return false;
+    };
+    let pid = contents.trim().trim_start_matches("pid=").trim();
+    !pid.is_empty() && pid.chars().all(|character| character.is_ascii_digit()) && {
+        Path::new("/proc").join(pid).exists()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::net::UnixListener;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
@@ -211,6 +246,42 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
+    #[test]
+    fn cleanup_stale_x11_artifacts_removes_dead_socket_and_lock() {
+        let root = unique_short_test_dir("display-stale-x11");
+        let socket_dir = root.join("sockets");
+        fs::create_dir_all(&socket_dir).unwrap();
+        let socket_path = socket_dir.join("X90");
+        let listener = UnixListener::bind(&socket_path).unwrap();
+        drop(listener);
+        let lock_path = root.join(".X90-lock");
+        fs::write(&lock_path, "999999999\n").unwrap();
+
+        cleanup_stale_x11_artifacts(&socket_path, &lock_path);
+
+        assert!(!socket_path.exists());
+        assert!(!lock_path.exists());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn cleanup_stale_x11_artifacts_keeps_live_socket() {
+        let root = unique_short_test_dir("display-live-x11");
+        let socket_dir = root.join("sockets");
+        fs::create_dir_all(&socket_dir).unwrap();
+        let socket_path = socket_dir.join("X90");
+        let listener = UnixListener::bind(&socket_path).unwrap();
+        let lock_path = root.join(".X90-lock");
+        fs::write(&lock_path, "999999999\n").unwrap();
+
+        cleanup_stale_x11_artifacts(&socket_path, &lock_path);
+
+        assert!(socket_path.exists());
+        assert!(lock_path.exists());
+        drop(listener);
+        let _ = fs::remove_dir_all(root);
+    }
+
     fn unique_test_dir(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -221,5 +292,13 @@ mod tests {
             .join("target")
             .join("eatme-alice-tests")
             .join(format!("{prefix}-{nonce}"))
+    }
+
+    fn unique_short_test_dir(prefix: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        env::temp_dir().join(format!("{prefix}-{nonce}"))
     }
 }

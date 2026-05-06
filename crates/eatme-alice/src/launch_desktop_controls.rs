@@ -70,6 +70,16 @@ pub(crate) fn probe_run_window_after_shortcut(
             stdout: text,
             stderr: String::new(),
         },
+        Ok((command, text)) if has_license_modal_evidence(&text) => UiActionProbe {
+            id: "observe-run-window-after-shortcut".into(),
+            status: "blocked".into(),
+            detail: "blocked: Alice license agreement window was still visible after Ctrl+F5 dispatch; Run-window observation requires clearing that modal first".into(),
+            window_id: run_shortcut_probe.window_id.clone(),
+            command: Some(command),
+            exit_status: Some(0),
+            stdout: text,
+            stderr: String::new(),
+        },
         Ok((command, text)) => UiActionProbe {
             id: "observe-run-window-after-shortcut".into(),
             status: "failed".into(),
@@ -144,6 +154,12 @@ fn has_run_window_evidence(window_text: &str) -> bool {
         (normalized.contains(" run") || normalized.contains("\"run"))
             && !normalized.contains("firefox")
     })
+}
+
+fn has_license_modal_evidence(window_text: &str) -> bool {
+    window_text
+        .lines()
+        .any(|line| line.to_ascii_lowercase().contains("license agreement"))
 }
 
 struct ShortcutProbe {
