@@ -68,6 +68,13 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record a no-go precondition probe for place-object"
         ));
     }
+    if has_passed_place_object_candidate_affordance_probe(contract)
+        && !has_edit_procedure_no_go_probe(contract)
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record a no-go precondition probe for edit-procedure-or-code-block after object placement passes"
+        ));
+    }
 }
 
 pub(super) fn action_ids(contract: &serde_json::Value) -> Vec<String> {
@@ -190,6 +197,48 @@ fn has_passed_place_object_candidate_affordance_probe(contract: &serde_json::Val
         .unwrap_or(false)
 }
 
+fn has_edit_procedure_no_go_probe(contract: &serde_json::Value) -> bool {
+    contract
+        .get("action_precondition_probes")
+        .and_then(serde_json::Value::as_array)
+        .map(|probes| {
+            probes.iter().any(|probe| {
+                probe.get("id").and_then(serde_json::Value::as_str)
+                    == Some("edit-procedure-precondition")
+                    && probe.get("action_id").and_then(serde_json::Value::as_str)
+                        == Some("edit-procedure-or-code-block")
+                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("blocked")
+                    && probe.get("decision").and_then(serde_json::Value::as_str) == Some("no_go")
+                    && probe
+                        .get("missing_affordance")
+                        .is_some_and(has_edit_procedure_missing_affordance)
+                    && probe
+                        .get("preconditions")
+                        .and_then(serde_json::Value::as_array)
+                        .map(|preconditions| {
+                            has_precondition(preconditions, "place-object", true)
+                                && has_precondition(
+                                    preconditions,
+                                    "deterministic-alice-procedure-edit-affordance",
+                                    false,
+                                )
+                        })
+                        .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false)
+}
+
+fn has_precondition(preconditions: &[serde_json::Value], id: &str, expected_passed: bool) -> bool {
+    preconditions.iter().any(|precondition| {
+        precondition.get("id").and_then(serde_json::Value::as_str) == Some(id)
+            && precondition
+                .get("passed")
+                .and_then(serde_json::Value::as_bool)
+                == Some(expected_passed)
+    })
+}
+
 fn has_place_object_missing_affordance(value: &serde_json::Value) -> bool {
     value.get("id").and_then(serde_json::Value::as_str)
         == Some("deterministic-alice-object-gallery-placement-affordance")
@@ -214,5 +263,32 @@ fn has_place_object_missing_affordance(value: &serde_json::Value) -> bool {
             .is_some_and(|detail| {
                 detail.contains("Alice-side object placement command")
                     && detail.contains("named gallery selector")
+            })
+}
+
+fn has_edit_procedure_missing_affordance(value: &serde_json::Value) -> bool {
+    value.get("id").and_then(serde_json::Value::as_str)
+        == Some("deterministic-alice-procedure-edit-affordance")
+        && value.get("kind").and_then(serde_json::Value::as_str) == Some("backend_or_ui_affordance")
+        && value
+            .get("required_capability")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("procedure or code-block selector")
+                    && detail.contains("return proof of the edit")
+            })
+        && value
+            .get("missing_contract")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("No Alice-side command")
+                    && detail.contains("procedure/code-block selector")
+                    && detail.contains("procedure/code diff")
+            })
+        && value
+            .get("next_implementation")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("procedure edit command") && detail.contains("named editor target")
             })
 }

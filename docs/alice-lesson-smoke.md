@@ -80,8 +80,10 @@ Alice Stage IDE window from window-manager evidence, writes
 `ui-action-contract.json`, and fails loudly with
 `ui_action_automation_unimplemented` until a deterministic
 `deterministic-alice-object-gallery-placement-affordance` can place a named
-object without coordinate guessing, and follow-on automation can edit a
-procedure/code block, run the world, and save a project.
+object without coordinate guessing. Once object placement is proven, the
+contract records the next missing affordance,
+`deterministic-alice-procedure-edit-affordance`, before follow-on automation
+can run the world or save a project.
 This is launch/action-contract evidence only. It is not full UI automation, not
 creative assessment, and not learner-world grading.
 

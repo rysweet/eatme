@@ -107,6 +107,37 @@ fn ui_action_failure_category_advances_after_object_placement_proof() {
     );
 }
 
+#[test]
+fn edit_procedure_precondition_probe_records_no_go_after_object_placement() {
+    let placed = object_placement_probe_with_status("passed");
+
+    let probe = probe_edit_procedure_preconditions(&placed);
+
+    assert_eq!(probe.id, "edit-procedure-precondition");
+    assert_eq!(probe.action_id, "edit-procedure-or-code-block");
+    assert_eq!(probe.status, "blocked");
+    assert_eq!(probe.decision, "no_go");
+    assert_eq!(
+        probe.missing_affordance.id,
+        "deterministic-alice-procedure-edit-affordance"
+    );
+    assert!(
+        probe
+            .missing_affordance
+            .missing_contract
+            .contains("tools/eatme-edit-procedure")
+    );
+    assert!(
+        probe
+            .preconditions
+            .iter()
+            .any(|precondition| { precondition.id == "place-object" && precondition.passed })
+    );
+    assert!(probe.preconditions.iter().any(|precondition| {
+        precondition.id == "deterministic-alice-procedure-edit-affordance" && !precondition.passed
+    }));
+}
+
 fn object_placement_probe_with_status(status: &str) -> UiActionObjectPlacementProbe {
     UiActionObjectPlacementProbe {
         id: "alice-side-object-placement-command-hook".into(),

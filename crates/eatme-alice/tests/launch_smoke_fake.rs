@@ -256,6 +256,29 @@ fn real_ui_action_contract_advances_when_object_placement_hook_proves_placement(
             .expect("edit procedure assertion should exist")
             .passed
     );
+    assert!(
+        manifest
+            .assertions
+            .get("edit_procedure_precondition_no_go_probe")
+            .expect("edit procedure no-go assertion should exist")
+            .passed
+    );
+    let contract_path = fixture
+        .root
+        .join("runs/first-lessons-real-ui-actions/ui-action-hook-run/ui-action-contract.json");
+    let contract: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(contract_path).unwrap()).unwrap();
+    let edit_probe = contract["action_precondition_probes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|probe| probe["action_id"] == "edit-procedure-or-code-block")
+        .expect("edit procedure no-go probe should be machine-readable after object placement");
+    assert_eq!(edit_probe["decision"], "no_go");
+    assert_eq!(
+        edit_probe["missing_affordance"]["id"],
+        "deterministic-alice-procedure-edit-affordance"
+    );
 }
 
 #[test]

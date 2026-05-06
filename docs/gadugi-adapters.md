@@ -99,9 +99,9 @@ the generated adapters as consumers of eatme's explicit contracts:
 Standard launch-smoke adapters expect command success and a `null`
 `failure_category`. The `first-lessons-real-ui-actions` adapter intentionally
 does not: it preserves `expect.exit_code: 1` and
-`"failure_category": "ui_action_automation_unimplemented"` until deterministic
-object placement, procedure editing, world running, and project saving are
-implemented in real Alice UI automation.
+`"failure_category": "ui_action_automation_unimplemented"` or
+`"ui_action_remaining_steps_unimplemented"` while deterministic object
+placement, procedure editing, world running, and project saving are incomplete.
 
 ## Editing policy
 

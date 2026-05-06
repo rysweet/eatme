@@ -315,7 +315,8 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 The action-contract scenario writes manifest/log/window/screenshot evidence and
 `ui-action-contract.json`. Without an Alice-side placement hook it reports
 `ui_action_automation_unimplemented`. With a valid placement hook it advances to
-`ui_action_remaining_steps_unimplemented`, because editing a procedure, running
+`ui_action_remaining_steps_unimplemented` and records the next missing contract:
+`deterministic-alice-procedure-edit-affordance`. Editing a procedure, running
 the world, and saving from the desktop are still not automated. Neither result
 is full UI coverage.
 
