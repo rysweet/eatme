@@ -159,9 +159,7 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(expected_stdout.contains(r#""scenario_id": "first-lessons-real-ui-actions""#));
-    assert!(
-        expected_stdout.contains(r#""failure_category": "ui_action_automation_unimplemented""#)
-    );
+    assert!(expected_stdout.contains(r#""failure_category":"#));
     assert!(expected_stdout.contains(r#""activate_alice_window_ui_action": {"#));
     assert!(expected_stdout.contains(r#""ui_action_contract": {"#));
     assert_eq!(

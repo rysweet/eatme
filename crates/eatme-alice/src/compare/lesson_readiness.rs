@@ -29,6 +29,11 @@ const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "save-project",
 ];
 
+const UI_ACTION_BLOCKED_FAILURE_CATEGORIES: &[&str] = &[
+    "ui_action_automation_unimplemented",
+    "ui_action_remaining_steps_unimplemented",
+];
+
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
     pub schema_version: String,
@@ -110,7 +115,10 @@ pub fn check_lesson_session_readiness(
     let readiness_status = if !issues.is_empty() {
         "incomplete"
     } else if target_evidence.iter().any(|target| {
-        target.failure_category.as_deref() == Some("ui_action_automation_unimplemented")
+        target
+            .failure_category
+            .as_deref()
+            .is_some_and(is_ui_action_blocked_category)
     }) {
         "blocked_until_ui_automation"
     } else {
@@ -183,18 +191,21 @@ fn inspect_target_evidence(
             "{role} launch_manifest scenario_id must be {FIRST_LESSON_SCENARIO_ID:?}"
         ));
     }
-    if failure_category.as_deref() != Some("ui_action_automation_unimplemented") {
-        issues.push(format!(
-            "{role} target must be blocked only by ui_action_automation_unimplemented until deterministic UI actions exist"
-        ));
-    }
-    if launch_manifest
-        .get("failure_category")
-        .and_then(serde_json::Value::as_str)
-        != Some("ui_action_automation_unimplemented")
+    if !failure_category
+        .as_deref()
+        .is_some_and(is_ui_action_blocked_category)
     {
         issues.push(format!(
-            "{role} launch_manifest failure_category must be ui_action_automation_unimplemented"
+            "{role} target must be blocked only by a known UI action category until deterministic UI actions exist"
+        ));
+    }
+    if !launch_manifest
+        .get("failure_category")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(is_ui_action_blocked_category)
+    {
+        issues.push(format!(
+            "{role} launch_manifest failure_category must be a known UI action blocker"
         ));
     }
 
@@ -298,6 +309,10 @@ fn inspect_target_evidence(
         missing_assertions,
         missing_required_actions,
     }
+}
+
+fn is_ui_action_blocked_category(category: &str) -> bool {
+    UI_ACTION_BLOCKED_FAILURE_CATEGORIES.contains(&category)
 }
 
 fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {

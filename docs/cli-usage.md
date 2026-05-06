@@ -313,9 +313,11 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 The action-contract scenario writes manifest/log/window/screenshot evidence and
-`ui-action-contract.json`. Until deterministic UI automation exists, an explicit
-`ui_action_automation_unimplemented` result is expected and should not be
-reported as passing full UI coverage.
+`ui-action-contract.json`. Without an Alice-side placement hook it reports
+`ui_action_automation_unimplemented`. With a valid placement hook it advances to
+`ui_action_remaining_steps_unimplemented`, because editing a procedure, running
+the world, and saving from the desktop are still not automated. Neither result
+is full UI coverage.
 
 Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow

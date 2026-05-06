@@ -71,9 +71,9 @@ acceptance_criteria:
   - given: Alice window activation succeeds but no stable object placement affordance exists
     when: the harness reaches the next first-lesson action boundary
     then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id deterministic-alice-object-gallery-placement-affordance
-  - given: deterministic Alice UI manipulation is not wired yet
+  - given: deterministic Alice UI manipulation is not fully wired yet
     when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
-    then: the manifest fails loudly with ui_action_automation_unimplemented and writes ui-action-contract.json
+    then: the manifest fails loudly with ui_action_automation_unimplemented when object placement is missing, or ui_action_remaining_steps_unimplemented after object placement proof exists, and writes ui-action-contract.json
   - given: reviewers use this scenario as first-lesson evidence
     when: they inspect the manifest, Alice log, window list, startup screenshot, and ui-action-contract.json
     then: they treat the result as launch/action-contract evidence only, not full UI automation, not creative assessment, and not learner-world grading
@@ -110,7 +110,7 @@ steps:
       - manifest assertions include run_world_ui_action
       - manifest assertions include save_project_ui_action
       - manifest assertions include ui_action_artifact_captured
-      - manifest failure_category is ui_action_automation_unimplemented until actions are automated
+      - manifest failure_category is a UI action blocker until actions are automated
       - ui-action-contract.json exists and is non-empty
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#building-a-scene-first-world
@@ -136,7 +136,7 @@ artifacts:
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. If Alice launches but real UI
-  actions are not automated, fail with ui_action_automation_unimplemented and
-  capture ui-action-contract.json rather than silently passing. This is
+  actions are not automated, fail with ui_action_automation_unimplemented or
+  ui_action_remaining_steps_unimplemented and capture ui-action-contract.json rather than silently passing. This is
   launch/action-contract evidence only. It is not full UI automation, not
   creative assessment, and not learner-world grading.

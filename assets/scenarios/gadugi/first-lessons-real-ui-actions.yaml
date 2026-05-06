@@ -62,7 +62,7 @@ steps:
     exit_code: 1
     stdout_contains:
     - '"scenario_id": "first-lessons-real-ui-actions"'
-    - '"failure_category": "ui_action_automation_unimplemented"'
+    - '"failure_category":'
     - '"real_alice_execution_evidence": {'
     - '"startup_screenshot": {'
     - '"specific_alice_window_detected": {'
@@ -92,7 +92,7 @@ assertions:
   params:
     required_strings: |-
       "scenario_id": "first-lessons-real-ui-actions"
-      "failure_category": "ui_action_automation_unimplemented"
+      "failure_category":
       "real_alice_execution_evidence": {
       "startup_screenshot": {
       "specific_alice_window_detected": {

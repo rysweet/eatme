@@ -430,7 +430,7 @@ fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioSte
     let evidence = step.evidence.join("\n").to_lowercase();
     let mut expected = vec![format!("\"scenario_id\": \"{}\"", scenario.id)];
     if scenario.kind == "alice_real_ui_action_contract" {
-        expected.push("\"failure_category\": \"ui_action_automation_unimplemented\"".into());
+        expected.push("\"failure_category\":".into());
     } else {
         expected.push("\"failure_category\": null".into());
     }

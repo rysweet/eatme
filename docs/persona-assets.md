@@ -180,7 +180,7 @@ contracts.
 | `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state scenarios for visible variables, score/time rules, arrays, item order, and boundary tests. |
 | `mythic-choice-event-tree` | Student interactive narrative scenario for player triggers, state or condition checks, feedback, and alternate path playtests. |
 | `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective scenarios that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |
-| `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window and fails with `ui_action_automation_unimplemented` until object placement, code editing, running, and saving are automated. |
+| `first-lessons-real-ui-actions` | Real UI action contract that detects the Alice window. Without an Alice-side hook it fails with `ui_action_automation_unimplemented`; with object placement proof it moves to `ui_action_remaining_steps_unimplemented` until editing, running, and saving are automated. |
 | `modified-class-portability` | Class portability contract requiring before-export, destination-import, and after-import behavior evidence before a shared modified class is trusted. |
 
 Standalone outside-in Alice QA scenario assets and generated Gadugi adapters

@@ -141,6 +141,16 @@ pub fn record_ui_action_artifact(
     );
 }
 
+pub fn ui_action_failure_category(
+    object_placement_probe: &UiActionObjectPlacementProbe,
+) -> &'static str {
+    if object_placement_probe.proves_placement() {
+        "ui_action_remaining_steps_unimplemented"
+    } else {
+        "ui_action_automation_unimplemented"
+    }
+}
+
 pub fn write_ui_action_contract(
     run_dir: &Path,
     specific_alice_window_detected: bool,
@@ -406,6 +416,42 @@ fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
 }
 
 #[cfg(test)]
+fn object_placement_probe_with_status(status: &str) -> UiActionObjectPlacementProbe {
+    UiActionObjectPlacementProbe {
+        id: "alice-side-object-placement-command-hook".into(),
+        action_id: "place-object".into(),
+        status: status.into(),
+        detail: "probe detail".into(),
+        object_identifier: "alice-gallery://animals/bunny".into(),
+        candidate_hook_path: "tools/eatme-place-object".into(),
+        command: Some("tools/eatme-place-object --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        placement_artifact: if status == "passed" {
+            Some(ArtifactInfo {
+                path: "object-placement/placement.json".into(),
+                size_bytes: 2,
+                sha256: "placement-sha".into(),
+            })
+        } else {
+            None
+        },
+        scene_or_project_diff: if status == "passed" {
+            Some(ArtifactInfo {
+                path: "object-placement/scene.diff.json".into(),
+                size_bytes: 2,
+                sha256: "diff-sha".into(),
+            })
+        } else {
+            None
+        },
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use eatme_core::CommandOutput;
@@ -489,5 +535,20 @@ mod tests {
             precondition.id == "deterministic-alice-object-gallery-placement-affordance"
                 && !precondition.passed
         }));
+    }
+
+    #[test]
+    fn ui_action_failure_category_advances_after_object_placement_proof() {
+        let placed = object_placement_probe_with_status("passed");
+        let blocked = object_placement_probe_with_status("blocked");
+
+        assert_eq!(
+            ui_action_failure_category(&placed),
+            "ui_action_remaining_steps_unimplemented"
+        );
+        assert_eq!(
+            ui_action_failure_category(&blocked),
+            "ui_action_automation_unimplemented"
+        );
     }
 }

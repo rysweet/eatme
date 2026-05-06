@@ -381,7 +381,8 @@ their kind.
 
 `first-lessons-real-ui-actions` is an explicit real Alice UI action contract.
 Its generated adapter is not a passing UI automation run. The adapter expects
-eatme to launch real Alice, collect deterministic evidence, and fail loudly with:
+eatme to launch real Alice, collect deterministic evidence, and fail loudly with
+a UI action failure category such as:
 
 ```json
 {
@@ -389,6 +390,10 @@ eatme to launch real Alice, collect deterministic evidence, and fail loudly with
   "failure_category": "ui_action_automation_unimplemented"
 }
 ```
+
+When the Alice-side object placement hook proves placement, the category can
+advance to `ui_action_remaining_steps_unimplemented`; that still is not a full
+UI automation pass.
 
 The generated Gadugi adapter preserves that contract with `expect.exit_code: 1`
 for the launch step and required output markers for:
@@ -405,5 +410,5 @@ ui_action_contract
 ```
 
 Do not change the generated adapter to expect a successful launch until the
-eatme harness actually implements deterministic object placement, procedure
-editing, world running, project saving, and UI action artifact capture.
+eatme harness actually implements object placement, procedure editing, world
+running, project saving, and UI action artifact capture.

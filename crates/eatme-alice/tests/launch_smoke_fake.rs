@@ -219,6 +219,46 @@ fn real_ui_action_contract_fails_loudly_when_actions_are_not_automated() {
 }
 
 #[test]
+fn real_ui_action_contract_advances_when_object_placement_hook_proves_placement() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    fixture.write_fake_object_placement_hook();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "ui-action-hook-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("first-lessons-real-ui-actions"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("ui_action_remaining_steps_unimplemented")
+    );
+    assert!(
+        manifest
+            .assertions
+            .get("place_object_ui_action")
+            .expect("object placement assertion should exist")
+            .passed
+    );
+    assert!(
+        !manifest
+            .assertions
+            .get("edit_procedure_ui_action")
+            .expect("edit procedure assertion should exist")
+            .passed
+    );
+}
+
+#[test]
 fn missing_desktop_dependency_writes_blocking_manifest() {
     let fixture = TestFixture::new();
     fixture.write_missing_xvfb_probe();
