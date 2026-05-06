@@ -7,18 +7,83 @@ pub(crate) fn probe_desktop_save_shortcut(
     display: &str,
     activation_probe: Option<&UiActionProbe>,
 ) -> UiActionProbe {
+    probe_desktop_shortcut(
+        runner,
+        display,
+        activation_probe,
+        ShortcutProbe {
+            id: "dispatch-save-project-shortcut",
+            action_name: "desktop save shortcut dispatch",
+            key: "ctrl+s",
+            label: "Ctrl+S",
+            proves_only: "saved project content",
+        },
+    )
+}
+
+pub(crate) fn probe_desktop_run_shortcut(
+    runner: &impl CommandRunner,
+    display: &str,
+    activation_probe: Option<&UiActionProbe>,
+    edit_proven: bool,
+) -> UiActionProbe {
+    if !edit_proven {
+        return blocked_probe(
+            "dispatch-run-world-shortcut",
+            "blocked: procedure/code-block edit proof is required before desktop run shortcut dispatch",
+        );
+    }
+    probe_desktop_shortcut(
+        runner,
+        display,
+        activation_probe,
+        ShortcutProbe {
+            id: "dispatch-run-world-shortcut",
+            action_name: "desktop run shortcut dispatch",
+            key: "ctrl+F5",
+            label: "Ctrl+F5",
+            proves_only: "world execution",
+        },
+    )
+}
+
+struct ShortcutProbe {
+    id: &'static str,
+    action_name: &'static str,
+    key: &'static str,
+    label: &'static str,
+    proves_only: &'static str,
+}
+
+fn probe_desktop_shortcut(
+    runner: &impl CommandRunner,
+    display: &str,
+    activation_probe: Option<&UiActionProbe>,
+    shortcut: ShortcutProbe,
+) -> UiActionProbe {
     let Some(activation_probe) = activation_probe else {
         return blocked_probe(
-            "blocked: Alice window activation is required before desktop save shortcut dispatch",
+            shortcut.id,
+            &format!(
+                "blocked: Alice window activation is required before {}",
+                shortcut.action_name
+            ),
         );
     };
     if activation_probe.status != "passed" {
         return blocked_probe(
-            "blocked: Alice window activation did not pass before desktop save shortcut dispatch",
+            shortcut.id,
+            &format!(
+                "blocked: Alice window activation did not pass before {}",
+                shortcut.action_name
+            ),
         );
     }
     let Some(window_id) = activation_probe.window_id.as_deref() else {
-        return blocked_probe("blocked: Alice window activation did not record a window id");
+        return blocked_probe(
+            shortcut.id,
+            "blocked: Alice window activation did not record a window id",
+        );
     };
 
     let output = runner.run(
@@ -28,7 +93,7 @@ pub(crate) fn probe_desktop_save_shortcut(
                 "--window".to_string(),
                 window_id.to_string(),
                 "--clearmodifiers".to_string(),
-                "ctrl+s".to_string(),
+                shortcut.key.to_string(),
             ])
             .env("DISPLAY", display)
             .timeout(Duration::from_secs(5))
@@ -37,10 +102,11 @@ pub(crate) fn probe_desktop_save_shortcut(
 
     match output {
         Ok(output) if output.exit_status == Some(0) => UiActionProbe {
-            id: "dispatch-save-project-shortcut".into(),
+            id: shortcut.id.into(),
             status: "passed".into(),
             detail: format!(
-                "xdotool dispatched Ctrl+S to Alice window {window_id}; this proves desktop input dispatch only, not saved project content"
+                "xdotool dispatched {} to Alice window {window_id}; this proves desktop input dispatch only, not {}",
+                shortcut.label, shortcut.proves_only
             ),
             window_id: Some(window_id.into()),
             command: Some(output.command),
@@ -49,11 +115,11 @@ pub(crate) fn probe_desktop_save_shortcut(
             stderr: output.stderr,
         },
         Ok(output) => UiActionProbe {
-            id: "dispatch-save-project-shortcut".into(),
+            id: shortcut.id.into(),
             status: "failed".into(),
             detail: format!(
-                "xdotool could not dispatch Ctrl+S to Alice window {window_id}; exit_status={:?}",
-                output.exit_status
+                "xdotool could not dispatch {} to Alice window {window_id}; exit_status={:?}",
+                shortcut.label, output.exit_status
             ),
             window_id: Some(window_id.into()),
             command: Some(output.command),
@@ -62,14 +128,16 @@ pub(crate) fn probe_desktop_save_shortcut(
             stderr: output.stderr,
         },
         Err(error) => UiActionProbe {
-            id: "dispatch-save-project-shortcut".into(),
+            id: shortcut.id.into(),
             status: "failed".into(),
             detail: format!(
-                "xdotool could not dispatch Ctrl+S to Alice window {window_id}: {error:#}"
+                "xdotool could not dispatch {} to Alice window {window_id}: {error:#}",
+                shortcut.label
             ),
             window_id: Some(window_id.into()),
             command: Some(format!(
-                "xdotool key --window {window_id} --clearmodifiers ctrl+s"
+                "xdotool key --window {window_id} --clearmodifiers {}",
+                shortcut.key
             )),
             exit_status: None,
             stdout: String::new(),
@@ -78,9 +146,9 @@ pub(crate) fn probe_desktop_save_shortcut(
     }
 }
 
-fn blocked_probe(detail: &str) -> UiActionProbe {
+fn blocked_probe(id: &str, detail: &str) -> UiActionProbe {
     UiActionProbe {
-        id: "dispatch-save-project-shortcut".into(),
+        id: id.into(),
         status: "blocked".into(),
         detail: detail.into(),
         window_id: None,

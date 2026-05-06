@@ -88,6 +88,13 @@ pub(super) fn inspect_ui_action_contract(
         ));
     }
     if has_passed_edit_procedure_candidate_affordance_probe(contract)
+        && !has_passed_action_probe(contract, "dispatch-run-world-shortcut")
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record passed dispatch-run-world-shortcut probe after edit-procedure-or-code-block proof"
+        ));
+    }
+    if has_passed_edit_procedure_candidate_affordance_probe(contract)
         && !has_passed_run_world_candidate_affordance_probe(contract)
         && !has_run_world_no_go_probe(contract)
     {

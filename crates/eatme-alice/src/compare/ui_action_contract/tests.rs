@@ -52,6 +52,9 @@ fn contract_after_edit_without_run_no_go() -> serde_json::Value {
         }, {
             "id": "dispatch-save-project-shortcut",
             "status": "passed"
+        }, {
+            "id": "dispatch-run-world-shortcut",
+            "status": "passed"
         }],
         "candidate_affordance_probes": [
             {
