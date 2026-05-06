@@ -11,14 +11,15 @@ resource_basis:
 purpose: >-
   Move the first Alice lesson checks beyond manifest-only smoke by launching the
   real Alice desktop, verifying a specific Alice window, executing a safe window
-  activation probe, and recording a machine-readable no-go precondition probe
-  for the next action: placing an object. The contract still requires explicit
-  evidence for object placement, procedure/code editing, world run, project
-  save, and a captured contract artifact. Until deterministic UI manipulation
-  beyond safe window activation is wired, the harness must fail loudly with a
-  preflight/action contract instead of reporting a silent pass. This is
-  launch/action-contract evidence only. It is not full UI automation, not
-  creative assessment, and not learner-world grading.
+  activation probe, and recording a machine-readable no-go contract for the next
+  action: placing an object. That contract names the exact missing affordance:
+  deterministic-alice-object-gallery-placement-affordance. The contract still
+  requires explicit evidence for object placement, procedure/code editing, world
+  run, project save, and a captured contract artifact. Until deterministic UI
+  manipulation beyond safe window activation is wired, the harness must fail
+  loudly with a preflight/action contract instead of reporting a silent pass.
+  This is launch/action-contract evidence only. It is not full UI automation,
+  not creative assessment, and not learner-world grading.
 launcher:
   command: alice launch-smoke
   scenario: first-lessons-real-ui-actions
@@ -67,9 +68,9 @@ acceptance_criteria:
   - given: a specific Alice window id is present in wmctrl output
     when: the harness runs the first safe UI action probe
     then: manifest assertions include activate_alice_window_ui_action passed=true for wmctrl -ia against that window id
-  - given: Alice window activation succeeds but no stable object placement backend exists
+  - given: Alice window activation succeeds but no stable object placement affordance exists
     when: the harness reaches the next first-lesson action boundary
-    then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object
+    then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id deterministic-alice-object-gallery-placement-affordance
   - given: deterministic Alice UI manipulation is not wired yet
     when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
     then: the manifest fails loudly with ui_action_automation_unimplemented and writes ui-action-contract.json
@@ -122,7 +123,7 @@ agentic_follow_on:
     - scenario-labeled real Alice launch path identifies first-lessons-real-ui-actions
     - manifest, Alice log, window list, and startup screenshot evidence are present
     - Alice window detection is explicit
-    - ui-action-contract.json records the Alice window activation probe, records a no_go place-object precondition probe, and names place object, edit procedure, run world, and save project expectations
+    - ui-action-contract.json records the Alice window activation probe, records a no_go place-object precondition probe, names missing_affordance.id deterministic-alice-object-gallery-placement-affordance, and names place object, edit procedure, run world, and save project expectations
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

@@ -401,7 +401,8 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
         }),
         serde_json::json!({
             "id": "place-object",
-            "required_evidence": "artifact proves an object was added to the scene and placed"
+            "required_evidence": "artifact proves a named object was added to the scene and placed without coordinate guessing",
+            "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
         }),
         serde_json::json!({
             "id": "edit-procedure-or-code-block",
@@ -442,8 +443,15 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
             "action_id": "place-object",
             "status": "blocked",
             "decision": "no_go",
-            "blocking_reason": "blocked: no supported deterministic Alice object placement backend is wired",
+            "blocking_reason": "blocked: missing deterministic-alice-object-gallery-placement-affordance",
             "required_evidence": "artifact proves a named object was added to the Alice scene and placed without coordinate guessing",
+            "missing_affordance": {
+                "id": "deterministic-alice-object-gallery-placement-affordance",
+                "kind": "backend_or_ui_affordance",
+                "required_capability": "Given an open Alice starter project and a named object identifier, deterministically add that object to the scene without coordinate guessing.",
+                "missing_contract": "No Alice backend command, accessibility target, stable menu action, or scene-graph verification hook currently accepts a named object identifier and returns proof of placement.",
+                "next_implementation": "Add one stable affordance: either an Alice-side object placement command/test hook, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification."
+            },
             "preconditions": [
                 {
                     "id": "specific-alice-window-detected",
@@ -466,9 +474,9 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
                     "detail": "Alice launch log exists and is non-empty"
                 },
                 {
-                    "id": "deterministic-object-placement-backend",
+                    "id": "deterministic-alice-object-gallery-placement-affordance",
                     "passed": false,
-                    "detail": "no supported Alice command or stable UI automation contract can place an object yet"
+                    "detail": "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement"
                 }
             ]
         }],

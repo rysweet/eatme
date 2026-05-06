@@ -103,12 +103,17 @@ fn has_place_object_no_go_probe(contract: &serde_json::Value) -> bool {
                     && probe.get("status").and_then(serde_json::Value::as_str) == Some("blocked")
                     && probe.get("decision").and_then(serde_json::Value::as_str) == Some("no_go")
                     && probe
+                        .get("missing_affordance")
+                        .is_some_and(has_place_object_missing_affordance)
+                    && probe
                         .get("preconditions")
                         .and_then(serde_json::Value::as_array)
                         .map(|preconditions| {
                             preconditions.iter().any(|precondition| {
                                 precondition.get("id").and_then(serde_json::Value::as_str)
-                                    == Some("deterministic-object-placement-backend")
+                                    == Some(
+                                        "deterministic-alice-object-gallery-placement-affordance",
+                                    )
                                     && precondition
                                         .get("passed")
                                         .and_then(serde_json::Value::as_bool)
@@ -119,4 +124,31 @@ fn has_place_object_no_go_probe(contract: &serde_json::Value) -> bool {
             })
         })
         .unwrap_or(false)
+}
+
+fn has_place_object_missing_affordance(value: &serde_json::Value) -> bool {
+    value.get("id").and_then(serde_json::Value::as_str)
+        == Some("deterministic-alice-object-gallery-placement-affordance")
+        && value.get("kind").and_then(serde_json::Value::as_str) == Some("backend_or_ui_affordance")
+        && value
+            .get("required_capability")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("named object identifier")
+                    && detail.contains("without coordinate guessing")
+            })
+        && value
+            .get("missing_contract")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("No Alice backend command")
+                    && detail.contains("returns proof of placement")
+            })
+        && value
+            .get("next_implementation")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|detail| {
+                detail.contains("Alice-side object placement command")
+                    && detail.contains("named gallery selector")
+            })
 }

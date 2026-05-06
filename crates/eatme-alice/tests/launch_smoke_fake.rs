@@ -194,6 +194,28 @@ fn real_ui_action_contract_fails_loudly_when_actions_are_not_automated() {
             )
             .is_file()
     );
+    let contract_path = fixture
+        .root
+        .join("runs/first-lessons-real-ui-actions/ui-action-contract-run/ui-action-contract.json");
+    let contract: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(contract_path).unwrap()).unwrap();
+    let place_object_probe = contract["action_precondition_probes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|probe| probe["action_id"] == "place-object")
+        .expect("place-object no-go probe should be machine-readable");
+    assert_eq!(place_object_probe["decision"], "no_go");
+    assert_eq!(
+        place_object_probe["missing_affordance"]["id"],
+        "deterministic-alice-object-gallery-placement-affordance"
+    );
+    assert!(
+        place_object_probe["missing_affordance"]["next_implementation"]
+            .as_str()
+            .unwrap()
+            .contains("named gallery selector")
+    );
 }
 
 #[test]
