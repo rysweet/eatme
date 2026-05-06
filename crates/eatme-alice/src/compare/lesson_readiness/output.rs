@@ -85,10 +85,17 @@ fn normalized_readiness_status(readiness_status: &str) -> &'static str {
 }
 
 fn required_evidence() -> Vec<String> {
-    ["comparison-manifest.json", "ui-action-contract.json"]
-        .into_iter()
-        .map(str::to_string)
-        .collect()
+    [
+        "comparison-manifest.json with baseline and modernized targets",
+        "launch evidence for each target",
+        "modernized Run-window evidence",
+        "modernized desktop execution evidence",
+        "screenshot, log, and window artifacts",
+        "ui-action-contract.json",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect()
 }
 
 fn human_summary(

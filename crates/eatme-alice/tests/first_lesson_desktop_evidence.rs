@@ -20,6 +20,21 @@ fn readiness_passes_with_visible_run_window_screenshot() {
 
     assert!(report.passed, "{:?}", report.issues);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
+    assert_eq!(
+        report.required_evidence,
+        vec![
+            "comparison-manifest.json with baseline and modernized targets",
+            "launch evidence for each target",
+            "modernized Run-window evidence",
+            "modernized desktop execution evidence",
+            "screenshot, log, and window artifacts",
+            "ui-action-contract.json",
+        ]
+    );
+    assert_eq!(
+        report.lesson_session_readiness.required_evidence,
+        report.required_evidence
+    );
 }
 
 #[test]
