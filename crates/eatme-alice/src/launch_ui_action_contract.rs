@@ -116,6 +116,7 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "place-object",
+                "decision": if placement_status != "passed" { "no_go" } else { "ready" },
                 "required_evidence": "artifact proves a named object was added to the scene and placed without coordinate guessing",
                 "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance",
                 "contract_required": {
@@ -127,6 +128,7 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "edit-procedure-or-code-block",
+                "decision": if !edit_procedure_proven { "no_go" } else { "ready" },
                 "required_evidence": "artifact proves a procedure or code block was edited",
                 "missing_affordance_id": "deterministic-alice-procedure-edit-affordance",
                 "contract_required": {
@@ -138,6 +140,7 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "run-world",
+                "decision": if !run_world_proven { "no_go" } else { "ready" },
                 "required_evidence": "artifact proves the world run control or equivalent runtime entry point executed after the first-lesson edit",
                 "missing_affordance_id": "deterministic-alice-world-run-affordance",
                 "contract_required": {
@@ -149,6 +152,7 @@ pub fn write_ui_action_contract(
             },
             {
                 "id": "save-project",
+                "decision": if !save_project_proven { "no_go" } else { "ready" },
                 "required_evidence": "saved .a3p project artifact exists, is non-empty, and can be read after the first-lesson run proof",
                 "missing_affordance_id": "deterministic-alice-project-save-affordance",
                 "contract_required": {

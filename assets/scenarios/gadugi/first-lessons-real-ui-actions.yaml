@@ -67,6 +67,7 @@ steps:
     - '"startup_screenshot": {'
     - '"specific_alice_window_detected": {'
     - '"activate_alice_window_ui_action": {'
+    - '"save_project_desktop_shortcut_dispatch": {'
     - '"place_object_precondition_no_go_probe": {'
     - '"place_object_ui_action": {'
     - '"edit_procedure_ui_action": {'
@@ -97,6 +98,7 @@ assertions:
       "startup_screenshot": {
       "specific_alice_window_detected": {
       "activate_alice_window_ui_action": {
+      "save_project_desktop_shortcut_dispatch": {
       "place_object_precondition_no_go_probe": {
       "place_object_ui_action": {
       "edit_procedure_ui_action": {

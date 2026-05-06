@@ -7,6 +7,7 @@ const LAUNCH_SMOKE_BOUNDARY_CLAIMS: &[&str] = &[
 ];
 pub(crate) const REAL_UI_ACTION_BOUNDARY_PHRASES: &[&str] = &[
     "ui_action_automation_unimplemented",
+    "no_go",
     "not full UI automation",
     "not creative assessment",
     "not learner-world grading",

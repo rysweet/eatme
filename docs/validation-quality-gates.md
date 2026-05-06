@@ -99,3 +99,4 @@ from `master` pushes or manual dispatch, never from pull requests.
 | Gadugi generator | Regenerate adapters; asset validation; Rust tests |
 | Alice harness | Rust quality gates; real Alice smoke where environment permits |
 | CLI command surface | Rust quality gates; update CLI usage docs; docs build |
+| Lesson-session readiness docs | `mkdocs build --strict`; asset validation and Gadugi freshness checks when scenario ids or adapter behavior are mentioned |

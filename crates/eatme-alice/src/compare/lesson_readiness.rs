@@ -11,6 +11,18 @@ use serde::Serialize;
 use std::fs;
 use std::path::Path;
 
+mod assertions;
+mod no_go;
+mod output;
+pub use assertions::LessonActionAssertionEvidence;
+use assertions::{
+    action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,
+};
+pub use no_go::LessonSessionNoGoContract;
+use no_go::ui_action_no_go_contracts;
+pub use output::LessonSessionReadinessEnvelope;
+use output::build_readiness_output;
+
 const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
     "specific_alice_window_detected",
@@ -33,13 +45,25 @@ const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "save-project",
 ];
 
+const REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS: &[&str] = &[
+    "run_world_desktop_toolbar_window_observed",
+    "run_world_desktop_execution_observed",
+];
+
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
     pub schema_version: String,
     pub manifest_path: String,
     pub scenario_id: Option<String>,
     pub passed: bool,
+    pub status: String,
     pub readiness_status: String,
+    pub blocked_reason: Option<String>,
+    pub human_summary: String,
+    pub required_evidence: Vec<String>,
+    pub no_go_contracts: Vec<LessonSessionNoGoContract>,
+    pub lesson_session_readiness: LessonSessionReadinessEnvelope,
+    pub role_readiness: Vec<LessonSessionReadinessEnvelope>,
     pub contract_check: LessonSessionContractCheck,
     pub execute_requested: Option<bool>,
     pub target_evidence: Vec<LessonTargetEvidence>,
@@ -60,14 +84,7 @@ pub struct LessonTargetEvidence {
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
     pub missing_required_actions: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct LessonActionAssertionEvidence {
-    pub assertion_id: String,
-    pub action_id: String,
-    pub passed: bool,
-    pub detail: String,
+    pub no_go_contracts: Vec<LessonSessionNoGoContract>,
 }
 
 pub fn check_lesson_session_readiness(
@@ -133,6 +150,17 @@ pub fn check_lesson_session_readiness(
         "ready"
     }
     .to_string();
+    let no_go_contracts = target_evidence
+        .iter()
+        .flat_map(|target| target.no_go_contracts.clone())
+        .collect::<Vec<_>>();
+    let readiness_output = build_readiness_output(
+        scenario_id.as_deref(),
+        &readiness_status,
+        !issues.is_empty(),
+        no_go_contracts,
+        FIRST_LESSON_SCENARIO_ID,
+    );
 
     let limitations = vec![
         "does not automate complete instructor assignment creation".into(),
@@ -141,13 +169,19 @@ pub fn check_lesson_session_readiness(
         "does not grade student worlds".into(),
         "does not prove broad Alice compatibility beyond the selected scenario".into(),
     ];
-
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
         scenario_id,
         passed: issues.is_empty(),
+        status: readiness_output.status,
         readiness_status,
+        blocked_reason: readiness_output.blocked_reason,
+        human_summary: readiness_output.human_summary,
+        required_evidence: readiness_output.required_evidence,
+        no_go_contracts: readiness_output.no_go_contracts,
+        lesson_session_readiness: readiness_output.lesson_session_readiness,
+        role_readiness: readiness_output.role_readiness,
         contract_check,
         execute_requested,
         target_evidence,
@@ -188,6 +222,7 @@ fn inspect_target_evidence(
                 .iter()
                 .map(|value| (*value).into())
                 .collect(),
+            no_go_contracts: Vec::new(),
         };
     };
 
@@ -249,10 +284,7 @@ fn inspect_target_evidence(
     }
     require_passed_assertion(issues, role, launch_manifest, "ui_action_artifact_captured");
     if role == "modernized" {
-        for assertion in [
-            "run_world_desktop_toolbar_window_observed",
-            "run_world_desktop_execution_observed",
-        ] {
+        for assertion in REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS {
             require_passed_assertion(issues, role, launch_manifest, assertion);
         }
     }
@@ -268,6 +300,7 @@ fn inspect_target_evidence(
         .map(|value| (*value).to_string())
         .collect::<Vec<_>>();
     let mut ui_action_contract_readable = false;
+    let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
         match resolve_artifact_path(manifest_path, path) {
@@ -276,6 +309,7 @@ fn inspect_target_evidence(
                     Ok(contract) => {
                         ui_action_contract_readable = true;
                         inspect_ui_action_contract(role, &contract, issues);
+                        no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
                             .iter()
@@ -326,6 +360,7 @@ fn inspect_target_evidence(
         required_actions,
         missing_assertions,
         missing_required_actions,
+        no_go_contracts,
     }
 }
 
@@ -341,85 +376,4 @@ fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {
         .get(field)
         .and_then(serde_json::Value::as_str)
         .map(str::to_string)
-}
-
-fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAssertionEvidence> {
-    #[rustfmt::skip]
-    let action_ids = [
-        ("specific_alice_window_detected", "verify-specific-alice-window"),
-        ("activate_alice_window_ui_action", "activate-specific-alice-window"),
-        ("save_project_desktop_shortcut_dispatch", "dispatch-save-project-shortcut"),
-        ("run_world_desktop_shortcut_dispatch", "dispatch-run-world-shortcut"),
-        ("run_world_desktop_window_observed", "observe-run-window-after-shortcut"),
-        ("run_world_desktop_toolbar_dispatch", "dispatch-run-toolbar-button"),
-        ("run_world_desktop_toolbar_window_observed", "observe-run-window-after-toolbar-button"),
-        ("run_world_desktop_execution_observed", "observe-desktop-run-execution-after-toolbar-button"),
-        ("place_object_ui_action", "place-object"),
-        ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
-        ("run_world_ui_action", "run-world"),
-        ("save_project_ui_action", "save-project"),
-    ];
-    action_ids
-        .into_iter()
-        .filter_map(|(assertion_id, action_id)| {
-            let assertion = launch_manifest
-                .get("assertions")
-                .and_then(|assertions| assertions.get(assertion_id))?;
-            Some(LessonActionAssertionEvidence {
-                assertion_id: assertion_id.into(),
-                action_id: action_id.into(),
-                passed: assertion
-                    .get("passed")
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false),
-                detail: assertion
-                    .get("detail")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("")
-                    .into(),
-            })
-        })
-        .collect()
-}
-
-fn missing_launch_assertions(launch_manifest: &serde_json::Value) -> Vec<String> {
-    let assertions = launch_manifest
-        .get("assertions")
-        .and_then(serde_json::Value::as_object);
-    REQUIRED_FIRST_LESSON_ASSERTIONS
-        .iter()
-        .filter(|assertion| {
-            assertions
-                .map(|entries| !entries.contains_key(**assertion))
-                .unwrap_or(true)
-        })
-        .map(|value| (*value).to_string())
-        .collect()
-}
-
-fn require_passed_assertion(
-    issues: &mut Vec<String>,
-    role: &str,
-    launch_manifest: &serde_json::Value,
-    assertion: &str,
-) {
-    let passed = launch_manifest
-        .get("assertions")
-        .and_then(|assertions| assertions.get(assertion))
-        .and_then(|entry| entry.get("passed"))
-        .and_then(serde_json::Value::as_bool);
-    if passed != Some(true) {
-        issues.push(format!(
-            "{role} launch_manifest assertion {assertion:?} must pass before first-lesson readiness is evidence-ready"
-        ));
-    }
-}
-
-fn assertion_passed(launch_manifest: &serde_json::Value, assertion: &str) -> bool {
-    launch_manifest
-        .get("assertions")
-        .and_then(|assertions| assertions.get(assertion))
-        .and_then(|entry| entry.get("passed"))
-        .and_then(serde_json::Value::as_bool)
-        == Some(true)
 }
