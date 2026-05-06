@@ -23,6 +23,7 @@ pub fn write_ui_action_contract(
     activation_probe: Option<&UiActionProbe>,
     desktop_save_shortcut_probe: Option<&UiActionProbe>,
     desktop_run_shortcut_probe: Option<&UiActionProbe>,
+    run_window_probe: Option<&UiActionProbe>,
     place_object_precondition_probe: Option<&UiActionNoGoProbe>,
     object_placement_probe: Option<&UiActionObjectPlacementProbe>,
     edit_procedure_candidate_probe: Option<&UiActionEditProcedureProbe>,
@@ -89,6 +90,7 @@ pub fn write_ui_action_contract(
             .into_iter()
             .chain(desktop_save_shortcut_probe)
             .chain(desktop_run_shortcut_probe)
+            .chain(run_window_probe)
             .collect::<Vec<_>>(),
         "action_precondition_probes": action_precondition_probes
             .into_iter()

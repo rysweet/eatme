@@ -94,6 +94,13 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record passed dispatch-run-world-shortcut probe after edit-procedure-or-code-block proof"
         ));
     }
+    if has_passed_action_probe(contract, "dispatch-run-world-shortcut")
+        && !has_action_probe(contract, "observe-run-window-after-shortcut")
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record observe-run-window-after-shortcut probe after desktop Run shortcut dispatch"
+        ));
+    }
     if has_passed_edit_procedure_candidate_affordance_probe(contract)
         && !has_passed_run_world_candidate_affordance_probe(contract)
         && !has_run_world_no_go_probe(contract)
@@ -127,13 +134,27 @@ pub(super) fn action_ids(contract: &serde_json::Value) -> Vec<String> {
 }
 
 fn has_passed_action_probe(contract: &serde_json::Value, probe_id: &str) -> bool {
+    has_action_probe_with_status(contract, probe_id, Some("passed"))
+}
+
+fn has_action_probe(contract: &serde_json::Value, probe_id: &str) -> bool {
+    has_action_probe_with_status(contract, probe_id, None)
+}
+
+fn has_action_probe_with_status(
+    contract: &serde_json::Value,
+    probe_id: &str,
+    status: Option<&str>,
+) -> bool {
     contract
         .get("executed_action_probes")
         .and_then(serde_json::Value::as_array)
         .map(|probes| {
             probes.iter().any(|probe| {
                 probe.get("id").and_then(serde_json::Value::as_str) == Some(probe_id)
-                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("passed")
+                    && status.is_none_or(|expected| {
+                        probe.get("status").and_then(serde_json::Value::as_str) == Some(expected)
+                    })
             })
         })
         .unwrap_or(false)

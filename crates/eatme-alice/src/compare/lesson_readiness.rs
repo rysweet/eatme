@@ -30,11 +30,6 @@ const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "save-project",
 ];
 
-const UI_ACTION_BLOCKED_FAILURE_CATEGORIES: &[&str] = &[
-    "ui_action_automation_unimplemented",
-    "ui_action_remaining_steps_unimplemented",
-];
-
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
     pub schema_version: String,
@@ -315,7 +310,10 @@ fn inspect_target_evidence(
 }
 
 fn is_ui_action_blocked_category(category: &str) -> bool {
-    UI_ACTION_BLOCKED_FAILURE_CATEGORIES.contains(&category)
+    matches!(
+        category,
+        "ui_action_automation_unimplemented" | "ui_action_remaining_steps_unimplemented"
+    )
 }
 
 fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {
@@ -342,6 +340,10 @@ fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAss
         (
             "run_world_desktop_shortcut_dispatch",
             "dispatch-run-world-shortcut",
+        ),
+        (
+            "run_world_desktop_window_observed",
+            "observe-run-window-after-shortcut",
         ),
         ("place_object_ui_action", "place-object"),
         ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
