@@ -12,6 +12,7 @@ const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
     "specific_alice_window_detected",
     "activate_alice_window_ui_action",
+    "save_project_desktop_shortcut_dispatch",
     "place_object_candidate_hook_probe",
     "place_object_ui_action",
     "edit_procedure_ui_action",
@@ -226,24 +227,14 @@ fn inspect_target_evidence(
             "{role} launch_manifest is missing assertion {assertion:?}"
         ));
     }
-    require_passed_assertion(
-        issues,
-        role,
-        launch_manifest,
+    for assertion in [
         "real_alice_execution_evidence",
-    );
-    require_passed_assertion(
-        issues,
-        role,
-        launch_manifest,
         "specific_alice_window_detected",
-    );
-    require_passed_assertion(
-        issues,
-        role,
-        launch_manifest,
         "activate_alice_window_ui_action",
-    );
+        "save_project_desktop_shortcut_dispatch",
+    ] {
+        require_passed_assertion(issues, role, launch_manifest, assertion);
+    }
     require_passed_assertion(
         issues,
         role,
@@ -343,6 +334,10 @@ fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAss
         (
             "activate_alice_window_ui_action",
             "activate-specific-alice-window",
+        ),
+        (
+            "save_project_desktop_shortcut_dispatch",
+            "dispatch-save-project-shortcut",
         ),
         ("place_object_ui_action", "place-object"),
         ("edit_procedure_ui_action", "edit-procedure-or-code-block"),

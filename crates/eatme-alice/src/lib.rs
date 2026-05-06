@@ -3,6 +3,7 @@ pub mod deps;
 pub mod discover;
 pub mod launch;
 mod launch_artifacts;
+mod launch_desktop_controls;
 mod launch_edit_procedure;
 mod launch_object_placement;
 mod launch_run_world;
