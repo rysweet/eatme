@@ -26,10 +26,30 @@ pub struct UiActionProbe {
     pub stderr: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct UiActionPrecondition {
+    pub id: String,
+    pub passed: bool,
+    pub detail: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct UiActionNoGoProbe {
+    pub id: String,
+    pub action_id: String,
+    pub status: String,
+    pub decision: String,
+    pub blocking_reason: String,
+    pub required_evidence: String,
+    pub preconditions: Vec<UiActionPrecondition>,
+}
+
 pub fn record_ui_action_blockers(
     assertions: &mut BTreeMap<String, AssertionResult>,
     artifact: &ArtifactInfo,
+    place_object_probe: &UiActionNoGoProbe,
 ) {
+    record_place_object_no_go(assertions, place_object_probe);
     assertions.insert(
         "place_object_ui_action".into(),
         AssertionResult::fail(
@@ -57,7 +77,10 @@ pub fn record_ui_action_blockers(
     record_ui_action_artifact(assertions, artifact);
 }
 
-pub fn record_preflight_ui_action_blockers(assertions: &mut BTreeMap<String, AssertionResult>) {
+pub fn record_preflight_ui_action_blockers(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    place_object_probe: &UiActionNoGoProbe,
+) {
     assertions.insert(
         "specific_alice_window_detected".into(),
         AssertionResult::fail("preflight blocked before an Alice window could be verified"),
@@ -82,6 +105,7 @@ pub fn record_preflight_ui_action_blockers(assertions: &mut BTreeMap<String, Ass
         "save_project_ui_action".into(),
         AssertionResult::fail("preflight blocked before project save could run"),
     );
+    record_place_object_no_go(assertions, place_object_probe);
 }
 
 pub fn record_ui_action_artifact(
@@ -103,6 +127,7 @@ pub fn write_ui_action_contract(
     visual_evidence_captured: bool,
     log_captured: bool,
     activation_probe: Option<&UiActionProbe>,
+    place_object_probe: Option<&UiActionNoGoProbe>,
 ) -> Result<ArtifactInfo> {
     let path = run_dir.join("ui-action-contract.json");
     let json = serde_json::json!({
@@ -115,6 +140,7 @@ pub fn write_ui_action_contract(
             "log_captured": log_captured
         },
         "executed_action_probes": activation_probe.into_iter().collect::<Vec<_>>(),
+        "action_precondition_probes": place_object_probe.into_iter().collect::<Vec<_>>(),
         "required_actions": [
             {
                 "id": "verify-specific-alice-window",
@@ -144,6 +170,59 @@ pub fn write_ui_action_contract(
     });
     fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
     artifact_info(&path)
+}
+
+pub fn probe_place_object_preconditions(
+    specific_alice_window_detected: bool,
+    visual_evidence_captured: bool,
+    log_captured: bool,
+    activation_probe: Option<&UiActionProbe>,
+) -> UiActionNoGoProbe {
+    let activation_passed = activation_probe
+        .map(|probe| probe.status == "passed")
+        .unwrap_or(false);
+    let window_targeting_ready = specific_alice_window_detected && activation_passed;
+    let blocking_reason = if window_targeting_ready {
+        "blocked: no supported deterministic Alice object placement backend is wired"
+    } else {
+        "blocked: Alice window targeting preconditions are incomplete, so object placement would be unsafe"
+    };
+
+    UiActionNoGoProbe {
+        id: "place-object-precondition".into(),
+        action_id: "place-object".into(),
+        status: "blocked".into(),
+        decision: "no_go".into(),
+        blocking_reason: blocking_reason.into(),
+        required_evidence: "artifact proves a named object was added to the Alice scene and placed without coordinate guessing".into(),
+        preconditions: vec![
+            UiActionPrecondition {
+                id: "specific-alice-window-detected".into(),
+                passed: specific_alice_window_detected,
+                detail: "wmctrl output identifies an Alice Stage IDE window".into(),
+            },
+            UiActionPrecondition {
+                id: "activate-specific-alice-window".into(),
+                passed: activation_passed,
+                detail: "wmctrl -ia succeeds against the detected Alice window id".into(),
+            },
+            UiActionPrecondition {
+                id: "visual-evidence-captured".into(),
+                passed: visual_evidence_captured,
+                detail: "startup screenshot or window evidence exists".into(),
+            },
+            UiActionPrecondition {
+                id: "log-captured".into(),
+                passed: log_captured,
+                detail: "Alice launch log exists and is non-empty".into(),
+            },
+            UiActionPrecondition {
+                id: "deterministic-object-placement-backend".into(),
+                passed: false,
+                detail: "no supported Alice command or stable UI automation contract can place an object yet".into(),
+            },
+        ],
+    }
 }
 
 pub fn probe_alice_window_activation(
@@ -221,6 +300,21 @@ pub fn record_alice_window_activation(
     );
 }
 
+fn record_place_object_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "place_object_precondition_no_go_probe".into(),
+        bool_assert(
+            probe.action_id == "place-object"
+                && probe.status == "blocked"
+                && probe.decision == "no_go",
+            probe.blocking_reason.clone(),
+        ),
+    );
+}
+
 pub fn alice_window_id(window_list: &str) -> Option<String> {
     window_list.lines().find_map(|line| {
         let normalized = line.to_ascii_lowercase();
@@ -288,5 +382,30 @@ mod tests {
 
         assert_eq!(probe.status, "blocked");
         assert!(runner.commands().is_empty());
+    }
+
+    #[test]
+    fn place_object_precondition_probe_records_no_go_after_window_activation() {
+        let activation_probe = UiActionProbe {
+            id: "activate-specific-alice-window".into(),
+            status: "passed".into(),
+            detail: "wmctrl activated Alice window 0x001".into(),
+            window_id: Some("0x001".into()),
+            command: Some("wmctrl -ia 0x001".into()),
+            exit_status: Some(0),
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+
+        let probe = probe_place_object_preconditions(true, true, true, Some(&activation_probe));
+
+        assert_eq!(probe.id, "place-object-precondition");
+        assert_eq!(probe.action_id, "place-object");
+        assert_eq!(probe.status, "blocked");
+        assert_eq!(probe.decision, "no_go");
+        assert!(probe.blocking_reason.contains("no supported deterministic"));
+        assert!(probe.preconditions.iter().any(|precondition| {
+            precondition.id == "deterministic-object-placement-backend" && !precondition.passed
+        }));
     }
 }

@@ -1,6 +1,7 @@
 use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
     first_lesson::FIRST_LESSON_SCENARIO_ID,
+    ui_action_contract::{action_ids, inspect_ui_action_contract},
 };
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
@@ -11,6 +12,7 @@ const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
     "specific_alice_window_detected",
     "activate_alice_window_ui_action",
+    "place_object_precondition_no_go_probe",
     "place_object_ui_action",
     "edit_procedure_ui_action",
     "run_world_ui_action",
@@ -220,6 +222,12 @@ fn inspect_target_evidence(
         launch_manifest,
         "activate_alice_window_ui_action",
     );
+    require_passed_assertion(
+        issues,
+        role,
+        launch_manifest,
+        "place_object_precondition_no_go_probe",
+    );
     require_passed_assertion(issues, role, launch_manifest, "ui_action_artifact_captured");
 
     let ui_action_contract_path = launch_manifest
@@ -322,89 +330,6 @@ fn require_passed_assertion(
             "{role} launch_manifest assertion {assertion:?} must pass before first-lesson readiness is evidence-ready"
         ));
     }
-}
-
-fn inspect_ui_action_contract(role: &str, contract: &serde_json::Value, issues: &mut Vec<String>) {
-    if contract
-        .get("schema_version")
-        .and_then(serde_json::Value::as_str)
-        != Some("eatme.ui-action-contract/v1")
-    {
-        issues.push(format!(
-            "{role} ui-action-contract.json has unsupported schema_version"
-        ));
-    }
-    if contract.get("status").and_then(serde_json::Value::as_str) != Some("blocked") {
-        issues.push(format!(
-            "{role} ui-action-contract.json status must remain blocked until UI actions are automated"
-        ));
-    }
-    if contract
-        .get("blocking_reason")
-        .and_then(serde_json::Value::as_str)
-        .map(str::is_empty)
-        .unwrap_or(true)
-    {
-        issues.push(format!(
-            "{role} ui-action-contract.json must explain the blocking_reason"
-        ));
-    }
-    let preflight = contract
-        .get("preflight_evidence")
-        .and_then(serde_json::Value::as_object);
-    for field in [
-        "specific_alice_window_detected",
-        "visual_evidence_captured",
-        "log_captured",
-    ] {
-        if preflight
-            .and_then(|entry| entry.get(field))
-            .and_then(serde_json::Value::as_bool)
-            .is_none()
-        {
-            issues.push(format!(
-                "{role} ui-action-contract.json preflight_evidence.{field} must be a boolean"
-            ));
-        }
-    }
-    if contract
-        .get("preflight_evidence")
-        .and_then(|preflight| preflight.get("specific_alice_window_detected"))
-        .and_then(serde_json::Value::as_bool)
-        == Some(true)
-        && !has_passed_action_probe(contract, "activate-specific-alice-window")
-    {
-        issues.push(format!(
-            "{role} ui-action-contract.json must record passed activate-specific-alice-window probe when an Alice window is detected"
-        ));
-    }
-}
-
-fn action_ids(contract: &serde_json::Value) -> Vec<String> {
-    contract
-        .get("required_actions")
-        .and_then(serde_json::Value::as_array)
-        .map(|actions| {
-            actions
-                .iter()
-                .filter_map(|action| action.get("id").and_then(serde_json::Value::as_str))
-                .map(str::to_string)
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn has_passed_action_probe(contract: &serde_json::Value, probe_id: &str) -> bool {
-    contract
-        .get("executed_action_probes")
-        .and_then(serde_json::Value::as_array)
-        .map(|probes| {
-            probes.iter().any(|probe| {
-                probe.get("id").and_then(serde_json::Value::as_str) == Some(probe_id)
-                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("passed")
-            })
-        })
-        .unwrap_or(false)
 }
 
 fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<PathBuf> {

@@ -361,6 +361,10 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
                 "passed": true,
                 "detail": "wmctrl activated Alice window 0x001"
             },
+            "place_object_precondition_no_go_probe": {
+                "passed": true,
+                "detail": "blocked: no supported deterministic Alice object placement backend is wired"
+            },
             "place_object_ui_action": {
                 "passed": false,
                 "detail": "blocked: no supported Alice desktop automation can add/place an object yet"
@@ -432,6 +436,41 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
             "exit_status": 0,
             "stdout": "",
             "stderr": ""
+        }],
+        "action_precondition_probes": [{
+            "id": "place-object-precondition",
+            "action_id": "place-object",
+            "status": "blocked",
+            "decision": "no_go",
+            "blocking_reason": "blocked: no supported deterministic Alice object placement backend is wired",
+            "required_evidence": "artifact proves a named object was added to the Alice scene and placed without coordinate guessing",
+            "preconditions": [
+                {
+                    "id": "specific-alice-window-detected",
+                    "passed": true,
+                    "detail": "wmctrl output identifies an Alice Stage IDE window"
+                },
+                {
+                    "id": "activate-specific-alice-window",
+                    "passed": true,
+                    "detail": "wmctrl -ia succeeds against the detected Alice window id"
+                },
+                {
+                    "id": "visual-evidence-captured",
+                    "passed": true,
+                    "detail": "startup screenshot or window evidence exists"
+                },
+                {
+                    "id": "log-captured",
+                    "passed": true,
+                    "detail": "Alice launch log exists and is non-empty"
+                },
+                {
+                    "id": "deterministic-object-placement-backend",
+                    "passed": false,
+                    "detail": "no supported Alice command or stable UI automation contract can place an object yet"
+                }
+            ]
         }],
         "required_actions": actions
     })
