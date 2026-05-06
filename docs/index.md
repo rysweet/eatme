@@ -26,6 +26,7 @@ Eatme has three layers:
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
+| Auditing instructor/student lesson-session readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -95,6 +96,9 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 Understand how generated adapter counts stay aligned with the asset inventory:
 [Generated Asset Consistency](generated-asset-consistency.md).
+
+Audit instructor/student lesson-session readiness:
+[Lesson Session Readiness](lesson-session-readiness.md).
 
 Keep local agent hook runtime files out of commits:
 [Local Hook Artifacts](local-hook-artifacts.md).

@@ -102,6 +102,9 @@ does not: it preserves `expect.exit_code: 1` and
 `"failure_category": "ui_action_automation_unimplemented"` or
 `"ui_action_remaining_steps_unimplemented"` while deterministic object
 placement, procedure editing, world running, and project saving are incomplete.
+Readiness consumers should inspect the normalized `status`,
+`lesson_session_readiness`, and `no_go_contracts` fields documented in
+[Lesson Session Readiness](lesson-session-readiness.md).
 
 ## Editing policy
 
