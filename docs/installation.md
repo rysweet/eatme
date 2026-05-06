@@ -12,8 +12,9 @@ Install:
 - Python 3 with virtual environment support
 - Java 21 for real Alice packaging and launch smoke runs
 - Maven for real Alice packaging
-- Xvfb, `xdpyinfo`, `wmctrl`, a screenshot tool, and Mesa/OpenGL support for real
-  desktop smoke runs
+- Xvfb, `xdpyinfo`, `wmctrl`, `xwininfo`, `xdotool`, a screenshot tool, and
+  Mesa/OpenGL support for real desktop smoke runs
+- Optional: `glxinfo` for graphics diagnostics
 
 The asset validation and Gadugi generation workflows do not require Alice to be
 installed. Real Alice launch smoke workflows do.

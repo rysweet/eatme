@@ -499,7 +499,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | `screenshot.path` | Top-level startup screenshot artifact path. |
 | `screenshot.size_bytes` | Startup screenshot size. |
 | `screenshot.sha256` | Startup screenshot digest. |
-| `window_list.path` | Captured `wmctrl -lx` artifact path when available. |
+| `window_list.path` | Captured window-list artifact path from `wmctrl -lx`, or `xwininfo -root -tree` when no window-manager client list is available. |
 | `window_list_error` | Window-list capture or artifact error when unavailable. |
 | `screenshot_error` | Screenshot capture or artifact error when unavailable. |
 | `log.path` | Alice log path. |
@@ -629,8 +629,10 @@ runtime inputs.
 | `NODE_OPTIONS=--max-old-space-size=32768` | Optional | Preserved environment preference for Node-based wrappers or agent tooling; the Rust CLI does not require it. |
 
 Host dependencies for real launch are the same as the baseline smoke: Java 21,
-Maven, Xvfb, `xdpyinfo`, `wmctrl`, a screenshot tool, and OpenGL/Mesa support
-for software rendering.
+Maven, Xvfb, `xdpyinfo`, `wmctrl`, `xwininfo`, `xdotool`, a screenshot tool, and
+OpenGL/Mesa support for software rendering.
+`glxinfo` is useful for diagnostics when present, but it is not required by the
+launch-smoke preflight.
 
 ## Tutorial: local lesson smoke
 

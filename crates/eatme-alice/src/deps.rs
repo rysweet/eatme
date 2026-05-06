@@ -5,8 +5,10 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 pub const REQUIRED_TOOLS: &[&str] = &[
-    "java", "mvn", "git", "Xvfb", "xdpyinfo", "wmctrl", "glxinfo",
+    "java", "mvn", "git", "Xvfb", "xdpyinfo", "wmctrl", "xwininfo", "xdotool",
 ];
+
+pub const OPTIONAL_TOOLS: &[&str] = &["glxinfo"];
 
 pub const SCREENSHOT_TOOLS: &[&str] = &["scrot", "import"];
 
@@ -19,7 +21,11 @@ pub struct DependencyReport {
 
 pub fn check_dependencies(runner: &impl CommandRunner) -> Result<DependencyReport> {
     let mut tools = BTreeMap::new();
-    for tool in REQUIRED_TOOLS.iter().chain(SCREENSHOT_TOOLS.iter()) {
+    for tool in REQUIRED_TOOLS
+        .iter()
+        .chain(OPTIONAL_TOOLS.iter())
+        .chain(SCREENSHOT_TOOLS.iter())
+    {
         tools.insert((*tool).to_string(), command_exists(runner, tool)?);
     }
     let screenshot_available = SCREENSHOT_TOOLS

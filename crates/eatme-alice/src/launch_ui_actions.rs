@@ -15,7 +15,7 @@ const ALICE_WINDOW_MARKERS: [&str; 4] = [
     "org.alice.stageide.entrypoint",
     "org.alice.stageide",
     "org.alice.ide",
-    "alice 3",
+    "\"alice 3",
 ];
 
 #[derive(Clone, Debug, Serialize)]
@@ -183,11 +183,11 @@ pub fn write_ui_action_contract(
         "required_actions": [
             {
                 "id": "verify-specific-alice-window",
-                "required_evidence": "wmctrl output identifies an Alice Stage IDE window"
+                "required_evidence": "wmctrl or xwininfo output identifies the Alice main window"
             },
             {
                 "id": "activate-specific-alice-window",
-                "required_evidence": "wmctrl -ia succeeds against the detected Alice window id"
+                "required_evidence": "wmctrl -ia or xdotool windowfocus succeeds against the detected Alice window id"
             },
             {
                 "id": "place-object",
@@ -247,12 +247,12 @@ pub fn probe_place_object_preconditions(
             UiActionPrecondition {
                 id: "specific-alice-window-detected".into(),
                 passed: specific_alice_window_detected,
-                detail: "wmctrl output identifies an Alice Stage IDE window".into(),
+                detail: "wmctrl or xwininfo output identifies the Alice main window".into(),
             },
             UiActionPrecondition {
                 id: "activate-specific-alice-window".into(),
                 passed: activation_passed,
-                detail: "wmctrl -ia succeeds against the detected Alice window id".into(),
+                detail: "wmctrl -ia or xdotool windowfocus succeeds against the detected Alice window id".into(),
             },
             UiActionPrecondition {
                 id: "visual-evidence-captured".into(),
@@ -282,7 +282,9 @@ pub fn probe_alice_window_activation(
         return UiActionProbe {
             id: "activate-specific-alice-window".into(),
             status: "blocked".into(),
-            detail: "blocked: wmctrl -lx output did not identify an Alice window id".into(),
+            detail:
+                "blocked: wmctrl -lx and xwininfo output did not identify an Alice main window id"
+                    .into(),
             window_id: None,
             command: None,
             exit_status: None,
@@ -310,31 +312,82 @@ pub fn probe_alice_window_activation(
             stdout: output.stdout,
             stderr: output.stderr,
         },
-        Ok(output) => UiActionProbe {
+        Ok(output) => focus_alice_window_with_xdotool(runner, display, &window_id, Some(output)),
+        Err(_) => focus_alice_window_with_xdotool(runner, display, &window_id, None),
+    }
+}
+
+fn focus_alice_window_with_xdotool(
+    runner: &impl CommandRunner,
+    display: &str,
+    window_id: &str,
+    wmctrl_output: Option<eatme_core::CommandOutput>,
+) -> UiActionProbe {
+    let output = runner.run(
+        &CommandSpec::new("xdotool")
+            .args(["windowfocus".to_string(), window_id.to_string()])
+            .env("DISPLAY", display)
+            .timeout(Duration::from_secs(5))
+            .retries(2, Duration::from_millis(100)),
+    );
+
+    match output {
+        Ok(output) if output.exit_status == Some(0) => UiActionProbe {
             id: "activate-specific-alice-window".into(),
-            status: "failed".into(),
-            detail: format!(
-                "wmctrl could not activate Alice window {window_id}; exit_status={:?}",
-                output.exit_status
-            ),
-            window_id: Some(window_id),
+            status: "passed".into(),
+            detail: format!("xdotool focused Alice window {window_id}"),
+            window_id: Some(window_id.into()),
             command: Some(output.command),
             exit_status: output.exit_status,
             stdout: output.stdout,
             stderr: output.stderr,
         },
+        Ok(output) => UiActionProbe {
+            id: "activate-specific-alice-window".into(),
+            status: "failed".into(),
+            detail: format!(
+                "wmctrl could not activate Alice window {window_id}; xdotool windowfocus exit_status={:?}",
+                output.exit_status
+            ),
+            window_id: Some(window_id.into()),
+            command: Some(output.command),
+            exit_status: output.exit_status,
+            stdout: combined_probe_output(wmctrl_output.as_ref(), &output.stdout),
+            stderr: combined_probe_output(wmctrl_output.as_ref(), &output.stderr),
+        },
         Err(error) => UiActionProbe {
             id: "activate-specific-alice-window".into(),
             status: "failed".into(),
             detail: format!(
-                "wmctrl activation probe failed for Alice window {window_id}: {error:#}"
+                "wmctrl and xdotool could not focus Alice window {window_id}: {error:#}"
             ),
-            command: Some(format!("wmctrl -ia {window_id}")),
-            window_id: Some(window_id),
+            command: Some(format!("xdotool windowfocus {window_id}")),
+            window_id: Some(window_id.into()),
             exit_status: None,
-            stdout: String::new(),
-            stderr: String::new(),
+            stdout: wmctrl_output
+                .as_ref()
+                .map(|output| output.stdout.clone())
+                .unwrap_or_default(),
+            stderr: wmctrl_output
+                .as_ref()
+                .map(|output| output.stderr.clone())
+                .unwrap_or_default(),
         },
+    }
+}
+
+fn combined_probe_output(
+    wmctrl_output: Option<&eatme_core::CommandOutput>,
+    xdotool_output: &str,
+) -> String {
+    match wmctrl_output {
+        Some(output) if !output.stderr.is_empty() || !output.stdout.is_empty() => {
+            format!(
+                "wmctrl stdout:\n{}wmctrl stderr:\n{}xdotool:\n{}",
+                output.stdout, output.stderr, xdotool_output
+            )
+        }
+        _ => xdotool_output.into(),
     }
 }
 

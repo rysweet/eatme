@@ -27,8 +27,12 @@ The check covers the desktop and build tools needed by real launch smoke runs:
 - Xvfb
 - `xdpyinfo`
 - `wmctrl`
+- `xwininfo`
+- `xdotool`
 - screenshot tooling
 - GLX/Mesa software rendering support
+
+`glxinfo` is reported when present, but it is diagnostic-only.
 
 ## Discover Alice
 

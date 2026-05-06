@@ -65,12 +65,16 @@ eatme alice launch-smoke \
 - `Xvfb`
 - `xdpyinfo`
 - `xdotool`
+- `xwininfo`
 - `wmctrl`
 - `import` or `scrot`
-- `glxinfo`
 - Mesa software rendering/GLX libraries
 - Java 21
 - Maven
+
+Optional diagnostics:
+
+- `glxinfo`
 
 Dependency checks must fail loudly with actionable messages.
 

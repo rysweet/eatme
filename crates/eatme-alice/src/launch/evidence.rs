@@ -1,4 +1,3 @@
-use crate::discover::first_non_empty;
 use anyhow::{Context, Result, bail};
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
 use std::fs;
@@ -9,7 +8,7 @@ const ALICE_WINDOW_MARKERS: [&str; 4] = [
     "org.alice.stageide.entrypoint",
     "org.alice.stageide",
     "org.alice.ide",
-    "alice 3",
+    "\"alice 3",
 ];
 
 pub(super) fn capture_window_list(
@@ -17,24 +16,50 @@ pub(super) fn capture_window_list(
     display: &str,
     run_dir: &Path,
 ) -> Result<String> {
-    let output = runner.run(
+    let wmctrl = runner.run(
         &CommandSpec::new("wmctrl")
             .args(["-lx"])
             .env("DISPLAY", display)
             .timeout(Duration::from_secs(5))
             .retries(2, Duration::from_millis(100)),
     )?;
-    if output.exit_status != Some(0) {
+    if wmctrl.exit_status == Some(0) {
+        let combined = command_text(&wmctrl.stdout, &wmctrl.stderr);
+        if !combined.trim().is_empty() {
+            fs::write(run_dir.join("window-list.txt"), &combined)?;
+            return Ok(combined);
+        }
+    }
+
+    let xwininfo = runner.run(
+        &CommandSpec::new("xwininfo")
+            .args(["-root", "-tree"])
+            .env("DISPLAY", display)
+            .timeout(Duration::from_secs(5))
+            .retries(2, Duration::from_millis(100)),
+    )?;
+    if xwininfo.exit_status != Some(0) {
         bail!(
-            "capturing window list failed with {:?}\n{}{}",
-            output.exit_status,
-            output.stdout,
-            output.stderr
+            "capturing window list failed: wmctrl={:?}, xwininfo={:?}\nwmctrl stdout:\n{}wmctrl stderr:\n{}xwininfo stdout:\n{}xwininfo stderr:\n{}",
+            wmctrl.exit_status,
+            xwininfo.exit_status,
+            wmctrl.stdout,
+            wmctrl.stderr,
+            xwininfo.stdout,
+            xwininfo.stderr
         );
     }
-    let combined = first_non_empty(&output.stdout, &output.stderr);
+    let combined = command_text(&xwininfo.stdout, &xwininfo.stderr);
     fs::write(run_dir.join("window-list.txt"), &combined)?;
     Ok(combined)
+}
+
+fn command_text(stdout: &str, stderr: &str) -> String {
+    if stdout.trim().is_empty() {
+        stderr.trim().to_string()
+    } else {
+        stdout.trim().to_string()
+    }
 }
 
 pub(super) fn has_alice_window_evidence(window_list: &str) -> bool {
@@ -115,6 +140,20 @@ mod tests {
     fn recognizes_alice_window_identity() {
         assert!(has_alice_window_evidence(
             "0x001  0 host org.alice.stageide.EntryPoint Alice 3"
+        ));
+    }
+
+    #[test]
+    fn recognizes_main_alice_window_from_xwininfo_tree() {
+        assert!(has_alice_window_evidence(
+            r#"0x600007 "Alice 3 ": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")"#
+        ));
+    }
+
+    #[test]
+    fn rejects_alice_license_dialog_as_main_window() {
+        assert!(!has_alice_window_evidence(
+            r#"0x60002a "License Agreement (Part 1 of 2): Alice 3": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")"#
         ));
     }
 
