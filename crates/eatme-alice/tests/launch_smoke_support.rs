@@ -146,6 +146,28 @@ echo "0x001 Alice org.alice.stageide.EntryPoint"
 "#,
         );
         self.write_tool(
+            "xwininfo",
+            r#"#!/bin/sh
+cat <<'OUT'
+xwininfo: Window id: 0x21f (the root window) (has no name)
+
+  Root window id: 0x21f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     1 child:
+     0x001 "Alice 3 ": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")  1000x740+0+0  +0+0
+OUT
+"#,
+        );
+        self.write_tool(
+            "xdotool",
+            r#"#!/bin/sh
+if [ "$1" = "windowfocus" ]; then
+  exit 0
+fi
+exit 1
+"#,
+        );
+        self.write_tool(
             "scrot",
             r#"#!/bin/sh
 echo screenshot > "$1"
@@ -185,6 +207,45 @@ exit 1
             "wmctrl",
             r#"#!/bin/sh
 echo "0x001 unrelated.firefox.Firefox Firefox"
+"#,
+        );
+    }
+
+    pub fn write_window_managerless_alice_tools(&self) {
+        self.write_tool(
+            "wmctrl",
+            r#"#!/bin/sh
+if [ "$1" = "-lx" ]; then
+  echo "Cannot get client list properties." 1>&2
+  exit 1
+fi
+if [ "$1" = "-ia" ]; then
+  echo "Your windowmanager claims not to support _NET_ACTIVE_WINDOW" 1>&2
+  exit 1
+fi
+exit 1
+"#,
+        );
+        self.write_tool(
+            "xwininfo",
+            r#"#!/bin/sh
+cat <<'OUT'
+xwininfo: Window id: 0x21f (the root window) (has no name)
+
+  Root window id: 0x21f (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     1 child:
+     0x600007 "Alice 3 ": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")  1000x740+0+0  +0+0
+OUT
+"#,
+        );
+        self.write_tool(
+            "xdotool",
+            r#"#!/bin/sh
+if [ "$1" = "windowfocus" ] && [ "$2" = "0x600007" ]; then
+  exit 0
+fi
+exit 1
 "#,
         );
     }

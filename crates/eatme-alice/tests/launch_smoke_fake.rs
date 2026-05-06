@@ -259,6 +259,59 @@ fn real_ui_action_contract_advances_when_object_placement_hook_proves_placement(
 }
 
 #[test]
+fn real_ui_action_contract_finds_window_without_window_manager_client_list() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_window_managerless_alice_tools();
+    fixture.write_fake_alice_repo();
+    fixture.write_fake_object_placement_hook();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "window-managerless-ui-action-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("first-lessons-real-ui-actions"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("ui_action_remaining_steps_unimplemented")
+    );
+    assert!(
+        manifest
+            .assertions
+            .get("specific_alice_window_detected")
+            .expect("window assertion should exist")
+            .passed
+    );
+    assert!(
+        manifest
+            .assertions
+            .get("activate_alice_window_ui_action")
+            .expect("activation assertion should exist")
+            .passed
+    );
+    assert!(
+        manifest
+            .assertions
+            .get("place_object_ui_action")
+            .expect("object placement assertion should exist")
+            .passed
+    );
+    let window_list = fs::read_to_string(fixture.root.join(
+        "runs/first-lessons-real-ui-actions/window-managerless-ui-action-run/window-list.txt",
+    ))
+    .unwrap();
+    assert!(window_list.contains("xwininfo"));
+}
+
+#[test]
 fn missing_desktop_dependency_writes_blocking_manifest() {
     let fixture = TestFixture::new();
     fixture.write_missing_xvfb_probe();

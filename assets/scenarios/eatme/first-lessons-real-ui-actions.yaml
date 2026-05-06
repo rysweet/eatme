@@ -40,6 +40,8 @@ capabilities:
     - xvfb
     - xdpyinfo
     - wmctrl
+    - xwininfo
+    - xdotool
     - screenshot-tool
   optional:
     - glxinfo
@@ -63,11 +65,11 @@ acceptance_criteria:
     when: the first-lessons-real-ui-actions scenario is launched through eatme
     then: the manifest identifies scenario_id first-lessons-real-ui-actions
   - given: Alice reaches a desktop session under Xvfb
-    when: the harness inspects window-manager evidence
+    when: the harness inspects window evidence from wmctrl or xwininfo
     then: manifest assertions include specific_alice_window_detected passed=true for an Alice Stage IDE window
-  - given: a specific Alice window id is present in wmctrl output
+  - given: a specific Alice window id is present in wmctrl or xwininfo output
     when: the harness runs the first safe UI action probe
-    then: manifest assertions include activate_alice_window_ui_action passed=true for wmctrl -ia against that window id
+    then: manifest assertions include activate_alice_window_ui_action passed=true for wmctrl or xdotool focus against that window id
   - given: Alice window activation succeeds but no stable object placement affordance exists
     when: the harness reaches the next first-lesson action boundary
     then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id deterministic-alice-object-gallery-placement-affordance

@@ -397,11 +397,11 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
     let mut actions = vec![
         serde_json::json!({
             "id": "verify-specific-alice-window",
-            "required_evidence": "wmctrl output identifies an Alice Stage IDE window"
+            "required_evidence": "wmctrl or xwininfo output identifies the Alice main window"
         }),
         serde_json::json!({
             "id": "activate-specific-alice-window",
-            "required_evidence": "wmctrl -ia succeeds against the detected Alice window id"
+            "required_evidence": "wmctrl -ia or xdotool windowfocus succeeds against the detected Alice window id"
         }),
         serde_json::json!({
             "id": "place-object",
@@ -457,8 +457,8 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
                 "next_implementation": "Add one stable affordance: either the Alice-side object placement command hook defined by this contract, or a UI automation contract with a named gallery selector plus scene-graph or saved-project diff verification."
             },
             "preconditions": [
-                {"id": "specific-alice-window-detected", "passed": true, "detail": "wmctrl output identifies an Alice Stage IDE window"},
-                {"id": "activate-specific-alice-window", "passed": true, "detail": "wmctrl -ia succeeds against the detected Alice window id"},
+                {"id": "specific-alice-window-detected", "passed": true, "detail": "wmctrl or xwininfo output identifies the Alice main window"},
+                {"id": "activate-specific-alice-window", "passed": true, "detail": "wmctrl -ia or xdotool windowfocus succeeds against the detected Alice window id"},
                 {"id": "visual-evidence-captured", "passed": true, "detail": "startup screenshot or window evidence exists"},
                 {"id": "log-captured", "passed": true, "detail": "Alice launch log exists and is non-empty"},
                 {"id": "deterministic-alice-object-gallery-placement-affordance", "passed": false, "detail": "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement"}

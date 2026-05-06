@@ -10,6 +10,16 @@ fn finds_alice_window_id_from_wmctrl_output() {
 }
 
 #[test]
+fn finds_main_alice_window_id_from_xwininfo_tree() {
+    let window_list = r#"
+     0x60002a "License Agreement (Part 1 of 2): Alice 3": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")  488x432+256+154  +256+154
+     0x600007 "Alice 3 ": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")  1000x740+0+0  +0+0
+"#;
+
+    assert_eq!(alice_window_id(window_list).as_deref(), Some("0x600007"));
+}
+
+#[test]
 fn activation_probe_runs_wmctrl_against_detected_window() {
     let runner = FakeCommandRunner::default();
     runner.push_output(CommandOutput {
