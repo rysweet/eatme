@@ -17,6 +17,7 @@ pub(crate) fn probe_desktop_save_shortcut(
             key: "ctrl+s",
             label: "Ctrl+S",
             proves_only: "saved project content",
+            refocus_before_key: false,
         },
     )
 }
@@ -43,6 +44,7 @@ pub(crate) fn probe_desktop_run_shortcut(
             key: "ctrl+F5",
             label: "Ctrl+F5",
             proves_only: "world execution",
+            refocus_before_key: true,
         },
     )
 }
@@ -168,6 +170,7 @@ struct ShortcutProbe {
     key: &'static str,
     label: &'static str,
     proves_only: &'static str,
+    refocus_before_key: bool,
 }
 
 fn probe_desktop_shortcut(
@@ -201,15 +204,29 @@ fn probe_desktop_shortcut(
         );
     };
 
+    let args = if shortcut.refocus_before_key {
+        vec![
+            "windowfocus".to_string(),
+            "--sync".to_string(),
+            window_id.to_string(),
+            "key".to_string(),
+            "--clearmodifiers".to_string(),
+            shortcut.key.to_string(),
+        ]
+    } else {
+        vec![
+            "key".to_string(),
+            "--window".to_string(),
+            window_id.to_string(),
+            "--clearmodifiers".to_string(),
+            shortcut.key.to_string(),
+        ]
+    };
+    let command_display = format!("xdotool {}", args.join(" "));
+
     let output = runner.run(
         &CommandSpec::new("xdotool")
-            .args([
-                "key".to_string(),
-                "--window".to_string(),
-                window_id.to_string(),
-                "--clearmodifiers".to_string(),
-                shortcut.key.to_string(),
-            ])
+            .args(args)
             .env("DISPLAY", display)
             .timeout(Duration::from_secs(5))
             .retries(2, Duration::from_millis(100)),
@@ -250,10 +267,7 @@ fn probe_desktop_shortcut(
                 shortcut.label
             ),
             window_id: Some(window_id.into()),
-            command: Some(format!(
-                "xdotool key --window {window_id} --clearmodifiers {}",
-                shortcut.key
-            )),
+            command: Some(command_display),
             exit_status: None,
             stdout: String::new(),
             stderr: String::new(),

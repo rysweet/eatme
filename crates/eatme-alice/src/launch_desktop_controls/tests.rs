@@ -54,7 +54,7 @@ fn desktop_save_shortcut_fails_when_xdotool_fails() {
 fn desktop_run_shortcut_dispatches_documented_accelerator_after_edit_proof() {
     let runner = FakeCommandRunner::default();
     runner.push_output(CommandOutput {
-        command: "xdotool key --window 0x001 --clearmodifiers ctrl+F5".into(),
+        command: "xdotool windowfocus --sync 0x001 key --clearmodifiers ctrl+F5".into(),
         exit_status: Some(0),
         stdout: String::new(),
         stderr: String::new(),
@@ -68,7 +68,20 @@ fn desktop_run_shortcut_dispatches_documented_accelerator_after_edit_proof() {
     assert!(probe.detail.contains("input dispatch only"));
     assert_eq!(
         runner.commands(),
-        vec!["xdotool key --window 0x001 --clearmodifiers ctrl+F5"]
+        vec!["xdotool windowfocus --sync 0x001 key --clearmodifiers ctrl+F5"]
+    );
+}
+
+#[test]
+fn desktop_run_shortcut_error_reports_refocus_command() {
+    let runner = FailingCommandRunner;
+
+    let probe = probe_desktop_run_shortcut(&runner, ":99", Some(&activation_probe("passed")), true);
+
+    assert_eq!(probe.status, "failed");
+    assert_eq!(
+        probe.command.as_deref(),
+        Some("xdotool windowfocus --sync 0x001 key --clearmodifiers ctrl+F5")
     );
 }
 
@@ -81,6 +94,14 @@ fn desktop_run_shortcut_blocks_before_edit_proof() {
 
     assert_eq!(probe.status, "blocked");
     assert!(runner.commands().is_empty());
+}
+
+struct FailingCommandRunner;
+
+impl CommandRunner for FailingCommandRunner {
+    fn run(&self, _spec: &CommandSpec) -> anyhow::Result<CommandOutput> {
+        anyhow::bail!("xdotool failed to start")
+    }
 }
 
 #[test]
