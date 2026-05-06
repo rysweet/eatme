@@ -1,5 +1,6 @@
 use crate::launch_edit_procedure::DEFAULT_PROCEDURE_SELECTOR;
 use crate::launch_run_world::DEFAULT_RUN_SELECTOR;
+use save::{has_passed_save_project_candidate_affordance_probe, has_save_project_no_go_probe};
 
 pub(super) fn inspect_ui_action_contract(
     role: &str,
@@ -85,6 +86,14 @@ pub(super) fn inspect_ui_action_contract(
     {
         issues.push(format!(
             "{role} ui-action-contract.json must record either passed run-world proof or a no-go precondition probe after edit-procedure-or-code-block passes"
+        ));
+    }
+    if has_passed_run_world_candidate_affordance_probe(contract)
+        && !has_passed_save_project_candidate_affordance_probe(contract)
+        && !has_save_project_no_go_probe(contract)
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record either passed save-project proof or a no-go precondition probe after run-world passes"
         ));
     }
 }
@@ -443,5 +452,6 @@ fn has_run_world_missing_affordance(value: &serde_json::Value) -> bool {
             })
 }
 
+mod save;
 #[cfg(test)]
 mod tests;

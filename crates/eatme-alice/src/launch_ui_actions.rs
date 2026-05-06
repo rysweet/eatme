@@ -5,6 +5,7 @@ use crate::launch_object_placement::{
     UiActionObjectPlacementProbe, missing_object_placement_affordance,
 };
 use crate::launch_run_world::{UiActionRunWorldProbe, probe_run_world_preconditions};
+use crate::launch_save_project::{UiActionSaveProjectProbe, probe_project_save_preconditions};
 use crate::launch_window_targeting::alice_window_id;
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
@@ -58,6 +59,7 @@ pub fn record_ui_action_blockers(
     object_placement_probe: &UiActionObjectPlacementProbe,
     edit_procedure_probe: &UiActionEditProcedureProbe,
     run_world_probe: &UiActionRunWorldProbe,
+    save_project_probe: &UiActionSaveProjectProbe,
 ) {
     record_place_object_probe(
         assertions,
@@ -92,13 +94,29 @@ pub fn record_ui_action_blockers(
         "run_world_ui_action".into(),
         bool_assert(run_world_probe.proves_run(), run_world_probe.detail.clone()),
     );
+    record_save_project_probe(assertions, save_project_probe);
+    if run_world_probe.proves_run() && !save_project_probe.proves_save() {
+        let save_project_probe = probe_project_save_preconditions(run_world_probe);
+        record_save_project_precondition_no_go(assertions, &save_project_probe);
+    }
     assertions.insert(
         "save_project_ui_action".into(),
-        AssertionResult::fail(
-            "blocked: no supported Alice desktop automation can save the project yet",
+        bool_assert(
+            save_project_probe.proves_save(),
+            save_project_probe.detail.clone(),
         ),
     );
     record_ui_action_artifact(assertions, artifact);
+}
+
+fn record_save_project_probe(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    probe: &UiActionSaveProjectProbe,
+) {
+    assertions.insert(
+        "save_project_candidate_hook_probe".into(),
+        bool_assert(probe.proves_save(), probe.detail.clone()),
+    );
 }
 
 pub fn record_preflight_ui_action_blockers(
@@ -429,6 +447,21 @@ fn record_run_world_probe(
                 && run_world_probe.id == "alice-side-world-run-command-hook"
                 && ["passed", "blocked", "failed"].contains(&run_world_probe.status.as_str()),
             run_world_probe.detail.clone(),
+        ),
+    );
+}
+
+fn record_save_project_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "save_project_precondition_no_go_probe".into(),
+        bool_assert(
+            precondition_probe.action_id == "save-project"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
         ),
     );
 }
