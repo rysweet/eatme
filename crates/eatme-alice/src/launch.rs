@@ -16,11 +16,12 @@ use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::prepare_run_dir;
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
+use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
+use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
     probe_alice_window_activation, probe_place_object_preconditions,
     record_alice_window_activation, record_ui_action_blockers, ui_action_failure_category,
-    write_ui_action_contract,
 };
 use crate::package::{PackageOptions, package_alice};
 use crate::scenario::LaunchSmokeScenario;
@@ -354,6 +355,13 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             default_object_identifier(),
             display.name(),
         );
+        let edit_procedure_probe = probe_edit_procedure_hook(
+            &runner,
+            &options.alice_home,
+            &run_dir,
+            &object_placement_probe,
+            display.name(),
+        );
         let artifact = write_ui_action_contract(
             &run_dir,
             specific_alice_window_ok,
@@ -362,12 +370,14 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             alice_window_activation_probe.as_ref(),
             Some(&place_object_probe),
             Some(&object_placement_probe),
+            Some(&edit_procedure_probe),
         )?;
         record_ui_action_blockers(
             &mut assertions,
             &artifact,
             &place_object_probe,
             &object_placement_probe,
+            &edit_procedure_probe,
         );
         if failure_category.is_none() {
             failure_category = Some(ui_action_failure_category(&object_placement_probe).into());

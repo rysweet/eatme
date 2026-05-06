@@ -1,8 +1,9 @@
 use crate::launch::LaunchSmokeOptions;
 use crate::launch_artifacts::{artifact_info, write_manifest};
+use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
     probe_place_object_preconditions, record_preflight_ui_action_blockers,
-    record_ui_action_artifact, write_ui_action_contract,
+    record_ui_action_artifact,
 };
 use anyhow::Result;
 use eatme_core::{AssertionResult, LaunchSmokeManifest};
@@ -37,6 +38,7 @@ pub fn write_preflight_blocked_manifest(
             log.is_some(),
             None,
             Some(&place_object_probe),
+            None,
             None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);

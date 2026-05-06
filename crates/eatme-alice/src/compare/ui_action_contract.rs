@@ -1,3 +1,5 @@
+use crate::launch_edit_procedure::DEFAULT_PROCEDURE_SELECTOR;
+
 pub(super) fn inspect_ui_action_contract(
     role: &str,
     contract: &serde_json::Value,
@@ -69,10 +71,11 @@ pub(super) fn inspect_ui_action_contract(
         ));
     }
     if has_passed_place_object_candidate_affordance_probe(contract)
+        && !has_passed_edit_procedure_candidate_affordance_probe(contract)
         && !has_edit_procedure_no_go_probe(contract)
     {
         issues.push(format!(
-            "{role} ui-action-contract.json must record a no-go precondition probe for edit-procedure-or-code-block after object placement passes"
+            "{role} ui-action-contract.json must record either passed edit-procedure-or-code-block proof or a no-go precondition probe after object placement passes"
         ));
     }
 }
@@ -186,6 +189,46 @@ fn has_passed_place_object_candidate_affordance_probe(contract: &serde_json::Val
                             > 0
                     })
                     && probe.get("scene_or_project_diff").is_some_and(|artifact| {
+                        artifact
+                            .get("size_bytes")
+                            .and_then(serde_json::Value::as_u64)
+                            .unwrap_or(0)
+                            > 0
+                    })
+            })
+        })
+        .unwrap_or(false)
+}
+
+fn has_passed_edit_procedure_candidate_affordance_probe(contract: &serde_json::Value) -> bool {
+    contract
+        .get("candidate_affordance_probes")
+        .and_then(serde_json::Value::as_array)
+        .map(|probes| {
+            probes.iter().any(|probe| {
+                probe.get("id").and_then(serde_json::Value::as_str)
+                    == Some("alice-side-procedure-edit-command-hook")
+                    && probe.get("action_id").and_then(serde_json::Value::as_str)
+                        == Some("edit-procedure-or-code-block")
+                    && probe.get("status").and_then(serde_json::Value::as_str) == Some("passed")
+                    && probe
+                        .get("procedure_selector")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(DEFAULT_PROCEDURE_SELECTOR)
+                    && probe
+                        .get("candidate_hook_path")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|value| value.ends_with("tools/eatme-edit-procedure"))
+                    && probe
+                        .get("edited_project_artifact")
+                        .is_some_and(|artifact| {
+                            artifact
+                                .get("size_bytes")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0)
+                                > 0
+                        })
+                    && probe.get("procedure_or_code_diff").is_some_and(|artifact| {
                         artifact
                             .get("size_bytes")
                             .and_then(serde_json::Value::as_u64)

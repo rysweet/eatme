@@ -2,9 +2,10 @@ use super::LaunchSmokeOptions;
 use super::evidence::artifact_info;
 use crate::deps::DependencyReport;
 use crate::discover::AliceDiscovery;
+use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
     probe_place_object_preconditions, record_preflight_ui_action_blockers,
-    record_ui_action_artifact, write_ui_action_contract,
+    record_ui_action_artifact,
 };
 use crate::package::PackageResult;
 use anyhow::Result;
@@ -45,6 +46,7 @@ pub(super) fn write_blocked_manifest(
             log.is_some(),
             None,
             Some(&place_object_probe),
+            None,
             None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);
