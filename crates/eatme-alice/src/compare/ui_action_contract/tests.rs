@@ -49,6 +49,9 @@ fn contract_after_edit_without_run_no_go() -> serde_json::Value {
         "executed_action_probes": [{
             "id": "activate-specific-alice-window",
             "status": "passed"
+        }, {
+            "id": "dispatch-save-project-shortcut",
+            "status": "passed"
         }],
         "candidate_affordance_probes": [
             {

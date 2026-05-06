@@ -361,6 +361,7 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
                 "passed": true,
                 "detail": "wmctrl activated Alice window 0x001"
             },
+            "save_project_desktop_shortcut_dispatch": {"passed": true, "detail": "input dispatch only: xdotool sent Ctrl+S to Alice window 0x001; this does not prove saved project content"},
             "place_object_precondition_no_go_probe": {
                 "passed": true,
                 "detail": "blocked: no supported deterministic Alice object placement backend is wired"
@@ -441,6 +442,15 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
             "exit_status": 0,
             "stdout": "",
             "stderr": ""
+        }, {
+            "id": "dispatch-save-project-shortcut",
+            "status": "passed",
+            "detail": "input dispatch only: xdotool sent Ctrl+S to Alice window 0x001; this does not prove saved project content",
+            "window_id": "0x001",
+            "command": "xdotool key --window 0x001 --clearmodifiers ctrl+s",
+            "exit_status": 0,
+            "stdout": "",
+            "stderr": ""
         }],
         "action_precondition_probes": [{
             "id": "place-object-precondition",
@@ -459,6 +469,7 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
             "preconditions": [
                 {"id": "specific-alice-window-detected", "passed": true, "detail": "wmctrl or xwininfo output identifies the Alice main window"},
                 {"id": "activate-specific-alice-window", "passed": true, "detail": "wmctrl -ia or xdotool windowfocus succeeds against the detected Alice window id"},
+                {"id": "dispatch-save-project-shortcut", "passed": true, "detail": "input dispatch only: xdotool sent Ctrl+S to the detected Alice window; this does not prove saved project content"},
                 {"id": "visual-evidence-captured", "passed": true, "detail": "startup screenshot or window evidence exists"},
                 {"id": "log-captured", "passed": true, "detail": "Alice launch log exists and is non-empty"},
                 {"id": "deterministic-alice-object-gallery-placement-affordance", "passed": false, "detail": "missing stable backend command, accessibility target, menu action, or scene-graph verification hook for named object placement"}

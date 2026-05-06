@@ -10,14 +10,13 @@ resource_basis:
     url: https://www.alice.org/get-alice/alice-3/
 purpose: >-
   Move the first Alice lesson checks beyond manifest-only smoke by launching the
-  real Alice desktop, verifying a specific Alice window, executing a safe window
-  activation probe, consuming object-placement proof when Alice exposes it, and
-  consuming edit proof when Alice exposes it. The contract now names the next
-  missing action after edit proof:
-  deterministic-alice-world-run-affordance. The contract still requires
-  explicit evidence for object placement, procedure/code editing, world run,
-  project save, and a captured contract artifact. Until deterministic desktop
-  manipulation beyond safe window activation and backend proof hooks is wired,
+  real Alice desktop, verifying a specific Alice window, executing safe window
+  activation and save-shortcut dispatch probes, consuming object-placement proof
+  when Alice exposes it, and consuming edit proof when Alice exposes it. The
+  contract still requires explicit evidence for object placement,
+  procedure/code editing, world run, project save, and a captured contract
+  artifact. Until deterministic desktop manipulation beyond safe window
+  activation, save-shortcut dispatch, and backend proof hooks is wired,
   the harness must fail loudly with a preflight/action contract instead of
   reporting a silent pass.
   This is launch/action-contract evidence only. It is not full UI automation,
@@ -58,6 +57,7 @@ smoke_ready:
     - manifest_log_window_and_startup_screenshot_evidence
     - specific_alice_window_detected
     - activate_alice_window_ui_action
+    - save_project_desktop_shortcut_dispatch
     - place_object_precondition_no_go_probe
     - edit_procedure_precondition_no_go_probe
     - run_world_precondition_no_go_probe
@@ -74,6 +74,9 @@ acceptance_criteria:
   - given: a specific Alice window id is present in wmctrl or xwininfo output
     when: the harness runs the first safe UI action probe
     then: manifest assertions include activate_alice_window_ui_action passed=true for wmctrl or xdotool focus against that window id
+  - given: Alice window activation succeeds
+    when: the harness dispatches Ctrl+S to the detected Alice window with xdotool
+    then: manifest assertions include save_project_desktop_shortcut_dispatch passed=true while treating it as input dispatch only, not saved project proof
   - given: Alice window activation succeeds but no stable object placement affordance exists
     when: the harness reaches the next first-lesson action boundary
     then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id deterministic-alice-object-gallery-placement-affordance
@@ -116,6 +119,7 @@ steps:
       - manifest assertions.real_alice_execution_evidence is present
       - manifest assertions include specific_alice_window_detected
       - manifest assertions include activate_alice_window_ui_action
+      - manifest assertions include save_project_desktop_shortcut_dispatch as input dispatch evidence only
       - manifest assertions include place_object_precondition_no_go_probe
       - manifest assertions include edit_procedure_precondition_no_go_probe when object placement proof exists
       - manifest assertions include run_world_precondition_no_go_probe when procedure edit proof exists
@@ -137,7 +141,7 @@ agentic_follow_on:
     - scenario-labeled real Alice launch path identifies first-lessons-real-ui-actions
     - manifest, Alice log, window list, and startup screenshot evidence are present
     - Alice window detection is explicit
-    - ui-action-contract.json records the Alice window activation probe, records the relevant no_go precondition probe for place object, edit procedure, or run world, names the missing affordance id, and names place object, edit procedure, run world, and save project expectations
+    - ui-action-contract.json records the Alice window activation probe, records the save shortcut dispatch probe as input dispatch evidence only, records the relevant no_go precondition probe for place object, edit procedure, or run world, names the missing affordance id, and names place object, edit procedure, run world, and save project expectations
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

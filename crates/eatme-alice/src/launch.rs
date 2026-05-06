@@ -4,18 +4,23 @@ mod display;
 mod evidence;
 mod manifest;
 mod run_dir;
+mod util;
 
 use self::alice_cmd::{alice_launch_args, start_alice};
 use self::assertions::{bool_assert, fatal_log_detail, visual_evidence_detail};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
 use self::evidence::{
-    artifact_info, capture_screenshot, capture_window_list, has_alice_window_evidence,
-    scan_fatal_logs,
+    capture_screenshot, capture_window_list, has_alice_window_evidence, scan_fatal_logs,
 };
 use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::prepare_run_dir;
+use self::util::{
+    artifact_or_error, capture_artifact_or_error, capture_text_or_error, combine_errors,
+    git_commit, shutdown, wait_for_start,
+};
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
+use crate::launch_desktop_controls::probe_desktop_save_shortcut;
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
 use crate::launch_run_world::probe_run_world_hook;
@@ -27,13 +32,10 @@ use crate::launch_ui_actions::{
 use crate::package::{PackageOptions, package_alice};
 use crate::scenario::LaunchSmokeScenario;
 use anyhow::{Result, bail};
-use eatme_core::{
-    ArtifactInfo, CommandRunner, CommandSpec, LaunchSmokeManifest, RealCommandRunner,
-};
+use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::process::Child;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeOptions {
     pub alice_home: PathBuf,
@@ -303,6 +305,19 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     } else {
         None
     };
+    let desktop_save_shortcut_probe = options.scenario.requires_real_ui_actions().then(|| {
+        probe_desktop_save_shortcut(
+            &runner,
+            display.name(),
+            alice_window_activation_probe.as_ref(),
+        )
+    });
+    if let Some(probe) = &desktop_save_shortcut_probe {
+        assertions.insert(
+            "save_project_desktop_shortcut_dispatch".into(),
+            bool_assert(probe.status == "passed", probe.detail.clone()),
+        );
+    }
 
     let (fatal_log_scan, log_scan_error) = capture_text_or_error(scan_fatal_logs(&log_path));
     assertions.insert(
@@ -378,6 +393,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             smoke_ready_visual_evidence,
             log_ok,
             alice_window_activation_probe.as_ref(),
+            desktop_save_shortcut_probe.as_ref(),
             Some(&place_object_probe),
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),
@@ -439,62 +455,6 @@ fn validate_scenario_name(name: &str) -> Result<()> {
         bail!("launch smoke scenario {name:?} must be kebab-case");
     }
     Ok(())
-}
-fn wait_for_start(child: &mut Child, seconds: u64) -> bool {
-    let deadline = Instant::now() + Duration::from_secs(seconds.clamp(5, 60));
-    while Instant::now() < deadline {
-        if let Ok(Some(_)) = child.try_wait() {
-            return false;
-        }
-        std::thread::sleep(Duration::from_millis(500));
-    }
-    true
-}
-fn shutdown(child: &mut Child) {
-    let _ = child.kill();
-    let _ = child.wait();
-}
-fn capture_text_or_error<T: Default>(result: Result<T>) -> (T, Option<String>) {
-    match result {
-        Ok(value) => (value, None),
-        Err(error) => (T::default(), Some(format!("{error:#}"))),
-    }
-}
-fn capture_artifact_or_error<T>(result: Result<T>) -> (Option<T>, Option<String>) {
-    match result {
-        Ok(value) => (Some(value), None),
-        Err(error) => (None, Some(format!("{error:#}"))),
-    }
-}
-fn artifact_or_error(path: &Path) -> (Option<ArtifactInfo>, Option<String>) {
-    capture_artifact_or_error(artifact_info(path))
-}
-fn combine_errors(errors: impl IntoIterator<Item = Option<String>>) -> Option<String> {
-    let errors = errors.into_iter().flatten().collect::<Vec<_>>();
-    if errors.is_empty() {
-        None
-    } else {
-        Some(errors.join("\n"))
-    }
-}
-fn git_commit(path: &Path, runner: &impl CommandRunner) -> Result<String> {
-    let output = runner.run(
-        &CommandSpec::new("git")
-            .args(["rev-parse", "HEAD"])
-            .cwd(path)
-            .timeout(Duration::from_secs(5))
-            .retries(2, Duration::from_millis(100)),
-    )?;
-    if output.exit_status != Some(0) {
-        bail!(
-            "reading git commit in {} failed with {:?}\n{}{}",
-            path.display(),
-            output.exit_status,
-            output.stdout,
-            output.stderr
-        );
-    }
-    Ok(output.stdout.trim().to_string())
 }
 #[cfg(test)]
 mod tests;

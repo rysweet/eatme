@@ -21,6 +21,7 @@ pub fn write_ui_action_contract(
     visual_evidence_captured: bool,
     log_captured: bool,
     activation_probe: Option<&UiActionProbe>,
+    desktop_save_shortcut_probe: Option<&UiActionProbe>,
     place_object_precondition_probe: Option<&UiActionNoGoProbe>,
     object_placement_probe: Option<&UiActionObjectPlacementProbe>,
     edit_procedure_candidate_probe: Option<&UiActionEditProcedureProbe>,
@@ -83,7 +84,10 @@ pub fn write_ui_action_contract(
             "visual_evidence_captured": visual_evidence_captured,
             "log_captured": log_captured
         },
-        "executed_action_probes": activation_probe.into_iter().collect::<Vec<_>>(),
+        "executed_action_probes": activation_probe
+            .into_iter()
+            .chain(desktop_save_shortcut_probe)
+            .collect::<Vec<_>>(),
         "action_precondition_probes": action_precondition_probes
             .into_iter()
             .chain(edit_procedure_precondition_probes)

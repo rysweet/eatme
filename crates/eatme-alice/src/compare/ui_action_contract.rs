@@ -60,6 +60,13 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record passed activate-specific-alice-window probe when an Alice window is detected"
         ));
     }
+    if has_passed_action_probe(contract, "activate-specific-alice-window")
+        && !has_passed_action_probe(contract, "dispatch-save-project-shortcut")
+    {
+        issues.push(format!(
+            "{role} ui-action-contract.json must record passed dispatch-save-project-shortcut probe after Alice window activation"
+        ));
+    }
     if !has_place_object_candidate_affordance_probe(contract) {
         issues.push(format!(
             "{role} ui-action-contract.json must record the Alice-side object placement command hook candidate probe"

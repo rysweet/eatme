@@ -164,6 +164,9 @@ OUT
 if [ "$1" = "windowfocus" ]; then
   exit 0
 fi
+if [ "$1" = "key" ]; then
+  exit 0
+fi
 exit 1
 "#,
         );
