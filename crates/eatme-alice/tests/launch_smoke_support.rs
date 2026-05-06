@@ -139,6 +139,9 @@ echo "display ready"
         self.write_tool(
             "wmctrl",
             r#"#!/bin/sh
+if [ "$1" = "-ia" ]; then
+  exit 0
+fi
 echo "0x001 Alice org.alice.stageide.EntryPoint"
 "#,
         );

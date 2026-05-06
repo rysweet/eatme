@@ -394,7 +394,7 @@ fn valid_lesson_smoke(id: &str) -> EatmeScenarioAsset {
         }),
         acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
             given: "dependencies are available".into(),
-            when: "the lane launches".into(),
+            when: "the scenario launches".into(),
             then: "the manifest records the scenario id".into(),
         }],
         steps: vec![EatmeScenarioStep {

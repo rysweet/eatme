@@ -110,7 +110,7 @@ fn known_lesson_smoke_requires_lesson_kind() {
         }),
         acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
             given: "dependencies are available".into(),
-            when: "the lane launches".into(),
+            when: "the scenario launches".into(),
             then: "the manifest records the scenario id".into(),
         }],
         steps: vec![EatmeScenarioStep {

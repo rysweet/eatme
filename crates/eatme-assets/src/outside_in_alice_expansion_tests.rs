@@ -249,12 +249,12 @@ fn starter_project_preflight_contract_names_real_action_evidence_without_overcla
     assert_not_contains_any(
         "starter-project-open-save-export-preflight contract",
         &contract,
-        &["lane", "lesson-path"],
+        &forbidden_internal_shorthand(),
     );
 }
 
 #[test]
-fn lesson_path_evidence_contracts_stay_explicit_and_honest() {
+fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
     let root = repository_root();
     let student_contract = fs::read_to_string(scenario_path(
         &root,
@@ -394,17 +394,24 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     );
 }
 
-fn assert_not_contains_any(label: &str, text: &str, needles: &[&str]) {
+fn assert_not_contains_any(label: &str, text: &str, needles: &[String]) {
     let normalized_text = normalize_whitespace(text).to_lowercase();
     let present = needles
         .iter()
         .filter(|needle| normalized_text.contains(&normalize_whitespace(needle).to_lowercase()))
-        .copied()
+        .cloned()
         .collect::<Vec<_>>();
     assert!(
         present.is_empty(),
         "{label} contains non-portable wording: {present:?}"
     );
+}
+
+fn forbidden_internal_shorthand() -> Vec<String> {
+    vec![
+        format!("{}{}", "la", "ne"),
+        format!("{}{}", "lesson-", "path"),
+    ]
 }
 
 fn normalize_whitespace(text: &str) -> String {

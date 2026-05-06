@@ -35,7 +35,7 @@ pub(super) fn write_blocked_manifest(
     let log = artifact_info(&run_dir.join("alice.log")).ok();
     let ui_action_contract = if options.scenario.requires_real_ui_actions() {
         record_preflight_ui_action_blockers(&mut assertions);
-        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some())?;
+        let artifact = write_ui_action_contract(run_dir, false, false, log.is_some(), None)?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)
     } else {
