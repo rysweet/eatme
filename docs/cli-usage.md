@@ -249,11 +249,18 @@ This consumes the embedded target launch manifests and each
 `ui-action-contract.json`. It passes only when both comparison targets include
 real Alice execution evidence, specific Alice window evidence, the required
 place/edit/run/save action assertions, and a readable action contract with the
-matching required action ids. A passing readiness report can still have
-`readiness_status=blocked_until_ui_automation`; that means the concrete
-artifacts are present and the only accepted blocker is the current lack of
-deterministic UI actions. It is not full UI automation, not creative assessment,
-and not learner-world grading.
+matching required action ids. The report now includes a
+`role_readiness` array for `instructor` and `student`, plus the legacy
+`lesson_session_readiness` student envelope, whose normalized `status` is one of
+`ready`, `not_ready`, or `blocked`. Action-level unsupported affordances are
+exposed as `decision=no_go` entries in `no_go_contracts`; object placement,
+procedure editing, world run, and project save each need an explicit no-go
+contract until deterministic desktop evidence exists. A passing readiness report
+can still have
+`status=blocked` and `readiness_status=blocked_until_ui_automation`; that means
+the concrete artifacts are present and the only accepted blocker is the current
+lack of deterministic UI actions. It is not full UI automation, not creative
+assessment, and not learner-world grading.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -273,12 +280,17 @@ cargo run -q -p eatme-cli -- alice run-first-lesson-readiness \
 The command fixes the scenario to `first-lessons-real-ui-actions`, writes
 `runs/comparisons/first-lessons-real-ui-actions/<run-id>/comparison-manifest.json`,
 then immediately runs the same readiness check against that manifest. Without
-`--execute` it still writes a manifest and returns an incomplete report that says
-target launch evidence is missing. With `--execute`, non-baseline Alice scenarios
-still require `EATME_REAL_ALICE=1`. The command preserves the same boundaries:
-it does not create a complete instructor assignment, consume a complete student
-lesson, perform creative assessment, grade learner worlds, or claim broad Alice
+`--execute` it still writes a manifest and returns `status=not_ready` with a
+detail `readiness_status=incomplete` because target launch evidence is missing.
+With `--execute`, non-baseline Alice scenarios still require
+`EATME_REAL_ALICE=1`. The command preserves the same boundaries: it does not
+create a complete instructor assignment, consume a complete student lesson,
+perform creative assessment, grade learner worlds, or claim broad Alice
 compatibility.
+
+For the complete readiness output schema, no-go contract API, and
+instructor/student usage recipes, see
+[Lesson Session Readiness](lesson-session-readiness.md).
 
 ### Outside-in evidence recipes for Alice lesson scenarios
 

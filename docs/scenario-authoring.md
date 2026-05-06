@@ -174,3 +174,6 @@ describe the finished evidence boundary exactly:
 Do not write that the launch smoke completes a lesson, clicks through the Alice
 UI, evaluates a creative project, or grades a learner's world unless a separate
 scenario owns that evidence and validation path.
+
+For the instructor/student readiness state machine, JSON fields, and no-go
+contract wording, see [Lesson Session Readiness](lesson-session-readiness.md).

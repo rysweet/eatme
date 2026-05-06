@@ -1,6 +1,9 @@
 use crate::launch_edit_procedure::DEFAULT_PROCEDURE_SELECTOR;
 use crate::launch_run_world::DEFAULT_RUN_SELECTOR;
+use required_action::validate_required_action_no_go_contracts;
 use save::{has_passed_save_project_candidate_affordance_probe, has_save_project_no_go_probe};
+
+mod required_action;
 
 pub(super) fn inspect_ui_action_contract(
     role: &str,
@@ -117,6 +120,7 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record either passed save-project proof or a no-go precondition probe after run-world passes"
         ));
     }
+    validate_required_action_no_go_contracts(role, contract, issues);
 }
 
 pub(super) fn action_ids(contract: &serde_json::Value) -> Vec<String> {
