@@ -7,6 +7,8 @@ mod launch_desktop_controls;
 mod launch_edit_procedure;
 mod launch_license;
 mod launch_object_placement;
+mod launch_options;
+mod launch_run_window;
 mod launch_run_world;
 mod launch_save_project;
 mod launch_ui_action_contract;
@@ -22,6 +24,7 @@ pub use compare::{
 };
 pub use deps::{DependencyReport, check_dependencies};
 pub use discover::{AliceDiscovery, discover_alice};
-pub use launch::{LaunchSmokeOptions, run_launch_smoke};
+pub use launch::run_launch_smoke;
+pub use launch_options::LaunchSmokeOptions;
 pub use package::{PackageOptions, package_alice};
 pub use scenario::LaunchSmokeScenario;

@@ -63,6 +63,10 @@ pub(super) fn start_alice(
             "-Djava.io.tmpdir={}",
             run_dir.join("tmp").display()
         ))
+        .arg(format!(
+            "-Dorg.alice.eatme.runWindowEvidenceDir={}",
+            run_dir.join("run-window-evidence").display()
+        ))
         .args(args)
         .stdout(Stdio::from(log.try_clone()?))
         .stderr(Stdio::from(log));

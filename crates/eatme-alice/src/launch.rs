@@ -16,16 +16,16 @@ use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::prepare_run_dir;
 use self::util::{
     artifact_or_error, capture_artifact_or_error, capture_text_or_error, combine_errors,
-    git_commit, shutdown, wait_for_start,
+    git_commit, shutdown, validate_scenario_name, wait_for_start,
 };
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
-use crate::launch_desktop_controls::{
-    probe_desktop_run_shortcut, probe_desktop_save_shortcut, probe_run_window_after_shortcut,
-};
+use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_license::seed_license_preferences_if_requested;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
+use crate::launch_options::LaunchSmokeOptions;
+use crate::launch_run_window::{probe_run_toolbar_sequence, probe_run_window_after_shortcut};
 use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
@@ -33,23 +33,11 @@ use crate::launch_ui_actions::{
     record_alice_window_activation, record_ui_action_blockers, ui_action_failure_category,
 };
 use crate::package::{PackageOptions, package_alice};
-use crate::scenario::LaunchSmokeScenario;
-use anyhow::{Result, bail};
+use anyhow::Result;
 use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
-#[derive(Clone, Debug)]
-pub struct LaunchSmokeOptions {
-    pub alice_home: PathBuf,
-    pub run_id: String,
-    pub runs_dir: PathBuf,
-    pub timeout_seconds: u64,
-    pub json: bool,
-    pub no_memory: bool,
-    pub offline_package: bool,
-    pub scenario: LaunchSmokeScenario,
-}
 pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManifest> {
     validate_scenario_name(&options.scenario.id)?;
     let runner = RealCommandRunner;
@@ -394,14 +382,41 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
                 bool_assert(true, desktop_run_shortcut_probe.detail.clone()),
             );
         }
-        let run_window_probe =
-            probe_run_window_after_shortcut(&runner, display.name(), &desktop_run_shortcut_probe);
+        let run_window_probe = probe_run_window_after_shortcut(
+            &runner,
+            display.name(),
+            &run_dir,
+            &desktop_run_shortcut_probe,
+        );
         if desktop_run_shortcut_probe.status == "passed" {
             assertions.insert(
                 "run_world_desktop_window_observed".into(),
                 bool_assert(
                     run_window_probe.status == "passed",
                     run_window_probe.detail.clone(),
+                ),
+            );
+        }
+        let (desktop_run_toolbar_probe, run_window_after_toolbar_probe) =
+            probe_run_toolbar_sequence(
+                &runner,
+                display.name(),
+                &run_dir,
+                alice_window_activation_probe.as_ref(),
+                &run_window_probe,
+            );
+        if desktop_run_toolbar_probe.status == "passed" {
+            assertions.insert(
+                "run_world_desktop_toolbar_dispatch".into(),
+                bool_assert(true, desktop_run_toolbar_probe.detail.clone()),
+            );
+        }
+        if desktop_run_toolbar_probe.status == "passed" {
+            assertions.insert(
+                "run_world_desktop_toolbar_window_observed".into(),
+                bool_assert(
+                    run_window_after_toolbar_probe.status == "passed",
+                    run_window_after_toolbar_probe.detail.clone(),
                 ),
             );
         }
@@ -428,6 +443,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             desktop_save_shortcut_probe.as_ref(),
             Some(&desktop_run_shortcut_probe),
             Some(&run_window_probe),
+            Some(&desktop_run_toolbar_probe),
+            Some(&run_window_after_toolbar_probe),
             Some(&place_object_probe),
             Some(&object_placement_probe),
             Some(&edit_procedure_probe),
@@ -477,18 +494,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     shutdown(&mut xvfb);
     manifest_write?;
     Ok(manifest)
-}
-fn validate_scenario_name(name: &str) -> Result<()> {
-    if name.is_empty()
-        || name.starts_with('-')
-        || name.ends_with('-')
-        || !name
-            .chars()
-            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
-    {
-        bail!("launch smoke scenario {name:?} must be kebab-case");
-    }
-    Ok(())
 }
 #[cfg(test)]
 mod tests;
