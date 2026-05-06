@@ -26,7 +26,7 @@ Eatme has three layers:
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
-| Auditing instructor/student lesson-session readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
+| Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -73,7 +73,7 @@ Alice launch path without overstating what the launch smoke proves.
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
-| `first-lessons-real-ui-actions` | Students and reviewers | Scenario-labeled launch plus Alice window detection and `ui-action-contract.json` expectations for first object/code/run/save actions. |
+| `first-lessons-real-ui-actions` | Students and reviewers | Required RabbitHole evidence for first-lesson readiness: launch, Run window, desktop execution, screenshot, log, window, and `ui-action-contract.json` artifacts, with `not_ready` for missing or insufficient evidence and `blocked` for known unsupported desktop actions. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission
