@@ -204,6 +204,43 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
 }
 
 #[test]
+fn lesson_session_readiness_requires_modernized_visible_desktop_evidence() {
+    let root = unique_test_dir("missing-modernized-desktop-evidence-check");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let screenshot = root
+        .join("runs")
+        .join("first-lessons-real-ui-actions")
+        .join("modernized-first-lesson-run")
+        .join("screenshots/run-window-after-dispatch.png");
+    fs::remove_file(&screenshot).unwrap();
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_eq!(
+        (
+            report.status.as_str(),
+            report.readiness_status.as_str(),
+            report.lesson_session_readiness.status.as_str()
+        ),
+        ("not_ready", "incomplete", "not_ready")
+    );
+    assert_contract_contains(
+        &report.issues,
+        "missing visible desktop rendering evidence after Run-frame and VM statement execution",
+    );
+    for role in ["instructor", "student"] {
+        let readiness = report
+            .role_readiness
+            .iter()
+            .find(|readiness| readiness.role == role)
+            .unwrap_or_else(|| panic!("missing {role} readiness: {:?}", report.role_readiness));
+        assert_eq!(readiness.status, "not_ready");
+    }
+    assert_contract_contains(&report.limitations, "does not grade student worlds");
+}
+
+#[test]
 fn lesson_session_readiness_rejects_missing_required_action_no_go_contract() {
     let root = unique_test_dir("missing-action-no-go-contract-check");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);

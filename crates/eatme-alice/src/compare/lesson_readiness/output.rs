@@ -101,7 +101,7 @@ fn human_summary(
     let scenario = scenario_id.unwrap_or(default_scenario_id);
     match status {
         "ready" => format!(
-            "{scenario} has complete comparison and UI action evidence with no accepted blockers."
+            "{scenario} has bounded comparison and UI action evidence with no accepted blockers."
         ),
         "blocked" => format!(
             "{scenario} has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists ({reason}).",

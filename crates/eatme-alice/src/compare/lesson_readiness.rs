@@ -45,6 +45,11 @@ const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "save-project",
 ];
 
+const REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS: &[&str] = &[
+    "run_world_desktop_toolbar_window_observed",
+    "run_world_desktop_execution_observed",
+];
+
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
     pub schema_version: String,
@@ -279,10 +284,7 @@ fn inspect_target_evidence(
     }
     require_passed_assertion(issues, role, launch_manifest, "ui_action_artifact_captured");
     if role == "modernized" {
-        for assertion in [
-            "run_world_desktop_toolbar_window_observed",
-            "run_world_desktop_execution_observed",
-        ] {
+        for assertion in REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS {
             require_passed_assertion(issues, role, launch_manifest, assertion);
         }
     }

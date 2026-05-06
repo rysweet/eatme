@@ -1,22 +1,34 @@
 schema_version: eatme.alice-comparison-targets/v1
 targets:
   baseline:
-    label: Baseline Alice
-    description: Existing Alice checkout used as the reference target for smoke evidence.
+    label: Original Alice
+    description: >-
+      Original Alice checkout used as the baseline target for bounded
+      instructor/student lesson-readiness evidence. This target provides setup,
+      launch, handoff, and classroom-support comparison signals only; it is not
+      a broad Alice compatibility certification or proof of full lesson
+      automation.
     alice_home_env: ALICE_BASELINE_HOME
     metadata:
       target_kind: reference
+      comparison_target: original_alice
     notes:
       - Set ALICE_BASELINE_HOME or pass --baseline-home before executing a comparison.
   modernized:
-    label: Modernized Alice
-    description: Modernized Alice checkout used as the comparison target for smoke evidence.
+    label: RabbitHole / Modernized Alice
+    description: >-
+      RabbitHole / modernized Alice checkout used as the modernized comparison
+      target for bounded instructor/student lesson-readiness evidence. This
+      target provides setup, launch, handoff, and classroom-support comparison
+      signals only; it is not a broad Alice compatibility certification or proof
+      of full lesson automation.
     alice_home_env: ALICE_MODERNIZED_HOME
     required_paths:
       - tweedle-lang/Grammar/TweedleLexer.g4
       - tweedle-lang/Grammar/TweedleParser.g4
     metadata:
       target_kind: candidate
+      comparison_target: rabbithole_modernized_alice
     notes:
       - Set ALICE_MODERNIZED_HOME or pass --modernized-home before executing a comparison.
       - Initialize the tweedle-lang submodule before executing a comparison.

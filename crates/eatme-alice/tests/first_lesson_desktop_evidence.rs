@@ -239,10 +239,34 @@ fn ui_action_contract_json() -> serde_json::Value {
         "required_actions": [
             {"id": "verify-specific-alice-window"},
             {"id": "activate-specific-alice-window"},
-            {"id": "place-object"},
-            {"id": "edit-procedure-or-code-block"},
-            {"id": "run-world"},
-            {"id": "save-project"}
+            {
+                "id": "place-object",
+                "required_evidence": "artifact proves a named object was added to the scene and placed without coordinate guessing",
+                "decision": "no_go",
+                "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance",
+                "contract_required": {"unsafe_until_available": true}
+            },
+            {
+                "id": "edit-procedure-or-code-block",
+                "required_evidence": "artifact proves a procedure or code block was edited",
+                "decision": "no_go",
+                "missing_affordance_id": "deterministic-alice-procedure-edit-affordance",
+                "contract_required": {"unsafe_until_available": true}
+            },
+            {
+                "id": "run-world",
+                "required_evidence": "artifact proves the world run control was invoked",
+                "decision": "no_go",
+                "missing_affordance_id": "deterministic-alice-world-run-affordance",
+                "contract_required": {"unsafe_until_available": true}
+            },
+            {
+                "id": "save-project",
+                "required_evidence": "saved .a3p project artifact exists and is non-empty",
+                "decision": "no_go",
+                "missing_affordance_id": "deterministic-alice-project-save-affordance",
+                "contract_required": {"unsafe_until_available": true}
+            }
         ]
     })
 }
