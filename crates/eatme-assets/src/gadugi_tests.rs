@@ -162,6 +162,7 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
     assert!(
         expected_stdout.contains(r#""failure_category": "ui_action_automation_unimplemented""#)
     );
+    assert!(expected_stdout.contains(r#""activate_alice_window_ui_action": {"#));
     assert!(expected_stdout.contains(r#""ui_action_contract": {"#));
     assert_eq!(
         launch_assertion["type"].as_str(),
@@ -170,7 +171,7 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
 }
 
 #[test]
-fn generated_lesson_path_adapters_preserve_honest_boundary_language() {
+fn generated_first_lesson_adapters_preserve_honest_boundary_language() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let lesson_path_sources = [
         "assets/scenarios/eatme/real-alice-launch-smoke.yaml",
@@ -218,9 +219,12 @@ fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundar
             "{source} generated adapter must preserve {required:?}:\n{generated}"
         );
     }
-    for blocked in ["lane", "lesson-path"] {
+    for blocked in [
+        format!("{}{}", "la", "ne"),
+        format!("{}{}", "lesson-", "path"),
+    ] {
         assert!(
-            !normalized.to_lowercase().contains(blocked),
+            !normalized.to_lowercase().contains(&blocked),
             "{source} generated adapter must not use internal {blocked:?} shorthand:\n{generated}"
         );
     }

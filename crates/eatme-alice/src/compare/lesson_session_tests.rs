@@ -357,6 +357,10 @@ fn launch_manifest_json(action_contract_path: &Path) -> serde_json::Value {
                 "passed": true,
                 "detail": "wmctrl window list contains an Alice Stage IDE window"
             },
+            "activate_alice_window_ui_action": {
+                "passed": true,
+                "detail": "wmctrl activated Alice window 0x001"
+            },
             "place_object_ui_action": {
                 "passed": false,
                 "detail": "blocked: no supported Alice desktop automation can add/place an object yet"
@@ -388,6 +392,10 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
             "required_evidence": "wmctrl output identifies an Alice Stage IDE window"
         }),
         serde_json::json!({
+            "id": "activate-specific-alice-window",
+            "required_evidence": "wmctrl -ia succeeds against the detected Alice window id"
+        }),
+        serde_json::json!({
             "id": "place-object",
             "required_evidence": "artifact proves an object was added to the scene and placed"
         }),
@@ -409,12 +417,22 @@ fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Value {
     serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
         "status": "blocked",
-        "blocking_reason": "No supported deterministic Alice desktop automation is wired for object placement, procedure editing, world run, or project save yet.",
+        "blocking_reason": "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet.",
         "preflight_evidence": {
             "specific_alice_window_detected": true,
             "visual_evidence_captured": true,
             "log_captured": true
         },
+        "executed_action_probes": [{
+            "id": "activate-specific-alice-window",
+            "status": "passed",
+            "detail": "wmctrl activated Alice window 0x001",
+            "window_id": "0x001",
+            "command": "wmctrl -ia 0x001",
+            "exit_status": 0,
+            "stdout": "",
+            "stderr": ""
+        }],
         "required_actions": actions
     })
 }

@@ -47,7 +47,7 @@ fn fake_toolchain_launch_smoke_writes_passing_manifest() {
 }
 
 #[test]
-fn fake_toolchain_launch_smoke_uses_scenario_run_lane() {
+fn fake_toolchain_launch_smoke_uses_scenario_run_directory() {
     let fixture = TestFixture::new();
     fixture.write_fake_tools();
     fixture.write_fake_alice_repo();

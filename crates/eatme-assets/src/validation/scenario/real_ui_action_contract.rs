@@ -13,6 +13,7 @@ pub(super) fn validate_real_ui_action_contract(
     }
     let action_evidence = [
         "specific_alice_window_detected",
+        "activate_alice_window_ui_action",
         "place_object_ui_action",
         "edit_procedure_ui_action",
         "run_world_ui_action",

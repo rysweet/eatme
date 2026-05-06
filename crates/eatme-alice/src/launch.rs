@@ -16,7 +16,10 @@ use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::prepare_run_dir;
 use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
-use crate::launch_ui_actions::{record_ui_action_blockers, write_ui_action_contract};
+use crate::launch_ui_actions::{
+    probe_alice_window_activation, record_alice_window_activation, record_ui_action_blockers,
+    write_ui_action_contract,
+};
 use crate::package::{PackageOptions, package_alice};
 use crate::scenario::LaunchSmokeScenario;
 use anyhow::{Result, bail};
@@ -291,6 +294,16 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             failure_category = Some("alice_window_not_detected".into());
         }
     }
+    let alice_window_activation_probe = if options.scenario.requires_real_ui_actions() {
+        let probe = probe_alice_window_activation(&runner, display.name(), &window_text);
+        record_alice_window_activation(&mut assertions, &probe);
+        if probe.status != "passed" && failure_category.is_none() {
+            failure_category = Some("alice_window_activation_failed".into());
+        }
+        Some(probe)
+    } else {
+        None
+    };
 
     let (fatal_log_scan, log_scan_error) = capture_text_or_error(scan_fatal_logs(&log_path));
     assertions.insert(
@@ -330,6 +343,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             specific_alice_window_ok,
             smoke_ready_visual_evidence,
             log_ok,
+            alice_window_activation_probe.as_ref(),
         )?;
         record_ui_action_blockers(&mut assertions, &artifact);
         if failure_category.is_none() {
