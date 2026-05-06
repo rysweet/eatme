@@ -46,6 +46,7 @@ pub(super) fn write_blocked_manifest(
             log.is_some(),
             None,
             None,
+            None,
             Some(&place_object_probe),
             None,
             None,

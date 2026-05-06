@@ -339,6 +339,10 @@ fn action_assertions(launch_manifest: &serde_json::Value) -> Vec<LessonActionAss
             "save_project_desktop_shortcut_dispatch",
             "dispatch-save-project-shortcut",
         ),
+        (
+            "run_world_desktop_shortcut_dispatch",
+            "dispatch-run-world-shortcut",
+        ),
         ("place_object_ui_action", "place-object"),
         ("edit_procedure_ui_action", "edit-procedure-or-code-block"),
         ("run_world_ui_action", "run-world"),

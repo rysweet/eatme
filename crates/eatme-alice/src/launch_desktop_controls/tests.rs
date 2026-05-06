@@ -50,6 +50,39 @@ fn desktop_save_shortcut_fails_when_xdotool_fails() {
     assert!(probe.detail.contains("could not dispatch Ctrl+S"));
 }
 
+#[test]
+fn desktop_run_shortcut_dispatches_documented_accelerator_after_edit_proof() {
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "xdotool key --window 0x001 --clearmodifiers ctrl+F5".into(),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_desktop_run_shortcut(&runner, ":99", Some(&activation_probe("passed")), true);
+
+    assert_eq!(probe.status, "passed");
+    assert_eq!(probe.id, "dispatch-run-world-shortcut");
+    assert_eq!(probe.window_id.as_deref(), Some("0x001"));
+    assert!(probe.detail.contains("input dispatch only"));
+    assert_eq!(
+        runner.commands(),
+        vec!["xdotool key --window 0x001 --clearmodifiers ctrl+F5"]
+    );
+}
+
+#[test]
+fn desktop_run_shortcut_blocks_before_edit_proof() {
+    let runner = FakeCommandRunner::default();
+
+    let probe =
+        probe_desktop_run_shortcut(&runner, ":99", Some(&activation_probe("passed")), false);
+
+    assert_eq!(probe.status, "blocked");
+    assert!(runner.commands().is_empty());
+}
+
 fn activation_probe(status: &str) -> UiActionProbe {
     UiActionProbe {
         id: "activate-specific-alice-window".into(),
