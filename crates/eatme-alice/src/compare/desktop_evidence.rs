@@ -1,14 +1,33 @@
 use anyhow::{Context, Result, bail};
+use serde::Serialize;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";
+const DESKTOP_RUN_PIXEL_BOUNDARY: &str = "run-window-evidence/desktop-run-pixel-boundary.json";
 const MISSING_VISIBLE_DESKTOP_EVIDENCE: &str = "missing visible desktop rendering evidence after Run-frame and VM statement execution; expected screenshots/run-window-after-dispatch.png under the comparison evidence root";
+const MISSING_PIXEL_BOUNDARY_EVIDENCE: &str = "missing desktop Run pixel-boundary evidence; expected run-window-evidence/desktop-run-pixel-boundary.json under the comparison evidence root";
 
 pub(crate) struct DesktopEvidenceCheck {
     pub(crate) observed: bool,
     pub(crate) artifact: Option<PathBuf>,
     pub(crate) issue: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DesktopRunPixelBoundaryEvidence {
+    pub status: String,
+    pub artifact: Option<String>,
+    pub detail: String,
+}
+
+impl DesktopRunPixelBoundaryEvidence {
+    pub(crate) fn issue_when_missing_or_invalid(&self) -> Option<String> {
+        match self.status.as_str() {
+            "missing" | "invalid" => Some(self.detail.clone()),
+            _ => None,
+        }
+    }
 }
 
 impl DesktopEvidenceCheck {
@@ -52,11 +71,91 @@ pub(crate) fn check_visible_desktop_evidence(
     }
 }
 
+pub(crate) fn check_pixel_boundary_evidence(
+    evidence_root: &Path,
+    ui_action_contract_path: &Path,
+) -> DesktopRunPixelBoundaryEvidence {
+    let Some(run_dir) = ui_action_contract_path.parent() else {
+        return missing_pixel_boundary();
+    };
+    let candidate = run_dir.join(DESKTOP_RUN_PIXEL_BOUNDARY);
+    let Ok(root) = evidence_root.canonicalize() else {
+        return missing_pixel_boundary();
+    };
+    let Ok(artifact) = candidate.canonicalize() else {
+        return missing_pixel_boundary();
+    };
+    if !artifact.starts_with(root) {
+        return missing_pixel_boundary();
+    }
+    let Ok(text) = fs::read_to_string(&artifact) else {
+        return invalid_pixel_boundary(
+            Some(artifact),
+            "desktop Run pixel-boundary evidence exists but is not readable",
+        );
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return invalid_pixel_boundary(
+            Some(artifact),
+            "desktop Run pixel-boundary evidence exists but is not valid JSON",
+        );
+    };
+    if json
+        .get("schema_version")
+        .and_then(serde_json::Value::as_str)
+        != Some("eatme.alice-desktop-run-pixel-boundary/v1")
+    {
+        return invalid_pixel_boundary(
+            Some(artifact),
+            "desktop Run pixel-boundary evidence has the wrong schema_version",
+        );
+    }
+    let status = json
+        .get("status")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("invalid");
+    if status == "invalid" {
+        return invalid_pixel_boundary(
+            Some(artifact),
+            "desktop Run pixel-boundary evidence is missing status",
+        );
+    }
+    let detail = json
+        .get("reason")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("desktop Run pixel-boundary evidence was read")
+        .to_string();
+    DesktopRunPixelBoundaryEvidence {
+        status: status.into(),
+        artifact: Some(artifact.display().to_string()),
+        detail,
+    }
+}
+
 fn missing() -> DesktopEvidenceCheck {
     DesktopEvidenceCheck {
         observed: false,
         artifact: None,
         issue: Some(MISSING_VISIBLE_DESKTOP_EVIDENCE.into()),
+    }
+}
+
+fn missing_pixel_boundary() -> DesktopRunPixelBoundaryEvidence {
+    DesktopRunPixelBoundaryEvidence {
+        status: "missing".into(),
+        artifact: None,
+        detail: MISSING_PIXEL_BOUNDARY_EVIDENCE.into(),
+    }
+}
+
+fn invalid_pixel_boundary(
+    artifact: Option<PathBuf>,
+    detail: &str,
+) -> DesktopRunPixelBoundaryEvidence {
+    DesktopRunPixelBoundaryEvidence {
+        status: "invalid".into(),
+        artifact: artifact.map(|path| path.display().to_string()),
+        detail: detail.into(),
     }
 }
 

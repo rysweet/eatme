@@ -89,6 +89,7 @@ fn required_evidence() -> Vec<String> {
         "comparison-manifest.json with baseline and modernized targets",
         "launch evidence for each target",
         "modernized Run-window evidence",
+        "modernized desktop-run-pixel-boundary.json status",
         "modernized desktop execution evidence",
         "screenshot, log, and window artifacts",
         "ui-action-contract.json",

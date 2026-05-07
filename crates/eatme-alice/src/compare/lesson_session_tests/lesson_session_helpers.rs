@@ -66,6 +66,13 @@ pub(super) fn write_executable_blocked_first_lesson_manifest(
                 "png",
             )
             .unwrap();
+            let run_window_evidence_dir = run_dir.join("run-window-evidence");
+            fs::create_dir_all(&run_window_evidence_dir).unwrap();
+            fs::write(
+                run_window_evidence_dir.join("desktop-run-pixel-boundary.json"),
+                r#"{"schema_version":"eatme.alice-desktop-run-pixel-boundary/v1","status":"not_observed","reason":"Run view attachment was observed, but this Alice-side signal does not inspect screenshots or pixel output."}"#,
+            )
+            .unwrap();
         }
         fs::write(
             &action_contract_path,
