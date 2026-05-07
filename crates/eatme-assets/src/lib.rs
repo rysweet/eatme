@@ -4,6 +4,8 @@ use std::path::Path;
 
 #[cfg(test)]
 mod assessment_boundary_tests;
+#[cfg(test)]
+mod creature_choreography_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]

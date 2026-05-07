@@ -438,55 +438,6 @@ fn lost_robot_debug_museum_covers_reflective_debugger_and_debug_coach() {
     );
 }
 
-#[test]
-fn creature_choreography_loop_lab_covers_playful_tinkerer_and_accessibility_advocate() {
-    let root = repository_root();
-    let path = scenario_path(&root, "eatme", "creature-choreography-loop-lab");
-    let contract = fs::read_to_string(&path).unwrap();
-    let scenario = read_eatme_scenario(&path);
-    let personas = scenario.personas.as_ref().expect("must define personas");
-    assert_eq!(scenario.kind, "instructor_agentic_flow");
-    assert!(personas.instructors.iter().any(|p| p == "exercise-forger"));
-    assert!(
-        personas
-            .instructors
-            .iter()
-            .any(|p| p == "assessment-curator")
-    );
-    assert!(personas.students.iter().any(|p| p == "playful-tinkerer"));
-    assert!(
-        personas
-            .students
-            .iter()
-            .any(|p| p == "creative-storyteller")
-    );
-    assert!(
-        personas
-            .students
-            .iter()
-            .any(|p| p == "accessibility-advocate")
-    );
-    assert_contains_all(
-        "creature-choreography-loop-lab contract",
-        &contract,
-        &[
-            "student choreography card",
-            "loop-frame reference",
-            "loop-count frame",
-            "written prediction",
-            "observation log",
-            "playful-tinkerer",
-            "accessibility-advocate",
-            "motion intensity",
-            "optional extension",
-            "not full user interface automation",
-            "not automated creative assessment",
-            "not learner-world grading",
-            "not complete Alice coverage",
-        ],
-    );
-}
-
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
