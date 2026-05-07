@@ -4,6 +4,10 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 mod blocker;
+mod first_lesson_next_action;
+
+pub use first_lesson_next_action::DesktopFirstLessonNextActionEvidence;
+pub(crate) use first_lesson_next_action::check_first_lesson_next_action_evidence;
 
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";
 const DESKTOP_RUN_PIXEL_BOUNDARY: &str = "run-window-evidence/desktop-run-pixel-boundary.json";
@@ -312,9 +316,9 @@ fn pixel_observation_detail(json: &serde_json::Value) -> String {
 }
 
 fn blocker_codes(json: &serde_json::Value) -> Option<String> {
-    let codes = json
-        .get("blocker")
-        .and_then(|blocker| blocker.get("codes"))
+    let blocker = json.get("blocker").unwrap_or(json);
+    let codes = blocker
+        .get("codes")
         .and_then(serde_json::Value::as_array)?
         .iter()
         .filter_map(serde_json::Value::as_str)

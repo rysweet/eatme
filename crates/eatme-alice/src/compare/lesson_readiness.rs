@@ -1,7 +1,8 @@
 use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
     desktop_evidence::{
-        DesktopRunPixelBoundaryEvidence, DesktopRunPixelObservationEvidence,
+        DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
+        DesktopRunPixelObservationEvidence, check_first_lesson_next_action_evidence,
         check_pixel_boundary_evidence, check_pixel_observation_evidence,
         check_visible_desktop_evidence, comparison_evidence_root, resolve_artifact_path,
     },
@@ -88,6 +89,7 @@ pub struct LessonTargetEvidence {
     pub ui_action_contract_readable: bool,
     pub desktop_run_pixel_boundary: Option<DesktopRunPixelBoundaryEvidence>,
     pub desktop_run_pixel_observation: Option<DesktopRunPixelObservationEvidence>,
+    pub desktop_first_lesson_next_action: Option<DesktopFirstLessonNextActionEvidence>,
     pub action_assertions: Vec<LessonActionAssertionEvidence>,
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
@@ -231,6 +233,7 @@ fn inspect_target_evidence(
             ui_action_contract_readable: false,
             desktop_run_pixel_boundary: None,
             desktop_run_pixel_observation: None,
+            desktop_first_lesson_next_action: None,
             action_assertions: Vec::new(),
             required_actions: Vec::new(),
             missing_assertions: REQUIRED_FIRST_LESSON_ASSERTIONS
@@ -321,6 +324,7 @@ fn inspect_target_evidence(
     let mut ui_action_contract_readable = false;
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
+    let mut desktop_first_lesson_next_action = None;
     let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
@@ -355,6 +359,12 @@ fn inspect_target_evidence(
                             );
                             issues.extend(pixel_observation.issue_when_missing_or_invalid());
                             desktop_run_pixel_observation = Some(pixel_observation);
+                            let first_lesson_next_action = check_first_lesson_next_action_evidence(
+                                &comparison_evidence_root(manifest_path),
+                                &resolved,
+                            );
+                            issues.extend(first_lesson_next_action.issue_when_invalid());
+                            desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
                                 check_visible_desktop_evidence(
                                     &comparison_evidence_root(manifest_path),
@@ -391,6 +401,7 @@ fn inspect_target_evidence(
         ui_action_contract_readable,
         desktop_run_pixel_boundary,
         desktop_run_pixel_observation,
+        desktop_first_lesson_next_action,
         action_assertions,
         required_actions,
         missing_assertions,

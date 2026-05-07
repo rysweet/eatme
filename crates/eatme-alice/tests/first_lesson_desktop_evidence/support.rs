@@ -12,6 +12,7 @@ pub(super) struct DesktopFixture {
     pub(super) visible_desktop_screenshot_present: bool,
     pub(super) pixel_boundary_present: bool,
     pub(super) pixel_observation: PixelObservationFixture,
+    pub(super) first_lesson_next_action: FirstLessonNextActionFixture,
 }
 
 #[derive(Clone, Copy)]
@@ -20,6 +21,12 @@ pub(super) enum PixelObservationFixture {
     Blocked,
     BlockedWithNextAction,
     Observed,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum FirstLessonNextActionFixture {
+    Missing,
+    Blocked,
 }
 
 pub(super) fn write_manifest(fixture: DesktopFixture) -> PathBuf {
@@ -142,6 +149,16 @@ fn write_modernized_desktop_artifacts(run_dir: &Path, fixture: &DesktopFixture) 
                 .unwrap();
             }
         }
+        if matches!(
+            fixture.first_lesson_next_action,
+            FirstLessonNextActionFixture::Blocked
+        ) {
+            fs::write(
+                evidence_dir.join("desktop-first-lesson-next-action.json"),
+                r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","evaluated_after":"desktop-run-pixel-observation.json","candidate_actions":["desktop_save_menu_action","desktop_code_editor_or_procedure_action"],"blocker":{"reason":"The Run render attachment seam does not receive or invoke a stable desktop Save menu or code editor/procedure action target.","codes":["desktop_save_menu_action_not_bound","procedure_editor_action_not_bound","no_ui_action_invoker_at_run_render_attachment"],"details":[{"observed":"recordRenderTargetAttached receives render target, render panel, Run view, and control-panel attachment state only","required":"stable desktop Save command/menu target plus invocation result"},{"observed":"no code editor or procedure operation target is exposed at this seam","required":"stable code editor/procedure action target plus invocation result"}]},"requiresNextEvidence":["desktop Save menu readiness or invocation artifact from the menu/action owner","code editor/procedure action readiness or invocation artifact from the editor/action owner"],"doesNotClaim":["full Alice UI automation","desktop save-menu completion","code editor/procedure action completion","first-lesson completion","grading","creative assessment"]}"#,
+            )
+            .unwrap();
+        }
     }
 }
 
@@ -178,6 +195,25 @@ pub(super) fn overwrite_modernized_pixel_observation(manifest_path: &Path, conte
             .unwrap()
             .join("run-window-evidence")
             .join("desktop-run-pixel-observation.json"),
+        content,
+    )
+    .unwrap();
+}
+
+pub(super) fn overwrite_modernized_first_lesson_next_action(manifest_path: &Path, content: &str) {
+    let value: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
+    let contract_path = PathBuf::from(
+        value["targets"]["modernized"]["launch_manifest"]["ui_action_contract"]["path"]
+            .as_str()
+            .unwrap(),
+    );
+    fs::write(
+        contract_path
+            .parent()
+            .unwrap()
+            .join("run-window-evidence")
+            .join("desktop-first-lesson-next-action.json"),
         content,
     )
     .unwrap();
