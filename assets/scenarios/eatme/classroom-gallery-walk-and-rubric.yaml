@@ -1,0 +1,143 @@
+schema_version: eatme.scenario/v1
+id: classroom-gallery-walk-and-rubric
+title: Classroom Gallery Walk And Rubric
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use lessons, exercises, projects, classroom resources, and how-tos as
+      editable sources for gallery-walk prompts and rubric evidence.
+  - name: Alice.org Building A Scene lesson
+    url: https://www.alice.org/resources/lessons/building-a-scene/
+    use: >-
+      Use visible project choices such as objects, positioning, camera, markers,
+      saving, and explanation as evidence examples without requiring identical
+      student artifacts.
+purpose: >-
+  Help an instructor and students run a classroom gallery walk for Alice projects.
+  The scenario produces a student-visible rubric, peer feedback card, creator
+  response prompt, revision checkpoint, and instructor boundary note. It asks
+  reviewers to connect visible artifact behavior to concept language, creative
+  intent, debugging process, accessibility, and one student-owned revision. This
+  editable scenario is not full user interface automation, not automated creative
+  assessment, not learner-world grading, not complete Alice coverage, and not a
+  deployed sharing service.
+personas:
+  instructors: [assessment-curator, studio-facilitator, classroom-orchestrator]
+  students: [collaborative-peer-mentor, reflective-debugger, accessibility-advocate]
+agentic_flow:
+  focus: classroom-gallery-walk-and-rubric
+  instructor_goal: >-
+    Prepare a gallery-walk evidence packet for diverse Alice student projects that
+    supports respectful peer critique, concept-focused rubric use, creator
+    response, and one revision checkpoint without ranking visual spectacle or
+    claiming automated grading.
+  prompt_source: assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - gallery_walk_rubric
+    - peer_feedback_card
+    - creator_response_prompt
+    - revision_checkpoint_note
+    - instructor_boundary_note
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing an Alice classroom gallery walk.
+  Produce a gallery walk rubric, peer feedback card, creator response prompt,
+  revision checkpoint note, and instructor boundary note grounded in the listed
+  resources and this classroom-gallery-walk-and-rubric scenario. Require feedback
+  to name one observed artifact behavior, one programming concept or design
+  choice, one respectful question, one accessibility or audience note when
+  relevant, and one student-owned revision. The rubric must work for stories,
+  games, simulations, media scenes, or starter projects without forcing one
+  project template. State explicitly that this is not full user interface
+  automation, not automated creative assessment, not learner-world grading, not
+  complete Alice coverage, and not a deployed sharing service.
+acceptance_criteria:
+  - given: >-
+      students bring different Alice stories, games, simulations, or media scenes
+      to a gallery walk
+    when: >-
+      the gallery walk rubric is prepared
+    then: >-
+      the rubric checks visible artifact behavior, concept language, creative
+      intent, debugging or process evidence, reflection, and accessibility or
+      audience clarity without requiring identical artifacts
+  - given: >-
+      peers review a classmate's Alice project
+    when: >-
+      the peer feedback card is used
+    then: >-
+      feedback includes one observation, one concept or design connection, one
+      respectful question, and one suggested revision rather than a popularity
+      ranking
+  - given: >-
+      the creator receives peer feedback
+    when: >-
+      the creator response prompt and revision checkpoint are applied
+    then: >-
+      the student names what they heard, what visible behavior they will keep or
+      change, and one small revision or reflection to complete next
+acceptance_probes:
+  - Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.
+  - Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.
+  - Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.
+  - Revision checkpoint note ties peer feedback to a visible behavior, debugging/process evidence, reflection, or accessibility/audience improvement.
+  - Output connects assessment-curator, studio-facilitator, collaborative-peer-mentor, reflective-debugger, and accessibility-advocate personas to reviewable classroom evidence.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed sharing service.
+rubric:
+  - criterion: Concept and artifact evidence
+    evidence:
+      - Rubric rows ask reviewers to cite a visible Alice behavior and the concept or design choice that produced it.
+      - Diverse artifacts can satisfy the rubric through explanation and observable behavior rather than matching one template.
+  - criterion: Peer feedback quality
+    evidence:
+      - Feedback includes observation, question, and suggested revision.
+      - Feedback avoids spectacle ranking and gives the creator a safe, useful next step.
+  - criterion: Revision and reflection loop
+    evidence:
+      - Creator response names what peer evidence was accepted, questioned, or deferred.
+      - Revision checkpoint records one student-owned change or reflection based on the gallery walk.
+  - criterion: Human review boundary
+    evidence:
+      - Instructor boundary note says the gallery walk supports discussion and evidence collection only.
+      - Instructor judgment remains responsible for creative meaning, classroom fit, accessibility interpretation, and learning claims.
+avoid:
+  - Exact user interface coordinates, brittle selectors, private implementation details, or hidden code inspection.
+  - Ranking projects by visual spectacle, asset quantity, popularity, or one correct template.
+  - Treating screenshots, launch manifests, or gallery notes as proof of completed learner understanding.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or deployed sharing-service status.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes classroom-gallery-walk-and-rubric
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  gallery_walk_rubric: agentic://instructor/gallery-walk-rubric
+  peer_feedback_card: agentic://student/peer-feedback-card
+  creator_response_prompt: agentic://student/creator-response-prompt
+  revision_checkpoint_note: agentic://student/revision-checkpoint-note
+  instructor_boundary_note: agentic://instructor/gallery-walk-boundary-note
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited Alice-facing resources, fail visibly and report the missing evidence. Do
+  not replace instructor judgment with launch, screenshot, or gallery-note
+  artifacts. Do not claim full user interface automation, automated creative
+  assessment, learner-world grading, complete Alice coverage, or a deployed
+  sharing service.

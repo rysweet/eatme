@@ -52,6 +52,7 @@ Current instructor mission assets include:
 | `instructor-student-outcomes-rubric` | Rubric for concept, creativity, process, and reflection |
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 | `student-reflection-artifact-review` | Review note and revision prompt for a student learning artifact plus reflection |
+| `classroom-gallery-walk-and-rubric` | Gallery-walk rubric, peer feedback card, creator response prompt, and revision checkpoint |
 
 `instructor-lesson-materials-remix` is the instructor lesson-material/remix
 evidence contract. It verifies that an Alice lesson packet is represented by
@@ -85,6 +86,7 @@ canonical eatme scenarios with generated Gadugi adapters:
 | `alice-2-migration-bridge` | Alice 2 lesson intent mapped to Alice 3 workflows and visible student evidence |
 | `vr-player-comfort-playtest` | Instructor-ready VR/player comfort playtest with non-VR classroom fallback |
 | `model-texture-import-checkpoint` | Import checkpoint for source, license, scale, orientation, texture visibility, and fallback assets |
+| `classroom-gallery-walk-and-rubric` | Gallery-walk evidence packet for peer critique, student response, and one revision checkpoint |
 
 ## Instructor scenario coverage
 
@@ -100,6 +102,7 @@ scenario assets currently cover:
 | `instructor-student-outcomes-rubric` | `assessment-curator` | Rubric that scores concept evidence, creativity, process, reflection, and accessibility. |
 | `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
 | `student-reflection-artifact-review` | `assessment-curator`, `studio-facilitator` | Instructor review of artifact behavior and learner explanation with one student-owned revision. |
+| `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk rubric and feedback prompts for visible artifact behavior, concept language, peer questions, creator response, and revision evidence. |
 
 Committed outside-in Alice expansion scenarios add these instructor decisions:
 
@@ -109,6 +112,7 @@ Committed outside-in Alice expansion scenarios add these instructor decisions:
 | `alice-2-migration-bridge` | `alice-2-migration-mentor` | Migration bridge that preserves Alice 2 lesson intent while requiring Alice 3 evidence. |
 | `vr-player-comfort-playtest` | `workshop-facilitator`, `classroom-orchestrator` | Short studio playtest with comfort checkpoints, helpers, share-out, and desktop fallback. |
 | `model-texture-import-checkpoint` | `studio-facilitator`, `assessment-curator` | Import review that accepts responsible fallbacks instead of requiring one third-party model. |
+| `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk review that turns peer observation into student-owned revision without ranking visual spectacle. |
 
 ## Mission design contract
 
