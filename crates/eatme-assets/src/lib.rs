@@ -112,7 +112,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 67);
+        assert_eq!(report.scenario_asset_count, 69);
     }
 
     #[test]
