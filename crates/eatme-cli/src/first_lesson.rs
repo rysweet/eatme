@@ -92,6 +92,13 @@ fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> O
         .next_actionable_blocker
         .as_ref()
         .map(|blocker| format!("Next blocker: {blocker}"))
+        .or_else(|| {
+            progress
+                .items
+                .iter()
+                .find(|item| item.state == "blocked")
+                .map(|item| format!("Next blocker: {}: {}", item.evidence, item.detail))
+        })
 }
 
 #[cfg(test)]
@@ -123,6 +130,32 @@ mod tests {
         let progress = progress_with_blocker(None);
 
         assert!(next_actionable_blocker_line(&progress).is_none());
+    }
+
+    #[test]
+    fn plain_output_falls_back_to_first_blocked_evidence_item() {
+        let progress = LessonReadinessEvidenceProgress {
+            total_required: 1,
+            present: 0,
+            missing: 0,
+            invalid: 0,
+            not_observed: 0,
+            blocked: 1,
+            summary: "0 of 1 required evidence items are present; 0 missing, 0 invalid, 0 not observed, 1 blocked.".into(),
+            next_actionable_blocker: None,
+            items: vec![LessonReadinessEvidenceProgressItem {
+                evidence: "modernized desktop run execution observation".into(),
+                state: "blocked".into(),
+                detail: "blocked: no supported Alice desktop automation can run the world yet".into(),
+            }],
+        };
+
+        assert_eq!(
+            next_actionable_blocker_line(&progress).as_deref(),
+            Some(
+                "Next blocker: modernized desktop run execution observation: blocked: no supported Alice desktop automation can run the world yet"
+            )
+        );
     }
 
     fn progress_with_blocker(blocker: Option<&str>) -> LessonReadinessEvidenceProgress {

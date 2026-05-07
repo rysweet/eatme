@@ -97,6 +97,52 @@ fn readiness_passes_with_visible_run_window_screenshot() {
 }
 
 #[test]
+fn blocked_pixel_observation_reports_explicit_next_action_as_next_fix() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::BlockedWithNextAction,
+    });
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(report.passed, "{:?}", report.issues);
+    assert_eq!(report.readiness_status, "blocked_until_ui_automation");
+    assert!(
+        report
+            .evidence_progress
+            .items
+            .iter()
+            .any(
+                |item| item.evidence == "modernized desktop-run-pixel-observation.json status"
+                    && item.state == "blocked"
+            )
+    );
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence should exist");
+    let pixel_observation = modernized
+        .desktop_run_pixel_observation
+        .as_ref()
+        .expect("modernized target should report pixel-observation evidence status");
+    assert!(pixel_observation.next_action.is_some());
+    let next_blocker = report
+        .evidence_progress
+        .next_actionable_blocker
+        .as_deref()
+        .expect("blocked pixel observation should name the next action");
+    assert!(next_blocker.contains(
+        "fix next: rerun RabbitHole with DISPLAY backed by a visible desktop and capture desktop-run-render-target.png"
+    ));
+    assert!(!next_blocker.contains("first-lesson completion"));
+    assert!(!next_blocker.contains("visible rendering correctness is proven"));
+}
+
+#[test]
 fn vm_execution_sentinel_alone_is_not_visible_desktop_proof() {
     let manifest_path = write_manifest(DesktopFixture {
         run_frame_present: true,
