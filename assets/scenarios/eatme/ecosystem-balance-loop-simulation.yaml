@@ -1,0 +1,145 @@
+schema_version: eatme.scenario/v1
+id: ecosystem-balance-loop-simulation
+title: Ecosystem Balance Loop Simulation
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Use the loops and procedures concepts from this lesson family as the
+      coding backbone for a repeating simulation round where each animal in
+      the scene performs one action per tick, showing why a loop replaces
+      repeated individual calls.
+  - name: Alice.org Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Use the loops and control structures topic from the Alice 3 lesson list
+      to frame a simulation that runs for a chosen number of rounds, with each
+      round repeating the same set of animal behaviors and producing a
+      visibly changing scene.
+purpose: >-
+  Help an instructor design a short Alice lesson where students build a simple
+  ecosystem simulation using a loop. Students start with a scene containing at
+  least two kinds of animals (such as rabbits and foxes), observe that manually
+  repeating each animal's behavior per round produces duplicated code, replace
+  the repetition with a loop that runs a chosen number of rounds, and predict
+  what the scene will look like after N rounds before running it. This scenario
+  covers the systems-puzzle-solver and playful-tinkerer student personas without
+  claiming full user interface automation, automated creative assessment,
+  learner-world grading, complete Alice coverage, or real Alice smoke evidence.
+personas:
+  instructors: [exercise-forger, debug-coach]
+  students: [systems-puzzle-solver, playful-tinkerer]
+agentic_flow:
+  focus: ecosystem-balance-loop-simulation
+  instructor_goal: >-
+    Prepare a lesson brief and student activity sheet for an Alice ecosystem
+    loop simulation: a motivator showing duplicated per-round animal calls, a
+    loop-round frame that replaces the duplication, a before-run prediction
+    prompt covering what the scene will look like after N rounds, and an
+    after-run observation log comparing prediction to visible outcome.
+  prompt_source: assets/scenarios/eatme/ecosystem-balance-loop-simulation.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - lesson_brief
+    - student_activity_sheet
+    - loop_round_frame
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing an ecosystem loop simulation
+  Alice lesson. Produce a lesson brief, student activity sheet, and loop-round
+  frame grounded in the listed resources and this ecosystem-balance-loop-simulation
+  scenario. The lesson brief must show a short motivating example of duplicated
+  per-round animal calls first, explain why a loop removes the duplication, and
+  introduce a loop that runs for a chosen number of rounds where each round
+  repeats the same animal behaviors. The student activity sheet must prompt:
+  choose at least two kinds of animals (such as rabbits and foxes, or fish and
+  sharks), write a single loop round containing one behavior per animal, choose
+  a round count between 3 and 10, write a prediction of what the scene will look
+  like after that many rounds before running, run the world, and record what
+  visible behavior changed compared to the prediction. The loop-round frame must
+  name the loop counter, name the round body, and list the two animal behaviors
+  without requiring specific Alice assets or character models. State explicitly
+  that this is not full user interface automation, not automated creative
+  assessment, not learner-world grading, and not complete Alice coverage.
+acceptance_criteria:
+  - given: >-
+      an instructor wants to run a loops lesson using a simple ecosystem
+      simulation in Alice
+    when: >-
+      the lesson brief is prepared
+    then: >-
+      the brief shows duplicated per-round code first, introduces a loop that
+      runs for a chosen round count, and does not require specific Alice assets
+      or character models
+  - given: >-
+      a student is building an ecosystem loop simulation
+    when: >-
+      the student activity sheet is used
+    then: >-
+      the sheet prompts the student to choose at least two animal kinds, write
+      one loop round with one behavior per animal, choose a round count, write
+      a prediction before running, and record observed behavior after running
+  - given: >-
+      a playful-tinkerer student wants to extend the simulation
+    when: >-
+      the activity sheet extension section is reached
+    then: >-
+      the extension suggests changing the round count or adding a third animal
+      without prescribing exact assets or UI steps
+acceptance_probes:
+  - Lesson brief shows duplicated per-round animal calls before introducing the loop.
+  - Loop-round frame names the loop counter and round body without referencing specific Alice assets.
+  - Student activity sheet prompts a written prediction of scene state after N rounds before any test run.
+  - Student activity sheet prompts recording of observed visible behavior after the run.
+  - Output connects systems-puzzle-solver and playful-tinkerer student personas to visible classroom evidence.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+rubric:
+  - criterion: Loop motivation clarity
+    evidence:
+      - Lesson brief shows at least two manual per-round calls before introducing the loop.
+      - Instructor framing explains what the loop replaces, not only how to add a loop.
+  - criterion: Prediction before test
+    evidence:
+      - Student activity sheet records a written prediction of N-round scene state before the run.
+      - Observation log captures what actually changed compared to the prediction.
+  - criterion: Asset independence
+    evidence:
+      - Loop-round frame names animal behaviors without referencing specific Alice character files.
+      - Extension suggestion does not prescribe exact assets or UI steps.
+avoid:
+  - Exact asset requirements or fixed UI steps.
+  - Claiming that a specific Alice character set is required for the lesson to work.
+  - Skipping the prediction step or letting students run before writing an expectation.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes ecosystem-balance-loop-simulation
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/ecosystem-balance-loop-simulation.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  lesson_brief: agentic://instructor/lesson-brief
+  student_activity_sheet: agentic://student/activity-sheet
+  loop_round_frame: agentic://instructor/loop-round-frame
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited Alice-facing resources, fail visibly and report the missing evidence.
+  Do not replace instructor judgment with launch, screenshot, or
+  export-preflight artifacts. Do not claim full user interface automation,
+  automated creative assessment, learner-world grading, or complete Alice
+  coverage.
