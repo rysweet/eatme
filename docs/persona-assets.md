@@ -46,6 +46,12 @@ Gadugi adapter. The scenario connects workshop facilitator personas to a
 reviewable instructor agentic flow without claiming desktop automation or
 automated grading.
 
+For teacher-community sharing coverage, use
+`assets/scenarios/eatme/teacher-community-sharing-loop.yaml` and its generated
+Gadugi adapter. The scenario connects the teacher-community curator persona to a
+teacher-facing share card, classroom handoff note, and remix feedback prompt
+without claiming a deployed community platform.
+
 ## QA-team outside-in test shape
 
 ```yaml
@@ -194,6 +200,7 @@ include:
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
+| `teacher-community-sharing-loop` | Teacher-community sharing scenario for share cards, classroom handoff notes, attribution, student evidence, accessibility notes, and remix feedback prompts. |
 
 Launch-smoke standalone scenarios route runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
@@ -228,6 +235,7 @@ The persona crew also defines these additional outside-in coverage areas:
 | `vr-player-comfort-playtest` | Existing standalone scenario | Facilitate a short VR/player comfort playtest with helper roles and a non-VR path. | Design Process Virtual Reality; Moving The Camera. |
 | `model-texture-import-checkpoint` | Existing standalone scenario | Review external model/texture use through source, license, scale, orientation, texture, and fallback checks. | Alice 3 resource categories; Building A Scene. |
 | `workshop-facilitator-live-studio` | Existing standalone scenario | Facilitate a short live studio workshop with checkpoint evidence, helper roles, recovery moves, and a final share. | Alice 3 resource categories; Alice 3 lessons list. |
+| `teacher-community-sharing-loop` | Existing standalone scenario | Package a teacher-facing share card, classroom handoff note, and remix feedback prompt with attribution and student evidence expectations. | Alice resources overview; Alice 3 resource categories. |
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected
