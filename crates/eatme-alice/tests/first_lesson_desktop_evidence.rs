@@ -67,6 +67,17 @@ fn readiness_passes_with_visible_run_window_screenshot() {
             .summary
             .contains("6 of 8 required evidence items are present")
     );
+    let next_blocker = report
+        .evidence_progress
+        .next_actionable_blocker
+        .as_deref()
+        .expect("blocked pixel observation should name the next blocker");
+    assert!(next_blocker.contains("desktop Run pixel observation is blocked"));
+    assert!(next_blocker.contains("run Alice with a non-headless graphics environment"));
+    assert!(next_blocker.contains("make the Run render target displayable"));
+    assert!(next_blocker.contains("render_target_not_displayable"));
+    assert!(next_blocker.contains("graphicsEnvironmentHeadless=true"));
+    assert!(next_blocker.contains("renderTargetWidth=0"));
     assert!(
         pixel_boundary
             .detail
@@ -254,6 +265,7 @@ fn missing_pixel_observation_evidence_is_reported_explicitly() {
                     && item.state == "missing"
             )
     );
+    assert!(report.evidence_progress.next_actionable_blocker.is_none());
 }
 
 #[test]
@@ -288,6 +300,7 @@ fn invalid_pixel_observation_evidence_is_reported_explicitly() {
                     && item.state == "invalid"
             )
     );
+    assert!(report.evidence_progress.next_actionable_blocker.is_none());
 }
 
 #[test]
