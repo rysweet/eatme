@@ -5,8 +5,11 @@ use std::path::{Component, Path, PathBuf};
 
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";
 const DESKTOP_RUN_PIXEL_BOUNDARY: &str = "run-window-evidence/desktop-run-pixel-boundary.json";
+const DESKTOP_RUN_PIXEL_OBSERVATION: &str =
+    "run-window-evidence/desktop-run-pixel-observation.json";
 const MISSING_VISIBLE_DESKTOP_EVIDENCE: &str = "missing visible desktop rendering evidence after Run-frame and VM statement execution; expected screenshots/run-window-after-dispatch.png under the comparison evidence root";
 const MISSING_PIXEL_BOUNDARY_EVIDENCE: &str = "missing desktop Run pixel-boundary evidence; expected run-window-evidence/desktop-run-pixel-boundary.json under the comparison evidence root";
+const MISSING_PIXEL_OBSERVATION_EVIDENCE: &str = "missing desktop Run pixel-observation evidence; expected run-window-evidence/desktop-run-pixel-observation.json under the comparison evidence root";
 
 pub(crate) struct DesktopEvidenceCheck {
     pub(crate) observed: bool,
@@ -21,7 +24,27 @@ pub struct DesktopRunPixelBoundaryEvidence {
     pub detail: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct DesktopRunPixelObservationEvidence {
+    pub status: String,
+    pub artifact: Option<String>,
+    pub detail: String,
+    pub screenshot: Option<serde_json::Value>,
+    pub sample: Option<serde_json::Value>,
+    pub blocker: Option<serde_json::Value>,
+    pub component_state: Option<serde_json::Value>,
+}
+
 impl DesktopRunPixelBoundaryEvidence {
+    pub(crate) fn issue_when_missing_or_invalid(&self) -> Option<String> {
+        match self.status.as_str() {
+            "missing" | "invalid" => Some(self.detail.clone()),
+            _ => None,
+        }
+    }
+}
+
+impl DesktopRunPixelObservationEvidence {
     pub(crate) fn issue_when_missing_or_invalid(&self) -> Option<String> {
         match self.status.as_str() {
             "missing" | "invalid" => Some(self.detail.clone()),
@@ -128,6 +151,63 @@ pub(crate) fn check_pixel_boundary_evidence(
     }
 }
 
+pub(crate) fn check_pixel_observation_evidence(
+    evidence_root: &Path,
+    ui_action_contract_path: &Path,
+) -> DesktopRunPixelObservationEvidence {
+    let Some(run_dir) = ui_action_contract_path.parent() else {
+        return missing_pixel_observation();
+    };
+    let candidate = run_dir.join(DESKTOP_RUN_PIXEL_OBSERVATION);
+    let Ok(root) = evidence_root.canonicalize() else {
+        return missing_pixel_observation();
+    };
+    let Ok(artifact) = candidate.canonicalize() else {
+        return missing_pixel_observation();
+    };
+    if !artifact.starts_with(root) {
+        return missing_pixel_observation();
+    }
+    let Ok(text) = fs::read_to_string(&artifact) else {
+        return invalid_pixel_observation(
+            Some(artifact),
+            "desktop Run pixel-observation evidence exists but is not readable",
+        );
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return invalid_pixel_observation(
+            Some(artifact),
+            "desktop Run pixel-observation evidence exists but is not valid JSON",
+        );
+    };
+    if json
+        .get("schema_version")
+        .and_then(serde_json::Value::as_str)
+        != Some("eatme.alice-desktop-run-pixel-observation/v1")
+    {
+        return invalid_pixel_observation(
+            Some(artifact),
+            "desktop Run pixel-observation evidence has the wrong schema_version",
+        );
+    }
+    let Some(status) = json.get("status").and_then(serde_json::Value::as_str) else {
+        return invalid_pixel_observation(
+            Some(artifact),
+            "desktop Run pixel-observation evidence is missing status field",
+        );
+    };
+    let detail = pixel_observation_detail(&json);
+    DesktopRunPixelObservationEvidence {
+        status: status.into(),
+        artifact: Some(artifact.display().to_string()),
+        detail,
+        screenshot: json.get("screenshot").cloned(),
+        sample: json.get("sample").cloned(),
+        blocker: json.get("blocker").cloned(),
+        component_state: json.get("component_state").cloned(),
+    }
+}
+
 fn missing() -> DesktopEvidenceCheck {
     DesktopEvidenceCheck {
         observed: false,
@@ -144,6 +224,18 @@ fn missing_pixel_boundary() -> DesktopRunPixelBoundaryEvidence {
     }
 }
 
+fn missing_pixel_observation() -> DesktopRunPixelObservationEvidence {
+    DesktopRunPixelObservationEvidence {
+        status: "missing".into(),
+        artifact: None,
+        detail: MISSING_PIXEL_OBSERVATION_EVIDENCE.into(),
+        screenshot: None,
+        sample: None,
+        blocker: None,
+        component_state: None,
+    }
+}
+
 fn invalid_pixel_boundary(
     artifact: Option<PathBuf>,
     detail: &str,
@@ -153,6 +245,67 @@ fn invalid_pixel_boundary(
         artifact: artifact.map(|path| path.display().to_string()),
         detail: detail.into(),
     }
+}
+
+fn invalid_pixel_observation(
+    artifact: Option<PathBuf>,
+    detail: &str,
+) -> DesktopRunPixelObservationEvidence {
+    DesktopRunPixelObservationEvidence {
+        status: "invalid".into(),
+        artifact: artifact.map(|path| path.display().to_string()),
+        detail: detail.into(),
+        screenshot: None,
+        sample: None,
+        blocker: None,
+        component_state: None,
+    }
+}
+
+fn pixel_observation_detail(json: &serde_json::Value) -> String {
+    let mut parts = Vec::new();
+    if let Some(claim) = json.get("claim").and_then(serde_json::Value::as_str) {
+        parts.push(claim.to_string());
+    } else if let Some(reason) = json
+        .get("blocker")
+        .and_then(|blocker| blocker.get("reason"))
+        .and_then(serde_json::Value::as_str)
+    {
+        parts.push(reason.to_string());
+    } else if let Some(reason) = json.get("reason").and_then(serde_json::Value::as_str) {
+        parts.push(reason.to_string());
+    } else {
+        parts.push("desktop Run pixel-observation evidence was read".into());
+    }
+    if let Some(file) = json
+        .get("screenshot")
+        .and_then(|screenshot| screenshot.get("file"))
+        .and_then(serde_json::Value::as_str)
+    {
+        parts.push(format!("screenshot: {file}"));
+    }
+    if let Some(argb) = json
+        .get("sample")
+        .and_then(|sample| sample.get("argb"))
+        .and_then(serde_json::Value::as_str)
+    {
+        parts.push(format!("center pixel: {argb}"));
+    }
+    if let Some(codes) = blocker_codes(json) {
+        parts.push(format!("blocker codes: {codes}"));
+    }
+    parts.join("; ")
+}
+
+fn blocker_codes(json: &serde_json::Value) -> Option<String> {
+    let codes = json
+        .get("blocker")
+        .and_then(|blocker| blocker.get("codes"))
+        .and_then(serde_json::Value::as_array)?
+        .iter()
+        .filter_map(serde_json::Value::as_str)
+        .collect::<Vec<_>>();
+    (!codes.is_empty()).then(|| codes.join(", "))
 }
 
 pub(super) fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -> Result<PathBuf> {

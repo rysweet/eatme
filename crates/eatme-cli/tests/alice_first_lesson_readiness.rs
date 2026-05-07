@@ -47,7 +47,7 @@ targets:
     );
     assert_eq!(report["passed"], false);
     assert_eq!(report["readiness_status"], "incomplete");
-    assert_eq!(report["evidence_progress"]["total_required"], 7);
+    assert_eq!(report["evidence_progress"]["total_required"], 8);
     assert!(
         report["evidence_progress"]["summary"]
             .as_str()
@@ -108,6 +108,7 @@ targets:
         stdout.contains("present: comparison-manifest.json with baseline and modernized targets")
     );
     assert!(stdout.contains("missing: launch evidence for each target"));
+    assert!(stdout.contains("modernized desktop-run-pixel-observation.json status"));
     assert!(stdout.contains("Limits:"));
     assert!(stdout.contains("does not prove full Alice UI automation"));
     assert!(stdout.contains("does not prove visible rendering correctness"));
