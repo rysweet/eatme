@@ -18,6 +18,7 @@ pub(super) struct DesktopFixture {
 pub(super) enum PixelObservationFixture {
     Missing,
     Blocked,
+    BlockedWithNextAction,
     Observed,
 }
 
@@ -122,6 +123,13 @@ fn write_modernized_desktop_artifacts(run_dir: &Path, fixture: &DesktopFixture) 
                 fs::write(
                     evidence_dir.join("desktop-run-pixel-observation.json"),
                     r#"{"schema_version":"eatme.alice-desktop-run-pixel-observation/v1","status":"blocked","source":"desktop_run_render_target_attachment","claim":"No desktop pixel was sampled.","component_state":{"graphicsEnvironmentHeadless":true,"renderTargetDisplayable":false,"renderTargetShowing":false,"renderTargetWidth":0,"renderTargetHeight":0},"blocker":{"reason":"A desktop screenshot requires a non-headless graphics environment, a showing Run render target, positive component size, and screen-capture access.","codes":["java_awt_headless","render_target_not_displayable","render_target_not_showing","render_target_has_no_positive_size"],"exceptionType":""}}"#,
+                )
+                .unwrap();
+            }
+            PixelObservationFixture::BlockedWithNextAction => {
+                fs::write(
+                    evidence_dir.join("desktop-run-pixel-observation.json"),
+                    r#"{"schema_version":"eatme.alice-desktop-run-pixel-observation/v1","status":"blocked","source":"desktop_run_render_target_attachment","claim":"No desktop pixel was sampled.","next_action":{"summary":"rerun RabbitHole with DISPLAY backed by a visible desktop and capture desktop-run-render-target.png"},"component_state":{"graphicsEnvironmentHeadless":true,"renderTargetDisplayable":false,"renderTargetShowing":false,"renderTargetWidth":0,"renderTargetHeight":0},"blocker":{"reason":"A desktop screenshot requires a non-headless graphics environment, a showing Run render target, positive component size, and screen-capture access.","codes":["java_awt_headless","render_target_not_displayable"],"exceptionType":""}}"#,
                 )
                 .unwrap();
             }

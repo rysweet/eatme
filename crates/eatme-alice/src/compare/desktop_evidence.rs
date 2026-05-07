@@ -35,6 +35,8 @@ pub struct DesktopRunPixelObservationEvidence {
     pub sample: Option<serde_json::Value>,
     pub blocker: Option<serde_json::Value>,
     pub component_state: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_action: Option<serde_json::Value>,
 }
 
 impl DesktopRunPixelBoundaryEvidence {
@@ -211,6 +213,10 @@ pub(crate) fn check_pixel_observation_evidence(
         sample: json.get("sample").cloned(),
         blocker: json.get("blocker").cloned(),
         component_state: json.get("component_state").cloned(),
+        next_action: json
+            .get("next_action")
+            .or_else(|| json.get("nextAction"))
+            .cloned(),
     }
 }
 
@@ -239,6 +245,7 @@ fn missing_pixel_observation() -> DesktopRunPixelObservationEvidence {
         sample: None,
         blocker: None,
         component_state: None,
+        next_action: None,
     }
 }
 
@@ -265,6 +272,7 @@ fn invalid_pixel_observation(
         sample: None,
         blocker: None,
         component_state: None,
+        next_action: None,
     }
 }
 

@@ -8,7 +8,9 @@ pub(super) fn next_actionable_pixel_observation_blocker(
     }
 
     let mut details = Vec::new();
-    if let Some(fixes) = blocker_fix_hints(evidence.blocker.as_ref()) {
+    if let Some(action) = explicit_next_action(evidence) {
+        details.push(format!("fix next: {action}"));
+    } else if let Some(fixes) = blocker_fix_hints(evidence.blocker.as_ref()) {
         details.push(format!("fix next: {fixes}"));
     }
     if let Some(reason) = blocker_reason(evidence.blocker.as_ref()) {
@@ -59,6 +61,44 @@ fn blocker_code_summary(blocker: Option<&serde_json::Value>) -> Option<String> {
         .and_then(serde_json::Value::as_str)
         .filter(|code| !code.is_empty())
         .map(str::to_string)
+}
+
+fn explicit_next_action(evidence: &DesktopRunPixelObservationEvidence) -> Option<String> {
+    plain_next_action(evidence.next_action.as_ref()).or_else(|| {
+        let blocker = evidence.blocker.as_ref()?;
+        plain_next_action(
+            blocker
+                .get("next_action")
+                .or_else(|| blocker.get("nextAction")),
+        )
+    })
+}
+
+fn plain_next_action(value: Option<&serde_json::Value>) -> Option<String> {
+    let value = value?;
+    if let Some(text) = value.as_str().filter(|text| !text.trim().is_empty()) {
+        return Some(text.trim().to_string());
+    }
+    let object = value.as_object()?;
+    for key in ["fix", "action", "summary", "description", "detail"] {
+        if let Some(text) = object
+            .get(key)
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|text| !text.is_empty())
+        {
+            return Some(text.to_string());
+        }
+    }
+    let steps = object
+        .get("steps")
+        .and_then(serde_json::Value::as_array)?
+        .iter()
+        .filter_map(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|step| !step.is_empty())
+        .collect::<Vec<_>>();
+    (!steps.is_empty()).then(|| steps.join("; "))
 }
 
 fn blocker_fix_hints(blocker: Option<&serde_json::Value>) -> Option<String> {
