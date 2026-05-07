@@ -53,6 +53,7 @@ Current instructor mission assets include:
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 | `student-reflection-artifact-review` | Review note and revision prompt for a student learning artifact plus reflection |
 | `classroom-gallery-walk-and-rubric` | Gallery-walk rubric, peer feedback card, creator response prompt, and revision checkpoint |
+| `teacher-community-sharing-loop` | Teacher-community share card, classroom handoff note, and remix feedback prompt |
 
 `instructor-lesson-materials-remix` is the instructor lesson-material/remix
 evidence contract. It verifies that an Alice lesson packet is represented by
@@ -103,6 +104,7 @@ scenario assets currently cover:
 | `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
 | `student-reflection-artifact-review` | `assessment-curator`, `studio-facilitator` | Instructor review of artifact behavior and learner explanation with one student-owned revision. |
 | `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk rubric and feedback prompts for visible artifact behavior, concept language, peer questions, creator response, and revision evidence. |
+| `teacher-community-sharing-loop` | `teacher-community-curator`, `classroom-orchestrator`, `assessment-curator` | Teacher-facing share card and handoff note with attribution, classroom constraints, student evidence, accessibility notes, and remix feedback prompts. |
 
 Committed outside-in Alice expansion scenarios add these instructor decisions:
 
@@ -113,6 +115,7 @@ Committed outside-in Alice expansion scenarios add these instructor decisions:
 | `vr-player-comfort-playtest` | `workshop-facilitator`, `classroom-orchestrator` | Short studio playtest with comfort checkpoints, helpers, share-out, and desktop fallback. |
 | `model-texture-import-checkpoint` | `studio-facilitator`, `assessment-curator` | Import review that accepts responsible fallbacks instead of requiring one third-party model. |
 | `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk review that turns peer observation into student-owned revision without ranking visual spectacle. |
+| `teacher-community-sharing-loop` | `teacher-community-curator`, `classroom-orchestrator`, `assessment-curator` | Teacher-community handoff that shares editable activity context without ranking teachers or claiming a deployed platform. |
 
 ## Mission design contract
 
