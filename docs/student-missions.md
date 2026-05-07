@@ -47,10 +47,22 @@ Student personas include:
 Student-facing scenarios cover Alice modernization from visible learner outcomes,
 not internal Alice implementation details.
 
+Current audit inventory:
+
+- 34 canonical scenario assets under `assets/scenarios/eatme/`
+- 35 Gadugi scenario assets under `assets/scenarios/gadugi/` (34 generated
+  adapters and 1 hand-authored validation regression)
+- 24 personas in `assets/personas/alice-user-crew.yaml`
+- 33 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
+  is the baseline launch evidence scenario and names no student persona
+
 Committed student-facing scenario assets currently include:
 
 | Scenario id | Primary student personas | Student outcome |
 | --- | --- | --- |
+| `hour-of-code-studio-kickoff` | `curious-novice`, `creative-storyteller`, `reflective-debugger` | Build a tiny first scene or fallback studio role, record first animation evidence, and connect one visible change to a student choice. |
+| `starter-project-open-save-export-preflight` | `creative-storyteller`, `accessibility-advocate` | Open the bundled starter project and collect bounded preflight evidence before any save, reopen, or export journey is trusted. |
+| `first-lessons-real-ui-actions` | `curious-novice`, `creative-storyteller` | Record the first object, procedure, run, and save action contract plus learner packet expectations without claiming full UI automation. |
 | `building-a-scene-first-world` | `curious-novice`, `creative-storyteller` | Build a small world, predict audience focus, run Alice, revise one visible scene choice. |
 | `code-editor-first-run` | `curious-novice`, `reflective-debugger` | Edit code, predict the world behavior, run Alice, and explain the expected-versus-actual result. |
 | `reusable-methods-and-parameters` | `systems-puzzle-solver`, `collaborative-peer-mentor` | Use reusable behavior with a parameter and describe why reuse changed the project. |
@@ -79,6 +91,21 @@ canonical scenario assets with generated Gadugi adapters:
 | `student-artifact-package-share-evidence` | `reflective-debugger`, `collaborative-peer-mentor` | Package one Alice artifact or screenshot with student change, visible run result, attribution or classroom context, and a next revision for instructor or peer review. |
 | `classroom-gallery-walk-and-rubric` | `collaborative-peer-mentor`, `reflective-debugger`, `accessibility-advocate` | Use peer observation, concept language, respectful questions, creator response, and one revision checkpoint during a gallery walk. |
 | `teacher-community-sharing-loop` | `collaborative-peer-mentor`, `accessibility-advocate` | Carry student evidence and accessibility notes into a teacher-facing activity handoff without ranking classmates or teachers. |
+
+Instructor-led scenario assets also produce student-facing prompts, handouts, or
+handoffs. They are instructor missions first, but their student persona mappings
+matter when checking learner-facing coverage:
+
+| Scenario id | Student-facing piece |
+| --- | --- |
+| `instructor-exercise-builder` | Student exercise brief with one concept focus, scaffolded entry, choice, stretch path, and visible evidence. |
+| `instructor-lesson-materials-remix` | Student handout and exit ticket derived from Alice.org resources. |
+| `instructor-alice-concept-map` | Student-facing concept language and misconception checks tied to visible Alice actions. |
+| `instructor-student-outcomes-rubric` | Rubric language for concept evidence, creativity, process, reflection, and accessibility. |
+| `instructor-classroom-setup-readiness` | Student readiness note and fallback plan that avoids treating environment blockers as learner mistakes. |
+| `instructor-student-launch-evidence-handoff` | Student action prompt asking for one Alice action, visible run result, and one next revision. |
+| `workshop-facilitator-live-studio` | Student prompt cards, help signals, peer feedback, revision, reflection, and share-out evidence. |
+| `curriculum-sequence-remix-pack` | Student evidence plan linked to prerequisites, pacing, fallback notes, and swap points. |
 
 ## Mission rhythm
 
