@@ -53,6 +53,10 @@ Current instructor mission assets include:
 | `instructor-classroom-setup-readiness` | Setup checklist, student note, and fallback plan |
 | `student-reflection-artifact-review` | Review note and revision prompt for a student learning artifact plus reflection |
 | `classroom-gallery-walk-and-rubric` | Gallery-walk rubric, peer feedback card, creator response prompt, and revision checkpoint |
+| `media-audio-cue-storyboard` | Media cue storyboard, student prediction prompt, accessibility fallback note, and revision reflection prompt |
+| `student-artifact-package-share-evidence` | Artifact share packet checklist, student evidence handoff prompt, and instructor review boundary note |
+| `instructor-student-launch-evidence-handoff` | Real Alice evidence handoff card, instructor readiness note, and student action prompt |
+| `workshop-facilitator-live-studio` | Live-studio facilitation plan, timing plan, student prompt cards, help signals, and share-out artifacts |
 | `teacher-community-sharing-loop` | Teacher-community share card, classroom handoff note, and remix feedback prompt |
 | `curriculum-sequence-remix-pack` | Curriculum sequence map, lesson sequence remix pack, and student evidence plan |
 
@@ -105,6 +109,10 @@ scenario assets currently cover:
 | `instructor-classroom-setup-readiness` | `classroom-orchestrator` | Classroom setup checklist, student-facing readiness note, and fallback plan. |
 | `student-reflection-artifact-review` | `assessment-curator`, `studio-facilitator` | Instructor review of artifact behavior and learner explanation with one student-owned revision. |
 | `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk rubric and feedback prompts for visible artifact behavior, concept language, peer questions, creator response, and revision evidence. |
+| `media-audio-cue-storyboard` | `exercise-forger`, `studio-facilitator`, `assessment-curator` | Media cue storyboard that links sound, timing, camera, captions, prediction, run evidence, fallback notes, and revision reflection. |
+| `student-artifact-package-share-evidence` | `teacher-community-curator`, `assessment-curator`, `classroom-orchestrator` | Student artifact share packet that keeps artifact references, student explanation, classroom context, next revision, and human review boundaries visible. |
+| `instructor-student-launch-evidence-handoff` | `classroom-orchestrator`, `debug-coach` | Classroom handoff that separates real Alice launch evidence from learner behavior and asks students for one visible action, run result, and next revision. |
+| `workshop-facilitator-live-studio` | `workshop-facilitator`, `studio-facilitator` | Live-studio workshop plan with setup, timing, observation, help signals, peer feedback, revision, reflection, and share-out evidence. |
 | `teacher-community-sharing-loop` | `teacher-community-curator`, `classroom-orchestrator`, `assessment-curator` | Teacher-facing share card and handoff note with attribution, classroom constraints, student evidence, accessibility notes, and remix feedback prompts. |
 | `curriculum-sequence-remix-pack` | `curriculum-pathway-designer`, `assessment-curator` | Curriculum sequence map that links committed Alice scenario assets to prerequisites, pacing, swap points, fallback notes, and visible student evidence. |
 
