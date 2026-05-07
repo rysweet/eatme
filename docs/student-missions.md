@@ -77,6 +77,7 @@ canonical scenario assets with generated Gadugi adapters:
 | `model-texture-import-checkpoint` | `model-texture-importer`, `reflective-debugger`, `creative-storyteller` | Check imported model or texture source, license, scale, orientation, visible texture behavior, and fallback asset choice. |
 | `media-audio-cue-storyboard` | `media-audio-creator`, `creative-storyteller`, `accessibility-advocate` | Storyboard one sound, timing, camera, or caption cue with prediction, run evidence, accessibility fallback, and revision reflection. |
 | `student-artifact-package-share-evidence` | `reflective-debugger`, `collaborative-peer-mentor` | Package one Alice artifact or screenshot with student change, visible run result, attribution or classroom context, and a next revision for instructor or peer review. |
+| `classroom-gallery-walk-and-rubric` | `collaborative-peer-mentor`, `reflective-debugger`, `accessibility-advocate` | Use peer observation, concept language, respectful questions, creator response, and one revision checkpoint during a gallery walk. |
 
 ## Mission rhythm
 

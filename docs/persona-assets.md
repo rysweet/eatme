@@ -188,6 +188,7 @@ include:
 
 | Scenario ID | User-facing outcome |
 | --- | --- |
+| `classroom-gallery-walk-and-rubric` | Instructor/student gallery-walk scenario for student-visible rubric evidence, peer feedback, creator response, revision checkpoints, and human review boundaries. |
 | `vr-player-comfort-playtest` | VR/player comfort scenario for orientation, locomotion comfort, discoverability, peer feedback, and desktop fallback evidence. |
 | `media-audio-cue-storyboard` | Media/audio cue scenario for sound, timing, camera, captions, prediction, run evidence, accessibility fallback, and revision reflection. |
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
