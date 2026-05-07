@@ -1,7 +1,8 @@
 use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
     desktop_evidence::{
-        DesktopRunPixelBoundaryEvidence, check_pixel_boundary_evidence,
+        DesktopRunPixelBoundaryEvidence, DesktopRunPixelObservationEvidence,
+        check_pixel_boundary_evidence, check_pixel_observation_evidence,
         check_visible_desktop_evidence, comparison_evidence_root, resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
@@ -86,6 +87,7 @@ pub struct LessonTargetEvidence {
     pub ui_action_contract_path: Option<String>,
     pub ui_action_contract_readable: bool,
     pub desktop_run_pixel_boundary: Option<DesktopRunPixelBoundaryEvidence>,
+    pub desktop_run_pixel_observation: Option<DesktopRunPixelObservationEvidence>,
     pub action_assertions: Vec<LessonActionAssertionEvidence>,
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
@@ -228,6 +230,7 @@ fn inspect_target_evidence(
             ui_action_contract_path: None,
             ui_action_contract_readable: false,
             desktop_run_pixel_boundary: None,
+            desktop_run_pixel_observation: None,
             action_assertions: Vec::new(),
             required_actions: Vec::new(),
             missing_assertions: REQUIRED_FIRST_LESSON_ASSERTIONS
@@ -317,6 +320,7 @@ fn inspect_target_evidence(
         .collect::<Vec<_>>();
     let mut ui_action_contract_readable = false;
     let mut desktop_run_pixel_boundary = None;
+    let mut desktop_run_pixel_observation = None;
     let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
@@ -345,6 +349,12 @@ fn inspect_target_evidence(
                             );
                             issues.extend(pixel_boundary.issue_when_missing_or_invalid());
                             desktop_run_pixel_boundary = Some(pixel_boundary);
+                            let pixel_observation = check_pixel_observation_evidence(
+                                &comparison_evidence_root(manifest_path),
+                                &resolved,
+                            );
+                            issues.extend(pixel_observation.issue_when_missing_or_invalid());
+                            desktop_run_pixel_observation = Some(pixel_observation);
                             issues.extend(
                                 check_visible_desktop_evidence(
                                     &comparison_evidence_root(manifest_path),
@@ -380,6 +390,7 @@ fn inspect_target_evidence(
         ui_action_contract_path,
         ui_action_contract_readable,
         desktop_run_pixel_boundary,
+        desktop_run_pixel_observation,
         action_assertions,
         required_actions,
         missing_assertions,

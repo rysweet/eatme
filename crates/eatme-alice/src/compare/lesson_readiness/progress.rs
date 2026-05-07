@@ -66,8 +66,12 @@ pub(super) fn evidence_progress(
         &required_evidence[3],
         modernized,
     ));
-    items.push(progress_item(
+    items.push(pixel_observation_progress_item(
         &required_evidence[4],
+        modernized,
+    ));
+    items.push(progress_item(
+        &required_evidence[5],
         desktop_action_state(
             modernized,
             "observe-desktop-run-execution-after-toolbar-button",
@@ -75,7 +79,7 @@ pub(super) fn evidence_progress(
         "modernized desktop run execution observation",
     ));
     items.push(progress_item(
-        &required_evidence[5],
+        &required_evidence[6],
         if issues.iter().any(|issue| {
             issue.contains("missing visible desktop rendering evidence after Run-frame")
         }) {
@@ -86,7 +90,7 @@ pub(super) fn evidence_progress(
         "screenshot/log/window artifact checks",
     ));
     items.push(progress_item(
-        &required_evidence[6],
+        &required_evidence[7],
         ui_action_contract_state(baseline, modernized),
         "readable ui-action-contract.json for both targets",
     ));
@@ -161,6 +165,28 @@ fn pixel_boundary_progress_item(
         "invalid" => progress_item(evidence, "invalid", pixel_boundary.detail.clone()),
         "not_observed" => progress_item(evidence, "not_observed", pixel_boundary.detail.clone()),
         _ => progress_item(evidence, "present", pixel_boundary.detail.clone()),
+    }
+}
+
+fn pixel_observation_progress_item(
+    evidence: &str,
+    target: Option<&LessonTargetEvidence>,
+) -> LessonReadinessEvidenceProgressItem {
+    let Some(pixel_observation) =
+        target.and_then(|target| target.desktop_run_pixel_observation.as_ref())
+    else {
+        return progress_item(
+            evidence,
+            "missing",
+            "desktop-run-pixel-observation.json was not read",
+        );
+    };
+    match pixel_observation.status.as_str() {
+        "missing" => progress_item(evidence, "missing", pixel_observation.detail.clone()),
+        "invalid" => progress_item(evidence, "invalid", pixel_observation.detail.clone()),
+        "not_observed" => progress_item(evidence, "not_observed", pixel_observation.detail.clone()),
+        "blocked" => progress_item(evidence, "blocked", pixel_observation.detail.clone()),
+        _ => progress_item(evidence, "present", pixel_observation.detail.clone()),
     }
 }
 

@@ -73,6 +73,11 @@ pub(super) fn write_executable_blocked_first_lesson_manifest(
                 r#"{"schema_version":"eatme.alice-desktop-run-pixel-boundary/v1","status":"not_observed","reason":"Run view attachment was observed, but this Alice-side signal does not inspect screenshots or pixel output."}"#,
             )
             .unwrap();
+            fs::write(
+                run_window_evidence_dir.join("desktop-run-pixel-observation.json"),
+                r#"{"schema_version":"eatme.alice-desktop-run-pixel-observation/v1","status":"blocked","source":"desktop_run_render_target_attachment","claim":"No desktop pixel was sampled.","component_state":{"graphicsEnvironmentHeadless":true,"renderTargetDisplayable":false,"renderTargetShowing":false,"renderTargetWidth":0,"renderTargetHeight":0},"blocker":{"reason":"A desktop screenshot requires a non-headless graphics environment, a showing Run render target, positive component size, and screen-capture access.","codes":["java_awt_headless","render_target_not_displayable"],"exceptionType":""}}"#,
+            )
+            .unwrap();
         }
         fs::write(
             &action_contract_path,
