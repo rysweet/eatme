@@ -62,6 +62,24 @@ targets:
             .summary
             .contains("required evidence items are present")
     );
+    assert!(
+        report
+            .limitations
+            .iter()
+            .any(|limit| limit == "does not prove full Alice UI automation")
+    );
+    assert!(
+        report
+            .limitations
+            .iter()
+            .any(|limit| limit == "does not prove visible rendering correctness")
+    );
+    assert!(
+        report
+            .limitations
+            .iter()
+            .any(|limit| limit == "does not prove first-lesson completion")
+    );
     assert!(report.issues.iter().any(|issue| issue.contains(
         "missing visible desktop rendering evidence after Run-frame and VM statement execution"
     )));

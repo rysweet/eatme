@@ -63,6 +63,58 @@ targets:
     );
 }
 
+#[test]
+fn run_first_lesson_readiness_cli_plain_text_lists_evidence_progress() {
+    let root = scratch_root("first-lesson-readiness-cli-text");
+    let registry_path = root.join("targets.yaml");
+    fs::write(
+        &registry_path,
+        r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Reference target.
+    alice_home: ./alice-baseline
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home: ./alice-modernized
+"#,
+    )
+    .unwrap();
+
+    let output = Command::new(eatme_bin())
+        .args([
+            "alice",
+            "run-first-lesson-readiness",
+            "--registry",
+            registry_path.to_str().unwrap(),
+            "--run-id",
+            "manifest-only-sequence-text",
+            "--runs-dir",
+            root.join("runs").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("First-lesson readiness: incomplete"));
+    assert!(stdout.contains("Evidence progress:"));
+    assert!(stdout.contains("required evidence items are present"));
+    assert!(stdout.contains("Required evidence:"));
+    assert!(
+        stdout.contains("present: comparison-manifest.json with baseline and modernized targets")
+    );
+    assert!(stdout.contains("missing: launch evidence for each target"));
+    assert!(stdout.contains("Limits:"));
+    assert!(stdout.contains("does not prove full Alice UI automation"));
+    assert!(stdout.contains("does not prove visible rendering correctness"));
+    assert!(stdout.contains("does not prove first-lesson completion"));
+    assert!(stdout.contains("Still missing or blocked:"));
+}
+
 fn scratch_root(name: &str) -> PathBuf {
     let root = workspace_root()
         .join("target/eatme-cli-integration-tests")
