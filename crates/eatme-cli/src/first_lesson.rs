@@ -64,6 +64,9 @@ fn write_first_lesson_readiness_result(
     if let Some(blocker) = next_actionable_blocker_line(&report.evidence_progress) {
         writeln!(writer, "{blocker}")?;
     }
+    if let Some(proof) = &report.evidence_progress.next_missing_real_desktop_proof {
+        writeln!(writer, "{proof}")?;
+    }
     writeln!(
         writer,
         "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
@@ -129,6 +132,23 @@ mod tests {
     }
 
     #[test]
+    fn plain_output_includes_next_missing_real_desktop_proof_line() {
+        let mut progress = progress_with_blocker(None);
+        progress.next_missing_real_desktop_proof = Some(
+            "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions.".into(),
+        );
+        let report = sequence_report(progress);
+
+        let mut output = Vec::new();
+        write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains(
+            "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions."
+        ));
+    }
+
+    #[test]
     fn next_actionable_blocker_line_is_absent_without_blocker_detail() {
         let progress = progress_with_blocker(None);
 
@@ -146,6 +166,7 @@ mod tests {
             blocked: 1,
             summary: "0 of 1 required evidence items are present; 0 missing, 0 invalid, 0 not observed, 1 blocked.".into(),
             next_actionable_blocker: None,
+            next_missing_real_desktop_proof: None,
             items: vec![LessonReadinessEvidenceProgressItem {
                 evidence: "modernized desktop run execution observation".into(),
                 state: "blocked".into(),
@@ -175,6 +196,7 @@ mod tests {
                 "0 of 1 required evidence items are present; {missing} missing, 0 invalid, 0 not observed, {blocked} blocked."
             ),
             next_actionable_blocker: blocker.map(str::to_string),
+            next_missing_real_desktop_proof: None,
             items: vec![LessonReadinessEvidenceProgressItem {
                 evidence: "modernized desktop-run-pixel-observation.json status".into(),
                 state: if blocker.is_some() {

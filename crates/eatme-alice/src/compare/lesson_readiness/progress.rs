@@ -12,6 +12,8 @@ pub struct LessonReadinessEvidenceProgress {
     pub summary: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next_actionable_blocker: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_missing_real_desktop_proof: Option<String>,
     pub items: Vec<LessonReadinessEvidenceProgressItem>,
 }
 
@@ -104,6 +106,7 @@ pub(super) fn evidence_progress(
     let blocked = count_state(&items, "blocked");
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
+    let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
     let summary = format!(
         "{present} of {total_required} required evidence items are present; {missing} missing, {invalid} invalid, {not_observed} not observed, {blocked} blocked."
     );
@@ -117,6 +120,7 @@ pub(super) fn evidence_progress(
         blocked,
         summary,
         next_actionable_blocker,
+        next_missing_real_desktop_proof,
         items,
     }
 }
@@ -150,6 +154,85 @@ fn next_actionable_blocker(target: Option<&LessonTargetEvidence>) -> Option<Stri
                     .and_then(|observation| observation.next_actionable_blocker())
             })
     })
+}
+
+fn next_missing_real_desktop_proof(
+    target: Option<&LessonTargetEvidence>,
+    items: &[LessonReadinessEvidenceProgressItem],
+) -> Option<String> {
+    let target = target?;
+    for (action_id, message) in [
+        (
+            "verify-specific-alice-window",
+            "next missing real-desktop proof: identify the Alice main window (verify-specific-alice-window) before claiming later lesson actions.",
+        ),
+        (
+            "activate-specific-alice-window",
+            "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions.",
+        ),
+        (
+            "observe-run-window-after-toolbar-button",
+            "next missing real-desktop proof: observe the Alice Run window after toolbar dispatch (observe-run-window-after-toolbar-button).",
+        ),
+        (
+            "observe-desktop-run-execution-after-toolbar-button",
+            "next missing real-desktop proof: observe desktop Run execution after toolbar dispatch (observe-desktop-run-execution-after-toolbar-button).",
+        ),
+    ] {
+        if !action_passed(target, action_id) {
+            return Some(message.into());
+        }
+    }
+
+    if item_needs_proof(items, "screenshot, log, and window artifacts") {
+        return Some(
+            "next missing real-desktop proof: capture screenshots/run-window-after-dispatch.png under the modernized comparison evidence root after Run-frame and VM statement execution.".into(),
+        );
+    }
+    if item_state_is(
+        items,
+        "modernized desktop-run-pixel-boundary.json status",
+        &["missing", "invalid"],
+    ) {
+        return Some(
+            "next missing real-desktop proof: record run-window-evidence/desktop-run-pixel-boundary.json under the modernized comparison evidence root.".into(),
+        );
+    }
+    if item_state_is(
+        items,
+        "modernized desktop-run-pixel-observation.json status",
+        &["missing", "invalid", "not_observed", "blocked"],
+    ) {
+        return Some(
+            "next missing real-desktop proof: record an observed desktop Run pixel sample in run-window-evidence/desktop-run-pixel-observation.json from a non-headless visible desktop.".into(),
+        );
+    }
+    None
+}
+
+fn action_passed(target: &LessonTargetEvidence, action_id: &str) -> bool {
+    target
+        .action_assertions
+        .iter()
+        .any(|action| action.action_id == action_id && action.passed)
+}
+
+fn item_needs_proof(items: &[LessonReadinessEvidenceProgressItem], evidence: &str) -> bool {
+    item_state_is(
+        items,
+        evidence,
+        &["missing", "invalid", "not_observed", "blocked"],
+    )
+}
+
+fn item_state_is(
+    items: &[LessonReadinessEvidenceProgressItem],
+    evidence: &str,
+    states: &[&str],
+) -> bool {
+    items
+        .iter()
+        .any(|item| item.evidence == evidence && states.contains(&item.state.as_str()))
 }
 
 fn desktop_action_state(target: Option<&LessonTargetEvidence>, action_id: &str) -> &'static str {
