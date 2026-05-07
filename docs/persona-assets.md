@@ -189,15 +189,17 @@ include:
 | Scenario ID | User-facing outcome |
 | --- | --- |
 | `vr-player-comfort-playtest` | VR/player comfort scenario for orientation, locomotion comfort, discoverability, peer feedback, and desktop fallback evidence. |
+| `media-audio-cue-storyboard` | Media/audio cue scenario for sound, timing, camera, captions, prediction, run evidence, accessibility fallback, and revision reflection. |
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
 
-Each committed standalone scenario routes runtime through
+Launch-smoke standalone scenarios route runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
-and keeps gadugi at the manifest-evidence boundary. The YAML contracts describe
-the user outcome agents must judge; the launch smoke provides deterministic
-desktop evidence and does not substitute for unimplemented UI, VR, or
+and keep gadugi at the manifest-evidence boundary. The media/audio storyboard
+scenario stays at the editable prompt, probe, and student-evidence boundary.
+The YAML contracts describe the user outcome agents must inspect; launch smoke
+evidence does not substitute for unimplemented user-interface, VR, or
 export/import automation. `real-alice-launch-smoke` remains the baseline
 manifest/log/window/screenshot proof only; it does not drive an entire lesson
 through the Alice interface, score learner creativity, or grade saved learner
