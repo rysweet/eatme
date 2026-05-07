@@ -98,6 +98,39 @@ fn missing_pixel_boundary_evidence_is_reported_explicitly() {
 }
 
 #[test]
+fn present_invalid_pixel_boundary_status_is_reported_as_evidence_status() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+    });
+    overwrite_modernized_pixel_boundary(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-run-pixel-boundary/v1","status":"invalid","reason":"producer reported invalid pixel evidence"}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_contains(&report.issues, "producer reported invalid pixel evidence");
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence should exist");
+    let pixel_boundary = modernized
+        .desktop_run_pixel_boundary
+        .as_ref()
+        .expect("modernized target should report invalid pixel-boundary evidence");
+    assert_eq!(pixel_boundary.status, "invalid");
+    assert_eq!(
+        pixel_boundary.detail,
+        "producer reported invalid pixel evidence"
+    );
+}
+
+#[test]
 fn run_frame_prerequisite_is_preserved_when_screenshot_exists() {
     let manifest_path = write_manifest(DesktopFixture {
         run_frame_present: false,
@@ -236,6 +269,25 @@ fn write_modernized_desktop_artifacts(run_dir: &Path, fixture: &DesktopFixture) 
             .unwrap();
         }
     }
+}
+
+fn overwrite_modernized_pixel_boundary(manifest_path: &Path, content: &str) {
+    let value: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
+    let contract_path = PathBuf::from(
+        value["targets"]["modernized"]["launch_manifest"]["ui_action_contract"]["path"]
+            .as_str()
+            .unwrap(),
+    );
+    fs::write(
+        contract_path
+            .parent()
+            .unwrap()
+            .join("run-window-evidence")
+            .join("desktop-run-pixel-boundary.json"),
+        content,
+    )
+    .unwrap();
 }
 
 fn launch_manifest_json(

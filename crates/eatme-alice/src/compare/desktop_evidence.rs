@@ -110,16 +110,12 @@ pub(crate) fn check_pixel_boundary_evidence(
             "desktop Run pixel-boundary evidence has the wrong schema_version",
         );
     }
-    let status = json
-        .get("status")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or("invalid");
-    if status == "invalid" {
+    let Some(status) = json.get("status").and_then(serde_json::Value::as_str) else {
         return invalid_pixel_boundary(
             Some(artifact),
-            "desktop Run pixel-boundary evidence is missing status",
+            "desktop Run pixel-boundary evidence is missing status field",
         );
-    }
+    };
     let detail = json
         .get("reason")
         .and_then(serde_json::Value::as_str)
