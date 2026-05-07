@@ -156,8 +156,8 @@ The following ids are scenario references inside
 `assets/personas/alice-user-crew.yaml`. Some are also committed standalone
 scenario assets under `assets/scenarios/eatme/`; others are design-forward
 coverage markers that should become standalone assets as the outside-in Alice QA
-expansion is built. `curriculum-sequence-remix-pack` is now a committed
-standalone scenario asset with a generated Gadugi adapter.
+expansion is built. The committed standalone assets named in the constituency
+coverage table each have generated Gadugi adapters.
 
 | Coverage area | Scenario IDs |
 | --- | --- |
@@ -203,7 +203,10 @@ include:
 | `model-texture-import-checkpoint` | Model/texture import scenario for source, license, scale, orientation, texture visibility, accessibility, and fallback evidence. |
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
+| `workshop-facilitator-live-studio` | Workshop facilitation scenario for checkpoint evidence, helper roles, recovery moves, student-owned action notes, and a final share-out. |
+| `student-artifact-package-share-evidence` | Student artifact sharing scenario for artifact references, student explanation, classroom context or attribution, next revision, and human review boundaries. |
 | `teacher-community-sharing-loop` | Teacher-community sharing scenario for share cards, classroom handoff notes, attribution, student evidence, accessibility notes, and remix feedback prompts. |
+| `curriculum-sequence-remix-pack` | Curriculum design scenario for sequencing committed Alice assets with prerequisites, pacing, swap points, fallback notes, and visible student evidence. |
 
 Launch-smoke standalone scenarios route runtime through
 `EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --scenario <id>`
