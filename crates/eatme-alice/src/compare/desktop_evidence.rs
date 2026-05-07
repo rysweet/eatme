@@ -3,6 +3,8 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
+mod blocker;
+
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";
 const DESKTOP_RUN_PIXEL_BOUNDARY: &str = "run-window-evidence/desktop-run-pixel-boundary.json";
 const DESKTOP_RUN_PIXEL_OBSERVATION: &str =
@@ -50,6 +52,10 @@ impl DesktopRunPixelObservationEvidence {
             "missing" | "invalid" => Some(self.detail.clone()),
             _ => None,
         }
+    }
+
+    pub fn next_actionable_blocker(&self) -> Option<String> {
+        blocker::next_actionable_pixel_observation_blocker(self)
     }
 }
 

@@ -10,6 +10,8 @@ pub struct LessonReadinessEvidenceProgress {
     pub not_observed: usize,
     pub blocked: usize,
     pub summary: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_actionable_blocker: Option<String>,
     pub items: Vec<LessonReadinessEvidenceProgressItem>,
 }
 
@@ -101,6 +103,7 @@ pub(super) fn evidence_progress(
     let not_observed = count_state(&items, "not_observed");
     let blocked = count_state(&items, "blocked");
     let total_required = items.len();
+    let next_actionable_blocker = next_actionable_blocker(modernized);
     let summary = format!(
         "{present} of {total_required} required evidence items are present; {missing} missing, {invalid} invalid, {not_observed} not observed, {blocked} blocked."
     );
@@ -113,6 +116,7 @@ pub(super) fn evidence_progress(
         not_observed,
         blocked,
         summary,
+        next_actionable_blocker,
         items,
     }
 }
@@ -131,6 +135,12 @@ fn progress_item(
 
 fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
     items.iter().filter(|item| item.state == state).count()
+}
+
+fn next_actionable_blocker(target: Option<&LessonTargetEvidence>) -> Option<String> {
+    target
+        .and_then(|target| target.desktop_run_pixel_observation.as_ref())
+        .and_then(|observation| observation.next_actionable_blocker())
 }
 
 fn desktop_action_state(target: Option<&LessonTargetEvidence>, action_id: &str) -> &'static str {

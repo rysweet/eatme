@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Args;
-use eatme_alice::compare::FirstLessonReadinessSequenceReport;
+use eatme_alice::compare::{FirstLessonReadinessSequenceReport, LessonReadinessEvidenceProgress};
+use std::io::Write;
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -37,28 +38,179 @@ pub fn print_first_lesson_readiness_result(
     json: bool,
     report: &FirstLessonReadinessSequenceReport,
 ) -> Result<()> {
+    write_first_lesson_readiness_result(std::io::stdout().lock(), json, report)
+}
+
+fn write_first_lesson_readiness_result(
+    mut writer: impl Write,
+    json: bool,
+    report: &FirstLessonReadinessSequenceReport,
+) -> Result<()> {
     if json {
-        println!("{}", serde_json::to_string_pretty(report)?);
+        writeln!(writer, "{}", serde_json::to_string_pretty(report)?)?;
         return Ok(());
     }
 
-    println!("First-lesson readiness: {}", report.readiness_status);
-    println!("Evidence progress: {}", report.evidence_progress.summary);
-    println!("Required evidence:");
+    writeln!(
+        writer,
+        "First-lesson readiness: {}",
+        report.readiness_status
+    )?;
+    writeln!(
+        writer,
+        "Evidence progress: {}",
+        report.evidence_progress.summary
+    )?;
+    if let Some(blocker) = next_actionable_blocker_line(&report.evidence_progress) {
+        writeln!(writer, "{blocker}")?;
+    }
+    writeln!(writer, "Required evidence:")?;
     for item in &report.evidence_progress.items {
-        println!("- {}: {} ({})", item.state, item.evidence, item.detail);
+        writeln!(
+            writer,
+            "- {}: {} ({})",
+            item.state, item.evidence, item.detail
+        )?;
     }
     if !report.limitations.is_empty() {
-        println!("Limits:");
+        writeln!(writer, "Limits:")?;
         for limitation in &report.limitations {
-            println!("- {limitation}");
+            writeln!(writer, "- {limitation}")?;
         }
     }
     if !report.issues.is_empty() {
-        println!("Still missing or blocked:");
+        writeln!(writer, "Still missing or blocked:")?;
         for issue in &report.issues {
-            println!("- {issue}");
+            writeln!(writer, "- {issue}")?;
         }
     }
     Ok(())
+}
+
+fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> Option<String> {
+    progress
+        .next_actionable_blocker
+        .as_ref()
+        .map(|blocker| format!("Next blocker: {blocker}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eatme_alice::compare::{
+        LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
+        LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
+    };
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn plain_output_includes_next_actionable_blocker_line() {
+        let report = sequence_report(progress_with_blocker(Some(
+            "desktop Run pixel observation is blocked: fix next: run Alice with a non-headless graphics environment",
+        )));
+
+        let mut output = Vec::new();
+        write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains(
+            "Next blocker: desktop Run pixel observation is blocked: fix next: run Alice with a non-headless graphics environment"
+        ));
+    }
+
+    #[test]
+    fn next_actionable_blocker_line_is_absent_without_blocker_detail() {
+        let progress = progress_with_blocker(None);
+
+        assert!(next_actionable_blocker_line(&progress).is_none());
+    }
+
+    fn progress_with_blocker(blocker: Option<&str>) -> LessonReadinessEvidenceProgress {
+        let missing = usize::from(blocker.is_none());
+        let blocked = usize::from(blocker.is_some());
+        LessonReadinessEvidenceProgress {
+            total_required: 1,
+            present: 0,
+            missing,
+            invalid: 0,
+            not_observed: 0,
+            blocked,
+            summary: format!(
+                "0 of 1 required evidence items are present; {missing} missing, 0 invalid, 0 not observed, {blocked} blocked."
+            ),
+            next_actionable_blocker: blocker.map(str::to_string),
+            items: vec![LessonReadinessEvidenceProgressItem {
+                evidence: "modernized desktop-run-pixel-observation.json status".into(),
+                state: if blocker.is_some() {
+                    "blocked"
+                } else {
+                    "missing"
+                }
+                .into(),
+                detail: "pixel observation detail".into(),
+            }],
+        }
+    }
+
+    fn sequence_report(
+        progress: LessonReadinessEvidenceProgress,
+    ) -> FirstLessonReadinessSequenceReport {
+        let envelope = LessonSessionReadinessEnvelope {
+            scenario_id: Some("first-lessons-real-ui-actions".into()),
+            role: "student".into(),
+            status: "blocked".into(),
+            blocked_reason: Some("blocked_until_ui_automation".into()),
+            human_summary: "blocked".into(),
+            required_evidence: Vec::new(),
+            no_go_contracts: Vec::new(),
+        };
+        let readiness_report = LessonSessionReadinessReport {
+            schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
+            manifest_path: "comparison-manifest.json".into(),
+            scenario_id: Some("first-lessons-real-ui-actions".into()),
+            passed: false,
+            status: "blocked".into(),
+            readiness_status: "blocked_until_ui_automation".into(),
+            blocked_reason: Some("blocked_until_ui_automation".into()),
+            human_summary: "blocked".into(),
+            evidence_progress: progress.clone(),
+            required_evidence: Vec::new(),
+            no_go_contracts: Vec::new(),
+            lesson_session_readiness: envelope.clone(),
+            role_readiness: vec![envelope],
+            contract_check: LessonSessionContractCheck {
+                schema_version: "eatme.alice-lesson-session-check/v1".into(),
+                manifest_path: "comparison-manifest.json".into(),
+                scenario_id: Some("first-lessons-real-ui-actions".into()),
+                session_kind: Some("first_lesson_action_contract".into()),
+                automation_status: Some("blocked".into()),
+                passed: false,
+                issues: Vec::new(),
+            },
+            execute_requested: Some(true),
+            target_evidence: Vec::new(),
+            issues: Vec::new(),
+            limitations: Vec::new(),
+        };
+        FirstLessonReadinessSequenceReport {
+            schema_version: "eatme.first-lesson-readiness-sequence/v1".into(),
+            scenario_id: "first-lessons-real-ui-actions".into(),
+            run_id: "test".into(),
+            execute_requested: true,
+            comparison_manifest_path: "comparison-manifest.json".into(),
+            passed: false,
+            status: "blocked".into(),
+            readiness_status: "blocked_until_ui_automation".into(),
+            blocked_reason: Some("blocked_until_ui_automation".into()),
+            human_summary: "blocked".into(),
+            evidence_progress: progress,
+            required_evidence: Vec::new(),
+            no_go_contracts: Vec::new(),
+            role_readiness: Vec::new(),
+            target_statuses: BTreeMap::new(),
+            issues: Vec::new(),
+            limitations: Vec::new(),
+            readiness_report,
+        }
+    }
 }
