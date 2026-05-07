@@ -1,0 +1,79 @@
+use crate::schema::EatmeScenarioAsset;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+#[test]
+fn accessibility_rescue_camera_captions_covers_accessibility_advocate_and_immersive_camera_director()
+ {
+    let root = repository_root();
+    let path = scenario_path(&root, "accessibility-rescue-camera-captions");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+    let personas = scenario.personas.as_ref().expect("must define personas");
+    assert_eq!(scenario.kind, "instructor_agentic_flow");
+    for instructor in &["studio-facilitator", "assessment-curator"] {
+        assert!(
+            personas.instructors.iter().any(|p| p == instructor),
+            "must include instructor persona {instructor}"
+        );
+    }
+    for student in &[
+        "accessibility-advocate",
+        "immersive-camera-director",
+        "creative-storyteller",
+    ] {
+        assert!(
+            personas.students.iter().any(|p| p == student),
+            "must include student persona {student}"
+        );
+    }
+    assert_contains_all(
+        "accessibility-rescue-camera-captions contract",
+        &contract,
+        &[
+            "accessibility audit card",
+            "camera rescue guide",
+            "caption and label template",
+            "camera framing gap",
+            "caption or label gap",
+            "accessibility-advocate",
+            "audio cues",
+            "high-contrast text",
+            "optional extension",
+            "not full user interface automation",
+            "not automated creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
+        ],
+    );
+}
+
+fn repository_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn scenario_path(root: &Path, id: &str) -> PathBuf {
+    root.join("assets/scenarios/eatme")
+        .join(format!("{id}.yaml"))
+}
+
+fn read_eatme_scenario(path: &Path) -> EatmeScenarioAsset {
+    let content = fs::read_to_string(path).unwrap();
+    serde_yaml::from_str(&content).unwrap()
+}
+
+fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
+    let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let missing: Vec<_> = needles
+        .iter()
+        .filter(|n| {
+            let nw = n.split_whitespace().collect::<Vec<_>>().join(" ");
+            !normalized.contains(&nw)
+        })
+        .copied()
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "{label} is missing required evidence language: {missing:?}"
+    );
+}
