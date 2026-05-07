@@ -103,7 +103,9 @@ targets:
     assert!(stdout.contains("First-lesson readiness: incomplete"));
     assert!(stdout.contains("Evidence progress:"));
     assert!(stdout.contains("required evidence items are present"));
-    assert!(stdout.contains("Required evidence:"));
+    assert!(stdout.contains(
+        "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
+    ));
     assert!(
         stdout.contains("present: comparison-manifest.json with baseline and modernized targets")
     );

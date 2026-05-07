@@ -64,7 +64,10 @@ fn write_first_lesson_readiness_result(
     if let Some(blocker) = next_actionable_blocker_line(&report.evidence_progress) {
         writeln!(writer, "{blocker}")?;
     }
-    writeln!(writer, "Required evidence:")?;
+    writeln!(
+        writer,
+        "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
+    )?;
     for item in &report.evidence_progress.items {
         writeln!(
             writer,
