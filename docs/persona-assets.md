@@ -133,7 +133,9 @@ editable by non-coders:
 non-coder editors can add or revise personas/scenarios without touching Rust. The
 references are validated against the persona crew's own scenario inventory; they
 are coverage markers and do not automatically mean a matching file already exists
-under `assets/scenarios/eatme/`.
+under `assets/scenarios/eatme/`. The current constituency table now has
+matching standalone eatme scenario assets and generated Gadugi adapters for each
+listed scenario.
 
 It requires persona and scenario references for:
 
@@ -154,7 +156,8 @@ The following ids are scenario references inside
 `assets/personas/alice-user-crew.yaml`. Some are also committed standalone
 scenario assets under `assets/scenarios/eatme/`; others are design-forward
 coverage markers that should become standalone assets as the outside-in Alice QA
-expansion is built.
+expansion is built. `curriculum-sequence-remix-pack` is now a committed
+standalone scenario asset with a generated Gadugi adapter.
 
 | Coverage area | Scenario IDs |
 | --- | --- |

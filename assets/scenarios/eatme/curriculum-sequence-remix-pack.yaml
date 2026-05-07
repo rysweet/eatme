@@ -1,0 +1,127 @@
+schema_version: eatme.scenario/v1
+id: curriculum-sequence-remix-pack
+title: Curriculum Sequence Remix Pack
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use lessons, exercises, projects, textbooks, curriculums, how-tos, and
+      audio library as remixable sources for a sequenced unit.
+  - name: Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Use lesson topics for scene building, programming, methods, parameters,
+      control structures, events, data, arrays, and VR as concept-progression
+      anchors.
+purpose: >-
+  Prepare an editable curriculum sequence remix pack that maps several Alice
+  scenario assets into a short unit with prerequisites, pacing, swappable
+  activities, visible student evidence, and fallback or extension notes. This is
+  curriculum planning evidence for instructor review; it is not full UI
+  automation, not creative assessment, not learner-world grading, and not proof
+  that a whole course has been delivered.
+personas:
+  instructors: [curriculum-pathway-designer, assessment-curator]
+  students: [curious-novice, systems-puzzle-solver]
+agentic_flow:
+  focus: curriculum-sequence-remix-pack
+  instructor_goal: >-
+    Remix existing Alice scenario assets into a sequenced unit plan that shows
+    concept progression, prerequisites, pacing, teacher swap points, visible
+    student evidence, and fallback or extension notes.
+  prompt_source: assets/scenarios/eatme/curriculum-sequence-remix-pack.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - curriculum_sequence_map
+    - lesson_sequence_remix_pack
+    - student_evidence_plan
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing an Alice curriculum sequence
+  remix pack. Produce a curriculum sequence map, lesson sequence remix pack, and
+  student evidence plan grounded in the listed resources and this
+  curriculum-sequence-remix-pack scenario. Reference at least three committed
+  Alice scenario assets, name the prerequisite or concept progression between
+  them, identify pacing and teacher swap points, and describe visible student
+  evidence at each checkpoint. Include fallback or extension notes for uneven
+  device readiness and prior knowledge. Keep language editable and
+  classroom-facing. State explicitly that this is not full UI automation, not
+  creative assessment, not learner-world grading, and not proof that a whole
+  course has been delivered.
+acceptance_criteria:
+  - given: >-
+      a curriculum designer is planning a short Alice unit from existing assets
+    when: >-
+      the agent prepares the curriculum sequence map
+    then: >-
+      the output references at least three committed scenario assets and explains
+      the prerequisite or concept progression between them
+  - given: >-
+      teachers need to adapt the unit for different classrooms
+    when: >-
+      the lesson sequence remix pack is reviewed
+    then: >-
+      it names pacing, swap points, fallback notes, and extension choices without
+      locking teachers into one lesson order
+  - given: >-
+      instructors need evidence before assessing learning
+    when: >-
+      the student evidence plan is applied
+    then: >-
+      each checkpoint asks for visible student evidence, prediction, observation,
+      revision, or reflection rather than screenshots or completion alone
+acceptance_probes:
+  - Curriculum sequence map references at least three committed Alice scenario assets and explains concept progression between them.
+  - Lesson sequence remix pack names prerequisites, pacing, teacher swap points, fallback notes, and extension choices.
+  - Student evidence plan names visible student evidence at each checkpoint, not just lesson titles, screenshots, or exact user interface steps.
+  - Output keeps the sequence editable by curriculum staff without requiring Rust changes or hidden implementation details.
+  - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, and not proof that a whole course has been delivered.
+rubric:
+  - criterion: Sequence usefulness
+    evidence:
+      - The map connects scenarios to prerequisites, concepts, pacing, and teacher swap points.
+      - The order can be adjusted while preserving the learning goal and evidence expectation.
+  - criterion: Student evidence clarity
+    evidence:
+      - Each checkpoint asks learners to predict, run or observe, revise, and explain visible Alice behavior.
+      - Evidence requirements are human-reviewable and do not depend on hidden implementation details.
+  - criterion: Classroom adaptability
+    evidence:
+      - The pack includes fallback notes for device readiness or prior knowledge gaps.
+      - Extension choices preserve student ownership instead of enforcing one final project.
+avoid:
+  - Exact user interface coordinates, brittle menu choreography, or private implementation details.
+  - One unchangeable lesson order with no teacher swap points.
+  - Screenshots, launch manifests, or visual polish as substitutes for student explanation.
+  - Claims of full UI automation, creative assessment, learner-world grading, or completed course delivery.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes curriculum-sequence-remix-pack
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/curriculum-sequence-remix-pack.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  curriculum_sequence_map: agentic://instructor/curriculum-sequence-map
+  lesson_sequence_remix_pack: agentic://instructor/lesson-sequence-remix-pack
+  student_evidence_plan: agentic://instructor/student-evidence-plan
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited Alice.org resource basis, fail visibly and report the missing evidence.
+  Do not replace instructor judgment with brittle user interface assertions. Do
+  not claim this scenario is full UI automation, creative assessment,
+  learner-world grading, or proof that a whole course has been delivered.

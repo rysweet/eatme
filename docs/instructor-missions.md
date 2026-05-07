@@ -54,6 +54,7 @@ Current instructor mission assets include:
 | `student-reflection-artifact-review` | Review note and revision prompt for a student learning artifact plus reflection |
 | `classroom-gallery-walk-and-rubric` | Gallery-walk rubric, peer feedback card, creator response prompt, and revision checkpoint |
 | `teacher-community-sharing-loop` | Teacher-community share card, classroom handoff note, and remix feedback prompt |
+| `curriculum-sequence-remix-pack` | Curriculum sequence map, lesson sequence remix pack, and student evidence plan |
 
 `instructor-lesson-materials-remix` is the instructor lesson-material/remix
 evidence contract. It verifies that an Alice lesson packet is represented by
@@ -105,6 +106,7 @@ scenario assets currently cover:
 | `student-reflection-artifact-review` | `assessment-curator`, `studio-facilitator` | Instructor review of artifact behavior and learner explanation with one student-owned revision. |
 | `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk rubric and feedback prompts for visible artifact behavior, concept language, peer questions, creator response, and revision evidence. |
 | `teacher-community-sharing-loop` | `teacher-community-curator`, `classroom-orchestrator`, `assessment-curator` | Teacher-facing share card and handoff note with attribution, classroom constraints, student evidence, accessibility notes, and remix feedback prompts. |
+| `curriculum-sequence-remix-pack` | `curriculum-pathway-designer`, `assessment-curator` | Curriculum sequence map that links committed Alice scenario assets to prerequisites, pacing, swap points, fallback notes, and visible student evidence. |
 
 Committed outside-in Alice expansion scenarios add these instructor decisions:
 

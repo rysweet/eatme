@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 67;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 69;
 
 struct TargetScenario {
     id: &'static str,
