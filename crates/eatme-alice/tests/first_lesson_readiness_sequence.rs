@@ -52,6 +52,16 @@ targets:
 
     assert!(!report.passed);
     assert_eq!(report.readiness_status, "incomplete");
+    assert_eq!(
+        report.evidence_progress.summary,
+        report.readiness_report.evidence_progress.summary
+    );
+    assert!(
+        report
+            .evidence_progress
+            .summary
+            .contains("required evidence items are present")
+    );
     assert!(report.issues.iter().any(|issue| issue.contains(
         "missing visible desktop rendering evidence after Run-frame and VM statement execution"
     )));
@@ -114,6 +124,16 @@ targets:
     .unwrap();
 
     assert!(!report.passed);
+    assert!(
+        report
+            .evidence_progress
+            .items
+            .iter()
+            .any(
+                |item| item.evidence == "screenshot, log, and window artifacts"
+                    && item.state == "missing"
+            )
+    );
     let modernized = report
         .readiness_report
         .target_evidence
