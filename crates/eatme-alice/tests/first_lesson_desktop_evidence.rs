@@ -1,10 +1,11 @@
 use eatme_alice::check_lesson_session_readiness;
 
 #[path = "first_lesson_desktop_evidence/support.rs"]
+#[allow(dead_code)]
 mod support;
 use support::{
-    DesktopFixture, PixelObservationFixture, assert_contains, overwrite_modernized_pixel_boundary,
-    overwrite_modernized_pixel_observation, write_manifest,
+    DesktopFixture, FirstLessonNextActionFixture, PixelObservationFixture, assert_contains,
+    overwrite_modernized_pixel_boundary, overwrite_modernized_pixel_observation, write_manifest,
 };
 
 const MISSING_DESKTOP_PROOF: &str = "missing visible desktop rendering evidence after Run-frame and VM statement execution; expected screenshots/run-window-after-dispatch.png under the comparison evidence root";
@@ -17,6 +18,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -104,6 +106,7 @@ fn blocked_pixel_observation_reports_explicit_next_action_as_next_fix() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::BlockedWithNextAction,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -150,6 +153,7 @@ fn vm_execution_sentinel_alone_is_not_visible_desktop_proof() {
         visible_desktop_screenshot_present: false,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -166,6 +170,7 @@ fn missing_pixel_boundary_evidence_is_reported_explicitly() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: false,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -205,6 +210,7 @@ fn present_invalid_pixel_boundary_status_is_reported_as_evidence_status() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
     overwrite_modernized_pixel_boundary(
         &manifest_path,
@@ -250,6 +256,7 @@ fn present_observed_pixel_observation_is_reported_as_desktop_pixel_status() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -292,6 +299,7 @@ fn missing_pixel_observation_evidence_is_reported_explicitly() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Missing,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -322,6 +330,7 @@ fn invalid_pixel_observation_evidence_is_reported_explicitly() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
     overwrite_modernized_pixel_observation(
         &manifest_path,
@@ -357,6 +366,7 @@ fn run_frame_prerequisite_is_preserved_when_screenshot_exists() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -376,6 +386,7 @@ fn vm_statement_prerequisite_is_preserved_when_screenshot_exists() {
         visible_desktop_screenshot_present: true,
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();

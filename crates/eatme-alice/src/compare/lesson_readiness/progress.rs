@@ -138,9 +138,18 @@ fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> us
 }
 
 fn next_actionable_blocker(target: Option<&LessonTargetEvidence>) -> Option<String> {
-    target
-        .and_then(|target| target.desktop_run_pixel_observation.as_ref())
-        .and_then(|observation| observation.next_actionable_blocker())
+    target.and_then(|target| {
+        target
+            .desktop_first_lesson_next_action
+            .as_ref()
+            .and_then(|next_action| next_action.next_actionable_blocker())
+            .or_else(|| {
+                target
+                    .desktop_run_pixel_observation
+                    .as_ref()
+                    .and_then(|observation| observation.next_actionable_blocker())
+            })
+    })
 }
 
 fn desktop_action_state(target: Option<&LessonTargetEvidence>, action_id: &str) -> &'static str {
