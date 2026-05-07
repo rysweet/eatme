@@ -47,6 +47,14 @@ targets:
     );
     assert_eq!(report["passed"], false);
     assert_eq!(report["readiness_status"], "incomplete");
+    assert_eq!(report["evidence_progress"]["total_required"], 7);
+    assert!(
+        report["evidence_progress"]["summary"]
+            .as_str()
+            .unwrap()
+            .contains("required evidence items are present")
+    );
+    assert!(report["readiness_report"]["evidence_progress"]["items"].is_array());
     assert!(
         report["comparison_manifest_path"]
             .as_str()

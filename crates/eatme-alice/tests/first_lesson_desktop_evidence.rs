@@ -47,6 +47,15 @@ fn readiness_passes_with_visible_run_window_screenshot() {
         .as_ref()
         .expect("modernized target should report pixel-boundary evidence status");
     assert_eq!(pixel_boundary.status, "not_observed");
+    assert_eq!(report.evidence_progress.total_required, 7);
+    assert_eq!(report.evidence_progress.present, 6);
+    assert_eq!(report.evidence_progress.not_observed, 1);
+    assert!(
+        report
+            .evidence_progress
+            .summary
+            .contains("6 of 7 required evidence items are present")
+    );
     assert!(
         pixel_boundary
             .detail
@@ -95,6 +104,16 @@ fn missing_pixel_boundary_evidence_is_reported_explicitly() {
         .as_ref()
         .expect("modernized target should report missing pixel-boundary evidence");
     assert_eq!(pixel_boundary.status, "missing");
+    assert!(
+        report
+            .evidence_progress
+            .items
+            .iter()
+            .any(
+                |item| item.evidence == "modernized desktop-run-pixel-boundary.json status"
+                    && item.state == "missing"
+            )
+    );
 }
 
 #[test]
@@ -127,6 +146,17 @@ fn present_invalid_pixel_boundary_status_is_reported_as_evidence_status() {
     assert_eq!(
         pixel_boundary.detail,
         "producer reported invalid pixel evidence"
+    );
+    assert_eq!(report.evidence_progress.invalid, 1);
+    assert!(
+        report
+            .evidence_progress
+            .items
+            .iter()
+            .any(
+                |item| item.evidence == "modernized desktop-run-pixel-boundary.json status"
+                    && item.state == "invalid"
+            )
     );
 }
 

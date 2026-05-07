@@ -15,6 +15,7 @@ use std::path::Path;
 mod assertions;
 mod no_go;
 mod output;
+mod progress;
 pub use assertions::LessonActionAssertionEvidence;
 use assertions::{
     action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,
@@ -23,6 +24,8 @@ pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
 pub use output::LessonSessionReadinessEnvelope;
 use output::build_readiness_output;
+use progress::evidence_progress;
+pub use progress::{LessonReadinessEvidenceProgress, LessonReadinessEvidenceProgressItem};
 
 const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
@@ -61,6 +64,7 @@ pub struct LessonSessionReadinessReport {
     pub readiness_status: String,
     pub blocked_reason: Option<String>,
     pub human_summary: String,
+    pub evidence_progress: LessonReadinessEvidenceProgress,
     pub required_evidence: Vec<String>,
     pub no_go_contracts: Vec<LessonSessionNoGoContract>,
     pub lesson_session_readiness: LessonSessionReadinessEnvelope,
@@ -163,6 +167,11 @@ pub fn check_lesson_session_readiness(
         no_go_contracts,
         FIRST_LESSON_SCENARIO_ID,
     );
+    let evidence_progress = evidence_progress(
+        &readiness_output.required_evidence,
+        &target_evidence,
+        &issues,
+    );
 
     let limitations = vec![
         "does not automate complete instructor assignment creation".into(),
@@ -180,6 +189,7 @@ pub fn check_lesson_session_readiness(
         readiness_status,
         blocked_reason: readiness_output.blocked_reason,
         human_summary: readiness_output.human_summary,
+        evidence_progress,
         required_evidence: readiness_output.required_evidence,
         no_go_contracts: readiness_output.no_go_contracts,
         lesson_session_readiness: readiness_output.lesson_session_readiness,
