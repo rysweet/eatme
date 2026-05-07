@@ -34,7 +34,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 69'
+    - '"scenario_asset_count": 71'
   timeout: 60000
 - name: Check Dependencies
   agent: eatme-cli-agent
