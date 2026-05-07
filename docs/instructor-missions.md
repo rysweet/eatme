@@ -126,6 +126,7 @@ Committed outside-in Alice expansion scenarios add these instructor decisions:
 | `model-texture-import-checkpoint` | `studio-facilitator`, `assessment-curator` | Import review that accepts responsible fallbacks instead of requiring one third-party model. |
 | `classroom-gallery-walk-and-rubric` | `assessment-curator`, `studio-facilitator`, `classroom-orchestrator` | Gallery-walk review that turns peer observation into student-owned revision without ranking visual spectacle. |
 | `teacher-community-sharing-loop` | `teacher-community-curator`, `classroom-orchestrator`, `assessment-curator` | Teacher-community handoff that shares editable activity context without ranking teachers or claiming a deployed platform. |
+| `lost-robot-debug-museum` | `debug-coach`, `exercise-forger` | Debugging mystery brief, student debug journal with hypothesis-before-edit discipline, and peer question checkpoint that turns visible wrong behavior into a learning conversation. |
 
 ## Mission design contract
 

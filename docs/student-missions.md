@@ -49,11 +49,11 @@ not internal Alice implementation details.
 
 Current audit inventory:
 
-- 34 canonical scenario assets under `assets/scenarios/eatme/`
-- 35 Gadugi scenario assets under `assets/scenarios/gadugi/` (34 generated
+- 35 canonical scenario assets under `assets/scenarios/eatme/`
+- 36 Gadugi scenario assets under `assets/scenarios/gadugi/` (35 generated
   adapters and 1 hand-authored validation regression)
 - 24 personas in `assets/personas/alice-user-crew.yaml`
-- 33 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
+- 34 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
   is the baseline launch evidence scenario and names no student persona
 
 Committed student-facing scenario assets currently include:
@@ -91,6 +91,7 @@ canonical scenario assets with generated Gadugi adapters:
 | `student-artifact-package-share-evidence` | `reflective-debugger`, `collaborative-peer-mentor` | Package one Alice artifact or screenshot with student change, visible run result, attribution or classroom context, and a next revision for instructor or peer review. |
 | `classroom-gallery-walk-and-rubric` | `collaborative-peer-mentor`, `reflective-debugger`, `accessibility-advocate` | Use peer observation, concept language, respectful questions, creator response, and one revision checkpoint during a gallery walk. |
 | `teacher-community-sharing-loop` | `collaborative-peer-mentor`, `accessibility-advocate` | Carry student evidence and accessibility notes into a teacher-facing activity handoff without ranking classmates or teachers. |
+| `lost-robot-debug-museum` | `reflective-debugger`, `collaborative-peer-mentor` | Plan a debugging investigation: record expected-vs-actual tour behavior, write a hypothesis before editing, make one minimal change, rerun, and pose a peer question before concluding. |
 
 Instructor-led scenario assets also produce student-facing prompts, handouts, or
 handoffs. They are instructor missions first, but their student persona mappings

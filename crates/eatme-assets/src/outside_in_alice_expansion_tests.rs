@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 69;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 71;
 
 struct TargetScenario {
     id: &'static str,
@@ -395,6 +395,41 @@ fn media_audio_cue_storyboard_covers_media_audio_student_persona() {
             "visible or audible result",
             "student-owned revision",
             "media-audio-creator",
+            "not full user interface automation",
+            "not automated creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
+        ],
+    );
+}
+
+#[test]
+fn lost_robot_debug_museum_covers_reflective_debugger_and_debug_coach() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme", "lost-robot-debug-museum");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+    let personas = scenario.personas.as_ref().expect("must define personas");
+    assert_eq!(scenario.kind, "instructor_agentic_flow");
+    assert!(personas.instructors.iter().any(|p| p == "debug-coach"));
+    assert!(personas.students.iter().any(|p| p == "reflective-debugger"));
+    assert!(
+        personas
+            .students
+            .iter()
+            .any(|p| p == "collaborative-peer-mentor")
+    );
+    assert_contains_all(
+        "lost-robot-debug-museum contract",
+        &contract,
+        &[
+            "debug mystery brief",
+            "student debug journal",
+            "peer question checkpoint",
+            "hypothesis",
+            "minimal change",
+            "reflective-debugger",
+            "collaborative-peer-mentor",
             "not full user interface automation",
             "not automated creative assessment",
             "not learner-world grading",
