@@ -1,0 +1,3 @@
+default-workflow hung without output after >2min; proceeding manually
+timestamp: 2026-05-07T23:11:28Z
+exit: hang/timeout

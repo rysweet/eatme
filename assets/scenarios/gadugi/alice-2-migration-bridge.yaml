@@ -35,7 +35,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 85'
+    - '"scenario_asset_count": 87'
   timeout: 60000
 - name: Record Migration Bridge
   agent: eatme-cli-agent

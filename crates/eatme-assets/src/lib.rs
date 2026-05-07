@@ -3,6 +3,8 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 #[cfg(test)]
+mod accessibility_rescue_camera_captions_tests;
+#[cfg(test)]
 mod assessment_boundary_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
@@ -116,7 +118,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 85);
+        assert_eq!(report.scenario_asset_count, 87);
     }
 
     #[test]
