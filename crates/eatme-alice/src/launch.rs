@@ -9,9 +9,7 @@ mod util;
 use self::alice_cmd::{alice_launch_args, start_alice};
 use self::assertions::{bool_assert, fatal_log_detail, visual_evidence_detail};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
-use self::evidence::{
-    capture_screenshot, capture_window_list, has_alice_window_evidence, scan_fatal_logs,
-};
+use self::evidence::{capture_screenshot, capture_window_list, scan_fatal_logs};
 use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::{launch_run_dir, prepare_run_dir};
 use self::util::{
@@ -33,6 +31,8 @@ use crate::launch_ui_actions::{
     probe_alice_window_activation, probe_place_object_preconditions,
     record_alice_window_activation, record_ui_action_blockers, ui_action_failure_category,
 };
+use crate::launch_window_activation::ui_action_activation_failure_category;
+use crate::launch_window_targeting::alice_window_search;
 use crate::package::{PackageOptions, package_alice};
 use anyhow::Result;
 use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
@@ -250,7 +250,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));
     let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
     let window_list_error = combine_errors([window_list_error, window_info_error]);
-    let specific_alice_window_ok = has_alice_window_evidence(&window_text);
+    let window_search = alice_window_search(&window_text);
+    let specific_alice_window_ok = window_search.detected();
     let window_evidence_ok = options.scenario.accepts_window_evidence() && specific_alice_window_ok;
     let (screenshot, screenshot_error) =
         capture_artifact_or_error(capture_screenshot(&runner, display.name(), &run_dir));
@@ -281,20 +282,17 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if options.scenario.requires_real_ui_actions() {
         assertions.insert(
             "specific_alice_window_detected".into(),
-            bool_assert(
-                specific_alice_window_ok,
-                "wmctrl window list contains an Alice Stage IDE window",
-            ),
+            bool_assert(specific_alice_window_ok, window_search.detail().to_string()),
         );
         if !specific_alice_window_ok && failure_category.is_none() {
-            failure_category = Some("alice_window_not_detected".into());
+            failure_category = window_search.failure_category().map(str::to_string);
         }
     }
     let alice_window_activation_probe = if options.scenario.requires_real_ui_actions() {
         let probe = probe_alice_window_activation(&runner, display.name(), &window_text);
         record_alice_window_activation(&mut assertions, &probe);
         if probe.status != "passed" && failure_category.is_none() {
-            failure_category = Some("alice_window_activation_failed".into());
+            failure_category = Some(ui_action_activation_failure_category(&probe).into());
         }
         Some(probe)
     } else {
