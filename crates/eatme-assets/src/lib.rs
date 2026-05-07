@@ -4,6 +4,8 @@ use std::path::Path;
 
 #[cfg(test)]
 mod assessment_boundary_tests;
+#[cfg(test)]
+mod creature_choreography_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
@@ -112,7 +114,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 81);
+        assert_eq!(report.scenario_asset_count, 83);
     }
 
     #[test]

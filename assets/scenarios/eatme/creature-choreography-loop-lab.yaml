@@ -1,0 +1,174 @@
+schema_version: eatme.scenario/v1
+id: creature-choreography-loop-lab
+title: Creature Choreography Loop Lab
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Use the loops and custom procedures concepts from this lesson family as
+      the coding backbone for a choreography lab where a creature repeats a
+      movement pattern, showing students how a loop replaces writing the same
+      action multiple times and how a named procedure groups those steps for
+      reuse.
+  - name: Alice.org Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Use the procedures, loops, and optional collection/array topic from the
+      Alice 3 lesson list to frame a dance lab where a solo creature performs a
+      repeating movement pattern, an optional group version uses the same
+      procedure across multiple creatures, and an advanced path adds a
+      collection so the instructor can differentiate without blocking novice
+      success.
+purpose: >-
+  Help an instructor design a short Alice choreography lab where students make
+  a creature perform a repeating movement pattern. Students write at least one
+  named procedure for a single dance move, place that procedure inside a loop
+  to repeat it a chosen number of times, predict how the scene will look after
+  the loop runs, and record the visible outcome. An optional extension asks
+  students to apply the same procedure to a second creature or use a collection
+  to drive the repetition. Motion intensity and audio cues should be noted as
+  adjustable for accessibility. This scenario covers the playful-tinkerer,
+  creative-storyteller, and accessibility-advocate student personas without
+  claiming full user interface automation, automated creative assessment,
+  learner-world grading, complete Alice coverage, or real Alice smoke evidence.
+personas:
+  instructors: [exercise-forger, assessment-curator]
+  students: [playful-tinkerer, creative-storyteller, accessibility-advocate]
+agentic_flow:
+  focus: creature-choreography-loop-lab
+  instructor_goal: >-
+    Prepare a lesson brief, a student choreography card, and a loop-frame
+    reference for an Alice creature choreography lab: a motivating example
+    showing a creature performing a move without a loop (and the extra code
+    that requires), a loop-and-procedure version that eliminates repetition, a
+    loop-count frame the student sets before running, a before-run prediction
+    prompt about how many times the move will repeat, and an after-run
+    observation log comparing prediction to visible outcome. The optional
+    extension shows how to apply the same procedure to a second creature or
+    introduce a simple collection without blocking novice success.
+  prompt_source: assets/scenarios/eatme/creature-choreography-loop-lab.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - lesson_brief
+    - student_choreography_card
+    - loop_frame
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing a creature choreography loop
+  lab Alice lesson. Produce a lesson brief, student choreography card, and
+  loop-frame reference grounded in the listed resources and this
+  creature-choreography-loop-lab scenario. The lesson brief must show a short
+  motivating example of a creature performing a move step-by-step without a
+  loop, explain what changes when a named procedure and loop are used instead,
+  and introduce a loop-count frame the student sets before running. The student
+  choreography card must prompt the student to name at least one dance move as a
+  procedure, place that procedure inside a loop with a chosen repeat count,
+  write a prediction of how the scene will look after the loop runs, run the
+  world, and record what visible behavior matched or differed from the
+  prediction. The loop-frame reference must name the procedure, the loop, and
+  the repeat count without referencing specific Alice character files or exact
+  asset names. Include a note that motion intensity and audio cues are adjustable
+  for accessibility. Include an optional extension that shows how to apply the
+  same procedure to a second creature or use a simple collection to drive the
+  loop, and make clear that the extension does not block novice success. State
+  explicitly that this is not full user interface automation, not automated
+  creative assessment, not learner-world grading, and not complete Alice
+  coverage.
+acceptance_criteria:
+  - given: >-
+      an instructor wants to teach loops and reusable procedures using a
+      creature choreography framing in Alice
+    when: >-
+      the lesson brief is prepared
+    then: >-
+      the brief shows a motivating no-loop example first, explains what changes
+      when a procedure and loop are introduced, and does not require specific
+      Alice assets or character models
+  - given: >-
+      a student is building a creature choreography lab world
+    when: >-
+      the student choreography card is used
+    then: >-
+      the card prompts the student to name a procedure, set a repeat count,
+      write a prediction before running, run the world, and record the visible
+      outcome
+  - given: >-
+      a playful-tinkerer or creative-storyteller student wants to extend the lab
+    when: >-
+      the optional extension section is reached
+    then: >-
+      the extension suggests applying the procedure to a second creature or
+      using a collection without prescribing exact assets or blocking learners
+      who skip the extension
+  - given: >-
+      an accessibility-advocate student or instructor is concerned about motion
+      intensity
+    when: >-
+      reviewing the choreography card
+    then: >-
+      the card notes that motion intensity and audio cues are adjustable and
+      that a reduced-motion version still teaches the loop and procedure
+      concepts
+acceptance_probes:
+  - Lesson brief shows the no-loop motivating example before introducing the procedure-and-loop version.
+  - Loop-frame reference names the procedure, loop, and repeat count without referencing specific Alice character files.
+  - Student choreography card prompts a written prediction of the visible outcome before running.
+  - Student choreography card includes an observation log comparing prediction to what was seen after running.
+  - Output covers playful-tinkerer, creative-storyteller, and accessibility-advocate personas with visible classroom evidence.
+  - Optional extension is clearly optional and does not block novice success.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+rubric:
+  - criterion: Loop motivation clarity
+    evidence:
+      - Lesson brief shows the step-by-step no-loop version before the loop-and-procedure version.
+      - Instructor framing explains what the repeat count controls, not only how to add a loop.
+  - criterion: Prediction before run
+    evidence:
+      - Student choreography card records a written prediction of how many times the move will repeat.
+      - Observation log captures what visible behavior matched or differed from the prediction.
+  - criterion: Asset independence
+    evidence:
+      - Loop-frame reference names the procedure and loop without referencing specific Alice character files.
+      - Optional extension does not prescribe exact assets or UI steps.
+  - criterion: Accessibility awareness
+    evidence:
+      - Choreography card notes that motion intensity and audio cues are adjustable.
+      - A reduced-motion path is acknowledged without blocking the core lesson.
+avoid:
+  - Requiring exact creature names, specific animation assets, or fixed audio cues for all learners.
+  - Skipping the no-loop motivating example before introducing the procedure and loop.
+  - Skipping the prediction step or letting students run before writing an expectation.
+  - Making the array/collection extension required rather than optional.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes creature-choreography-loop-lab
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/creature-choreography-loop-lab.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  lesson_brief: agentic://instructor/lesson-brief
+  student_choreography_card: agentic://student/choreography-card
+  loop_frame: agentic://instructor/loop-frame
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited Alice-facing resources, fail visibly and report the missing evidence.
+  Do not replace instructor judgment with launch, screenshot, or
+  export-preflight artifacts. Do not claim full user interface automation,
+  automated creative assessment, learner-world grading, or complete Alice
+  coverage.
