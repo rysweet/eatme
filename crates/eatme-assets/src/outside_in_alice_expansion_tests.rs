@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 63;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 65;
 
 struct TargetScenario {
     id: &'static str,
@@ -362,6 +362,43 @@ fn teacher_community_sharing_loop_contract_names_handoff_and_honest_boundaries()
             "not learner-world grading",
             "not complete Alice coverage",
             "not a deployed community platform",
+        ],
+    );
+}
+
+#[test]
+fn media_audio_cue_storyboard_covers_media_audio_student_persona() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme", "media-audio-cue-storyboard");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+    let personas = scenario
+        .personas
+        .as_ref()
+        .expect("media-audio scenario must define personas");
+
+    assert_eq!(scenario.kind, "instructor_agentic_flow");
+    assert!(
+        personas
+            .students
+            .iter()
+            .any(|persona| persona == "media-audio-creator"),
+        "media-audio-cue-storyboard must cover media-audio-creator"
+    );
+    assert_contains_all(
+        "media-audio-cue-storyboard contract",
+        &contract,
+        &[
+            "media cue storyboard",
+            "student prediction prompt",
+            "accessibility fallback note",
+            "visible or audible result",
+            "student-owned revision",
+            "media-audio-creator",
+            "not full user interface automation",
+            "not automated creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
         ],
     );
 }

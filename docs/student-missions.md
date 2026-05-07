@@ -75,6 +75,7 @@ canonical scenario assets with generated Gadugi adapters:
 | `alice-2-migration-bridge` | `curious-novice`, `creative-storyteller` | Produce current Alice 3 evidence while preserving the learning intent of an older Alice 2 activity. |
 | `vr-player-comfort-playtest` | `vr-player-tester`, `accessibility-advocate` | Playtest orientation, locomotion comfort, discoverability, and fallback access without assuming headset availability. |
 | `model-texture-import-checkpoint` | `model-texture-importer`, `reflective-debugger`, `creative-storyteller` | Check imported model or texture source, license, scale, orientation, visible texture behavior, and fallback asset choice. |
+| `media-audio-cue-storyboard` | `media-audio-creator`, `creative-storyteller`, `accessibility-advocate` | Storyboard one sound, timing, camera, or caption cue with prediction, run evidence, accessibility fallback, and revision reflection. |
 
 ## Mission rhythm
 
