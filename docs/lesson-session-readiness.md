@@ -367,12 +367,14 @@ Top-level fields:
 | `readiness_status` | string | Detailed status such as `ready`, `incomplete`, or `blocked_until_ui_automation`. |
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Single-sentence human explanation of the readiness result. |
+| `evidence_progress` | object | Required-evidence counts plus next blocker/proof hints. |
 | `required_evidence` | array of strings | Durable artifact names required by the readiness check. |
 | `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
 | `lesson_session_readiness` | object | Backward-compatible normalized student readiness envelope. |
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
+| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, or Run pixel observation. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |

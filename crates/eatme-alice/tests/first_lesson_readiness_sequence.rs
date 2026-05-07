@@ -301,6 +301,20 @@ targets:
         modernized.failure_category.as_deref(),
         Some("alice_window_activation_unsupported")
     );
+    assert_eq!(
+        report
+            .evidence_progress
+            .next_missing_real_desktop_proof
+            .as_deref(),
+        Some(
+            "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions."
+        )
+    );
+    let progress_json = serde_json::to_value(&report.evidence_progress).unwrap();
+    assert_eq!(
+        progress_json["next_missing_real_desktop_proof"],
+        "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions."
+    );
     assert_action(modernized, "verify-specific-alice-window", true);
     assert_action_detail_contains(
         modernized,
