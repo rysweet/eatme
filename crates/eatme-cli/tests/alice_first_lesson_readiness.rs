@@ -47,6 +47,20 @@ targets:
     );
     assert_eq!(report["passed"], false);
     assert_eq!(report["readiness_status"], "incomplete");
+    assert_eq!(
+        report["desktop_proof_contract"],
+        report["readiness_report"]["desktop_proof_contract"]
+    );
+    assert_eq!(
+        report["desktop_proof_contract"],
+        serde_json::json!({
+            "status": "skipped",
+            "reason_code": "execute_not_requested",
+            "detail": "execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof",
+            "target_role": "modernized",
+            "artifact": null
+        })
+    );
     assert_eq!(report["evidence_progress"]["total_required"], 8);
     assert!(
         report["evidence_progress"]["summary"]
@@ -101,6 +115,9 @@ targets:
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("First-lesson readiness: incomplete"));
+    assert!(stdout.contains(
+        "Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof"
+    ));
     assert!(stdout.contains("Evidence progress:"));
     assert!(stdout.contains("required evidence items are present"));
     assert!(stdout.contains(
@@ -116,6 +133,59 @@ targets:
     assert!(stdout.contains("does not prove visible rendering correctness"));
     assert!(stdout.contains("does not prove first-lesson completion"));
     assert!(stdout.contains("Still missing or blocked:"));
+}
+
+#[test]
+fn run_first_lesson_readiness_cli_reports_unsupported_environment_contract() {
+    let root = scratch_root("first-lesson-readiness-cli-unsupported");
+    let registry_path = root.join("targets.yaml");
+    fs::write(
+        &registry_path,
+        r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Reference target.
+    alice_home_env: EATME_TEST_BASELINE_HOME_NOT_SET
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home_env: EATME_TEST_MODERNIZED_HOME_NOT_SET
+"#,
+    )
+    .unwrap();
+
+    let output = Command::new(eatme_bin())
+        .env("EATME_REAL_ALICE", "1")
+        .args([
+            "alice",
+            "run-first-lesson-readiness",
+            "--registry",
+            registry_path.to_str().unwrap(),
+            "--run-id",
+            "unsupported-environment-contract",
+            "--runs-dir",
+            root.join("runs").to_str().unwrap(),
+            "--execute",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("sequence report is JSON");
+    assert_eq!(
+        report["desktop_proof_contract"],
+        serde_json::json!({
+            "status": "unsupported_environment",
+            "reason_code": "alice_home_unresolved",
+            "detail": "modernized target did not launch desktop Alice proof collection (alice_home_unresolved)",
+            "target_role": "modernized",
+            "artifact": null
+        })
+    );
 }
 
 fn scratch_root(name: &str) -> PathBuf {

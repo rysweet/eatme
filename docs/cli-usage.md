@@ -282,6 +282,9 @@ The command fixes the scenario to `first-lessons-real-ui-actions`, writes
 then immediately runs the same readiness check against that manifest. Without
 `--execute` it still writes a manifest and returns `status=not_ready` with a
 detail `readiness_status=incomplete` because target launch evidence is missing.
+Its `desktop_proof_contract` reports `status="skipped"` and
+`reason_code="execute_not_requested"` so scripts can distinguish a deliberate
+manual smoke skip from a failed desktop proof run.
 With `--execute`, non-baseline Alice scenarios still require
 `EATME_REAL_ALICE=1`. The command preserves the same boundaries: it does not
 create a complete instructor assignment, consume a complete student lesson,

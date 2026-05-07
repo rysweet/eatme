@@ -26,6 +26,20 @@ fn readiness_passes_with_visible_run_window_screenshot() {
     assert!(report.passed, "{:?}", report.issues);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
     assert_eq!(
+        report.desktop_proof_contract.status,
+        "launched_but_unverified"
+    );
+    assert_eq!(
+        report.desktop_proof_contract.reason_code,
+        "desktop_pixel_observation_blocked"
+    );
+    assert!(
+        report
+            .desktop_proof_contract
+            .detail
+            .contains("desktop Run pixel-observation evidence is blocked")
+    );
+    assert_eq!(
         report.required_evidence,
         vec![
             "comparison-manifest.json with baseline and modernized targets",
@@ -271,6 +285,24 @@ fn present_observed_pixel_observation_is_reported_as_desktop_pixel_status() {
         .as_ref()
         .expect("modernized target should report observed pixel-observation evidence");
     assert_eq!(pixel_observation.status, "observed");
+    assert_eq!(report.desktop_proof_contract.status, "verified");
+    assert_eq!(
+        report.desktop_proof_contract.reason_code,
+        "desktop_pixel_observation_verified"
+    );
+    assert!(
+        report
+            .desktop_proof_contract
+            .detail
+            .contains("does not prove full lesson automation")
+    );
+    assert!(
+        report
+            .desktop_proof_contract
+            .artifact
+            .as_deref()
+            .is_some_and(|artifact| artifact.ends_with("desktop-run-pixel-observation.json"))
+    );
     assert!(pixel_observation.screenshot.is_some());
     assert!(pixel_observation.sample.is_some());
     assert!(

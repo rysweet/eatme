@@ -15,6 +15,7 @@ use std::fs;
 use std::path::Path;
 
 mod assertions;
+mod desktop_proof;
 mod no_go;
 mod output;
 mod progress;
@@ -22,6 +23,8 @@ pub use assertions::LessonActionAssertionEvidence;
 use assertions::{
     action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,
 };
+pub use desktop_proof::DesktopProofContract;
+use desktop_proof::desktop_proof_contract;
 pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
 pub use output::LessonSessionReadinessEnvelope;
@@ -66,6 +69,7 @@ pub struct LessonSessionReadinessReport {
     pub readiness_status: String,
     pub blocked_reason: Option<String>,
     pub human_summary: String,
+    pub desktop_proof_contract: DesktopProofContract,
     pub evidence_progress: LessonReadinessEvidenceProgress,
     pub required_evidence: Vec<String>,
     pub no_go_contracts: Vec<LessonSessionNoGoContract>,
@@ -176,6 +180,8 @@ pub fn check_lesson_session_readiness(
         &target_evidence,
         &issues,
     );
+    let desktop_proof_contract =
+        desktop_proof_contract(execute_requested, &target_evidence, &issues);
 
     let limitations = vec![
         "does not prove full Alice UI automation".into(),
@@ -196,6 +202,7 @@ pub fn check_lesson_session_readiness(
         readiness_status,
         blocked_reason: readiness_output.blocked_reason,
         human_summary: readiness_output.human_summary,
+        desktop_proof_contract,
         evidence_progress,
         required_evidence: readiness_output.required_evidence,
         no_go_contracts: readiness_output.no_go_contracts,

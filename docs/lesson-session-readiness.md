@@ -367,6 +367,7 @@ Top-level fields:
 | `readiness_status` | string | Detailed status such as `ready`, `incomplete`, or `blocked_until_ui_automation`. |
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Single-sentence human explanation of the readiness result. |
+| `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
 | `evidence_progress` | object | Required-evidence counts plus next blocker/proof hints. |
 | `required_evidence` | array of strings | Durable artifact names required by the readiness check. |
 | `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
@@ -378,6 +379,21 @@ Top-level fields:
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |
+
+### Desktop proof contract
+
+`desktop_proof_contract` is intentionally narrower than full first-lesson
+automation. It reports what happened to the modernized desktop proof attempt:
+
+| Status | Meaning |
+| --- | --- |
+| `skipped` | Execution was not requested, or no modernized target evidence exists. This is a deliberate manual smoke skip, not a failed proof. |
+| `unsupported_environment` | Execution was requested, but the modernized target could not launch desktop proof collection, for example because Alice home resolution or required target paths failed. |
+| `launched_but_unverified` | Alice launch evidence exists, but Run-window, desktop execution, screenshot, or pixel-observation proof is missing, blocked, invalid, or not observed. |
+| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, rendering correctness, grading, save behavior, or creative assessment. |
+
+The contract includes `reason_code`, `detail`, `target_role`, and optional
+`artifact` fields so CI and reports can preserve the exact skip/blocker shape.
 
 ### Normalized envelope
 
