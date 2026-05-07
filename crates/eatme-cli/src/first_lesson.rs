@@ -58,6 +58,13 @@ fn write_first_lesson_readiness_result(
     )?;
     writeln!(
         writer,
+        "Desktop proof: {} ({}) - {}",
+        report.desktop_proof_contract.status,
+        report.desktop_proof_contract.reason_code,
+        report.desktop_proof_contract.detail
+    )?;
+    writeln!(
+        writer,
         "Evidence progress: {}",
         report.evidence_progress.summary
     )?;
@@ -111,7 +118,7 @@ fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> O
 mod tests {
     use super::*;
     use eatme_alice::compare::{
-        LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
+        DesktopProofContract, LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
         LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
     };
     use std::collections::BTreeMap;
@@ -231,6 +238,7 @@ mod tests {
             readiness_status: "blocked_until_ui_automation".into(),
             blocked_reason: Some("blocked_until_ui_automation".into()),
             human_summary: "blocked".into(),
+            desktop_proof_contract: desktop_proof_contract(),
             evidence_progress: progress.clone(),
             required_evidence: Vec::new(),
             no_go_contracts: Vec::new(),
@@ -261,6 +269,7 @@ mod tests {
             readiness_status: "blocked_until_ui_automation".into(),
             blocked_reason: Some("blocked_until_ui_automation".into()),
             human_summary: "blocked".into(),
+            desktop_proof_contract: desktop_proof_contract(),
             evidence_progress: progress,
             required_evidence: Vec::new(),
             no_go_contracts: Vec::new(),
@@ -269,6 +278,16 @@ mod tests {
             issues: Vec::new(),
             limitations: Vec::new(),
             readiness_report,
+        }
+    }
+
+    fn desktop_proof_contract() -> DesktopProofContract {
+        DesktopProofContract {
+            status: "launched_but_unverified".into(),
+            reason_code: "desktop_pixel_observation_blocked".into(),
+            detail: "desktop proof is not verified".into(),
+            target_role: "modernized".into(),
+            artifact: None,
         }
     }
 }
