@@ -1,6 +1,7 @@
 use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
     desktop_evidence::{
+        DesktopRunPixelBoundaryEvidence, check_pixel_boundary_evidence,
         check_visible_desktop_evidence, comparison_evidence_root, resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
@@ -80,6 +81,7 @@ pub struct LessonTargetEvidence {
     pub launch_manifest_present: bool,
     pub ui_action_contract_path: Option<String>,
     pub ui_action_contract_readable: bool,
+    pub desktop_run_pixel_boundary: Option<DesktopRunPixelBoundaryEvidence>,
     pub action_assertions: Vec<LessonActionAssertionEvidence>,
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
@@ -212,6 +214,7 @@ fn inspect_target_evidence(
             launch_manifest_present: false,
             ui_action_contract_path: None,
             ui_action_contract_readable: false,
+            desktop_run_pixel_boundary: None,
             action_assertions: Vec::new(),
             required_actions: Vec::new(),
             missing_assertions: REQUIRED_FIRST_LESSON_ASSERTIONS
@@ -300,6 +303,7 @@ fn inspect_target_evidence(
         .map(|value| (*value).to_string())
         .collect::<Vec<_>>();
     let mut ui_action_contract_readable = false;
+    let mut desktop_run_pixel_boundary = None;
     let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
@@ -322,6 +326,12 @@ fn inspect_target_evidence(
                             ));
                         }
                         if role == "modernized" {
+                            let pixel_boundary = check_pixel_boundary_evidence(
+                                &comparison_evidence_root(manifest_path),
+                                &resolved,
+                            );
+                            issues.extend(pixel_boundary.issue_when_missing_or_invalid());
+                            desktop_run_pixel_boundary = Some(pixel_boundary);
                             issues.extend(
                                 check_visible_desktop_evidence(
                                     &comparison_evidence_root(manifest_path),
@@ -356,6 +366,7 @@ fn inspect_target_evidence(
         launch_manifest_present: true,
         ui_action_contract_path,
         ui_action_contract_readable,
+        desktop_run_pixel_boundary,
         action_assertions,
         required_actions,
         missing_assertions,

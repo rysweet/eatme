@@ -14,6 +14,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
         run_frame_present: true,
         vm_statement_execution_present: true,
         visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -26,6 +27,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
             "comparison-manifest.json with baseline and modernized targets",
             "launch evidence for each target",
             "modernized Run-window evidence",
+            "modernized desktop-run-pixel-boundary.json status",
             "modernized desktop execution evidence",
             "screenshot, log, and window artifacts",
             "ui-action-contract.json",
@@ -35,6 +37,21 @@ fn readiness_passes_with_visible_run_window_screenshot() {
         report.lesson_session_readiness.required_evidence,
         report.required_evidence
     );
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence should exist");
+    let pixel_boundary = modernized
+        .desktop_run_pixel_boundary
+        .as_ref()
+        .expect("modernized target should report pixel-boundary evidence status");
+    assert_eq!(pixel_boundary.status, "not_observed");
+    assert!(
+        pixel_boundary
+            .detail
+            .contains("does not inspect screenshots or pixel output")
+    );
 }
 
 #[test]
@@ -43,6 +60,7 @@ fn vm_execution_sentinel_alone_is_not_visible_desktop_proof() {
         run_frame_present: true,
         vm_statement_execution_present: true,
         visible_desktop_screenshot_present: false,
+        pixel_boundary_present: true,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -52,11 +70,73 @@ fn vm_execution_sentinel_alone_is_not_visible_desktop_proof() {
 }
 
 #[test]
+fn missing_pixel_boundary_evidence_is_reported_explicitly() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: false,
+    });
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_contains(
+        &report.issues,
+        "missing desktop Run pixel-boundary evidence; expected run-window-evidence/desktop-run-pixel-boundary.json under the comparison evidence root",
+    );
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence should exist");
+    let pixel_boundary = modernized
+        .desktop_run_pixel_boundary
+        .as_ref()
+        .expect("modernized target should report missing pixel-boundary evidence");
+    assert_eq!(pixel_boundary.status, "missing");
+}
+
+#[test]
+fn present_invalid_pixel_boundary_status_is_reported_as_evidence_status() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+    });
+    overwrite_modernized_pixel_boundary(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-run-pixel-boundary/v1","status":"invalid","reason":"producer reported invalid pixel evidence"}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_contains(&report.issues, "producer reported invalid pixel evidence");
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence should exist");
+    let pixel_boundary = modernized
+        .desktop_run_pixel_boundary
+        .as_ref()
+        .expect("modernized target should report invalid pixel-boundary evidence");
+    assert_eq!(pixel_boundary.status, "invalid");
+    assert_eq!(
+        pixel_boundary.detail,
+        "producer reported invalid pixel evidence"
+    );
+}
+
+#[test]
 fn run_frame_prerequisite_is_preserved_when_screenshot_exists() {
     let manifest_path = write_manifest(DesktopFixture {
         run_frame_present: false,
         vm_statement_execution_present: true,
         visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -74,6 +154,7 @@ fn vm_statement_prerequisite_is_preserved_when_screenshot_exists() {
         run_frame_present: true,
         vm_statement_execution_present: false,
         visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -89,6 +170,7 @@ struct DesktopFixture {
     run_frame_present: bool,
     vm_statement_execution_present: bool,
     visible_desktop_screenshot_present: bool,
+    pixel_boundary_present: bool,
 }
 
 fn write_manifest(fixture: DesktopFixture) -> PathBuf {
@@ -179,7 +261,33 @@ fn write_modernized_desktop_artifacts(run_dir: &Path, fixture: &DesktopFixture) 
             r#"{"schema_version":"eatme.alice-desktop-run-execution/v1","status":"statement_execution_observed","active_scene_invoke_started":true,"executing_statement_count":1,"runtime_log":"desktop-run-runtime.log"}"#,
         )
         .unwrap();
+        if fixture.pixel_boundary_present {
+            fs::write(
+                evidence_dir.join("desktop-run-pixel-boundary.json"),
+                r#"{"schema_version":"eatme.alice-desktop-run-pixel-boundary/v1","status":"not_observed","reason":"Run view attachment was observed, but this Alice-side signal does not inspect screenshots or pixel output."}"#,
+            )
+            .unwrap();
+        }
     }
+}
+
+fn overwrite_modernized_pixel_boundary(manifest_path: &Path, content: &str) {
+    let value: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
+    let contract_path = PathBuf::from(
+        value["targets"]["modernized"]["launch_manifest"]["ui_action_contract"]["path"]
+            .as_str()
+            .unwrap(),
+    );
+    fs::write(
+        contract_path
+            .parent()
+            .unwrap()
+            .join("run-window-evidence")
+            .join("desktop-run-pixel-boundary.json"),
+        content,
+    )
+    .unwrap();
 }
 
 fn launch_manifest_json(
