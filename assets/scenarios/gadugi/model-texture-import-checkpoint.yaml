@@ -35,7 +35,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 77'
+    - '"scenario_asset_count": 79'
   timeout: 60000
 - name: Record Import Checkpoint
   agent: eatme-cli-agent
