@@ -8,6 +8,8 @@ mod accessibility_rescue_camera_captions_tests;
 mod assessment_boundary_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
+#[cfg(test)]
+mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
@@ -118,7 +120,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 87);
+        assert_eq!(report.scenario_asset_count, 89);
     }
 
     #[test]

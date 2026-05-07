@@ -231,6 +231,7 @@ Alice modernization work pressures first:
 | `instructor-alice-concept-map` | Map Alice actions to transferable CS vocabulary and misconception checks. | Programming in Alice; Alice 3 lessons list. |
 | `instructor-student-outcomes-rubric` | Check outcomes with concept, creativity, process, and reflection rubric evidence. | Alice 3 resource categories; Building A Scene. |
 | `instructor-classroom-setup-readiness` | Prepare setup checklist, student-facing note, and fallback plan. | Alice 3 setup/download; Alice resources overview. |
+| `design-process-story-or-game` | Guide students through a structured design process before coding: story-vs-game framing, scene-sketch card, and design-to-code bridge card. | Programming in Alice; Alice 3 lessons list. |
 
 The persona crew also defines these additional outside-in coverage areas:
 
