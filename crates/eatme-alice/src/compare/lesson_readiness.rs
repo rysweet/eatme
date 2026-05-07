@@ -413,7 +413,12 @@ fn inspect_target_evidence(
 fn is_ui_action_blocked_category(category: &str) -> bool {
     matches!(
         category,
-        "ui_action_automation_unimplemented" | "ui_action_remaining_steps_unimplemented"
+        "alice_window_not_detected"
+            | "alice_like_window_not_main"
+            | "alice_window_activation_unsupported"
+            | "alice_window_activation_failed"
+            | "ui_action_automation_unimplemented"
+            | "ui_action_remaining_steps_unimplemented"
     )
 }
 

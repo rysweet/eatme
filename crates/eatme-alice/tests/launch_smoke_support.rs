@@ -214,6 +214,40 @@ echo "0x001 unrelated.firefox.Firefox Firefox"
         );
     }
 
+    #[allow(dead_code)]
+    pub fn write_alice_like_license_window_tool(&self) {
+        self.write_tool(
+            "wmctrl",
+            r#"#!/bin/sh
+echo '0x002  0 host sun-awt-X11-XDialogPeer License Agreement (Part 1 of 2): Alice 3'
+"#,
+        );
+    }
+
+    #[allow(dead_code)]
+    pub fn write_unsupported_activation_tools(&self) {
+        self.write_tool(
+            "wmctrl",
+            r#"#!/bin/sh
+if [ "$1" = "-ia" ]; then
+  echo "Your windowmanager claims not to support _NET_ACTIVE_WINDOW" 1>&2
+  exit 1
+fi
+echo "0x001  0 host org.alice.stageide.EntryPoint Alice 3"
+"#,
+        );
+        self.write_tool(
+            "xdotool",
+            r#"#!/bin/sh
+if [ "$1" = "windowfocus" ]; then
+  echo "XGetWindowProperty[_NET_ACTIVE_WINDOW] failed" 1>&2
+  exit 1
+fi
+exit 1
+"#,
+        );
+    }
+
     pub fn write_window_managerless_alice_tools(&self) {
         self.write_tool(
             "wmctrl",

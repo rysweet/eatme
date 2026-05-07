@@ -1,15 +1,10 @@
+#[cfg(test)]
+use crate::launch_window_targeting::alice_window_search;
 use anyhow::{Context, Result, bail};
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
-
-const ALICE_WINDOW_MARKERS: [&str; 4] = [
-    "org.alice.stageide.entrypoint",
-    "org.alice.stageide",
-    "org.alice.ide",
-    "\"alice 3",
-];
 
 pub(super) fn capture_window_list(
     runner: &impl CommandRunner,
@@ -62,13 +57,9 @@ fn command_text(stdout: &str, stderr: &str) -> String {
     }
 }
 
+#[cfg(test)]
 pub(super) fn has_alice_window_evidence(window_list: &str) -> bool {
-    window_list.lines().any(|line| {
-        let normalized = line.to_ascii_lowercase();
-        ALICE_WINDOW_MARKERS
-            .iter()
-            .any(|marker| normalized.contains(marker))
-    })
+    alice_window_search(window_list).detected()
 }
 
 pub(super) fn capture_screenshot(

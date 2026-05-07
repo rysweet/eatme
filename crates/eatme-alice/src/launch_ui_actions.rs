@@ -6,7 +6,8 @@ use crate::launch_object_placement::{
 };
 use crate::launch_run_world::{UiActionRunWorldProbe, probe_run_world_preconditions};
 use crate::launch_save_project::{UiActionSaveProjectProbe, probe_project_save_preconditions};
-use crate::launch_window_targeting::alice_window_id;
+use crate::launch_window_activation::activation_failure_detail;
+use crate::launch_window_targeting::{AliceWindowSearch, alice_window_search};
 use eatme_core::{ArtifactInfo, AssertionResult, CommandRunner, CommandSpec};
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -233,19 +234,21 @@ pub fn probe_alice_window_activation(
     display: &str,
     window_list: &str,
 ) -> UiActionProbe {
-    let Some(window_id) = alice_window_id(window_list) else {
-        return UiActionProbe {
-            id: "activate-specific-alice-window".into(),
-            status: "blocked".into(),
-            detail:
-                "blocked: wmctrl -lx and xwininfo output did not identify an Alice main window id"
-                    .into(),
-            window_id: None,
-            command: None,
-            exit_status: None,
-            stdout: String::new(),
-            stderr: String::new(),
-        };
+    let window_id = match alice_window_search(window_list) {
+        AliceWindowSearch::Found { window_id, .. } => window_id,
+        AliceWindowSearch::WrongAliceLikeWindow { detail }
+        | AliceWindowSearch::NoAliceWindow { detail } => {
+            return UiActionProbe {
+                id: "activate-specific-alice-window".into(),
+                status: "blocked".into(),
+                detail: format!("blocked: {detail}"),
+                window_id: None,
+                command: None,
+                exit_status: None,
+                stdout: String::new(),
+                stderr: String::new(),
+            };
+        }
     };
 
     let output = runner.run(
@@ -300,10 +303,7 @@ fn focus_alice_window_with_xdotool(
         Ok(output) => UiActionProbe {
             id: "activate-specific-alice-window".into(),
             status: "failed".into(),
-            detail: format!(
-                "wmctrl could not activate Alice window {window_id}; xdotool windowfocus exit_status={:?}",
-                output.exit_status
-            ),
+            detail: activation_failure_detail(window_id, wmctrl_output.as_ref(), &output),
             window_id: Some(window_id.into()),
             command: Some(output.command),
             exit_status: output.exit_status,

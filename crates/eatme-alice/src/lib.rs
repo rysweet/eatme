@@ -14,6 +14,7 @@ mod launch_run_world;
 mod launch_save_project;
 mod launch_ui_action_contract;
 mod launch_ui_actions;
+mod launch_window_activation;
 mod launch_window_targeting;
 pub mod package;
 pub mod scenario;
