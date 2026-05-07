@@ -11,6 +11,8 @@ mod gadugi;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
+mod neighborhood_data_story_tests;
+#[cfg(test)]
 mod outside_in_alice_expansion_tests;
 mod report;
 #[cfg(test)]
@@ -114,7 +116,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 83);
+        assert_eq!(report.scenario_asset_count, 85);
     }
 
     #[test]
