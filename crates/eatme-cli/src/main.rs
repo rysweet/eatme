@@ -12,7 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 mod first_lesson;
-use first_lesson::RunFirstLessonReadinessArgs;
+use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -289,7 +289,7 @@ fn main() -> Result<()> {
                     execute: args.execute,
                     starter_project: args.starter_project,
                 })?;
-                print_result(args.json, &report)?;
+                print_first_lesson_readiness_result(args.json, &report)?;
                 if !report.passed {
                     bail!("first-lesson readiness sequence incomplete");
                 }

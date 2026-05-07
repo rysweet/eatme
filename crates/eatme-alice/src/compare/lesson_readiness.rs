@@ -174,10 +174,13 @@ pub fn check_lesson_session_readiness(
     );
 
     let limitations = vec![
+        "does not prove full Alice UI automation".into(),
         "does not automate complete instructor assignment creation".into(),
         "does not automate complete student lesson consumption".into(),
         "does not perform creative assessment".into(),
         "does not grade student worlds".into(),
+        "does not prove visible rendering correctness".into(),
+        "does not prove first-lesson completion".into(),
         "does not prove broad Alice compatibility beyond the selected scenario".into(),
     ];
     Ok(LessonSessionReadinessReport {
