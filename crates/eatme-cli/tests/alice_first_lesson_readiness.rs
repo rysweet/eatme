@@ -81,13 +81,12 @@ targets:
     assert_eq!(select_item["state"], "missing");
     assert_eq!(save_item["evidence"], "Save Project proof artifact");
     assert_eq!(select_item["evidence"], "Select Project proof artifact");
-    assert_json_detail_contains(
-        save_item,
-        "run-window-evidence/desktop-first-lesson-next-action.json",
-    );
-    assert_json_detail_contains(
-        select_item,
-        "run-window-evidence/desktop-first-lesson-next-action.json",
+    assert_json_detail_contains(save_item, "desktop next-action evidence");
+    assert_json_detail_contains(select_item, "desktop next-action evidence");
+    let report_text = serde_json::to_string(&report).unwrap();
+    assert!(
+        !report_text.contains("run-window-evidence/desktop-first-lesson-next-action.json"),
+        "readiness JSON must not leak the internal next-action evidence path: {report_text}"
     );
     assert_readiness_json_avoids_unsupported_success_claims(&report);
 }

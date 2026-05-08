@@ -205,7 +205,7 @@ mod tests {
     fn plain_output_surfaces_blocked_save_project_proof_artifact_without_completion_claims() {
         let mut progress = progress_with_blocker(None);
         progress.next_missing_real_desktop_proof = Some(
-            "next missing real-desktop proof: blocked Save Project proof artifact in run-window-evidence/desktop-first-lesson-next-action.json: Save dialog owner does not expose a stable proof-artifact handoff yet.".into(),
+            "next missing real-desktop proof: blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet.".into(),
         );
         let report = sequence_report(progress);
 
@@ -214,7 +214,8 @@ mod tests {
 
         let output = String::from_utf8(output).unwrap();
         assert!(output.contains("blocked Save Project proof artifact"));
-        assert!(output.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
+        assert!(output.contains("desktop next-action evidence"));
+        assert!(!output.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
         assert!(!output.contains("Save completion evidence"));
         assert!(!output.contains("Save completed"));
         assert!(!output.contains("Save Project succeeded"));

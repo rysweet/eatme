@@ -123,8 +123,12 @@ fn after_all_four_hooks_pass_next_proof_names_missing_next_action_artifact() {
         .expect("missing next-action artifact should remain the next proof blocker");
 
     assert!(
-        next_proof.contains("missing run-window-evidence/desktop-first-lesson-next-action.json"),
+        next_proof.contains("missing desktop next-action evidence"),
         "expected missing next-action artifact guidance; got: {next_proof:?}"
+    );
+    assert!(
+        !next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"),
+        "next proof must not leak the internal next-action evidence path; got: {next_proof:?}"
     );
     assert!(
         next_proof.contains("Save Project proof artifact"),

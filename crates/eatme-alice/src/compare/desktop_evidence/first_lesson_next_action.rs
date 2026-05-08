@@ -9,7 +9,8 @@ use super::{blocker, resolve_run_dir_artifact_path_under_root};
 
 pub(crate) const DESKTOP_FIRST_LESSON_NEXT_ACTION: &str =
     "run-window-evidence/desktop-first-lesson-next-action.json";
-const MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE: &str = "missing desktop first-lesson next-action evidence; expected run-window-evidence/desktop-first-lesson-next-action.json under the comparison evidence root";
+pub(crate) const DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL: &str = "desktop next-action evidence";
+const MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE: &str = "missing desktop next-action evidence; expected desktop next-action evidence under the comparison evidence root";
 const SAVE_PROJECT_PROOF_LABEL: &str = "Save Project proof artifact";
 const SELECT_PROJECT_PROOF_LABEL: &str = "Select Project proof artifact";
 

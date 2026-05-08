@@ -1,6 +1,6 @@
 use super::LessonTargetEvidence;
 use crate::compare::desktop_evidence::{
-    DESKTOP_FIRST_LESSON_NEXT_ACTION, DesktopFirstLessonNextActionEvidence,
+    DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL, DesktopFirstLessonNextActionEvidence,
     ProjectProofArtifactEvidence,
 };
 use serde::{Serialize, Serializer, ser::SerializeStruct};
@@ -184,7 +184,7 @@ fn project_proof_progress_item(
             evidence,
             "missing",
             format!(
-                "missing {DESKTOP_FIRST_LESSON_NEXT_ACTION}; {label} cannot be checked because no next-action proof-artifact declaration was read."
+                "missing {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}; {label} cannot be checked because no next-action proof-artifact declaration was read."
             ),
         );
     };
@@ -199,11 +199,11 @@ fn project_proof_progress_item(
 fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvidence) -> String {
     match artifact.state() {
         "missing" => format!(
-            "missing {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION}: {}",
+            "missing {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
             artifact.detail
         ),
         "blocked" => format!(
-            "blocked {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION}: {}",
+            "blocked {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
             artifact.detail
         ),
         _ => artifact.detail.clone(),
@@ -331,7 +331,7 @@ fn next_missing_real_desktop_proof(
         && next_action.status == "missing"
     {
         return Some(format!(
-            "next missing real-desktop proof: missing {DESKTOP_FIRST_LESSON_NEXT_ACTION} before checking {SAVE_PROJECT_PROOF_LABEL}."
+            "next missing real-desktop proof: missing {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} before checking {SAVE_PROJECT_PROOF_LABEL}."
         ));
     }
     for evidence in [

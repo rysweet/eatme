@@ -11,7 +11,7 @@ pub use first_lesson_boundaries::{FirstLessonEvidenceBoundary, first_lesson_evid
 pub use first_lesson_next_action::DesktopFirstLessonNextActionEvidence;
 pub(crate) use first_lesson_next_action::ProjectProofArtifactEvidence;
 pub(crate) use first_lesson_next_action::{
-    DESKTOP_FIRST_LESSON_NEXT_ACTION, check_first_lesson_next_action_evidence,
+    DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL, check_first_lesson_next_action_evidence,
 };
 
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";

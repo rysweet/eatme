@@ -356,9 +356,8 @@ fn first_lesson_readiness_missing_next_action_artifact_names_missing_proof_artif
         .next_missing_real_desktop_proof
         .as_deref()
         .expect("missing next-action artifact should be the next proof blocker");
-    assert!(
-        next_proof.contains("missing run-window-evidence/desktop-first-lesson-next-action.json")
-    );
+    assert!(next_proof.contains("missing desktop next-action evidence"));
+    assert!(!next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
     assert!(next_proof.contains("Save Project proof artifact"));
     let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
     assert_no_unsupported_readiness_claims(&report_text);
@@ -392,7 +391,8 @@ fn first_lesson_readiness_blocked_save_project_proof_artifact_is_actionable() {
         .as_deref()
         .expect("blocked Save Project proof artifact should be the next proof blocker");
     assert!(next_proof.contains("blocked Save Project proof artifact"));
-    assert!(next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
+    assert!(next_proof.contains("desktop next-action evidence"));
+    assert!(!next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
 
     let save_item = report
         .evidence_progress
@@ -406,8 +406,9 @@ fn first_lesson_readiness_blocked_save_project_proof_artifact_is_actionable() {
             .detail
             .contains("blocked Save Project proof artifact")
     );
+    assert!(save_item.detail.contains("desktop next-action evidence"));
     assert!(
-        save_item
+        !save_item
             .detail
             .contains("run-window-evidence/desktop-first-lesson-next-action.json")
     );
