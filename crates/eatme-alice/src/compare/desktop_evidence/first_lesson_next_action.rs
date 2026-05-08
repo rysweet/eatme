@@ -2,11 +2,13 @@ use serde::{Serialize, Serializer};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use super::{blocker, resolve_run_dir_artifact_path};
+use super::{blocker, resolve_run_dir_artifact_path_under_root};
 
 const DESKTOP_FIRST_LESSON_NEXT_ACTION: &str =
     "run-window-evidence/desktop-first-lesson-next-action.json";
 const MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE: &str = "missing desktop first-lesson next-action evidence; expected run-window-evidence/desktop-first-lesson-next-action.json under the comparison evidence root";
+const SAVE_PROJECT_PROOF_LABEL: &str = "Save Project proof artifact";
+const SELECT_PROJECT_PROOF_LABEL: &str = "Select Project proof artifact";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct DesktopFirstLessonNextActionEvidence {
@@ -52,17 +54,30 @@ pub struct ProjectProofArtifactEvidence {
     pub detail: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub artifact: Option<ProjectProofArtifactInfo>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub blocker: Option<serde_json::Value>,
 }
 
 impl ProjectProofArtifactEvidence {
     pub(crate) fn missing(label: &str) -> Self {
+        Self::missing_with_detail(format!(
+            "{label} is missing; artifact availability was not declared."
+        ))
+    }
+
+    fn declared_missing(label: &str, declaration: &serde_json::Value) -> Self {
+        let detail = string_field(declaration, "reason")
+            .or_else(|| string_field(declaration, "detail"))
+            .map(|detail| format!("{label} is missing: {detail}"))
+            .unwrap_or_else(|| {
+                format!("{label} is missing; artifact availability was declared missing.")
+            });
+        Self::missing_with_detail(detail)
+    }
+
+    fn missing_with_detail(detail: impl Into<String>) -> Self {
         Self {
             status: ProofArtifactState::Missing,
-            detail: format!("{label} is missing; artifact availability was not declared."),
+            detail: detail.into(),
             artifact: None,
-            blocker: None,
         }
     }
 
@@ -79,8 +94,6 @@ pub struct ProjectProofArtifactInfo {
     pub size_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
 }
 
 impl DesktopFirstLessonNextActionEvidence {
@@ -138,7 +151,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     let Ok(artifact) = candidate.canonicalize() else {
         return missing_first_lesson_next_action();
     };
-    if !artifact.starts_with(root) {
+    if !artifact.starts_with(&root) {
         return missing_first_lesson_next_action();
     }
     let Ok(text) = fs::read_to_string(&artifact) else {
@@ -179,63 +192,62 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         requires_next_evidence: requires_next_evidence(&json),
         save_project_proof_artifact: project_proof_artifact(
             &json,
-            evidence_root,
+            &root,
             run_dir,
             "save_project_proof_artifact",
             "saveProjectProofArtifact",
-            "Save Project proof artifact",
+            SAVE_PROJECT_PROOF_LABEL,
         ),
         select_project_proof_artifact: project_proof_artifact(
             &json,
-            evidence_root,
+            &root,
             run_dir,
             "select_project_proof_artifact",
             "selectProjectProofArtifact",
-            "Select Project proof artifact",
+            SELECT_PROJECT_PROOF_LABEL,
         ),
     }
 }
 
 fn missing_first_lesson_next_action() -> DesktopFirstLessonNextActionEvidence {
-    DesktopFirstLessonNextActionEvidence {
-        status: "missing".into(),
-        artifact: None,
-        detail: MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE.into(),
-        candidate_actions: Vec::new(),
-        blocker: None,
-        requires_next_evidence: Vec::new(),
-        save_project_proof_artifact: ProjectProofArtifactEvidence::missing(
-            "Save Project proof artifact",
-        ),
-        select_project_proof_artifact: ProjectProofArtifactEvidence::missing(
-            "Select Project proof artifact",
-        ),
-    }
+    first_lesson_next_action_with_empty_proof_artifacts(
+        "missing",
+        None,
+        MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE,
+    )
 }
 
 fn invalid_first_lesson_next_action(
     artifact: Option<PathBuf>,
     detail: &str,
 ) -> DesktopFirstLessonNextActionEvidence {
+    first_lesson_next_action_with_empty_proof_artifacts("invalid", artifact, detail)
+}
+
+fn first_lesson_next_action_with_empty_proof_artifacts(
+    status: &str,
+    artifact: Option<PathBuf>,
+    detail: &str,
+) -> DesktopFirstLessonNextActionEvidence {
     DesktopFirstLessonNextActionEvidence {
-        status: "invalid".into(),
+        status: status.into(),
         artifact: artifact.map(|path| path.display().to_string()),
         detail: detail.into(),
         candidate_actions: Vec::new(),
         blocker: None,
         requires_next_evidence: Vec::new(),
         save_project_proof_artifact: ProjectProofArtifactEvidence::missing(
-            "Save Project proof artifact",
+            SAVE_PROJECT_PROOF_LABEL,
         ),
         select_project_proof_artifact: ProjectProofArtifactEvidence::missing(
-            "Select Project proof artifact",
+            SELECT_PROJECT_PROOF_LABEL,
         ),
     }
 }
 
 fn project_proof_artifact(
     json: &serde_json::Value,
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     run_dir: &Path,
     snake_key: &str,
     camel_key: &str,
@@ -257,33 +269,40 @@ fn project_proof_artifact(
             detail: blocker::project_proof_artifact_blocker_detail(label, blocker.as_ref())
                 .unwrap_or_else(|| format!("{label} is blocked")),
             artifact: None,
-            blocker,
         };
+    }
+    if declaration
+        .get("status")
+        .and_then(serde_json::Value::as_str)
+        == Some("missing")
+    {
+        return ProjectProofArtifactEvidence::declared_missing(label, declaration);
     }
 
     let artifact_value = declaration.get("artifact").unwrap_or(declaration);
     let path =
         string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"));
-    let resolved_path = path
-        .as_deref()
-        .and_then(|path| resolve_run_dir_artifact_path(evidence_root, run_dir, path).ok());
-    let reported_path = path
-        .as_deref()
-        .and_then(|path| reportable_artifact_path(evidence_root, path, resolved_path.as_deref()));
+    let resolved_path = path.as_deref().and_then(|path| {
+        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, path).ok()
+    });
+    let reported_path = path.as_deref().and_then(|path| {
+        reportable_artifact_path(canonical_evidence_root, path, resolved_path.as_deref())
+    });
     let declared_size = artifact_value
         .get("size_bytes")
         .or_else(|| artifact_value.get("sizeBytes"))
         .and_then(serde_json::Value::as_u64);
-    let observed_size = resolved_path
-        .as_ref()
-        .and_then(|path| fs::metadata(path).ok())
-        .filter(|metadata| metadata.is_file())
-        .map(|metadata| metadata.len());
+    let size_bytes = declared_size.or_else(|| {
+        resolved_path
+            .as_ref()
+            .and_then(|path| fs::metadata(path).ok())
+            .filter(|metadata| metadata.is_file())
+            .map(|metadata| metadata.len())
+    });
     let artifact = ProjectProofArtifactInfo {
         path: reported_path,
-        size_bytes: declared_size.or(observed_size),
+        size_bytes,
         sha256: string_field(artifact_value, "sha256"),
-        metadata: artifact_value.get("metadata").cloned(),
     };
 
     if resolved_path.is_some() || artifact_has_metadata(&artifact) {
@@ -291,7 +310,6 @@ fn project_proof_artifact(
             status: ProofArtifactState::Present,
             detail: present_artifact_detail(label, &artifact),
             artifact: Some(artifact),
-            blocker: None,
         };
     }
 
@@ -299,7 +317,7 @@ fn project_proof_artifact(
 }
 
 fn reportable_artifact_path(
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     artifact_path: &str,
     resolved_path: Option<&Path>,
 ) -> Option<String> {
@@ -313,18 +331,14 @@ fn reportable_artifact_path(
     }
 
     let resolved_path = resolved_path?;
-    let root = evidence_root.canonicalize().ok()?;
     resolved_path
-        .strip_prefix(root)
+        .strip_prefix(canonical_evidence_root)
         .ok()
         .map(|path| path.to_string_lossy().replace('\\', "/"))
 }
 
 fn artifact_has_metadata(artifact: &ProjectProofArtifactInfo) -> bool {
-    artifact.path.is_some()
-        || artifact.size_bytes.is_some()
-        || artifact.sha256.is_some()
-        || artifact.metadata.is_some()
+    artifact.path.is_some() || artifact.size_bytes.is_some() || artifact.sha256.is_some()
 }
 
 fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> String {
@@ -338,9 +352,6 @@ fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> 
     if let Some(sha256) = &artifact.sha256 {
         parts.push(format!("sha256: {sha256}"));
     }
-    if let Some(metadata) = metadata_summary(artifact.metadata.as_ref()) {
-        parts.push(format!("metadata: {metadata}"));
-    }
 
     if parts.is_empty() {
         format!("{label} is present as artifact availability only")
@@ -350,22 +361,6 @@ fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> 
             parts.join("; ")
         )
     }
-}
-
-fn metadata_summary(metadata: Option<&serde_json::Value>) -> Option<String> {
-    let object = metadata?.as_object()?;
-    let mut pairs = object
-        .iter()
-        .filter_map(|(key, value)| {
-            value
-                .as_str()
-                .map(|value| format!("{key}={value}"))
-                .or_else(|| value.as_bool().map(|value| format!("{key}={value}")))
-                .or_else(|| value.as_i64().map(|value| format!("{key}={value}")))
-        })
-        .collect::<Vec<_>>();
-    pairs.sort();
-    (!pairs.is_empty()).then(|| pairs.join(", "))
 }
 
 fn first_lesson_next_action_detail(json: &serde_json::Value) -> String {

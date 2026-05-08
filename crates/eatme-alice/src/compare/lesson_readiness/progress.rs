@@ -122,11 +122,21 @@ pub(super) fn evidence_progress(
         modernized,
     ));
 
-    let present = count_state(&items, "present");
-    let missing = count_state(&items, "missing");
-    let invalid = count_state(&items, "invalid");
-    let not_observed = count_state(&items, "not_observed");
-    let blocked = count_state(&items, "blocked");
+    let mut present = 0;
+    let mut missing = 0;
+    let mut invalid = 0;
+    let mut not_observed = 0;
+    let mut blocked = 0;
+    for item in &items {
+        match item.state.as_str() {
+            "present" => present += 1,
+            "missing" => missing += 1,
+            "invalid" => invalid += 1,
+            "not_observed" => not_observed += 1,
+            "blocked" => blocked += 1,
+            _ => {}
+        }
+    }
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
@@ -160,28 +170,24 @@ pub(super) fn progress_item(
     }
 }
 
-fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
-}
-
 fn progress_item_id(evidence: &str) -> String {
     match evidence {
         "Save Project proof artifact" => "save_project_proof_artifact".into(),
         "Select Project proof artifact" => "select_project_proof_artifact".into(),
-        _ => evidence
-            .chars()
-            .map(|ch| {
+        _ => {
+            let mut id = String::with_capacity(evidence.len());
+            for ch in evidence.chars() {
                 if ch.is_ascii_alphanumeric() {
-                    ch.to_ascii_lowercase()
-                } else {
-                    '_'
+                    id.push(ch.to_ascii_lowercase());
+                } else if !id.ends_with('_') && !id.is_empty() {
+                    id.push('_');
                 }
-            })
-            .collect::<String>()
-            .split('_')
-            .filter(|part| !part.is_empty())
-            .collect::<Vec<_>>()
-            .join("_"),
+            }
+            if id.ends_with('_') {
+                id.pop();
+            }
+            id
+        }
     }
 }
 

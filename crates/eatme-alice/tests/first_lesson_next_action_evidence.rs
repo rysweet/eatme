@@ -195,6 +195,11 @@ fn save_and_select_project_proof_artifacts_present_from_next_action_metadata() {
     assert_detail_contains(select_item, "sha256-select-project-proof");
     assert_no_project_proof_success_claims(save_item);
     assert_no_project_proof_success_claims(select_item);
+    let report_text = serde_json::to_string(&report_json).unwrap();
+    assert!(
+        !report_text.contains("rabbithole-desktop-proof"),
+        "project proof metadata must not copy arbitrary metadata values into readiness output: {report_text}"
+    );
 }
 
 #[test]
@@ -235,7 +240,7 @@ fn blocked_project_proof_artifacts_reuse_known_blocker_details() {
     });
     overwrite_modernized_first_lesson_next_action(
         &manifest_path,
-        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"]}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"],"debug_secret":"proof-handoff-token"}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
     );
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -250,7 +255,16 @@ fn blocked_project_proof_artifacts_reuse_known_blocker_details() {
         "Save dialog owner does not expose a stable proof-artifact handoff yet.",
     );
     assert_detail_contains(save_item, "save_project_artifact_handoff_not_bound");
+    assert_detail_contains(
+        select_item,
+        "Select Project proof artifact is missing; artifact availability was declared missing.",
+    );
     assert_no_project_proof_success_claims(save_item);
+    let report_text = serde_json::to_string(&report_json).unwrap();
+    assert!(
+        !report_text.contains("proof-handoff-token"),
+        "project proof blockers must not copy arbitrary blocker fields into readiness output: {report_text}"
+    );
 }
 
 #[test]
@@ -276,6 +290,10 @@ fn blocked_project_proof_artifacts_without_details_report_plain_blocked_state() 
 
     assert_eq!(save_item["state"], "missing");
     assert_eq!(select_item["state"], "blocked");
+    assert_detail_contains(
+        save_item,
+        "Save Project proof artifact is missing; artifact availability was declared missing.",
+    );
     assert_detail_contains(select_item, "Select Project proof artifact is blocked");
     assert_no_project_proof_success_claims(select_item);
 }

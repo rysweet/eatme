@@ -372,8 +372,8 @@ pub(super) fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -
     Ok(candidate)
 }
 
-pub(super) fn resolve_run_dir_artifact_path(
-    evidence_root: &Path,
+pub(super) fn resolve_run_dir_artifact_path_under_root(
+    canonical_evidence_root: &Path,
     run_dir: &Path,
     artifact_path: &str,
 ) -> Result<PathBuf> {
@@ -386,21 +386,19 @@ pub(super) fn resolve_run_dir_artifact_path(
         let artifact = path
             .canonicalize()
             .with_context(|| format!("resolving artifact path {}", path.display()))?;
-        let root = canonical_evidence_root(evidence_root)?;
-        if !artifact.starts_with(&root) {
+        if !artifact.starts_with(canonical_evidence_root) {
             bail!(
                 "absolute artifact path {} must stay under comparison evidence root {}",
                 artifact.display(),
-                root.display()
+                canonical_evidence_root.display()
             );
         }
         return Ok(artifact);
     }
 
     reject_unsafe_relative_path(&path)?;
-    let root = canonical_evidence_root(evidence_root)?;
     let candidate = run_dir.join(&path);
-    canonical_artifact_under_root(&candidate, &root)
+    canonical_artifact_under_root(&candidate, canonical_evidence_root)
 }
 
 pub(super) fn comparison_evidence_root(manifest_path: &Path) -> PathBuf {
