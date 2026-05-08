@@ -294,7 +294,7 @@ pub(super) fn assert_contract_contains(entries: &[String], expected: &str) {
     );
 }
 
-pub(super) fn assert_safe_blocker_message(message: &str) {
+pub(super) fn assert_safe_blocker_text(text: &str) {
     for unsafe_text in [
         "/",
         "\\",
@@ -306,8 +306,8 @@ pub(super) fn assert_safe_blocker_message(message: &str) {
         "environment variable",
     ] {
         assert!(
-            !message.contains(unsafe_text),
-            "blocker message must not expose unsafe detail {unsafe_text:?}: {message}"
+            !text.contains(unsafe_text),
+            "blocker text must not expose unsafe detail {unsafe_text:?}: {text}"
         );
     }
     for unsupported_claim in [
@@ -319,8 +319,8 @@ pub(super) fn assert_safe_blocker_message(message: &str) {
         "first-lesson completion",
     ] {
         assert!(
-            !message.contains(unsupported_claim),
-            "blocker message must not claim {unsupported_claim:?}: {message}"
+            !text.contains(unsupported_claim),
+            "blocker text must not claim {unsupported_claim:?}: {text}"
         );
     }
 }

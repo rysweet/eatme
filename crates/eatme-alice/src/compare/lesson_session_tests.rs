@@ -3,8 +3,8 @@ use std::path::Path;
 
 mod lesson_session_helpers;
 use lesson_session_helpers::{
-    assert_contract_contains, assert_safe_blocker_message, ui_action_contract_json,
-    unique_test_dir, write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
+    assert_contract_contains, assert_safe_blocker_text, ui_action_contract_json, unique_test_dir,
+    write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
 };
 
 #[test]
@@ -60,7 +60,7 @@ targets:
     );
     assert_contract_contains(
         &manifest.lesson_session_contract.executable_evidence,
-        "ui-action-contract.json",
+        "automation scenarios",
     );
     assert_contract_contains(
         &manifest.lesson_session_contract.boundaries,
@@ -156,7 +156,7 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
         )
     );
     assert_contract_contains(&report.required_evidence, "comparison-manifest.json");
-    assert_contract_contains(&report.required_evidence, "ui-action-contract.json");
+    assert_contract_contains(&report.required_evidence, "automation scenario");
     for role in ["instructor", "student"] {
         let readiness = report
             .role_readiness
@@ -168,7 +168,7 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
             readiness.blocked_reason.as_deref(),
             Some("blocked_until_ui_automation")
         );
-        assert_contract_contains(&readiness.required_evidence, "ui-action-contract.json");
+        assert_contract_contains(&readiness.required_evidence, "automation scenario");
     }
     for affordance in [
         "object_placement",
@@ -207,13 +207,15 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
 fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
     let root = unique_test_dir("original-alice-action-evidence-blocker");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
-    let contract_path = ui_action_contract_path(&manifest_path, "baseline");
-    let mut contract: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&contract_path).unwrap()).unwrap();
-    remove_executed_action_probe(&mut contract, "dispatch-save-project-shortcut");
+    let mut manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    manifest["targets"]["baseline"]["launch_manifest"]["assertions"]
+        .as_object_mut()
+        .unwrap()
+        .remove("save_project_ui_action");
     fs::write(
-        &contract_path,
-        serde_json::to_vec_pretty(&contract).unwrap(),
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
     )
     .unwrap();
 
@@ -228,8 +230,6 @@ fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
         ),
         ("not_ready", "incomplete", "not_ready")
     );
-    assert_contract_contains(&report.issues, "automation scenarios");
-
     let report_json = serde_json::to_value(&report).unwrap();
     let baseline = target_evidence_json(&report_json, "baseline");
     let blockers = baseline["blockers"]
@@ -238,17 +238,15 @@ fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
     let blocker = blockers
         .iter()
         .find(|blocker| {
-            blocker["code"] == "missing_real_action_evidence"
-                && blocker["action"] == "baseline.dispatch-save-project-shortcut"
+            blocker["code"] == "missing_real_action_evidence" && blocker["action"] == "save-project"
         })
         .unwrap_or_else(|| panic!("missing baseline action-evidence blocker: {blockers:?}"));
-    assert_eq!(blocker["reason"], "dispatch-save-project-shortcut-missing");
-    let message = blocker["message"].as_str().unwrap_or_default();
-    assert!(
-        message.contains("automation scenarios"),
-        "blocker message must use automation scenarios language: {blocker}"
+    assert_eq!(
+        blocker["reason"],
+        "Required original Alice action evidence is missing from automation scenarios."
     );
-    assert_safe_blocker_message(message);
+    assert_safe_blocker_text(blocker["reason"].as_str().unwrap_or_default());
+    assert!(blocker.get("message").is_none(), "{blocker}");
 }
 
 #[test]
@@ -458,22 +456,6 @@ fn assert_no_go_affordance(contracts: &[LessonSessionNoGoContract], affordance: 
         }),
         "missing {affordance} no-go contract: {contracts:?}"
     );
-}
-
-fn ui_action_contract_path(manifest_path: &Path, role: &str) -> String {
-    let manifest: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
-    manifest["targets"][role]["launch_manifest"]["ui_action_contract"]["path"]
-        .as_str()
-        .unwrap_or_else(|| panic!("missing {role} ui_action_contract.path in {manifest}"))
-        .to_string()
-}
-
-fn remove_executed_action_probe(contract: &mut serde_json::Value, probe_id: &str) {
-    contract["executed_action_probes"]
-        .as_array_mut()
-        .unwrap()
-        .retain(|probe| probe.get("id").and_then(serde_json::Value::as_str) != Some(probe_id));
 }
 
 fn target_evidence_json<'a>(report: &'a serde_json::Value, role: &str) -> &'a serde_json::Value {

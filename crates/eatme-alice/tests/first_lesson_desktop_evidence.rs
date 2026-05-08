@@ -50,7 +50,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
             "modernized desktop-run-pixel-observation.json status",
             "modernized desktop execution evidence",
             "screenshot, log, and window artifacts",
-            "ui-action-contract.json",
+            "automation scenario action evidence",
             "Save Project proof artifact",
             "Select Project proof artifact",
         ]

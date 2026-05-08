@@ -5,7 +5,6 @@ use save::{has_passed_save_project_candidate_affordance_probe, has_save_project_
 
 mod blockers;
 mod required_action;
-pub(in crate::compare) use blockers::UiActionEvidenceBlocker;
 pub(super) use blockers::ui_action_evidence_blockers;
 
 pub(super) fn inspect_ui_action_contract(

@@ -8,10 +8,7 @@ use super::{
         first_lesson_evidence_boundaries, resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
-    ui_action_contract::{
-        UiActionEvidenceBlocker, action_ids, inspect_ui_action_contract,
-        ui_action_evidence_blockers,
-    },
+    ui_action_contract::{action_ids, inspect_ui_action_contract},
 };
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -103,8 +100,15 @@ pub struct LessonTargetEvidence {
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
     pub missing_required_actions: Vec<String>,
-    blockers: Vec<UiActionEvidenceBlocker>,
+    pub blockers: Vec<LessonTargetEvidenceBlocker>,
     pub no_go_contracts: Vec<LessonSessionNoGoContract>,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct LessonTargetEvidenceBlocker {
+    pub code: &'static str,
+    pub action: String,
+    pub reason: String,
 }
 
 pub fn check_lesson_session_readiness(
@@ -279,7 +283,7 @@ fn inspect_target_evidence(
                 .iter()
                 .map(|value| (*value).into())
                 .collect(),
-            blockers: Vec::new(),
+            blockers: required_action_evidence_blockers(role, &[]),
             no_go_contracts: Vec::new(),
         };
     };
@@ -361,7 +365,6 @@ fn inspect_target_evidence(
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
     let mut desktop_first_lesson_next_action = None;
-    let mut blockers = Vec::new();
     let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
@@ -371,7 +374,6 @@ fn inspect_target_evidence(
                     Ok(contract) => {
                         ui_action_contract_readable = true;
                         inspect_ui_action_contract(role, &contract, issues);
-                        blockers = ui_action_evidence_blockers(role, &contract);
                         no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
@@ -381,7 +383,7 @@ fn inspect_target_evidence(
                             .collect();
                         for action in &missing_required_actions {
                             issues.push(format!(
-                                "{role} ui-action-contract.json is missing required action {action:?}"
+                                "{role} automation scenarios are missing required action {action:?}"
                             ));
                         }
                         if role == "modernized" {
@@ -406,11 +408,11 @@ fn inspect_target_evidence(
                         }
                     }
                     Err(error) => issues.push(format!(
-                        "{role} ui-action-contract.json is not valid JSON: {error}"
+                        "{role} automation scenario action evidence is not valid JSON: {error}"
                     )),
                 },
                 Err(error) => issues.push(format!(
-                    "{role} ui-action-contract.json could not be read at {}: {error}",
+                    "{role} automation scenario action evidence could not be read at {}: {error}",
                     resolved.display()
                 )),
             },
@@ -422,6 +424,7 @@ fn inspect_target_evidence(
         ));
     }
 
+    let blockers = required_action_evidence_blockers(role, &action_assertions);
     LessonTargetEvidence {
         role: role.into(),
         target_id,
@@ -442,6 +445,34 @@ fn inspect_target_evidence(
     }
 }
 
+fn required_action_evidence_blockers(
+    role: &str,
+    action_assertions: &[LessonActionAssertionEvidence],
+) -> Vec<LessonTargetEvidenceBlocker> {
+    if !is_original_alice_role(role) {
+        return Vec::new();
+    }
+
+    REQUIRED_UI_ACTION_IDS
+        .iter()
+        .filter_map(|action_id| {
+            let action = action_assertions
+                .iter()
+                .find(|action| action.action_id == *action_id);
+            let reason = match action {
+                Some(action) if action.passed => return None,
+                Some(_) => "Required original Alice action evidence from automation scenarios did not pass.",
+                None => "Required original Alice action evidence is missing from automation scenarios.",
+            };
+            Some(LessonTargetEvidenceBlocker {
+                code: "missing_real_action_evidence",
+                action: (*action_id).to_string(),
+                reason: reason.into(),
+            })
+        })
+        .collect()
+}
+
 fn is_ui_action_blocked_category(category: &str) -> bool {
     matches!(
         category,
@@ -452,6 +483,10 @@ fn is_ui_action_blocked_category(category: &str) -> bool {
             | "ui_action_automation_unimplemented"
             | "ui_action_remaining_steps_unimplemented"
     )
+}
+
+fn is_original_alice_role(role: &str) -> bool {
+    role == "baseline" || role == "original Alice"
 }
 
 fn string_field(value: &serde_json::Value, field: &str) -> Option<String> {

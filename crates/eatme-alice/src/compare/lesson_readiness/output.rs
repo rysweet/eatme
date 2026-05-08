@@ -93,7 +93,7 @@ fn required_evidence() -> Vec<String> {
         "modernized desktop-run-pixel-observation.json status",
         "modernized desktop execution evidence",
         "screenshot, log, and window artifacts",
-        "ui-action-contract.json",
+        "automation scenario action evidence",
         "Save Project proof artifact",
         "Select Project proof artifact",
     ]
@@ -115,7 +115,7 @@ fn human_summary(
             "{scenario} has bounded comparison and UI action evidence with no accepted blockers."
         ),
         "blocked" => format!(
-            "{scenario} has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists ({reason}).",
+            "{scenario} has launch and automation scenario action evidence but is blocked until deterministic desktop UI automation exists ({reason}).",
             reason = blocked_reason.unwrap_or("blocked")
         ),
         "not_ready" if has_issues => format!(
