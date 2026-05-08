@@ -356,9 +356,9 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 The automation scenario writes launch, log, window, screenshot, action-contract,
-and first-lesson readiness progress evidence. Readiness reports desktop
-next-action evidence, including Save Project and Select Project proof-artifact
-states through `evidence_progress.items[]`, and
+and first-lesson readiness progress evidence. Readiness reports Save Project
+and Select Project proof-artifact states from desktop next-action evidence
+through `evidence_progress.items[]`, and
 reports Select Project, procedure/edit, Save, visible rendering, grading,
 creative assessment, and first-lesson completion independently as `present`,
 `missing`, `invalid`, `not_observed`, or `blocked`. The report treats each result as

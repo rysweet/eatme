@@ -201,6 +201,11 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
     `-- startup.png
 ```
 
+This tree is the internal artifact layout for audit and troubleshooting. Alice
+readiness/progress output should use the display-safe label `desktop next-action
+evidence` instead of exposing `run-window-evidence/desktop-first-lesson-next-action.json`
+as a user-facing blocker.
+
 The explicit `ui_action_automation_unimplemented` failure is honest evidence
 that the action contract exists but deterministic UI automation is not yet
 claiming a full lesson pass. For object placement, inspect both

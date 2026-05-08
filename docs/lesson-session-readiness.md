@@ -447,7 +447,7 @@ lesson, prove UI completion, or collapse blocked evidence into missing evidence.
 | `summary` | string | Human-readable aggregate count summary. |
 | `next_actionable_blocker` | string or omitted | Next unsupported action blocker reported by RabbitHole. |
 | `items` | array | Required evidence entries. Each entry has `id`, `evidence`, `state`, and `detail`. |
-| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. When the missing proof is the next-action artifact, the value is `desktop next-action evidence`, not an internal artifact path. |
+| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. When the missing proof is the next-action artifact, the value includes the label `desktop next-action evidence`, not an internal artifact path. |
 
 Across the full progress object, `items[].state` can be `present`, `missing`,
 `invalid`, `not_observed`, or `blocked`. The Save Project and Select Project

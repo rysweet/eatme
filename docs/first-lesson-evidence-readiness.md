@@ -360,3 +360,5 @@ Use scenario-focused wording in user-facing text:
 
 It is acceptable for JSON reference sections to document stable field names.
 Primary human output should stay plain, scenario-focused, and conservative.
+Display-safe wording is produced by the Alice readiness/report model; CLI output
+renders that wording without CLI-side sanitization.
