@@ -1,6 +1,9 @@
 use anyhow::Result;
 use clap::Args;
-use eatme_alice::compare::{FirstLessonReadinessSequenceReport, LessonReadinessEvidenceProgress};
+use eatme_alice::compare::{
+    FirstLessonEvidenceBoundary, FirstLessonReadinessSequenceReport,
+    LessonReadinessEvidenceProgress,
+};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -53,8 +56,8 @@ fn write_first_lesson_readiness_result(
 
     writeln!(
         writer,
-        "First-lesson readiness: {}",
-        terminal_plain(&report.readiness_status)
+        "First-lesson automation scenario readiness: {}",
+        terminal_plain(scenario_readiness_status(report))
     )?;
     writeln!(
         writer,
@@ -76,16 +79,22 @@ fn write_first_lesson_readiness_result(
     }
     writeln!(
         writer,
-        "Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):"
+        "automation scenarios evidence (present/missing/invalid/blocked; present is bounded scenario evidence only):"
     )?;
-    for item in &report.evidence_progress.items {
+    for boundary in &report.evidence_boundaries {
         writeln!(
             writer,
             "- {}: {} ({})",
-            terminal_plain(&item.state),
-            terminal_plain(&item.evidence),
-            terminal_plain(&item.detail)
+            terminal_plain(&boundary.status),
+            terminal_plain(&boundary.label),
+            terminal_plain(&boundary.detail)
         )?;
+    }
+    if let Some(blockers) = scenario_blockers(&report.evidence_boundaries) {
+        writeln!(writer, "Blockers:")?;
+        for blocker in blockers {
+            writeln!(writer, "- {}", terminal_plain(&blocker))?;
+        }
     }
     if !report.limitations.is_empty() {
         writeln!(writer, "Limits:")?;
@@ -100,6 +109,29 @@ fn write_first_lesson_readiness_result(
         }
     }
     Ok(())
+}
+
+fn scenario_readiness_status(report: &FirstLessonReadinessSequenceReport) -> &str {
+    if report.passed
+        && !report.evidence_boundaries.is_empty()
+        && report
+            .evidence_boundaries
+            .iter()
+            .all(|boundary| boundary.status == "present")
+    {
+        "ready"
+    } else {
+        "not ready"
+    }
+}
+
+fn scenario_blockers(boundaries: &[FirstLessonEvidenceBoundary]) -> Option<Vec<String>> {
+    let blockers = boundaries
+        .iter()
+        .filter(|boundary| boundary.status != "present")
+        .map(|boundary| boundary.detail.clone())
+        .collect::<Vec<_>>();
+    (!blockers.is_empty()).then_some(blockers)
 }
 
 fn terminal_plain(value: &str) -> String {
@@ -277,6 +309,7 @@ mod tests {
             human_summary: "blocked".into(),
             desktop_proof_contract: desktop_proof_contract(),
             evidence_progress: progress.clone(),
+            evidence_boundaries: Vec::new(),
             required_evidence: Vec::new(),
             no_go_contracts: Vec::new(),
             lesson_session_readiness: envelope.clone(),
@@ -308,6 +341,7 @@ mod tests {
             human_summary: "blocked".into(),
             desktop_proof_contract: desktop_proof_contract(),
             evidence_progress: progress,
+            evidence_boundaries: Vec::new(),
             required_evidence: Vec::new(),
             no_go_contracts: Vec::new(),
             role_readiness: Vec::new(),

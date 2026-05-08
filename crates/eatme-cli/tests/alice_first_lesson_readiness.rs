@@ -120,22 +120,19 @@ targets:
 
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("First-lesson readiness: incomplete"));
+    assert!(stdout.contains("First-lesson automation scenario readiness: not ready"));
     assert!(stdout.contains(
         "Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof"
     ));
     assert!(stdout.contains("Evidence progress:"));
     assert!(stdout.contains("required evidence items are present"));
     assert!(stdout.contains(
-        "Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):"
+        "automation scenarios evidence (present/missing/invalid/blocked; present is bounded scenario evidence only):"
     ));
-    assert!(
-        stdout.contains("present: comparison-manifest.json with baseline and modernized targets")
-    );
-    assert!(stdout.contains("missing: launch evidence for each target"));
-    assert!(stdout.contains("modernized desktop-run-pixel-observation.json status"));
-    assert!(stdout.contains("missing: Save Project proof artifact"));
-    assert!(stdout.contains("missing: Select Project proof artifact"));
+    assert!(stdout.contains("missing: Select Project scenario evidence"));
+    assert!(stdout.contains("missing: Procedure/edit scenario evidence"));
+    assert!(stdout.contains("missing: Save scenario evidence"));
+    assert!(stdout.contains("missing: Visible rendering scenario evidence"));
     assert!(stdout.contains("Limits:"));
     assert!(stdout.contains("does not prove full Alice UI automation"));
     assert!(stdout.contains("does not prove visible rendering correctness"));

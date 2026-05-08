@@ -4,8 +4,10 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 mod blocker;
+mod first_lesson_boundaries;
 mod first_lesson_next_action;
 
+pub use first_lesson_boundaries::{FirstLessonEvidenceBoundary, first_lesson_evidence_boundaries};
 pub use first_lesson_next_action::DesktopFirstLessonNextActionEvidence;
 pub(crate) use first_lesson_next_action::ProjectProofArtifactEvidence;
 pub(crate) use first_lesson_next_action::check_first_lesson_next_action_evidence;

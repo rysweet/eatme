@@ -2,6 +2,9 @@ use serde::{Serialize, Serializer};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use super::first_lesson_boundaries::{
+    FirstLessonEvidenceBoundary, first_lesson_evidence_boundaries, missing_boundaries,
+};
 use super::{blocker, resolve_run_dir_artifact_path_under_root};
 
 const DESKTOP_FIRST_LESSON_NEXT_ACTION: &str =
@@ -20,6 +23,7 @@ pub struct DesktopFirstLessonNextActionEvidence {
     pub requires_next_evidence: Vec<String>,
     pub save_project_proof_artifact: ProjectProofArtifactEvidence,
     pub select_project_proof_artifact: ProjectProofArtifactEvidence,
+    pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -135,6 +139,13 @@ impl DesktopFirstLessonNextActionEvidence {
             )
         })
     }
+
+    pub(crate) fn boundary_issues(&self) -> Vec<String> {
+        self.evidence_boundaries
+            .iter()
+            .filter_map(FirstLessonEvidenceBoundary::issue_when_invalid)
+            .collect()
+    }
 }
 
 pub(crate) fn check_first_lesson_next_action_evidence(
@@ -206,6 +217,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
             "selectProjectProofArtifact",
             SELECT_PROJECT_PROOF_LABEL,
         ),
+        evidence_boundaries: first_lesson_evidence_boundaries(&json, &root, run_dir),
     }
 }
 
@@ -242,6 +254,7 @@ fn first_lesson_next_action_with_empty_proof_artifacts(
         select_project_proof_artifact: ProjectProofArtifactEvidence::missing(
             SELECT_PROJECT_PROOF_LABEL,
         ),
+        evidence_boundaries: missing_boundaries(),
     }
 }
 
