@@ -52,6 +52,46 @@ fn accepts_recorded_failed_run_window_observation_after_shortcut_dispatch() {
     );
 }
 
+#[test]
+fn rejects_missing_original_alice_action_evidence_with_structured_blocker() {
+    let mut issues = Vec::new();
+    let mut contract = contract_after_edit_without_run_no_go();
+    remove_executed_action_probe(&mut contract, "dispatch-save-project-shortcut");
+
+    inspect_ui_action_contract("original Alice", &contract, &mut issues);
+
+    assert_issue_contains(&issues, "code=missing_real_action_evidence");
+    assert_issue_contains(
+        &issues,
+        "action=original_alice.dispatch-save-project-shortcut",
+    );
+    assert_issue_contains(&issues, "reason=dispatch-save-project-shortcut-missing");
+    assert_issue_contains(&issues, "automation scenarios");
+    assert_issue_contains(&issues, "Original Alice");
+    assert_issues_avoid_unsupported_claims(&issues);
+}
+
+#[test]
+fn rejects_manifest_only_required_original_alice_action_evidence() {
+    let mut issues = Vec::new();
+    let mut contract = contract_after_edit_without_run_no_go();
+    contract["required_actions"] = serde_json::json!([{
+        "id": "verify-specific-alice-window",
+        "required_evidence": "wmctrl or xwininfo output identifies the Alice main window"
+    }]);
+
+    inspect_ui_action_contract("original Alice", &contract, &mut issues);
+
+    assert_issue_contains(&issues, "code=missing_real_action_evidence");
+    assert_issue_contains(
+        &issues,
+        "action=original_alice.verify-specific-alice-window",
+    );
+    assert_issue_contains(&issues, "reason=required-action-probe-missing");
+    assert_issue_contains(&issues, "automation scenarios");
+    assert_issues_avoid_unsupported_claims(&issues);
+}
+
 fn contract_after_edit_without_run_no_go() -> serde_json::Value {
     serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
@@ -114,4 +154,36 @@ fn contract_after_run_without_save_no_go() -> serde_json::Value {
             "runtime_or_log_evidence": {"path": "world-run/runtime.log", "size_bytes": 2}
         }));
     contract
+}
+
+fn remove_executed_action_probe(contract: &mut serde_json::Value, probe_id: &str) {
+    contract["executed_action_probes"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|probe| probe.get("id").and_then(serde_json::Value::as_str) != Some(probe_id));
+}
+
+fn assert_issue_contains(issues: &[String], expected: &str) {
+    assert!(
+        issues.iter().any(|issue| issue.contains(expected)),
+        "issues should contain {expected:?}: {issues:?}"
+    );
+}
+
+fn assert_issues_avoid_unsupported_claims(issues: &[String]) {
+    let joined = issues.join("\n").to_ascii_lowercase();
+    for unsupported_claim in [
+        "full alice ui automation",
+        "grading",
+        "creative assessment",
+        "visible rendering correctness",
+        "save completion",
+        "first-lesson completion",
+        "lesson completed",
+    ] {
+        assert!(
+            !joined.contains(unsupported_claim),
+            "issue text must not claim {unsupported_claim:?}: {issues:?}"
+        );
+    }
 }

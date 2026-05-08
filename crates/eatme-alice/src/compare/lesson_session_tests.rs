@@ -204,6 +204,54 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
 }
 
 #[test]
+fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
+    let root = unique_test_dir("original-alice-action-evidence-blocker");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let contract_path = ui_action_contract_path(&manifest_path, "baseline");
+    let mut contract: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&contract_path).unwrap()).unwrap();
+    remove_executed_action_probe(&mut contract, "dispatch-save-project-shortcut");
+    fs::write(
+        &contract_path,
+        serde_json::to_vec_pretty(&contract).unwrap(),
+    )
+    .unwrap();
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_eq!(
+        (
+            report.status.as_str(),
+            report.readiness_status.as_str(),
+            report.lesson_session_readiness.status.as_str()
+        ),
+        ("not_ready", "incomplete", "not_ready")
+    );
+    assert_contract_contains(&report.issues, "automation scenarios");
+
+    let report_json = serde_json::to_value(&report).unwrap();
+    let baseline = target_evidence_json(&report_json, "baseline");
+    let blockers = baseline["blockers"]
+        .as_array()
+        .unwrap_or_else(|| panic!("baseline target should expose blockers: {baseline}"));
+    let blocker = blockers
+        .iter()
+        .find(|blocker| {
+            blocker["code"] == "missing_real_action_evidence"
+                && blocker["action"] == "baseline.dispatch-save-project-shortcut"
+        })
+        .unwrap_or_else(|| panic!("missing baseline action-evidence blocker: {blockers:?}"));
+    assert_eq!(blocker["reason"], "dispatch-save-project-shortcut-missing");
+    let message = blocker["message"].as_str().unwrap_or_default();
+    assert!(
+        message.contains("automation scenarios"),
+        "blocker message must use automation scenarios language: {blocker}"
+    );
+    assert_safe_blocker_message(message);
+}
+
+#[test]
 fn lesson_session_readiness_requires_modernized_visible_desktop_evidence() {
     let root = unique_test_dir("missing-modernized-desktop-evidence-check");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
@@ -410,4 +458,60 @@ fn assert_no_go_affordance(contracts: &[LessonSessionNoGoContract], affordance: 
         }),
         "missing {affordance} no-go contract: {contracts:?}"
     );
+}
+
+fn ui_action_contract_path(manifest_path: &Path, role: &str) -> String {
+    let manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
+    manifest["targets"][role]["launch_manifest"]["ui_action_contract"]["path"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing {role} ui_action_contract.path in {manifest}"))
+        .to_string()
+}
+
+fn remove_executed_action_probe(contract: &mut serde_json::Value, probe_id: &str) {
+    contract["executed_action_probes"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|probe| probe.get("id").and_then(serde_json::Value::as_str) != Some(probe_id));
+}
+
+fn target_evidence_json<'a>(report: &'a serde_json::Value, role: &str) -> &'a serde_json::Value {
+    report["target_evidence"]
+        .as_array()
+        .unwrap_or_else(|| panic!("report should expose target_evidence[]: {report}"))
+        .iter()
+        .find(|target| target["role"] == role)
+        .unwrap_or_else(|| panic!("missing target_evidence role {role}: {report}"))
+}
+
+fn assert_safe_blocker_message(message: &str) {
+    for unsafe_text in [
+        "/",
+        "\\",
+        "ui-action-contract.json",
+        "desktop-run-pixel",
+        "screenshot",
+        "stdout",
+        "stderr",
+        "environment variable",
+    ] {
+        assert!(
+            !message.contains(unsafe_text),
+            "blocker message must not expose unsafe detail {unsafe_text:?}: {message}"
+        );
+    }
+    for unsupported_claim in [
+        "full Alice UI automation",
+        "grading",
+        "creative assessment",
+        "visible rendering correctness",
+        "Save completion",
+        "first-lesson completion",
+    ] {
+        assert!(
+            !message.contains(unsupported_claim),
+            "blocker message must not claim {unsupported_claim:?}: {message}"
+        );
+    }
 }
