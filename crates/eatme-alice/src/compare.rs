@@ -17,12 +17,12 @@ mod lesson_readiness;
 mod lesson_session;
 mod scorecard;
 mod ui_action_contract;
-pub use contract::ComparisonContract;
 pub use first_lesson::*;
 pub use lesson_readiness::*;
 pub use lesson_session::*;
 pub use scorecard::ComparisonScorecard;
 use scorecard::build_scorecard;
+pub use {contract::ComparisonContract, desktop_evidence::FirstLessonEvidenceBoundary};
 use {contract::comparison_contract, lesson_session::lesson_session_contract};
 #[derive(Clone, Debug)]
 pub struct AliceComparisonOptions {

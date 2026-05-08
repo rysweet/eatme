@@ -2,9 +2,10 @@ use super::{
     LessonSessionContractCheck, check_lesson_session_contract,
     desktop_evidence::{
         DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
-        DesktopRunPixelObservationEvidence, check_first_lesson_next_action_evidence,
-        check_pixel_boundary_evidence, check_pixel_observation_evidence,
-        check_visible_desktop_evidence, comparison_evidence_root, resolve_artifact_path,
+        DesktopRunPixelObservationEvidence, FirstLessonEvidenceBoundary,
+        check_first_lesson_next_action_evidence, check_pixel_boundary_evidence,
+        check_pixel_observation_evidence, check_visible_desktop_evidence, comparison_evidence_root,
+        first_lesson_evidence_boundaries, resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
     ui_action_contract::{action_ids, inspect_ui_action_contract},
@@ -71,6 +72,7 @@ pub struct LessonSessionReadinessReport {
     pub human_summary: String,
     pub desktop_proof_contract: DesktopProofContract,
     pub evidence_progress: LessonReadinessEvidenceProgress,
+    pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
     pub required_evidence: Vec<String>,
     pub no_go_contracts: Vec<LessonSessionNoGoContract>,
     pub lesson_session_readiness: LessonSessionReadinessEnvelope,
@@ -180,6 +182,7 @@ pub fn check_lesson_session_readiness(
         &target_evidence,
         &issues,
     );
+    let evidence_boundaries = readiness_evidence_boundaries(manifest_path, &target_evidence);
     let desktop_proof_contract =
         desktop_proof_contract(execute_requested, &target_evidence, &issues);
 
@@ -204,6 +207,7 @@ pub fn check_lesson_session_readiness(
         human_summary: readiness_output.human_summary,
         desktop_proof_contract,
         evidence_progress,
+        evidence_boundaries,
         required_evidence: readiness_output.required_evidence,
         no_go_contracts: readiness_output.no_go_contracts,
         lesson_session_readiness: readiness_output.lesson_session_readiness,
@@ -214,6 +218,26 @@ pub fn check_lesson_session_readiness(
         issues,
         limitations,
     })
+}
+
+fn readiness_evidence_boundaries(
+    manifest_path: &Path,
+    target_evidence: &[LessonTargetEvidence],
+) -> Vec<FirstLessonEvidenceBoundary> {
+    if let Some(boundaries) = target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .and_then(|target| target.desktop_first_lesson_next_action.as_ref())
+        .map(|next_action| next_action.evidence_boundaries.clone())
+    {
+        return boundaries;
+    }
+
+    let evidence_root = comparison_evidence_root(manifest_path);
+    let canonical_root = evidence_root
+        .canonicalize()
+        .unwrap_or_else(|_| evidence_root.clone());
+    first_lesson_evidence_boundaries(&serde_json::Value::Null, &canonical_root, &evidence_root)
 }
 
 fn inspect_target_evidence(
@@ -366,6 +390,7 @@ fn inspect_target_evidence(
                             let first_lesson_next_action =
                                 check_first_lesson_next_action_evidence(&evidence_root, &resolved);
                             issues.extend(first_lesson_next_action.issue_when_invalid());
+                            issues.extend(first_lesson_next_action.boundary_issues());
                             desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
                                 check_visible_desktop_evidence(&evidence_root, &resolved)
