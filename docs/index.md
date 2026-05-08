@@ -28,6 +28,7 @@ Eatme has three layers:
 | Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
+| Reviewing first-lesson automation scenario evidence boundaries | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -100,6 +101,9 @@ Understand how generated adapter counts stay aligned with the asset inventory:
 
 Audit instructor/student lesson-session readiness:
 [Lesson Session Readiness](lesson-session-readiness.md).
+
+Review the conservative first-lesson evidence boundary contract:
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 Keep local agent hook runtime files out of commits:
 [Local Hook Artifacts](local-hook-artifacts.md).

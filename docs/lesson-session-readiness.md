@@ -11,15 +11,22 @@ connects four surfaces:
 | --- | --- |
 | Canonical scenario assets | Describe instructor/student intent, evidence, boundaries, and unsupported-action policies. |
 | Generated Gadugi adapters | Keep external runners aligned with canonical scenario assets. |
-| Alice comparison manifests | Record baseline and modernized launch/action-contract evidence for the same lesson scenario. |
+| Alice comparison manifests | Record baseline and modernized launch and automation scenario evidence for the same lesson scenario. |
 | Readiness reports | Normalize the result as `ready`, `not_ready`, or `blocked` for humans, CI, and adapters. |
 
 The readiness contract is deliberately outside-in. It proves that required
-assets, manifests, UI action contracts, Save Project proof-artifact state,
-Select Project proof-artifact state, and known unsupported-action blockers are
-visible and machine-readable. It does not implement missing Alice desktop
+assets, manifests, first-lesson automation scenario evidence, and known blockers
+are visible and machine-readable. It does not implement missing Alice desktop
 affordances, does not automate a complete lesson, does not perform creative
 assessment, and does not grade student worlds.
+
+For the conservative RabbitHole boundary contract that readiness reports for
+Select Project, procedure/edit, Save, visible rendering, grading, creative
+assessment, and first-lesson completion, see
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
+is the public wording contract for human output: use scenarios or automation
+scenarios in primary text, and keep implementation-detail names in JSON/API
+reference sections only.
 
 ## Scenario map
 
@@ -27,7 +34,7 @@ Use these canonical scenarios for instructor/student lesson-session evidence:
 
 | Scenario | Role | Evidence contract |
 | --- | --- | --- |
-| `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, `ui-action-contract.json`, first object/edit/run/save expectations, and explicit action-level `no_go` decisions for missing desktop affordances. `no_go` means the action is unsupported and must be reported as `blocked`. |
+| `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, first-lesson automation scenario evidence boundaries, and explicit blockers for missing desktop affordances. |
 | `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
 | `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
 | `instructor-student-outcomes-rubric` | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
@@ -53,15 +60,16 @@ RabbitHole-produced desktop evidence:
 | --- | --- | --- |
 | Canonical scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and unsupported-action policy are part of the validated eatme asset set. |
 | Generated adapter evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Adapter freshness proves the generated Gadugi scenario matches the current canonical scenario. RabbitHole-specific wording reaches adapters only after the canonical scenario is updated and adapters are regenerated. |
-| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, launch assertions, `ui-action-contract.json`, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
+| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, launch assertions, first-lesson automation scenario evidence, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
 | RabbitHole desktop evidence | Baseline and modernized target evidence in `comparison-manifest.json`, with RabbitHole-specific assertions on the modernized target | RabbitHole produced the required desktop signals for the next first-lesson action boundary. |
 
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. eatme can mark the next first-lesson action `ready` only after
 RabbitHole evidence files show launch, the Run window, desktop execution,
-screenshot artifacts, log artifacts, window artifacts,
-`ui-action-contract.json`, and explicit Save Project and Select Project
-proof-artifact states.
+screenshot artifacts, log artifacts, window artifacts, first-lesson automation
+scenario evidence, and explicit boundary states for Select Project,
+procedure/edit, Save, visible rendering, grading, creative assessment, and
+first-lesson completion.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
@@ -816,43 +824,49 @@ This is acceptable first-lesson evidence when the report also includes
 `ui-action-contract.json` evidence and action-level `no_go_contracts`
 (unsupported-action entries). It is not a completed UI automation pass.
 
-### Student flow: inspect Save and Select Project proof artifacts
+### Student flow: inspect first-lesson scenario evidence
 
-Plain output always names the project proof-artifact categories:
+Plain output always names the scenario evidence boundaries:
 
 ```text
-Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):
-- present: Save Project proof artifact (artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f...)
-- blocked: Select Project proof artifact (blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable)
+First-lesson automation scenario readiness: blocked
+
+Evidence present:
+- Select Project scenario evidence is present.
+- Procedure/edit scenario evidence is present.
+- Visible rendering scenario evidence is present.
+
+Blockers:
+- Save scenario evidence is blocked: desktop Save completion evidence was not produced by this run.
+- First-lesson completion scenario evidence is missing.
 ```
 
-JSON output exposes the same states in `evidence_progress.items[]`. This
-excerpt shows only the project proof-artifact entries from the longer progress
-array:
+JSON output exposes the same conservative states in `evidence_boundaries[]`. This
+excerpt shows only two entries from the longer boundary array:
 
 ```json
 [
   {
-    "id": "save_project_proof_artifact",
-    "evidence": "Save Project proof artifact",
-    "state": "present",
-    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f..."
+    "id": "select_project",
+    "label": "Select Project scenario evidence",
+    "status": "present",
+    "detail": "Select Project scenario evidence is present."
   },
   {
-    "id": "select_project_proof_artifact",
-    "evidence": "Select Project proof artifact",
-    "state": "blocked",
-    "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
+    "id": "save_project",
+    "label": "Save scenario evidence",
+    "status": "blocked",
+    "detail": "Save scenario evidence is blocked: desktop Save completion evidence was not produced by this run."
   }
 ]
 ```
 
-The Save Project line says only that a save proof artifact is available for
-audit. The Select Project line says proof collection is blocked and preserves
-the RabbitHole blocker as a normalized summary. If a category has no declaration
-or no usable relative artifact path, it remains visible as `missing`; if it only
-declares `status: "blocked"`, its detail can be just `blocked`. Neither line
-proves lesson completion, full UI automation, grading, or creative assessment.
+The Select Project line says only that the Select Project boundary has scenario
+evidence. The Save line says desktop Save completion remains blocked. If a
+boundary has no evidence, only ambiguous metadata, or no usable relative summary,
+it remains visible as `missing` or `invalid`. Neither line proves lesson
+completion, full UI automation, rendering correctness, grading, or creative
+assessment.
 
 ### Student flow: fix a not-ready report
 
@@ -918,12 +932,14 @@ or deployed-service status.
 2. State the role, expected outputs, evidence artifacts, and unsupported policy in
    the scenario YAML.
 3. Use `ready`, `not_ready`, and `blocked` wording for readiness outputs.
-4. Add explicit `no_go` entries for missing desktop affordances instead of
-   implying silent success; explain that they report `blocked`.
-5. If the scenario consumes RabbitHole next-action proof, declare Save Project
-   and Select Project proof-artifact state separately as `present`, `missing`, or
-   `blocked`. Preserve blocker information as a normalized summary and keep
-   artifact presence language separate from UI success language.
+4. Add explicit blockers for missing desktop affordances instead of implying
+   silent success; explain that they report `blocked`.
+5. If the scenario consumes RabbitHole first-lesson evidence, report Select
+   Project, procedure/edit, Save, visible rendering, grading, creative
+   assessment, and first-lesson completion separately as `present`, `missing`,
+   `invalid`, `not_observed`, or `blocked`. Preserve blocker information as a
+   normalized summary and keep boundary evidence separate from UI success,
+   rendering correctness, grading, creative assessment, and completion language.
 6. Validate the changed asset:
 
    ```bash
@@ -945,11 +961,10 @@ or deployed-service status.
    ```
 
 9. For student first-lesson changes, run or inspect a readiness report and
-   confirm it exposes `status`, `lesson_session_readiness`, `no_go_contracts`,
-   `save_project_proof_artifact`, and `select_project_proof_artifact`. For
-   instructor-only asset changes, keep the evidence boundary in scenario
-   validation and generated adapters unless an executable instructor harness is
-   added.
+   confirm it exposes `status`, `lesson_session_readiness`, and the
+   first-lesson scenario evidence boundaries. For instructor-only asset changes,
+   keep the evidence boundary in scenario validation and generated adapters
+   unless an executable instructor harness is added.
 10. Run the repository quality gate before handoff:
 
    ```bash
@@ -966,7 +981,7 @@ summary in the PR description:
 | Scenario validation | `cargo run -q -p eatme-cli -- assets validate --json` passed. |
 | Gadugi freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` passed, or adapters were regenerated and committed. |
 | Readiness output | Student first-lesson reports expose normalized `status` and `lesson_session_readiness`; instructor-only changes do not claim a readiness report unless a harness produces one. |
-| Project proof artifacts | Save Project and Select Project proof-artifact entries are visible as `present`, `missing`, or `blocked`; aggregate progress counts `present` entries in `evidence_progress.present`, and blocked entries preserve normalized blocker summaries when supplied. |
-| Unsupported-action entries | Unsupported desktop actions are explicit `decision: "no_go"` entries that report `blocked`. |
-| Boundaries | The change does not claim full UI automation, creative assessment, learner-world grading, complete Alice coverage, or deployed-service status. |
+| First-lesson scenario evidence | Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion entries are visible as `present`, `missing`, `invalid`, `not_observed`, or `blocked`; blocked entries preserve normalized blocker summaries when supplied. |
+| Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
+| Boundaries | The change does not claim full UI automation, visible rendering correctness, desktop Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

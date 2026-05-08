@@ -24,7 +24,7 @@ used by the baseline launch smoke, then records that id in the run manifest.
 | `arrays-collection-choreography` | Student data/state smoke | Gate array/list/index review on real launch evidence. |
 | `mythic-choice-event-tree` | Student interactive narrative smoke | Gate choice, event, branch, and peer-playtest review on real launch evidence. |
 | `vr-camera-perspective-tour` | Student camera/VR smoke | Gate audience viewpoint and non-VR fallback review on real launch evidence. |
-| `first-lessons-real-ui-actions` | Real UI action contract | Launch Alice, detect the Alice window, write `ui-action-contract.json`, and fail explicitly until deterministic UI actions are automated. |
+| `first-lessons-real-ui-actions` | First-lesson automation scenario | Launch Alice, detect the Alice window, record first-lesson scenario evidence boundaries, and fail explicitly until deterministic desktop evidence exists. |
 | `modified-class-portability` | Class portability contract | Validate the export/import evidence contract and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
@@ -74,24 +74,20 @@ The baseline `real-alice-launch-smoke` scenario proves only the scenario-labeled
 launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
 
-The `first-lessons-real-ui-actions` scenario is different: it is an executable
-harness contract for the first real UI actions. It launches Alice, verifies an
-Alice Stage IDE window from window-manager evidence, writes
-`ui-action-contract.json`, reports Save Project and Select Project
-proof-artifact categories from RabbitHole next-action evidence, defaulting each
-category to `missing` when the next-action evidence or declaration is absent, and
-fails loudly with
-`ui_action_automation_unimplemented` until a deterministic
-`deterministic-alice-object-gallery-placement-affordance` can place a named
-object without coordinate guessing. Once object placement is proven, the
-contract records the next missing affordance,
-`deterministic-alice-procedure-edit-affordance`, before follow-on automation
-can run the world or save a project.
-Save Project and Select Project proof-artifact states are artifact availability
-signals only: `present`, `missing`, or `blocked`. They do not prove a complete
-selection workflow, project save success, lesson completion, creative
-assessment, or learner-world grading.
-This is launch/action-contract evidence only. It is not full UI automation.
+The `first-lessons-real-ui-actions` scenario is different: it is the executable
+automation scenario for first-lesson evidence boundaries. It launches Alice,
+verifies an Alice Stage IDE window from window-manager evidence, records the
+first-lesson scenario evidence contract, and reports Select Project,
+procedure/edit, Save, visible rendering, grading, creative assessment, and
+first-lesson completion independently. Missing declarations remain visible as
+`missing`; malformed or unsafe evidence is `invalid`; a producer that ran without
+the expected observation is `not_observed`; explicit RabbitHole blockers are
+`blocked`.
+
+Present boundary evidence is boundary-specific only. It does not prove full Alice
+UI automation, visible rendering correctness, desktop Save completion, grading,
+creative assessment, learner-world grading, or first-lesson completion unless
+the matching evidence boundary is present.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -129,7 +125,7 @@ and explicit instructor/student deliverables.
 | Need | Scenario | What to collect |
 | --- | --- | --- |
 | Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations, plus explicit Save Project and Select Project proof-artifact states that stay visible as `missing` when RabbitHole does not declare them. |
+| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, first-lesson scenario evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
 The evidence levels are intentionally separate:
@@ -148,21 +144,24 @@ quality, and does not grade a saved world.
 
 ### Evidence reporting vocabulary
 
-First-lesson project proof-artifact reporting uses explicit states for Save
-Project and Select Project entries:
+First-lesson automation scenario reporting uses explicit states for each
+boundary:
 
 | State | Meaning | Boundary |
 | --- | --- | --- |
-| `present` | The artifact declaration or proof summary exists and is safe to reference from the evidence root. | Counts toward `evidence_progress.present`, but does not prove lesson completion. |
-| `missing` | The declaration, metadata, or safe relative artifact path is absent or unusable. | The report stays not ready until the evidence is produced or repaired. |
-| `blocked` | RabbitHole supplied a blocker, or a known unsupported desktop affordance prevents proof collection. | The blocker remains visible; do not turn it into a pass or a generic missing state. |
+| `present` | Explicit evidence exists for the named boundary and is safe to summarize. | Supports only that boundary's claim; it does not prove lesson completion. |
+| `missing` | Evidence is absent, incomplete, or only declares metadata without proof for the required claim. | The report stays not ready until the evidence is produced or repaired. |
+| `invalid` | Evidence is malformed, unsafe, contradictory, outside the evidence root, or ambiguous. | The report stays not ready and surfaces the issue. |
+| `not_observed` | A producer ran but did not observe the expected boundary result. | The report stays not ready for that boundary. |
+| `blocked` | RabbitHole supplied a blocker, or a known unsupported desktop affordance prevents evidence collection. | The blocker remains visible; do not turn it into a pass or a generic missing state. |
 
-Use `present`, `missing`, and `blocked` language for Save Project and Select
-Project proof artifacts in PR text, scenario notes, and handoff material. The
-broader readiness progress object can also report `invalid` and `not_observed`
-for desktop pixel evidence. Do not replace any of those states with claims of
-full UI automation, grading, creative assessment, broad Alice compatibility, or
-finished lesson execution.
+Use scenario-focused labels in PR text, scenario notes, and handoff material:
+Select Project scenario evidence, procedure/edit scenario evidence, Save
+scenario evidence, visible rendering scenario evidence, grading scenario
+evidence, creative assessment scenario evidence, and first-lesson completion
+scenario evidence. Do not replace any boundary state with claims of full UI
+automation, rendering correctness, grading, creative assessment, broad Alice
+compatibility, desktop Save completion, or finished lesson execution.
 
 ### Student first-lesson recipe
 
@@ -211,16 +210,17 @@ non-empty placement artifact plus a scene/project diff for the named gallery
 object. Treat every other outcome as a boundary signal, not as completed UI
 coverage.
 
-Readiness always reports `save_project_proof_artifact` and
-`select_project_proof_artifact` as `present`, `missing`, or `blocked`.
-Declarations in `desktop-first-lesson-next-action.json` can make a category
-`present` or `blocked`; absent next-action evidence or absent declarations remain
-visible as `missing` instead of being folded into generic readiness language.
-Aggregate progress counts present entries in `evidence_progress.present`, but
-that count is only evidence availability. A present declaration is only
-proof-artifact availability. Emitted artifact paths are evidence-root-relative
-summaries, artifact contents are never read or emitted, and blockers are
-preserved as normalized summaries.
+Readiness always reports Select Project, procedure/edit, Save, visible
+rendering, grading, creative assessment, and first-lesson completion as separate
+scenario evidence boundaries. Declarations can explain what RabbitHole attempted
+or observed, but declarations alone remain `missing` for completion-sensitive
+claims. Aggregate progress counts present entries in `evidence_progress.present`,
+but that count is only evidence availability. Emitted artifact paths are
+evidence-root-relative summaries, artifact contents are never read or emitted,
+and blockers are preserved as normalized summaries.
+
+For the complete boundary contract, see
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 ### Instructor remix recipe
 

@@ -8,8 +8,7 @@ cargo run -q -p eatme-cli -- <command>
 
 Commands that accept `--json` print JSON when the flag is present. Without
 `--json`, `alice run-first-lesson-readiness` prints a plain readiness report for
-humans, including explicit Save Project and Select Project proof-artifact
-states.
+humans, including plain blockers for first-lesson automation scenario evidence.
 
 ## Command overview
 
@@ -247,37 +246,20 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
   --json
 ```
 
-This consumes the embedded target launch manifests and each
-`ui-action-contract.json`. It always reports Save Project and Select Project
-proof-artifact categories. Declarations come from
-`desktop-first-lesson-next-action.json`; if that evidence artifact or a category
-declaration is absent, the category remains visible as `missing`. Each project
-proof-artifact category is normalized to `present`, `missing`, or `blocked`;
-aggregate progress reports a `present` count, but that count means artifact
-availability, not lesson completion. The structural readiness check is valid only
-when both comparison targets include real Alice execution evidence, specific
-Alice window evidence, the required place/edit/run/save action assertions, a
-readable action contract with the matching required action ids, and no unhandled
-readiness issues. The report now includes a
-`role_readiness` array for `instructor` and `student`, plus the legacy
-`lesson_session_readiness` student envelope, whose normalized `status` is one of
-`ready`, `not_ready`, or `blocked`. Action-level unsupported affordances are
-exposed as `decision=no_go` entries in `no_go_contracts`; object placement,
-procedure editing, world run, and project save each need an explicit no-go
-contract until deterministic desktop evidence exists. A passing readiness report
-can still have
-`status=blocked` and `readiness_status=blocked_until_ui_automation`; that means
-the concrete artifacts are present and the only accepted blocker is the current
-lack of deterministic UI actions. It is not full UI automation, not creative
-assessment, and not learner-world grading.
+This consumes the embedded target launch manifests and first-lesson automation
+scenario evidence. It reports each RabbitHole boundary separately: Select
+Project, procedure/edit, Save, visible rendering, grading, creative assessment,
+and first-lesson completion. Missing, malformed, ambiguous, unsafe, or uncertain
+evidence remains visible as a blocker. Boundary metadata may show that a
+boundary was declared or observed, but it does not prove desktop Save
+completion, rendering correctness, grading, creative assessment, or first-lesson
+completion unless the matching boundary evidence exists.
 
-Proof-artifact presence means artifact availability only. A present Save Project
-or Select Project artifact can summarize an evidence-root-relative path, size,
-hash, or normalized metadata in `detail`, but it does not prove UI automation
-succeeded, a lesson was completed, grading occurred, or creative quality was
-assessed. Readiness output must not emit absolute host paths or artifact
-contents. Missing evidence is printed as missing; blocked evidence is printed as
-blocked and includes a normalized blocker summary when RabbitHole supplies one.
+The report includes `role_readiness` for `instructor` and `student`, plus the
+legacy `lesson_session_readiness` student envelope. The normalized `status` is
+`ready`, `not_ready`, or `blocked`. A blocked report can still be structurally
+valid; that means the report found coherent evidence plus an explicit blocker,
+not that full Alice UI automation is complete.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -303,14 +285,23 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run.
-Plain output includes the same shared evidence-progress items that JSON exposes:
+manual smoke skip from a failed desktop proof run. Plain output keeps blockers
+scenario-focused:
 
 ```text
-Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):
-- present: Run-window screenshot proof (artifact path screenshots/run-window-after-dispatch.png, size_bytes=48120, sha256=2d6f...)
-- missing: Save Project proof artifact (no Save Project proof artifact declaration was found)
-- blocked: Select Project proof artifact (blocked: project selector proof is unavailable)
+First-lesson automation scenario readiness: not ready
+
+Evidence present:
+- Alice launch scenario evidence is present.
+- Visible rendering scenario evidence is present.
+
+Blockers:
+- Select Project scenario evidence is missing.
+- Procedure/edit scenario evidence is missing.
+- Save scenario evidence is missing.
+- Grading scenario evidence is missing.
+- Creative assessment scenario evidence is missing.
+- First-lesson completion scenario evidence is missing.
 ```
 
 With `--execute`, non-baseline Alice scenarios still require
@@ -319,7 +310,8 @@ create a complete instructor assignment, consume a complete student lesson,
 perform creative assessment, grade learner worlds, or claim broad Alice
 compatibility.
 
-For the complete readiness output schema, no-go contract API, and
+For the complete conservative boundary schema, see
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). For
 instructor/student usage recipes, see
 [Lesson Session Readiness](lesson-session-readiness.md).
 
@@ -337,9 +329,9 @@ cargo run -q -p eatme-cli -- alice launch-smoke \
   --no-memory
 ```
 
-Use the student action-contract scenario when the claim includes first-lesson
-evidence for object placement, code/procedure editing, running the world, and
-saving a project:
+Use the student automation scenario when the claim includes first-lesson
+scenario evidence for object placement, code/procedure editing, running the
+world, and saving a project:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -355,16 +347,13 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The action-contract scenario writes manifest/log/window/screenshot evidence and
-`ui-action-contract.json`. Without an Alice-side placement hook it reports
-`ui_action_automation_unimplemented`. With a valid placement hook it advances to
-`ui_action_remaining_steps_unimplemented` and records the next missing contract:
-`deterministic-alice-procedure-edit-affordance`. Editing a procedure, running
-the world, and saving from the desktop are still not automated. Readiness always
-reports Save Project and Select Project proof-artifact availability categories.
-RabbitHole declarations can make those categories `present` or `blocked`; absent
-declarations stay visible as `missing`. The report treats each result as
-auditable artifact state only, not full UI coverage.
+The automation scenario writes launch, log, window, screenshot, and
+first-lesson scenario evidence. Readiness reports Select Project,
+procedure/edit, Save, visible rendering, grading, creative assessment, and
+first-lesson completion independently as `present`, `missing`, `invalid`,
+`not_observed`, or `blocked`. The report treats each result as boundary-specific
+evidence only, not full UI coverage, rendering correctness, grading, creative
+assessment, or completed lesson proof.
 
 Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow
