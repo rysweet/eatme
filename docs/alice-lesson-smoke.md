@@ -413,9 +413,67 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 
 Until real UI automation is wired, this command is expected to exit non-zero
 after writing a manifest and `ui-action-contract.json`. Treat that explicit
-failure as the contract, not as passing coverage. This scenario is launch/action-
-contract evidence only; it is not full UI automation, not creative assessment,
-and not learner-world grading.
+failure as the contract, not as passing coverage. This scenario is preflight
+launch/action-contract readiness evidence only for setup, launch support,
+handoff artifacts, and classroom support preparation. It is not full UI
+automation, not creative assessment, not learner-world grading, not production
+readiness, not lesson completion, not complete end-to-end lesson execution, and
+not broad Alice compatibility.
+
+#### Instructor-editable readiness evidence wording
+
+The canonical source for the first-lesson action-contract wording is:
+
+```text
+assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
+```
+
+Scenario authors can refine the instructor-facing readiness language by editing
+exactly one existing text field in that YAML asset. Prefer `purpose` for the
+small wording update because it is the summary that explains what the scenario
+proves before a reviewer inspects acceptance criteria, steps, or artifacts.
+
+The finished wording describes preflight launch/action-contract readiness
+evidence for setup, launch support, handoff artifacts, and classroom-support
+preparation. It keeps these boundaries intact:
+
+| Boundary | Required wording behavior |
+| --- | --- |
+| Evidence claim | Say "readiness evidence", "launch/action-contract evidence", or "preflight evidence". |
+| Scenario identity | Keep `id: first-lessons-real-ui-actions` and the same scenario inventory. |
+| Generated adapters | Do not hand-edit `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml`; regenerate or check it from the canonical asset. |
+| Non-claims | Keep the exact limits: "not full UI automation", "not creative assessment", "not learner-world grading", "not production readiness", "not lesson completion", "not complete end-to-end lesson execution", and "not broad Alice compatibility". |
+
+Example complete `purpose` wording:
+
+```yaml
+purpose: >-
+  Move the first Alice lesson checks beyond manifest-only smoke by launching the
+  real Alice desktop for original Alice and RabbitHole / modernized Alice,
+  verifying a specific Alice window, executing safe window
+  activation plus save-shortcut dispatch probes, consuming object-placement proof
+  when Alice exposes it, consuming edit proof when Alice exposes it, and
+  dispatching Alice's documented Run shortcut after edit proof exists. The
+  contract still requires explicit evidence for object placement,
+  procedure/code editing, world run, project save, and a captured contract
+  artifact. Until deterministic desktop manipulation beyond safe window
+  activation, shortcut dispatch, and backend proof hooks is wired,
+  the harness must fail loudly with a preflight/action contract instead of
+  reporting a silent pass.
+  This is preflight launch/action-contract readiness evidence only for setup,
+  launch support, handoff artifacts, and classroom support preparation. It is
+  not full UI automation, not creative assessment, not learner-world grading,
+  not production readiness, not lesson completion, not complete end-to-end
+  lesson execution, and not broad Alice compatibility.
+```
+
+After a wording edit, validate the canonical asset and check generated adapter
+freshness:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
 
 | Option | Description |
 | --- | --- |

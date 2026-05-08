@@ -44,6 +44,24 @@ const TARGET_SCENARIOS: &[TargetScenario] = &[
     },
 ];
 
+const FIRST_LESSON_SMOKE_READY_EVIDENCE_COUNT: usize = 14;
+const FIRST_LESSON_REQUIRED_SMOKE_READY_EVIDENCE: &[&str] = &[
+    "manifest_assertions",
+    "scenario_labeled_real_alice_launch_path",
+    "manifest_log_window_and_startup_screenshot_evidence",
+    "specific_alice_window_detected",
+    "activate_alice_window_ui_action",
+    "save_project_desktop_shortcut_dispatch",
+    "run_world_desktop_shortcut_dispatch",
+    "run_world_desktop_window_observed",
+    "place_object_precondition_no_go_probe",
+    "edit_procedure_precondition_no_go_probe",
+    "run_world_precondition_no_go_probe",
+    "ui_action_contract_artifact",
+    "action_contract_expectations_for_place_edit_run_and_save",
+    "explicit_failure_when_ui_actions_are_not_automated",
+];
+
 #[test]
 fn alice_outside_in_expansion_assets_exist_validate_and_have_fresh_gadugi_adapters() {
     let root = repository_root();
@@ -290,10 +308,12 @@ fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
             "manifest, Alice log, window list, and startup screenshot evidence",
             "Alice window detection",
             "ui-action-contract.json",
-            "This is launch/action-contract evidence only.",
+            "preflight launch/action-contract readiness evidence only",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",
+            "not production readiness",
+            "not lesson completion",
         ],
     );
     assert_contains_all(
@@ -327,12 +347,67 @@ fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
             "first-lessons-real-ui-actions",
             "instructor-lesson-materials-remix",
             "real-alice-launch-smoke",
-            "launch/action-contract evidence only",
+            "preflight launch/action-contract readiness evidence only",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",
+            "not production readiness",
+            "not lesson completion",
             "does not grade learner worlds or assess creativity automatically",
         ],
+    );
+}
+
+#[test]
+fn first_lesson_readiness_purpose_names_preflight_evidence_without_completion_claims() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme", "first-lessons-real-ui-actions");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+    let smoke_ready = scenario
+        .smoke_ready
+        .as_ref()
+        .expect("first-lessons-real-ui-actions must define smoke_ready evidence");
+
+    assert_eq!(scenario.id, "first-lessons-real-ui-actions");
+    assert_eq!(scenario.kind, "alice_real_ui_action_contract");
+    assert_eq!(
+        smoke_ready.evidence.len(),
+        FIRST_LESSON_SMOKE_READY_EVIDENCE_COUNT,
+        "first-lessons-real-ui-actions smoke_ready evidence inventory count must stay stable"
+    );
+    assert_contains_all(
+        "first-lessons-real-ui-actions smoke_ready evidence",
+        &smoke_ready.evidence.join("\n"),
+        FIRST_LESSON_REQUIRED_SMOKE_READY_EVIDENCE,
+    );
+    assert_contains_all(
+        "first-lessons-real-ui-actions purpose",
+        &scenario.purpose,
+        &[
+            "preflight launch/action-contract readiness evidence only",
+            "setup, launch support, handoff artifacts, and classroom support preparation",
+            "not full UI automation",
+            "not creative assessment",
+            "not learner-world grading",
+            "not production readiness",
+            "not lesson completion",
+            "not complete end-to-end lesson execution",
+            "not broad Alice compatibility",
+        ],
+    );
+    assert_not_contains_any(
+        "first-lessons-real-ui-actions purpose",
+        &scenario.purpose,
+        &[
+            "This is launch/action-contract evidence only. It is bounded readiness evidence"
+                .to_string(),
+        ],
+    );
+    assert_contains_all(
+        "first-lessons-real-ui-actions canonical asset",
+        &contract,
+        &["purpose: >-", "smoke_ready:", "acceptance_criteria:"],
     );
 }
 
