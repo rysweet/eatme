@@ -416,11 +416,13 @@ fn inspect_target_evidence(
                     resolved.display()
                 )),
             },
-            Err(error) => issues.push(format!("{role} ui-action-contract.path is unsafe: {error}")),
+            Err(error) => issues.push(format!(
+                "{role} automation scenario action evidence path is unsafe: {error}"
+            )),
         }
     } else {
         issues.push(format!(
-            "{role} launch_manifest is missing ui_action_contract.path"
+            "{role} launch_manifest is missing automation scenario action evidence path"
         ));
     }
 

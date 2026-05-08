@@ -24,7 +24,7 @@ pub(super) fn validate_required_action_no_go_contracts(
             && !required_action_has_no_go_contract(contract, action_id, missing_affordance_id)
         {
             issues.push(format!(
-                "{role} ui-action-contract.json required action {action_id} must carry a no-go contract until deterministic desktop affordance exists"
+                "{role} automation scenario action evidence required action {action_id} must carry a no-go contract until deterministic desktop affordance exists"
             ));
         }
     }

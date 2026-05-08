@@ -354,7 +354,10 @@ fn lesson_session_readiness_rejects_unsafe_ui_action_contract_path() {
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
     assert!(!report.passed);
-    assert_contract_contains(&report.issues, "ui-action-contract.path is unsafe");
+    assert_contract_contains(
+        &report.issues,
+        "automation scenario action evidence path is unsafe",
+    );
     assert_contract_contains(&report.issues, "must not contain parent");
 }
 
@@ -385,7 +388,10 @@ fn lesson_session_readiness_rejects_symlinked_ui_action_contract_escape() {
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
     assert!(!report.passed);
-    assert_contract_contains(&report.issues, "ui-action-contract.path is unsafe");
+    assert_contract_contains(
+        &report.issues,
+        "automation scenario action evidence path is unsafe",
+    );
     assert_contract_contains(&report.issues, "must stay under comparison evidence root");
 }
 

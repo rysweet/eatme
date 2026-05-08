@@ -18,12 +18,12 @@ pub(super) fn inspect_ui_action_contract(
         != Some("eatme.ui-action-contract/v1")
     {
         issues.push(format!(
-            "{role} ui-action-contract.json has unsupported schema_version"
+            "{role} automation scenario action evidence has unsupported schema_version"
         ));
     }
     if contract.get("status").and_then(serde_json::Value::as_str) != Some("blocked") {
         issues.push(format!(
-            "{role} ui-action-contract.json status must remain blocked until UI actions are automated"
+            "{role} automation scenario action evidence status must remain blocked until UI actions are automated"
         ));
     }
     if contract
@@ -33,7 +33,7 @@ pub(super) fn inspect_ui_action_contract(
         .unwrap_or(true)
     {
         issues.push(format!(
-            "{role} ui-action-contract.json must explain the blocking_reason"
+            "{role} automation scenario action evidence must explain the blocking_reason"
         ));
     }
     let preflight = contract
@@ -50,7 +50,7 @@ pub(super) fn inspect_ui_action_contract(
             .is_none()
         {
             issues.push(format!(
-                "{role} ui-action-contract.json preflight_evidence.{field} must be a boolean"
+                "{role} automation scenario action evidence preflight_evidence.{field} must be a boolean"
             ));
         }
     }
@@ -62,14 +62,14 @@ pub(super) fn inspect_ui_action_contract(
         && !has_passed_action_probe(contract, "activate-specific-alice-window")
     {
         issues.push(format!(
-            "{role} ui-action-contract.json must record passed activate-specific-alice-window probe when an Alice window is detected"
+            "{role} automation scenario action evidence must record passed activate-specific-alice-window probe when an Alice window is detected"
         ));
     }
     if has_passed_action_probe(contract, "activate-specific-alice-window")
         && !has_passed_action_probe(contract, "dispatch-save-project-shortcut")
     {
         issues.push(format!(
-            "{role} ui-action-contract.json must record passed dispatch-save-project-shortcut probe after Alice window activation"
+            "{role} automation scenario action evidence must record passed dispatch-save-project-shortcut probe after Alice window activation"
         ));
     }
     let place_object_probe_recorded = has_place_object_candidate_affordance_probe(contract);
@@ -80,39 +80,39 @@ pub(super) fn inspect_ui_action_contract(
 
     if !place_object_probe_recorded {
         issues.push(format!(
-            "{role} ui-action-contract.json must record the Alice-side object placement command hook candidate probe"
+            "{role} automation scenario action evidence must record the Alice-side object placement command hook candidate probe"
         ));
     }
     if !place_object_proven && !has_place_object_no_go_probe(contract) {
         issues.push(format!(
-            "{role} ui-action-contract.json must record a no-go precondition probe for place-object"
+            "{role} automation scenario action evidence must record a no-go precondition probe for place-object"
         ));
     }
     if place_object_proven && !edit_procedure_proven && !has_edit_procedure_no_go_probe(contract) {
         issues.push(format!(
-            "{role} ui-action-contract.json must record either passed edit-procedure-or-code-block proof or a no-go precondition probe after object placement passes"
+            "{role} automation scenario action evidence must record either passed edit-procedure-or-code-block proof or a no-go precondition probe after object placement passes"
         ));
     }
     if edit_procedure_proven && !has_passed_action_probe(contract, "dispatch-run-world-shortcut") {
         issues.push(format!(
-            "{role} ui-action-contract.json must record passed dispatch-run-world-shortcut probe after edit-procedure-or-code-block proof"
+            "{role} automation scenario action evidence must record passed dispatch-run-world-shortcut probe after edit-procedure-or-code-block proof"
         ));
     }
     if has_passed_action_probe(contract, "dispatch-run-world-shortcut")
         && !has_action_probe(contract, "observe-run-window-after-shortcut")
     {
         issues.push(format!(
-            "{role} ui-action-contract.json must record observe-run-window-after-shortcut probe after desktop Run shortcut dispatch"
+            "{role} automation scenario action evidence must record observe-run-window-after-shortcut probe after desktop Run shortcut dispatch"
         ));
     }
     if edit_procedure_proven && !run_world_proven && !has_run_world_no_go_probe(contract) {
         issues.push(format!(
-            "{role} ui-action-contract.json must record either passed run-world proof or a no-go precondition probe after edit-procedure-or-code-block passes"
+            "{role} automation scenario action evidence must record either passed run-world proof or a no-go precondition probe after edit-procedure-or-code-block passes"
         ));
     }
     if run_world_proven && !save_project_proven && !has_save_project_no_go_probe(contract) {
         issues.push(format!(
-            "{role} ui-action-contract.json must record either passed save-project proof or a no-go precondition probe after run-world passes"
+            "{role} automation scenario action evidence must record either passed save-project proof or a no-go precondition probe after run-world passes"
         ));
     }
     issues.extend(
