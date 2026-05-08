@@ -19,6 +19,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -121,6 +122,7 @@ fn blocked_pixel_observation_reports_explicit_next_action_as_next_fix() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::BlockedWithNextAction,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -168,6 +170,7 @@ fn vm_execution_sentinel_alone_is_not_visible_desktop_proof() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -185,6 +188,7 @@ fn missing_pixel_boundary_evidence_is_reported_explicitly() {
         pixel_boundary_present: false,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -225,6 +229,7 @@ fn present_invalid_pixel_boundary_status_is_reported_as_evidence_status() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
     overwrite_modernized_pixel_boundary(
         &manifest_path,
@@ -271,6 +276,7 @@ fn present_observed_pixel_observation_is_reported_as_desktop_pixel_status() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Observed,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -332,6 +338,7 @@ fn missing_pixel_observation_evidence_is_reported_explicitly() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Missing,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -363,6 +370,7 @@ fn invalid_pixel_observation_evidence_is_reported_explicitly() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
     overwrite_modernized_pixel_observation(
         &manifest_path,
@@ -399,6 +407,7 @@ fn run_frame_prerequisite_is_preserved_when_screenshot_exists() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -419,6 +428,7 @@ fn vm_statement_prerequisite_is_preserved_when_screenshot_exists() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -443,6 +453,7 @@ fn after_full_desktop_pixel_chain_next_proof_names_first_missing_rabbithole_hook
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Observed,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();

@@ -17,6 +17,7 @@ fn blocked_first_lesson_next_action_artifact_reports_missing_ui_action_targets()
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::BlockedWithNextAction,
         first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -70,6 +71,7 @@ fn missing_first_lesson_next_action_artifact_is_reported_without_replacing_pixel
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::BlockedWithNextAction,
         first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[],
     });
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
@@ -109,6 +111,7 @@ fn invalid_first_lesson_next_action_artifact_is_reported_explicitly() {
         pixel_boundary_present: true,
         pixel_observation: PixelObservationFixture::Blocked,
         first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[],
     });
     overwrite_modernized_first_lesson_next_action(
         &manifest_path,
