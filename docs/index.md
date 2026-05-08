@@ -24,6 +24,7 @@ Eatme has three layers:
 | Using Gadugi | [Gadugi Adapters](gadugi-adapters.md) |
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
+| Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
 | Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
@@ -73,7 +74,7 @@ Alice launch path without overstating what the launch smoke proves.
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
-| `first-lessons-real-ui-actions` | Students and reviewers | Required RabbitHole evidence for first-lesson readiness: launch, Run window, desktop execution, screenshot, log, window, and `ui-action-contract.json` artifacts, with `not_ready` for missing or insufficient evidence and `blocked` for known unsupported desktop actions. |
+| `first-lessons-real-ui-actions` | Instructors, students, and reviewers | Preflight launch/action-contract readiness evidence for first-lesson setup, launch support, handoff artifacts, and classroom-support preparation, with `ui-action-contract.json`, `not_ready` for missing or insufficient evidence, and `blocked` for known unsupported desktop actions. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission
