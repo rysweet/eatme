@@ -20,6 +20,7 @@ pub fn write_ui_action_contract(
     specific_alice_window_detected: bool,
     visual_evidence_captured: bool,
     log_captured: bool,
+    window_verification_probe: Option<&UiActionProbe>,
     activation_probe: Option<&UiActionProbe>,
     desktop_save_shortcut_probe: Option<&UiActionProbe>,
     desktop_run_shortcut_probe: Option<&UiActionProbe>,
@@ -89,8 +90,9 @@ pub fn write_ui_action_contract(
             "visual_evidence_captured": visual_evidence_captured,
             "log_captured": log_captured
         },
-        "executed_action_probes": activation_probe
+        "executed_action_probes": window_verification_probe
             .into_iter()
+            .chain(activation_probe)
             .chain(desktop_save_shortcut_probe)
             .chain(desktop_run_shortcut_probe)
             .chain(run_window_probe)

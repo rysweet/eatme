@@ -102,7 +102,7 @@ pub fn check_lesson_session_contract(manifest_path: &Path) -> Result<LessonSessi
             &mut issues,
             "executable_evidence",
             &contract.executable_evidence,
-            &["ui-action-contract.json"],
+            &["automation scenarios"],
         );
     }
     require_fragments(
@@ -152,7 +152,7 @@ pub(super) fn lesson_session_contract(
             executable_evidence: vec![
                 "comparison manifest records both target runs under the same scenario id".into(),
                 "target launch manifests record dependency, package, display, window, screenshot, log, and assertion evidence".into(),
-                "ui-action-contract.json names the required actions that are not automated yet".into(),
+                "automation scenarios name the required actions that are not automated yet".into(),
             ],
             boundaries: shared_boundaries(),
         };

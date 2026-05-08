@@ -116,7 +116,7 @@ pub(super) fn evidence_progress(
     items.push(progress_item(
         &required_evidence[7],
         ui_action_contract_state(baseline, modernized),
-        "readable ui-action-contract.json for both targets",
+        "readable automation scenario action evidence for both targets",
     ));
     items.push(project_proof_progress_item(
         &required_evidence[8],

@@ -3,7 +3,7 @@ use std::path::Path;
 
 mod lesson_session_helpers;
 use lesson_session_helpers::{
-    assert_contract_contains, ui_action_contract_json, unique_test_dir,
+    assert_contract_contains, assert_safe_blocker_text, ui_action_contract_json, unique_test_dir,
     write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
 };
 
@@ -60,7 +60,7 @@ targets:
     );
     assert_contract_contains(
         &manifest.lesson_session_contract.executable_evidence,
-        "ui-action-contract.json",
+        "automation scenarios",
     );
     assert_contract_contains(
         &manifest.lesson_session_contract.boundaries,
@@ -156,7 +156,7 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
         )
     );
     assert_contract_contains(&report.required_evidence, "comparison-manifest.json");
-    assert_contract_contains(&report.required_evidence, "ui-action-contract.json");
+    assert_contract_contains(&report.required_evidence, "automation scenario");
     for role in ["instructor", "student"] {
         let readiness = report
             .role_readiness
@@ -168,7 +168,7 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
             readiness.blocked_reason.as_deref(),
             Some("blocked_until_ui_automation")
         );
-        assert_contract_contains(&readiness.required_evidence, "ui-action-contract.json");
+        assert_contract_contains(&readiness.required_evidence, "automation scenario");
     }
     for affordance in [
         "object_placement",
@@ -201,6 +201,52 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
         );
     }
     assert_contract_contains(&report.limitations, "does not grade student worlds");
+}
+
+#[test]
+fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
+    let root = unique_test_dir("original-alice-action-evidence-blocker");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let mut manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    manifest["targets"]["baseline"]["launch_manifest"]["assertions"]
+        .as_object_mut()
+        .unwrap()
+        .remove("save_project_ui_action");
+    fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    assert!(!report.passed);
+    assert_eq!(
+        (
+            report.status.as_str(),
+            report.readiness_status.as_str(),
+            report.lesson_session_readiness.status.as_str()
+        ),
+        ("not_ready", "incomplete", "not_ready")
+    );
+    let report_json = serde_json::to_value(&report).unwrap();
+    let baseline = target_evidence_json(&report_json, "baseline");
+    let blockers = baseline["blockers"]
+        .as_array()
+        .unwrap_or_else(|| panic!("baseline target should expose blockers: {baseline}"));
+    let blocker = blockers
+        .iter()
+        .find(|blocker| {
+            blocker["code"] == "missing_real_action_evidence" && blocker["action"] == "save-project"
+        })
+        .unwrap_or_else(|| panic!("missing baseline action-evidence blocker: {blockers:?}"));
+    assert_eq!(
+        blocker["reason"],
+        "Required original Alice action evidence is missing from automation scenarios."
+    );
+    assert_safe_blocker_text(blocker["reason"].as_str().unwrap_or_default());
+    assert!(blocker.get("message").is_none(), "{blocker}");
 }
 
 #[test]
@@ -410,4 +456,13 @@ fn assert_no_go_affordance(contracts: &[LessonSessionNoGoContract], affordance: 
         }),
         "missing {affordance} no-go contract: {contracts:?}"
     );
+}
+
+fn target_evidence_json<'a>(report: &'a serde_json::Value, role: &str) -> &'a serde_json::Value {
+    report["target_evidence"]
+        .as_array()
+        .unwrap_or_else(|| panic!("report should expose target_evidence[]: {report}"))
+        .iter()
+        .find(|target| target["role"] == role)
+        .unwrap_or_else(|| panic!("missing target_evidence role {role}: {report}"))
 }

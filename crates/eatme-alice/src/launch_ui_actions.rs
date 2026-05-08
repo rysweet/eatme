@@ -229,6 +229,28 @@ pub fn probe_place_object_preconditions(
     }
 }
 
+pub(crate) fn probe_specific_alice_window(window_search: &AliceWindowSearch) -> UiActionProbe {
+    let (status, detail, window_id, exit_status) = match window_search {
+        AliceWindowSearch::Found { window_id, detail } => {
+            ("passed", detail.clone(), Some(window_id.clone()), Some(0))
+        }
+        AliceWindowSearch::WrongAliceLikeWindow { detail }
+        | AliceWindowSearch::NoAliceWindow { detail } => {
+            ("blocked", format!("blocked: {detail}"), None, None)
+        }
+    };
+    UiActionProbe {
+        id: "verify-specific-alice-window".into(),
+        status: status.into(),
+        detail,
+        window_id,
+        command: Some("wmctrl/xwininfo window discovery".into()),
+        exit_status,
+        stdout: String::new(),
+        stderr: String::new(),
+    }
+}
+
 pub fn probe_alice_window_activation(
     runner: &impl CommandRunner,
     display: &str,

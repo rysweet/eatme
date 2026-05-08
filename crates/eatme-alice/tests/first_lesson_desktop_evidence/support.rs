@@ -283,6 +283,7 @@ fn ui_action_contract_json() -> serde_json::Value {
         "blocking_reason": "The harness can activate a detected Alice window, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet.",
         "preflight_evidence": {"specific_alice_window_detected": true, "visual_evidence_captured": true, "log_captured": true},
         "executed_action_probes": [
+            {"id": "verify-specific-alice-window", "status": "passed", "detail": "wmctrl or xwininfo identified Alice main window 0x001", "window_id": "0x001", "command": "wmctrl/xwininfo window discovery", "exit_status": 0, "stdout": "", "stderr": ""},
             {"id": "activate-specific-alice-window", "status": "passed", "detail": "wmctrl activated Alice window 0x001", "window_id": "0x001", "command": "wmctrl -ia 0x001", "exit_status": 0, "stdout": "", "stderr": ""},
             {"id": "dispatch-save-project-shortcut", "status": "passed", "detail": "input dispatch only: xdotool sent Ctrl+S to Alice window 0x001; this does not prove saved project content", "window_id": "0x001", "command": "xdotool key --window 0x001 --clearmodifiers ctrl+s", "exit_status": 0, "stdout": "", "stderr": ""}
         ],

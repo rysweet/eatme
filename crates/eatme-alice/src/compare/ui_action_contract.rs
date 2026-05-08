@@ -3,7 +3,9 @@ use crate::launch_run_world::DEFAULT_RUN_SELECTOR;
 use required_action::validate_required_action_no_go_contracts;
 use save::{has_passed_save_project_candidate_affordance_probe, has_save_project_no_go_probe};
 
+mod blockers;
 mod required_action;
+pub(super) use blockers::ui_action_evidence_blockers;
 
 pub(super) fn inspect_ui_action_contract(
     role: &str,
@@ -113,6 +115,11 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json must record either passed save-project proof or a no-go precondition probe after run-world passes"
         ));
     }
+    issues.extend(
+        ui_action_evidence_blockers(role, contract)
+            .into_iter()
+            .map(|blocker| blocker.issue()),
+    );
     validate_required_action_no_go_contracts(role, contract, issues);
 }
 
