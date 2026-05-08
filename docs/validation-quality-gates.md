@@ -60,6 +60,8 @@ cargo llvm-cov --workspace --all-features --fail-under-lines 70 --summary-only
 
 The module-size gate enforces the repository convention that Rust source modules
 stay at or below 500 lines.
+For the split outside-in Alice expansion contract tests, see
+[Outside-in Alice Test Modules](outside-in-alice-test-modules.md).
 
 ## Real Alice launch gate
 
