@@ -1,6 +1,11 @@
 use super::LessonTargetEvidence;
-use super::project_proof::{save_project_proof_progress_item, select_project_proof_progress_item};
+use crate::compare::desktop_evidence::{
+    DesktopFirstLessonNextActionEvidence, ProjectProofArtifactEvidence,
+};
 use serde::{Serialize, Serializer, ser::SerializeStruct};
+
+const SAVE_PROJECT_PROOF_LABEL: &str = "Save Project proof artifact";
+const SELECT_PROJECT_PROOF_LABEL: &str = "Select Project proof artifact";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonReadinessEvidenceProgress {
@@ -113,30 +118,24 @@ pub(super) fn evidence_progress(
         ui_action_contract_state(baseline, modernized),
         "readable ui-action-contract.json for both targets",
     ));
-    items.push(save_project_proof_progress_item(
+    items.push(project_proof_progress_item(
         &required_evidence[8],
+        SAVE_PROJECT_PROOF_LABEL,
         modernized,
+        |next_action| &next_action.save_project_proof_artifact,
     ));
-    items.push(select_project_proof_progress_item(
+    items.push(project_proof_progress_item(
         &required_evidence[9],
+        SELECT_PROJECT_PROOF_LABEL,
         modernized,
+        |next_action| &next_action.select_project_proof_artifact,
     ));
 
-    let mut present = 0;
-    let mut missing = 0;
-    let mut invalid = 0;
-    let mut not_observed = 0;
-    let mut blocked = 0;
-    for item in &items {
-        match item.state.as_str() {
-            "present" => present += 1,
-            "missing" => missing += 1,
-            "invalid" => invalid += 1,
-            "not_observed" => not_observed += 1,
-            "blocked" => blocked += 1,
-            _ => {}
-        }
-    }
+    let present = count_state(&items, "present");
+    let missing = count_state(&items, "missing");
+    let invalid = count_state(&items, "invalid");
+    let not_observed = count_state(&items, "not_observed");
+    let blocked = count_state(&items, "blocked");
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
@@ -168,6 +167,30 @@ pub(super) fn progress_item(
         state: state.into(),
         detail: detail.into(),
     }
+}
+
+fn project_proof_progress_item(
+    evidence: &str,
+    label: &str,
+    target: Option<&LessonTargetEvidence>,
+    artifact: fn(&DesktopFirstLessonNextActionEvidence) -> &ProjectProofArtifactEvidence,
+) -> LessonReadinessEvidenceProgressItem {
+    let Some(artifact) = target
+        .and_then(|target| target.desktop_first_lesson_next_action.as_ref())
+        .map(artifact)
+    else {
+        return progress_item(
+            evidence,
+            "missing",
+            format!("{label} is missing; no next-action proof-artifact declaration was read."),
+        );
+    };
+
+    progress_item(evidence, artifact.state(), artifact.detail.clone())
+}
+
+fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
+    items.iter().filter(|item| item.state == state).count()
 }
 
 fn progress_item_id(evidence: &str) -> String {

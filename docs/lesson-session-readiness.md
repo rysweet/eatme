@@ -117,6 +117,28 @@ statement evidence. Neither evidence item proves rendered output correctness,
 creative quality, learner understanding, saved-world grading, or completed
 lesson execution.
 
+### Evidence status vocabulary
+
+Readiness reports use explicit evidence states so human readers and automation
+do not have to infer whether evidence is available, absent, malformed, not yet
+observed, or blocked:
+
+| Evidence state | Where it appears | Meaning |
+| --- | --- | --- |
+| `present` | `evidence_progress.items[].state` and `evidence_progress.present` | The named artifact declaration or proof summary is available and safe to report. This is artifact availability only. |
+| `missing` | `evidence_progress.items[].state` and `evidence_progress.missing` | The declaration, artifact metadata, or safe evidence-root-relative path is absent or unusable. |
+| `invalid` | `evidence_progress.items[].state` and `evidence_progress.invalid` | A producer supplied malformed or explicitly invalid desktop evidence. |
+| `not_observed` | `evidence_progress.items[].state` and `evidence_progress.not_observed` | A desktop evidence producer ran, but the expected visible observation was not made. |
+| `blocked` | `evidence_progress.items[].state`, `evidence_progress.blocked`, and readiness `status` when applicable | RabbitHole supplied a normalized blocker, or a known unsupported desktop affordance prevents continuing. |
+
+Save Project and Select Project proof-artifact entries intentionally use only
+`present`, `missing`, or `blocked`. The broader readiness progress object can
+also emit `invalid` and `not_observed` for desktop pixel evidence. Malformed,
+unsafe, or out-of-root project proof-artifact declarations are not promoted to
+`present`; they remain `missing` and may also appear in `issues` so the caller
+knows what to repair. `blocked` remains separate from `missing`: blocked means
+the report received an explicit reason proof collection could not proceed.
+
 ### Readiness results
 
 Treat these states as the decision for the next first-lesson action:
@@ -382,7 +404,7 @@ Top-level fields:
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Single-sentence human explanation of the readiness result. |
 | `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
-| `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints. |
+| `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints using explicit `present`, `missing`, `invalid`, `not_observed`, and `blocked` states. |
 | `required_evidence` | array of strings | Durable evidence names required by the readiness check, including Save Project and Select Project proof-artifact state entries. |
 | `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
 | `lesson_session_readiness` | object | Backward-compatible normalized student readiness envelope. |
@@ -393,6 +415,47 @@ Top-level fields:
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |
+
+### Evidence progress API
+
+`evidence_progress` is the shared progress object used by JSON output and plain
+CLI output. It reports observed evidence state only; it does not grade the
+lesson, prove UI completion, or collapse blocked evidence into missing evidence.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `total_required` | number | Number of required evidence items represented in `items`. |
+| `present` | number | Count of items whose `state` is `present`. This is artifact availability, not lesson completion. |
+| `missing` | number | Count of items whose `state` is `missing`. |
+| `invalid` | number | Count of items whose `state` is `invalid`. |
+| `not_observed` | number | Count of items whose `state` is `not_observed`. |
+| `blocked` | number | Count of items whose `state` is `blocked`. |
+| `summary` | string | Human-readable aggregate count summary. |
+| `next_actionable_blocker` | string or omitted | Next unsupported action blocker reported by RabbitHole. |
+| `items` | array | Required evidence entries. Each entry has `id`, `evidence`, `state`, and `detail`. |
+| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. |
+
+Across the full progress object, `items[].state` can be `present`, `missing`,
+`invalid`, `not_observed`, or `blocked`. The Save Project and Select Project
+proof-artifact entries are the narrower subset that use only `present`,
+`missing`, or `blocked`: use `present` for observed artifact availability,
+`missing` for absent or unusable evidence, and `blocked` only when RabbitHole
+supplies an explicit blocker.
+
+Project proof-artifact item example:
+
+```json
+{
+  "id": "select_project_proof_artifact",
+  "evidence": "Select Project proof artifact",
+  "state": "blocked",
+  "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
+}
+```
+
+This means proof collection hit an explicit boundary. It does not mean Alice
+completed a lesson, saved a learner world through full UI automation, or graded
+creative work.
 
 ### Desktop proof contract
 
@@ -460,7 +523,7 @@ Normalization uses this precedence for each category:
 | Normalized state | Condition | Boundary |
 | --- | --- | --- |
 | `blocked` | The declaration has blocker metadata, or declares `status: "blocked"`. | Report the blocker reason, codes, next action, or component state when present. If no detail exists, report only that the proof artifact is blocked. |
-| `present` | The declaration has `ArtifactInfo` metadata or a safe comparison-evidence-root-relative artifact path. | Report artifact availability only. Path, `size_bytes`, `sha256`, and normalized metadata summaries may be included. |
+| `present` | The declaration has `ArtifactInfo` metadata or a safe comparison-evidence-root-relative artifact path. | Report artifact availability only. These entries count toward `evidence_progress.present`. Path, `size_bytes`, `sha256`, and normalized metadata summaries may be included. |
 | `missing` | No declaration exists, the declaration has no usable artifact metadata, or the path is absent or unsafe. | Report missing artifact availability plainly. Do not convert this to success language. |
 
 `blocked` remains distinct from `missing`: blocked means RabbitHole supplied an
@@ -763,27 +826,25 @@ Required evidence file status (present/missing/invalid/blocked; present is artif
 - blocked: Select Project proof artifact (blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable)
 ```
 
-JSON output exposes the same states in `evidence_progress.items[]`:
+JSON output exposes the same states in `evidence_progress.items[]`. This
+excerpt shows only the project proof-artifact entries from the longer progress
+array:
 
 ```json
-{
-  "evidence_progress": {
-    "missing": 0,
-    "blocked": 1,
-    "items": [
-      {
-        "evidence": "Save Project proof artifact",
-        "state": "present",
-        "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f..."
-      },
-      {
-        "evidence": "Select Project proof artifact",
-        "state": "blocked",
-        "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
-      }
-    ]
+[
+  {
+    "id": "save_project_proof_artifact",
+    "evidence": "Save Project proof artifact",
+    "state": "present",
+    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f..."
+  },
+  {
+    "id": "select_project_proof_artifact",
+    "evidence": "Select Project proof artifact",
+    "state": "blocked",
+    "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
   }
-}
+]
 ```
 
 The Save Project line says only that a save proof artifact is available for
@@ -905,7 +966,7 @@ summary in the PR description:
 | Scenario validation | `cargo run -q -p eatme-cli -- assets validate --json` passed. |
 | Gadugi freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` passed, or adapters were regenerated and committed. |
 | Readiness output | Student first-lesson reports expose normalized `status` and `lesson_session_readiness`; instructor-only changes do not claim a readiness report unless a harness produces one. |
-| Project proof artifacts | Save Project and Select Project proof-artifact entries are visible as `present`, `missing`, or `blocked`; blocked entries preserve normalized blocker summaries when supplied. |
+| Project proof artifacts | Save Project and Select Project proof-artifact entries are visible as `present`, `missing`, or `blocked`; aggregate progress counts `present` entries in `evidence_progress.present`, and blocked entries preserve normalized blocker summaries when supplied. |
 | Unsupported-action entries | Unsupported desktop actions are explicit `decision: "no_go"` entries that report `blocked`. |
 | Boundaries | The change does not claim full UI automation, creative assessment, learner-world grading, complete Alice coverage, or deployed-service status. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

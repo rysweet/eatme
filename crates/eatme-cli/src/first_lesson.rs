@@ -76,7 +76,7 @@ fn write_first_lesson_readiness_result(
     }
     writeln!(
         writer,
-        "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
+        "Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):"
     )?;
     for item in &report.evidence_progress.items {
         writeln!(

@@ -146,6 +146,24 @@ Do not collapse those levels into one pass/fail claim. Passing launch smoke does
 not mean Alice has been driven through a lesson, does not assess creative
 quality, and does not grade a saved world.
 
+### Evidence reporting vocabulary
+
+First-lesson project proof-artifact reporting uses explicit states for Save
+Project and Select Project entries:
+
+| State | Meaning | Boundary |
+| --- | --- | --- |
+| `present` | The artifact declaration or proof summary exists and is safe to reference from the evidence root. | Counts toward `evidence_progress.present`, but does not prove lesson completion. |
+| `missing` | The declaration, metadata, or safe relative artifact path is absent or unusable. | The report stays not ready until the evidence is produced or repaired. |
+| `blocked` | RabbitHole supplied a blocker, or a known unsupported desktop affordance prevents proof collection. | The blocker remains visible; do not turn it into a pass or a generic missing state. |
+
+Use `present`, `missing`, and `blocked` language for Save Project and Select
+Project proof artifacts in PR text, scenario notes, and handoff material. The
+broader readiness progress object can also report `invalid` and `not_observed`
+for desktop pixel evidence. Do not replace any of those states with claims of
+full UI automation, grading, creative assessment, broad Alice compatibility, or
+finished lesson execution.
+
 ### Student first-lesson recipe
 
 Run the action-contract scenario when the student scenario requires evidence for the
@@ -197,10 +215,12 @@ Readiness always reports `save_project_proof_artifact` and
 `select_project_proof_artifact` as `present`, `missing`, or `blocked`.
 Declarations in `desktop-first-lesson-next-action.json` can make a category
 `present` or `blocked`; absent next-action evidence or absent declarations remain
-visible as `missing` instead of being folded into generic readiness language. A
-present declaration is only proof-artifact availability. Emitted artifact paths
-are evidence-root-relative summaries, artifact contents are never read or
-emitted, and blockers are preserved as normalized summaries.
+visible as `missing` instead of being folded into generic readiness language.
+Aggregate progress counts present entries in `evidence_progress.present`, but
+that count is only evidence availability. A present declaration is only
+proof-artifact availability. Emitted artifact paths are evidence-root-relative
+summaries, artifact contents are never read or emitted, and blockers are
+preserved as normalized summaries.
 
 ### Instructor remix recipe
 

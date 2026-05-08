@@ -251,9 +251,10 @@ This consumes the embedded target launch manifests and each
 `ui-action-contract.json`. It always reports Save Project and Select Project
 proof-artifact categories. Declarations come from
 `desktop-first-lesson-next-action.json`; if that evidence artifact or a category
-declaration is absent, the category remains visible as `missing`. Each category
-is normalized to `present`, `missing`, or `blocked`. The structural readiness
-check is valid only
+declaration is absent, the category remains visible as `missing`. Each project
+proof-artifact category is normalized to `present`, `missing`, or `blocked`;
+aggregate progress reports a `present` count, but that count means artifact
+availability, not lesson completion. The structural readiness check is valid only
 when both comparison targets include real Alice execution evidence, specific
 Alice window evidence, the required place/edit/run/save action assertions, a
 readable action contract with the matching required action ids, and no unhandled
@@ -281,6 +282,8 @@ blocked and includes a normalized blocker summary when RabbitHole supplies one.
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
 ```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+
 EATME_REAL_ALICE=1 \
 ALICE_BASELINE_HOME=/path/to/alice-reference \
 ALICE_MODERNIZED_HOME=/path/to/alice-candidate \
@@ -305,6 +308,7 @@ Plain output includes the same shared evidence-progress items that JSON exposes:
 
 ```text
 Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):
+- present: Run-window screenshot proof (artifact path screenshots/run-window-after-dispatch.png, size_bytes=48120, sha256=2d6f...)
 - missing: Save Project proof artifact (no Save Project proof artifact declaration was found)
 - blocked: Select Project proof artifact (blocked: project selector proof is unavailable)
 ```
