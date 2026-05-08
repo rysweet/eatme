@@ -264,6 +264,10 @@ legacy `lesson_session_readiness` student envelope. The normalized `status` is
 `ready`, `not_ready`, or `blocked`. A blocked report can still be structurally
 valid; that means the report found coherent evidence plus an explicit blocker,
 not that full Alice UI automation is complete.
+When the missing proof is the next-action artifact, JSON
+`evidence_progress.next_missing_real_desktop_proof`, progress details, and plain
+CLI blockers use the display-safe phrase `desktop next-action evidence` instead
+of exposing the internal artifact path.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -352,8 +356,9 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 The automation scenario writes launch, log, window, screenshot, action-contract,
-and first-lesson readiness progress evidence. Readiness reports Save Project and
-Select Project proof-artifact states through `evidence_progress.items[]` and
+and first-lesson readiness progress evidence. Readiness reports Save Project
+and Select Project proof-artifact states from desktop next-action evidence
+through `evidence_progress.items[]`, and
 reports Select Project, procedure/edit, Save, visible rendering, grading,
 creative assessment, and first-lesson completion independently as `present`,
 `missing`, `invalid`, `not_observed`, or `blocked`. The report treats each result as

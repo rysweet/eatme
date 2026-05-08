@@ -1,6 +1,7 @@
 use super::LessonTargetEvidence;
 use crate::compare::desktop_evidence::{
-    DesktopFirstLessonNextActionEvidence, ProjectProofArtifactEvidence,
+    DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL, DesktopFirstLessonNextActionEvidence,
+    ProjectProofArtifactEvidence,
 };
 use serde::{Serialize, Serializer, ser::SerializeStruct};
 
@@ -182,11 +183,31 @@ fn project_proof_progress_item(
         return progress_item(
             evidence,
             "missing",
-            format!("{label} is missing; no next-action proof-artifact declaration was read."),
+            format!(
+                "missing {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}; {label} cannot be checked because no next-action proof-artifact declaration was read."
+            ),
         );
     };
 
-    progress_item(evidence, artifact.state(), artifact.detail.clone())
+    progress_item(
+        evidence,
+        artifact.state(),
+        project_proof_progress_detail(label, artifact),
+    )
+}
+
+fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvidence) -> String {
+    match artifact.state() {
+        "missing" => format!(
+            "missing {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
+            artifact.detail
+        ),
+        "blocked" => format!(
+            "blocked {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
+            artifact.detail
+        ),
+        _ => artifact.detail.clone(),
+    }
 }
 
 fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
@@ -303,6 +324,31 @@ fn next_missing_real_desktop_proof(
                  at {hook_path} so the harness can collect deterministic evidence; \
                  this does not prove full UI automation."
             ));
+        }
+    }
+
+    if let Some(next_action) = target.desktop_first_lesson_next_action.as_ref()
+        && next_action.status == "missing"
+    {
+        return Some(format!(
+            "next missing real-desktop proof: missing {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} before checking {SAVE_PROJECT_PROOF_LABEL}."
+        ));
+    }
+    for evidence in [
+        "Save Project proof artifact",
+        "Select Project proof artifact",
+    ] {
+        if let Some(item) = items
+            .iter()
+            .find(|item| item.evidence == evidence && item.state == "blocked")
+        {
+            return Some(format!("next missing real-desktop proof: {}", item.detail));
+        }
+        if let Some(item) = items
+            .iter()
+            .find(|item| item.evidence == evidence && item.state == "missing")
+        {
+            return Some(format!("next missing real-desktop proof: {}", item.detail));
         }
     }
 

@@ -63,7 +63,7 @@ fn missing_rabbithole_evidence_boundaries_are_plain_scenario_blockers() {
     assert_boundary_detail_contains(
         &report_json,
         "save_project",
-        "Save scenario evidence is missing.",
+        "Save boundary evidence is missing.",
     );
     assert_boundary_detail_contains(
         &report_json,
@@ -132,6 +132,10 @@ fn explicit_rabbithole_boundary_evidence_is_reported_without_cross_claims() {
         "first-lesson completion",
     );
     assert_does_not_prove(evidence_boundary(&report_json, "save_project"), "grading");
+    assert_eq!(
+        evidence_boundary(&report_json, "save_project")["claim"],
+        "Save action evidence is present for this scenario boundary."
+    );
     assert_does_not_prove(
         evidence_boundary(&report_json, "visible_rendering"),
         "visible rendering correctness",
@@ -175,7 +179,7 @@ fn observed_or_declared_boundary_metadata_does_not_prove_completion() {
         "{save_boundary}"
     );
     assert_detail_contains(save_boundary, "Save scenario metadata was declared");
-    assert_detail_contains(save_boundary, "bounded Save completion evidence is missing");
+    assert_detail_contains(save_boundary, "Save boundary evidence is missing");
     assert_eq!(
         completion_boundary["status"], "missing",
         "{completion_boundary}"
@@ -292,7 +296,9 @@ fn assert_boundary_text_is_scenario_focused(boundary: &serde_json::Value) {
         "boundary label must use scenario-focused wording: {boundary}"
     );
     assert!(
-        detail.contains("scenario") || detail.contains("automation scenarios"),
+        detail.contains("scenario")
+            || detail.contains("automation scenarios")
+            || detail.contains("Save boundary evidence"),
         "boundary detail must use scenario-focused wording: {boundary}"
     );
     for forbidden in [
@@ -326,8 +332,12 @@ fn assert_no_unsupported_success_claims(value: &serde_json::Value) {
         "full alice ui automation is proven",
         "ui automation succeeded",
         "visible rendering correctness is proven",
+        "save completion evidence",
+        "save completed",
+        "save project succeeded",
         "desktop save completion is proven",
         "bounded save completion is proven",
+        "bounded save completion evidence",
         "grading is complete",
         "creative assessment passed",
         "first-lesson completion is proven",

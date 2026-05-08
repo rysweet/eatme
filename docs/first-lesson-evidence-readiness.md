@@ -175,7 +175,10 @@ This report does not prove bounded Save completion or first-lesson completion.
 
 Human output may include short evidence-root-relative summaries. It must not
 expose absolute paths, raw artifact contents, screenshots, logs, environment
-variables, secrets, framework-internal names, or raw blocker objects.
+variables, secrets, framework-internal names, raw blocker objects, or internal
+next-action artifact paths. When the next missing proof is the first-lesson
+next-action artifact, human output and progress details say `desktop
+next-action evidence`.
 
 ## JSON API
 
@@ -352,7 +355,10 @@ Use scenario-focused wording in user-facing text:
 | `First-lesson automation scenarios are not ready.` | `ui-action-contract no_go status failed.` |
 | `Select Project scenario evidence is missing for original Alice.` | `select_project_proof_artifact declaration is missing.` |
 | `Save scenario evidence is blocked for RabbitHole.` | `save_project_desktop_shortcut_dispatch failed.` |
+| `desktop next-action evidence is missing.` | Internal next-action evidence paths. |
 | `Visible rendering scenario evidence is present, but correctness is not proven.` | `pixel proof passed, so rendering is correct.` |
 
 It is acceptable for JSON reference sections to document stable field names.
 Primary human output should stay plain, scenario-focused, and conservative.
+Display-safe wording is produced by the Alice readiness/report model; CLI output
+renders that wording without CLI-side sanitization.

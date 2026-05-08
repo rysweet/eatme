@@ -81,6 +81,14 @@ targets:
     assert_eq!(select_item["state"], "missing");
     assert_eq!(save_item["evidence"], "Save Project proof artifact");
     assert_eq!(select_item["evidence"], "Select Project proof artifact");
+    assert_json_detail_contains(save_item, "desktop next-action evidence");
+    assert_json_detail_contains(select_item, "desktop next-action evidence");
+    let report_text = serde_json::to_string(&report).unwrap();
+    assert!(
+        !report_text.contains("run-window-evidence/desktop-first-lesson-next-action.json"),
+        "readiness JSON must not leak the internal next-action evidence path: {report_text}"
+    );
+    assert_readiness_json_avoids_unsupported_success_claims(&report);
 }
 
 #[test]
@@ -182,7 +190,7 @@ targets:
     assert!(stdout.contains("Blockers:"));
     assert!(stdout.contains("Select Project scenario evidence is missing."));
     assert!(stdout.contains("Procedure/edit scenario evidence is missing."));
-    assert!(stdout.contains("Save scenario evidence is missing."));
+    assert!(stdout.contains("Save boundary evidence is missing."));
     assert!(stdout.contains("Visible rendering scenario evidence is missing."));
     assert!(stdout.contains("Grading scenario evidence is missing."));
     assert!(stdout.contains("Creative assessment scenario evidence is missing."));
@@ -245,6 +253,7 @@ targets:
         );
         assert_boundary_text_is_scenario_focused(boundary);
     }
+    assert_readiness_json_avoids_unsupported_success_claims(&report);
 }
 
 #[test]
@@ -347,6 +356,14 @@ fn progress_item<'a>(report: &'a serde_json::Value, id: &str) -> &'a serde_json:
         .unwrap_or_else(|| panic!("missing evidence_progress item {id}"))
 }
 
+fn assert_json_detail_contains(item: &serde_json::Value, expected: &str) {
+    let detail = item["detail"].as_str().unwrap_or_default();
+    assert!(
+        detail.contains(expected),
+        "expected JSON detail to contain {expected:?}; item was {item}"
+    );
+}
+
 const REQUIRED_BOUNDARY_IDS: [&str; 7] = [
     "select_project",
     "procedure_edit",
@@ -386,7 +403,9 @@ fn assert_boundary_text_is_scenario_focused(boundary: &serde_json::Value) {
         "boundary label must use scenario-focused wording: {boundary}"
     );
     assert!(
-        detail.contains("scenario") || detail.contains("automation scenarios"),
+        detail.contains("scenario")
+            || detail.contains("automation scenarios")
+            || detail.contains("Save boundary evidence"),
         "boundary detail must use scenario-focused wording: {boundary}"
     );
 }
@@ -394,6 +413,8 @@ fn assert_boundary_text_is_scenario_focused(boundary: &serde_json::Value) {
 fn assert_plain_output_avoids_project_proof_success_claims(stdout: &str) {
     let stdout = stdout.to_ascii_lowercase();
     for forbidden in [
+        "save completion evidence",
+        "save completed",
         "ui automation succeeded",
         "automation passed",
         "lesson completed",
@@ -406,6 +427,25 @@ fn assert_plain_output_avoids_project_proof_success_claims(stdout: &str) {
         assert!(
             !stdout.contains(forbidden),
             "plain output must not claim {forbidden:?}"
+        );
+    }
+}
+
+fn assert_readiness_json_avoids_unsupported_success_claims(report: &serde_json::Value) {
+    let text = serde_json::to_string(report).unwrap().to_ascii_lowercase();
+    for forbidden in [
+        "save completion evidence",
+        "save completed",
+        "save project succeeded",
+        "lesson completed",
+        "ui automation succeeded",
+        "grading occurred",
+        "creative assessment passed",
+        "creative quality assessed",
+    ] {
+        assert!(
+            !text.contains(forbidden),
+            "CLI readiness JSON must not claim {forbidden:?}: {text}"
         );
     }
 }

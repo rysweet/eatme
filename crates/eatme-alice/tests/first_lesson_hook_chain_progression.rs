@@ -96,9 +96,9 @@ fn after_place_object_and_edit_procedure_pass_next_proof_names_run_world() {
 }
 
 #[test]
-fn after_all_four_hooks_pass_no_next_missing_real_desktop_proof() {
-    // When all four RabbitHole hook actions are proven,
-    // next_missing_real_desktop_proof should return None — the entire chain is complete.
+fn after_all_four_hooks_pass_next_proof_names_missing_next_action_artifact() {
+    // Once the hook action chain is proven, readiness still requires the
+    // next-action proof artifact before reporting RabbitHole evidence as complete.
     let manifest_path = write_manifest(DesktopFixture {
         run_frame_present: true,
         vm_statement_execution_present: true,
@@ -116,12 +116,26 @@ fn after_all_four_hooks_pass_no_next_missing_real_desktop_proof() {
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
+    let next_proof = report
+        .evidence_progress
+        .next_missing_real_desktop_proof
+        .as_deref()
+        .expect("missing next-action artifact should remain the next proof blocker");
+
     assert!(
-        report
-            .evidence_progress
-            .next_missing_real_desktop_proof
-            .is_none(),
-        "next_missing_real_desktop_proof should be None when all hooks are proven; got: {:?}",
-        report.evidence_progress.next_missing_real_desktop_proof
+        next_proof.contains("missing desktop next-action evidence"),
+        "expected missing next-action artifact guidance; got: {next_proof:?}"
+    );
+    assert!(
+        !next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"),
+        "next proof must not leak the internal next-action evidence path; got: {next_proof:?}"
+    );
+    assert!(
+        next_proof.contains("Save Project proof artifact"),
+        "expected Save Project proof artifact guidance; got: {next_proof:?}"
+    );
+    assert!(
+        !next_proof.contains("lesson completed"),
+        "next proof must not claim lesson completion; got: {next_proof:?}"
     );
 }

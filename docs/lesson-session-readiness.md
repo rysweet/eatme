@@ -96,13 +96,13 @@ the RabbitHole desktop execution check.
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
 | Action contract artifact | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
-| Save Project proof artifact | `save_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove bounded Save completion without a completion signal. |
-| Select Project proof artifact | `select_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
+| Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove bounded Save completion without a completion signal. |
+| Select Project proof artifact | `select_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
 | Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
 
 Current readiness directly resolves and validates the UI action contract path,
-the modernized visible desktop screenshot, and the first-lesson next-action
+the modernized visible desktop screenshot, and the desktop next-action evidence
 proof-artifact states. Other launch artifacts such as logs, window lists, and
 startup screenshots are represented through launch-manifest assertions;
 readiness does not independently revalidate every referenced launch artifact.
@@ -295,9 +295,8 @@ The command consumes embedded target launch manifests and each
 Alice window evidence, action assertions, and matching action ids for the
 student first-lesson flow. Current output always reports Save Project and Select
 Project proof-artifact categories in `evidence_progress.items[]`. Declarations
-come from the modernized target's `desktop-first-lesson-next-action.json`; if
-that evidence artifact or a category declaration is absent, the category remains
-visible as `missing`.
+come from the modernized target's desktop next-action evidence; if that evidence
+or a category declaration is absent, the category remains visible as `missing`.
 
 ### Check the RabbitHole evidence needed before continuing
 
@@ -421,7 +420,7 @@ Top-level fields:
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
-| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, Save Project proof artifact, or Select Project proof artifact. |
+| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than internal artifact paths. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |
@@ -448,7 +447,7 @@ lesson, prove UI completion, or collapse blocked evidence into missing evidence.
 | `summary` | string | Human-readable aggregate count summary. |
 | `next_actionable_blocker` | string or omitted | Next unsupported action blocker reported by RabbitHole. |
 | `items` | array | Required evidence entries. Each entry has `id`, `evidence`, `state`, and `detail`. |
-| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. |
+| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. When the missing proof is the next-action artifact, the value includes the label `desktop next-action evidence`, not an internal artifact path. |
 
 Across the full progress object, `items[].state` can be `present`, `missing`,
 `invalid`, `not_observed`, or `blocked`. The Save Project and Select Project
@@ -496,11 +495,10 @@ whether RabbitHole supplied an auditable artifact declaration for the action
 boundary. They do not say that Alice UI automation succeeded, that a lesson was
 completed, that a saved world was graded, or that creative quality was assessed.
 
-The modernized target reads optional declarations from:
-
-```text
-run-window-evidence/desktop-first-lesson-next-action.json
-```
+The modernized target reads optional declarations from desktop next-action
+evidence. The runner still resolves and validates the underlying artifact under
+the comparison evidence root, but readiness output describes it with the
+display-safe label `desktop next-action evidence`.
 
 The accepted declaration fields are:
 
@@ -549,10 +547,10 @@ readiness report did not receive a usable proof-artifact declaration. An unsafe
 absolute path, traversal path, or artifact outside the evidence root is not
 treated as present.
 
-Both project proof-artifact categories are reported even when
-`desktop-first-lesson-next-action.json` is missing or does not declare them. In
-that case the Save Project and Select Project entries appear as `missing`
-instead of disappearing from the report.
+Both project proof-artifact categories are reported even when desktop
+next-action evidence is missing or does not declare them. In that case the Save
+Project and Select Project entries appear as `missing` instead of disappearing
+from the report.
 
 Artifact paths emitted by readiness are evidence-root-relative paths from the
 declaration. The readiness report must not emit absolute host paths for Save
@@ -721,7 +719,7 @@ Each `target_evidence[]` entry describes one comparison target:
 | `launch_manifest_present` | boolean | Whether the target has a readable launch manifest reference. |
 | `ui_action_contract_path` | string or null | Path to the target `ui-action-contract.json`. |
 | `ui_action_contract_readable` | boolean | Whether the UI action contract could be parsed. |
-| `desktop_first_lesson_next_action` | object or null | Parsed `desktop-first-lesson-next-action.json` evidence for the modernized target. Save Project and Select Project categories still appear in `evidence_progress.items[]` as `missing` when declarations are absent. |
+| `desktop_first_lesson_next_action` | object or null | Parsed desktop next-action evidence for the modernized target. Save Project and Select Project categories still appear in `evidence_progress.items[]` as `missing` when declarations are absent. |
 | `action_assertions` | array | Required action assertions and their pass/fail status. |
 | `required_actions` | array of strings | Action ids discovered from the UI action contract. |
 | `missing_assertions` | array of strings | Required assertions absent from the target evidence. |
