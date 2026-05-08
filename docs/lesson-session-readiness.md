@@ -20,13 +20,13 @@ are visible and machine-readable. It does not implement missing Alice desktop
 affordances, does not automate a complete lesson, does not perform creative
 assessment, and does not grade student worlds.
 
-For the planned conservative RabbitHole boundary contract for Select Project,
-procedure/edit, Save, visible rendering, grading, creative assessment, and
-first-lesson completion, see
-[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
-describes the feature to build. Current readiness reports still expose these
-signals through `evidence_progress.items[]`, project proof-artifact entries,
-limitations, and issues.
+For the conservative original Alice and RabbitHole boundary contract for Select
+Project, procedure/edit, Save, visible rendering, grading, creative assessment,
+and first-lesson completion, see
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). Current
+readiness reports expose these signals through `evidence_boundaries[]`,
+`evidence_progress.items[]`, project proof-artifact entries, limitations, and
+issues.
 
 ## Scenario map
 
@@ -34,7 +34,7 @@ Use these canonical scenarios for instructor/student lesson-session evidence:
 
 | Scenario | Role | Evidence contract |
 | --- | --- | --- |
-| `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, current readiness progress evidence, planned first-lesson automation scenario evidence boundaries, and explicit blockers for missing desktop affordances. |
+| `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress evidence, first-lesson automation scenario evidence boundaries, and explicit blockers for missing desktop affordances. |
 | `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
 | `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
 | `instructor-student-outcomes-rubric` | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
@@ -67,10 +67,9 @@ Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. Current readiness can mark the next first-lesson action `ready` only
 after RabbitHole evidence files show launch, the Run window, desktop execution,
 screenshot artifacts, log artifacts, window artifacts, a readable action
-contract, and the current project proof-artifact states. The planned boundary
-reporting feature will add explicit boundary states for Select Project,
-procedure/edit, Save, visible rendering, grading, creative assessment, and
-first-lesson completion.
+contract, the current project proof-artifact states, and explicit boundary
+states for Select Project, procedure/edit, Save, visible rendering, grading,
+creative assessment, and first-lesson completion.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
@@ -426,10 +425,10 @@ Top-level fields:
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |
 
-The planned first-lesson boundary reporting shard will add
-`evidence_boundaries[]` to this schema. Until that field exists, consumers must
-not assume it is present; use `evidence_progress.items[]` and the project
-proof-artifact entries instead.
+First-lesson boundary reporting adds `evidence_boundaries[]` to this schema.
+Consumers that need the bounded automation scenarios contract should read
+`evidence_boundaries[]`; older consumers can continue to use
+`evidence_progress.items[]` and the project proof-artifact entries.
 
 ### Evidence progress API
 
@@ -831,13 +830,12 @@ This is acceptable first-lesson evidence when the report also includes
 `ui-action-contract.json` evidence and action-level `no_go_contracts`
 (unsupported-action entries). It is not a completed UI automation pass.
 
-### Student flow: inspect planned first-lesson scenario evidence
+### Student flow: inspect first-lesson scenario evidence
 
-The planned boundary reporting feature will make plain output name scenario
-evidence boundaries:
+Boundary reporting makes plain output name scenario evidence boundaries:
 
 ```text
-First-lesson automation scenario readiness: blocked
+First-lesson automation scenarios readiness: blocked
 
 Evidence present:
 - Select Project scenario evidence is present.
@@ -849,9 +847,9 @@ Blockers:
 - First-lesson completion scenario evidence is missing.
 ```
 
-After the planned feature is implemented, JSON output will expose the same
-conservative states in mandatory `evidence_boundaries[]` entries. This excerpt
-shows only two entries from the longer boundary array:
+JSON output exposes the same conservative states in mandatory
+`evidence_boundaries[]` entries. This excerpt shows only two entries from the
+longer boundary array:
 
 ```json
 [
@@ -943,14 +941,14 @@ or deployed-service status.
 3. Use `ready`, `not_ready`, and `blocked` wording for readiness outputs.
 4. Add explicit blockers for missing desktop affordances instead of implying
    silent success; explain that they report `blocked`.
-5. If the scenario consumes RabbitHole first-lesson evidence today, preserve the
-   current `evidence_progress.items[]` entries and project proof-artifact states.
-   If it implements the planned boundary shard, report Select Project,
-   procedure/edit, Save, visible rendering, grading, creative assessment, and
-   first-lesson completion separately as `present`, `missing`, `invalid`,
-   `not_observed`, or `blocked`. Preserve blocker information as a normalized
-   summary and keep boundary evidence separate from UI success, rendering
-   correctness, grading, creative assessment, and completion language.
+5. If the scenario consumes RabbitHole first-lesson evidence, preserve
+   `evidence_boundaries[]`, `evidence_progress.items[]`, and project
+   proof-artifact states. Report Select Project, procedure/edit, Save, visible
+   rendering, grading, creative assessment, and first-lesson completion
+   separately as `present`, `missing`, `invalid`, `not_observed`, or `blocked`.
+   Preserve blocker information as a normalized summary and keep boundary
+   evidence separate from UI success, rendering correctness, grading, creative
+   assessment, and completion language.
 6. Validate the changed asset:
 
    ```bash
@@ -991,8 +989,8 @@ summary in the PR description:
 | --- | --- |
 | Scenario validation | `cargo run -q -p eatme-cli -- assets validate --json` passed. |
 | Gadugi freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` passed, or adapters were regenerated and committed. |
-| Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
-| First-lesson scenario evidence | Current reports preserve project proof-artifact and readiness progress states. Planned boundary-shard changes expose Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion entries as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
+| Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
+| First-lesson scenario evidence | Reports preserve project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
 | Boundaries | The change does not claim full UI automation, visible rendering correctness, bounded Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

@@ -24,7 +24,7 @@ used by the baseline launch smoke, then records that id in the run manifest.
 | `arrays-collection-choreography` | Student data/state smoke | Gate array/list/index review on real launch evidence. |
 | `mythic-choice-event-tree` | Student interactive narrative smoke | Gate choice, event, branch, and peer-playtest review on real launch evidence. |
 | `vr-camera-perspective-tour` | Student camera/VR smoke | Gate audience viewpoint and non-VR fallback review on real launch evidence. |
-| `first-lessons-real-ui-actions` | First-lesson automation scenario | Launch Alice, detect the Alice window, record first-lesson scenario evidence boundaries, and fail explicitly until deterministic desktop evidence exists. |
+| `first-lessons-real-ui-actions` | First-lesson automation scenarios | Launch Alice, detect the Alice window, record first-lesson scenario evidence boundaries, and fail explicitly until deterministic desktop evidence exists. |
 | `modified-class-portability` | Class portability contract | Validate the export/import evidence contract and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
@@ -75,21 +75,21 @@ launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
 
 The `first-lessons-real-ui-actions` scenario is different: it is the executable
-automation scenario for first-lesson readiness progress evidence and the planned
-first-lesson evidence boundary shard. It launches Alice, verifies an Alice Stage
-IDE window from window-manager evidence, records the first-lesson scenario
-evidence contract, and currently reports readiness progress entries including
-Save Project and Select Project proof-artifact states. The planned boundary
-shard will report Select Project, procedure/edit, Save, visible rendering,
-grading, creative assessment, and first-lesson completion independently. Missing
-declarations remain visible as `missing`; malformed or unsafe evidence is
-`invalid`; a producer that ran without the expected observation is
-`not_observed`; explicit RabbitHole blockers are `blocked`.
+automation scenario for first-lesson readiness progress evidence and
+first-lesson evidence boundaries. It launches Alice, verifies an Alice Stage IDE
+window from window-manager evidence, records the first-lesson scenario evidence
+contract, and reports readiness progress entries including Save Project and
+Select Project proof-artifact states. Boundary reporting names Select Project,
+procedure/edit, Save, visible rendering, grading, creative assessment, and
+first-lesson completion independently. Missing declarations remain visible as
+`missing`; malformed or unsafe evidence is `invalid`; a producer that ran
+without the expected observation is `not_observed`; explicit RabbitHole blockers
+are `blocked`.
 
-Present planned boundary evidence is boundary-specific only. It does not prove
-full Alice UI automation, visible rendering correctness, bounded Save
-completion, grading, creative assessment, learner-world grading, or
-first-lesson completion unless the matching evidence boundary is present.
+Present boundary evidence is boundary-specific only. It does not prove full
+Alice UI automation, visible rendering correctness, bounded Save completion,
+grading, creative assessment, learner-world grading, or first-lesson completion
+unless the matching evidence boundary is present.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -127,7 +127,7 @@ and explicit instructor/student deliverables.
 | Need | Scenario | What to collect |
 | --- | --- | --- |
 | Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, current readiness progress evidence, and planned explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
+| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
 The evidence levels are intentionally separate:
@@ -146,8 +146,8 @@ quality, and does not grade a saved world.
 
 ### Evidence reporting vocabulary
 
-Current first-lesson readiness reporting uses explicit states for progress
-items. The planned boundary shard uses the same vocabulary for each boundary:
+First-lesson readiness reporting uses explicit states for progress items and for
+each boundary:
 
 | State | Meaning | Boundary |
 | --- | --- | --- |
@@ -212,11 +212,11 @@ non-empty placement artifact plus a scene/project diff for the named gallery
 object. Treat every other outcome as a boundary signal, not as completed UI
 coverage.
 
-Current readiness always reports Save Project and Select Project proof-artifact
-states in `evidence_progress.items[]`. The planned boundary shard will report
-Select Project, procedure/edit, Save, visible rendering, grading, creative
-assessment, and first-lesson completion as separate scenario evidence
-boundaries. Declarations can explain what RabbitHole attempted or observed, but
+Readiness always reports Save Project and Select Project proof-artifact states
+in `evidence_progress.items[]` and reports Select Project, procedure/edit, Save,
+visible rendering, grading, creative assessment, and first-lesson completion as
+separate scenario evidence boundaries. Declarations can explain what RabbitHole
+attempted or observed, but
 declarations alone remain `missing` for completion-sensitive claims. Aggregate
 progress counts present entries in `evidence_progress.present`, but that count
 is only evidence availability. Emitted artifact paths are evidence-root-relative
@@ -454,14 +454,14 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-Until real UI automation is wired, this command is expected to exit non-zero
-after writing a manifest and `ui-action-contract.json`. Treat that explicit
-failure as the contract, not as passing coverage. This scenario is preflight
-launch/action-contract readiness evidence only for setup, launch support,
-handoff artifacts, and classroom support preparation. It is not full UI
-automation, not creative assessment, not learner-world grading, not production
-readiness, not lesson completion, not complete end-to-end lesson execution, and
-not broad Alice compatibility.
+When required executable evidence is missing, incomplete, or blocked, this
+command exits non-zero after writing a manifest and `ui-action-contract.json`.
+Treat that explicit failure as the contract, not as passing coverage. These
+automation scenarios provide preflight launch/action-contract readiness evidence
+only for setup, launch support, handoff artifacts, and classroom support
+preparation. They are not full Alice UI automation, not creative assessment, not
+learner-world grading, not production readiness, not lesson completion, not
+complete end-to-end lesson execution, and not broad Alice compatibility.
 
 #### Instructor-editable readiness evidence wording
 
@@ -491,23 +491,22 @@ Example complete `purpose` wording:
 
 ```yaml
 purpose: >-
-  Move the first Alice lesson checks beyond manifest-only smoke by launching the
-  real Alice desktop for original Alice and RabbitHole / modernized Alice,
-  verifying a specific Alice window, executing safe window
+  Compare first Alice lesson automation scenarios beyond manifest-only smoke by
+  launching the real Alice desktop for original Alice and RabbitHole /
+  modernized Alice, verifying a specific Alice window, executing safe window
   activation plus save-shortcut dispatch probes, consuming object-placement proof
   when Alice exposes it, consuming edit proof when Alice exposes it, and
   dispatching Alice's documented Run shortcut after edit proof exists. The
-  contract still requires explicit evidence for object placement,
-  procedure/code editing, world run, project save, and a captured contract
-  artifact. Until deterministic desktop manipulation beyond safe window
-  activation, shortcut dispatch, and backend proof hooks is wired,
-  the harness must fail loudly with a preflight/action contract instead of
-  reporting a silent pass.
-  This is preflight launch/action-contract readiness evidence only for setup,
-  launch support, handoff artifacts, and classroom support preparation. It is
-  not full UI automation, not creative assessment, not learner-world grading,
-  not production readiness, not lesson completion, not complete end-to-end
-  lesson execution, and not broad Alice compatibility.
+  contract requires explicit evidence for object placement, procedure/code
+  editing, world run, project save, and a captured contract artifact. When
+  deterministic desktop manipulation beyond safe window activation, shortcut
+  dispatch, and backend proof hooks is missing, the harness fails loudly with a
+  preflight/action contract instead of reporting a silent pass. This is
+  preflight launch/action-contract readiness evidence only for setup, launch
+  support, handoff artifacts, and classroom support preparation. It is not full
+  Alice UI automation, not creative assessment, not learner-world grading, not
+  production readiness, not lesson completion, not complete end-to-end lesson
+  execution, and not broad Alice compatibility.
 ```
 
 After a wording edit, validate the canonical asset and check generated adapter

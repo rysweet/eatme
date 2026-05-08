@@ -246,17 +246,17 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
   --json
 ```
 
-This consumes the embedded target launch manifests and current first-lesson
-readiness progress evidence. Current JSON reports explicit
+This consumes the embedded target launch manifests and first-lesson readiness
+progress evidence. JSON reports explicit `evidence_boundaries[]` and
 `evidence_progress.items[]` states, including Save Project and Select Project
-proof-artifact entries. The planned boundary-reporting shard will add separate
-RabbitHole boundaries for Select Project, procedure/edit, Save, visible
-rendering, grading, creative assessment, and first-lesson completion. Missing,
-malformed, ambiguous, unsafe, or uncertain evidence remains visible as a blocker.
-Boundary metadata may show that a boundary was declared or observed, but it does
-not prove bounded Save completion, rendering correctness, grading, creative
-assessment, or first-lesson completion unless the matching boundary evidence
-exists.
+proof-artifact entries. It reports separate original Alice and RabbitHole
+boundaries for Select Project, procedure/edit, Save, visible rendering, grading,
+creative assessment, and first-lesson completion. Missing, malformed, ambiguous,
+unsafe, manifest-only, incomplete, out-of-order, or uncertain evidence remains
+visible as a blocker. Boundary metadata may show that a boundary was declared or
+observed, but it does not prove bounded Save completion, rendering correctness,
+grading, creative assessment, or first-lesson completion unless the matching
+boundary evidence exists.
 
 The report includes `role_readiness` for `instructor` and `student`, plus the
 legacy `lesson_session_readiness` student envelope. The normalized `status` is
@@ -288,11 +288,11 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run. The planned boundary shard
-will keep plain-output blockers scenario-focused:
+manual smoke skip from a failed desktop proof run. Boundary reporting keeps
+plain-output blockers scenario-focused:
 
 ```text
-First-lesson automation scenario readiness: not ready
+First-lesson automation scenarios readiness: not ready
 
 Evidence present:
 - Alice launch scenario evidence is present.
@@ -313,7 +313,7 @@ not create a complete instructor assignment, consume a complete student lesson,
 perform creative assessment, grade learner worlds, or claim broad Alice
 compatibility.
 
-For the planned conservative boundary schema, see
+For the conservative boundary schema, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). For
 instructor/student usage recipes, see
 [Lesson Session Readiness](lesson-session-readiness.md).
@@ -351,12 +351,11 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 The automation scenario writes launch, log, window, screenshot, action-contract,
-and current first-lesson readiness progress evidence. Current readiness reports
-Save Project and Select Project proof-artifact states through
-`evidence_progress.items[]`. The planned boundary shard will report Select
-Project, procedure/edit, Save, visible rendering, grading, creative assessment,
-and first-lesson completion independently as `present`, `missing`, `invalid`,
-`not_observed`, or `blocked`. The report treats each result as
+and first-lesson readiness progress evidence. Readiness reports Save Project and
+Select Project proof-artifact states through `evidence_progress.items[]` and
+reports Select Project, procedure/edit, Save, visible rendering, grading,
+creative assessment, and first-lesson completion independently as `present`,
+`missing`, `invalid`, `not_observed`, or `blocked`. The report treats each result as
 boundary-specific evidence only, not full UI coverage, rendering correctness,
 grading, creative assessment, or completed lesson proof.
 
