@@ -429,3 +429,50 @@ fn vm_statement_prerequisite_is_preserved_when_screenshot_exists() {
         "modernized launch_manifest assertion \"run_world_desktop_execution_observed\" must pass before first-lesson readiness is evidence-ready",
     );
 }
+
+#[test]
+fn after_full_desktop_pixel_chain_next_proof_names_first_missing_rabbithole_hook() {
+    // When all Run-window/pixel-chain evidence is present but the RabbitHole hook
+    // actions are still unproven, next_missing_real_desktop_proof should name the
+    // first missing hook (place-object) and cite the specific tools/ path to wire.
+    // This gives a plain user an exact next step rather than silence.
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+    });
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    let next_proof = report
+        .evidence_progress
+        .next_missing_real_desktop_proof
+        .as_deref()
+        .expect("next_missing_real_desktop_proof should be set when RabbitHole hooks are unproven");
+
+    assert!(
+        next_proof.contains("place-object"),
+        "expected place-object hook guidance; got: {next_proof:?}"
+    );
+    assert!(
+        next_proof.contains("tools/eatme-place-object"),
+        "expected tools/eatme-place-object path; got: {next_proof:?}"
+    );
+    assert!(
+        next_proof.contains("does not prove full UI automation"),
+        "expected explicit automation limit statement; got: {next_proof:?}"
+    );
+    // The run-world and save-project hooks come after place-object in the chain;
+    // they should not appear as the next step until place-object is wired.
+    assert!(
+        !next_proof.contains("run-world"),
+        "run-world should not be the next step before place-object; got: {next_proof:?}"
+    );
+    assert!(
+        !next_proof.contains("save-project"),
+        "save-project should not be the next step before place-object; got: {next_proof:?}"
+    );
+}

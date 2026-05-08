@@ -207,6 +207,32 @@ fn next_missing_real_desktop_proof(
             "next missing real-desktop proof: record an observed desktop Run pixel sample in run-window-evidence/desktop-run-pixel-observation.json from a non-headless visible desktop.".into(),
         );
     }
+
+    // After the Run-pixel chain is complete, surface the first RabbitHole hook action
+    // that has not yet been proven so a plain user knows exactly which hook to wire next.
+    for (action_id, hook_path, label) in [
+        (
+            "place-object",
+            "tools/eatme-place-object",
+            "object placement",
+        ),
+        (
+            "edit-procedure-or-code-block",
+            "tools/eatme-edit-procedure",
+            "procedure/code-block editing",
+        ),
+        ("run-world", "tools/eatme-run-world", "world run"),
+        ("save-project", "tools/eatme-save-project", "project save"),
+    ] {
+        if !action_passed(target, action_id) {
+            return Some(format!(
+                "next missing real-desktop proof: wire the {label} hook ({action_id}) \
+                 at {hook_path} so the harness can collect deterministic evidence; \
+                 this does not prove full UI automation."
+            ));
+        }
+    }
+
     None
 }
 
