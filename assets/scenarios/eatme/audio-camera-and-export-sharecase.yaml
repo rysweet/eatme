@@ -1,0 +1,194 @@
+schema_version: eatme.scenario/v1
+id: audio-camera-and-export-sharecase
+title: Audio, Camera, and Export — Sharecase
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use Alice lessons, exercises, projects, how-tos, and the audio library as
+      editable sources for camera marker placement, timing, audio cues, caption
+      labels, and classroom sharing choices. The sharecase must reference at
+      least one audio or camera technique that students can apply to an existing
+      Alice world before sharing it.
+  - name: Alice.org Programming in Alice lesson family
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Use the camera, scene layout, sound, and character animation concepts from
+      this lesson family as student-facing vocabulary for how camera markers and
+      audio cues affect audience experience. The sharing plan must name at least
+      two delivery options (such as a project file, a screen presentation, or a
+      gallery walk) and ask students to choose based on classroom conditions and
+      the accessibility needs of their audience.
+purpose: >-
+  Help an instructor design a lesson where students polish an Alice world with
+  at least one camera or audio cue, then share it with peers in an
+  accessibility-aware way. Students choose a camera marker or audio cue that
+  improves audience understanding, add a caption or text label that makes the
+  cue meaningful for viewers who cannot rely on sound or fine visual detail,
+  prepare a sharing plan that offers at least two delivery alternatives in case
+  export fails, and invite one targeted peer-feedback question that addresses
+  concept or communication rather than only aesthetics. This scenario covers the
+  creative-storyteller, accessibility-advocate, and immersive-camera-director
+  student personas without claiming full user interface automation, automated
+  creative assessment, learner-world grading, complete Alice coverage, or a
+  real smoke-test of the Alice application.
+personas:
+  instructors: [studio-facilitator, classroom-orchestrator, assessment-curator]
+  students: [creative-storyteller, accessibility-advocate, immersive-camera-director]
+agentic_flow:
+  focus: audio-camera-and-export-sharecase
+  instructor_goal: >-
+    Prepare a camera-and-audio polish guide, a student sharecase card, and an
+    accessibility-aware sharing plan for an Alice sharecase lesson: a
+    camera-and-audio polish guide that prompts students to choose one camera
+    marker or audio cue that improves audience understanding and explain why
+    they chose it; a caption or text-label step that adds an on-screen label
+    making the cue meaningful for viewers who cannot rely solely on sound or on
+    fine visual detail; a student sharecase card that names the artifact, the
+    cue the student added, and one targeted peer-feedback question that focuses
+    on concept or communication rather than only aesthetics; and an
+    accessibility-aware sharing plan that lists at least two delivery
+    alternatives (such as project file, screen presentation, exported media, or
+    gallery walk) so that sharing can proceed even if export fails. The
+    instructor note must require one accessibility-aware communication choice
+    and explain that the choice is a real design decision, not an optional add-on.
+  prompt_source: assets/scenarios/eatme/audio-camera-and-export-sharecase.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - camera_and_audio_polish_guide
+    - student_sharecase_card
+    - accessibility_aware_sharing_plan
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing an Alice sharecase lesson
+  where students add camera or audio polish to an existing world and then share
+  it with peers. Produce a camera-and-audio polish guide, a student sharecase
+  card, and an accessibility-aware sharing plan grounded in the listed resources
+  and this audio-camera-and-export-sharecase scenario. The camera-and-audio
+  polish guide must prompt the student to choose one camera marker or audio cue
+  that improves audience understanding, write one sentence explaining why they
+  chose that cue over doing nothing, and add a caption or text label that makes
+  the cue meaningful for viewers who cannot rely solely on sound or on fine
+  visual detail. The student sharecase card must name the artifact or screenshot
+  reference, describe the one cue the student added and how it changes audience
+  experience, and ask one targeted peer-feedback question that addresses concept
+  or communication rather than only aesthetics. The accessibility-aware sharing
+  plan must list at least two delivery alternatives — for example a project
+  file hand-off and a screen presentation — so that sharing can proceed even if
+  export fails, explain what each alternative requires from the receiving peer
+  or teacher, and include one accessibility-aware communication choice (such as
+  adding a caption or label to a key sound or visual moment). The instructor
+  note must state that the accessibility-aware communication choice is a real
+  design decision, not an optional add-on, and that export format, LMS, and
+  media pipeline choices vary by classroom policy. Include a note that peer
+  feedback must target concept and communication, not only aesthetics, and
+  explain why that distinction matters for the audience's ability to follow
+  the work. State explicitly that this is not full user interface automation,
+  not automated creative assessment, not learner-world grading, not complete
+  Alice coverage, and not a real Alice smoke test.
+acceptance_criteria:
+  - given: >-
+      an instructor wants to help students polish an Alice world before sharing
+      it with peers
+    when: >-
+      the camera-and-audio polish guide is prepared
+    then: >-
+      the guide prompts the student to choose one camera marker or audio cue,
+      explain why they chose it, and add a caption or text label for
+      accessibility — without requiring a specific export format or LMS
+  - given: >-
+      a student is preparing to share an Alice world with peers
+    when: >-
+      the student sharecase card is used
+    then: >-
+      the card names the artifact, describes the one cue added and its effect
+      on audience experience, and asks one peer-feedback question that targets
+      concept or communication rather than only aesthetics
+  - given: >-
+      export may fail or classroom policy may restrict specific export formats
+    when: >-
+      the accessibility-aware sharing plan is prepared
+    then: >-
+      the plan lists at least two delivery alternatives and explains what each
+      requires, so sharing can proceed even if the primary export path is
+      unavailable
+  - given: >-
+      an accessibility-advocate student or instructor is concerned about
+      audio-only meaning
+    when: >-
+      reviewing the polish guide or sharing plan
+    then: >-
+      the output requires one accessibility-aware communication choice and
+      describes it as a real design decision, not an optional add-on
+  - given: >-
+      a peer is providing feedback on a shared Alice world
+    when: >-
+      the peer-feedback question is used
+    then: >-
+      the question focuses on concept or communication rather than only
+      aesthetics, and the output explains why that distinction matters
+acceptance_probes:
+  - Camera-and-audio polish guide prompts the student to choose one camera marker or audio cue and write one sentence explaining why they chose it.
+  - Camera-and-audio polish guide includes a caption or text-label step that makes the cue meaningful for viewers who cannot rely solely on sound or visual detail.
+  - Student sharecase card names the artifact or screenshot reference and describes the one cue the student added.
+  - Student sharecase card asks one targeted peer-feedback question that addresses concept or communication rather than only aesthetics.
+  - Accessibility-aware sharing plan lists at least two delivery alternatives in case export fails.
+  - Accessibility-aware sharing plan includes one accessibility-aware communication choice described as a real design decision, not an optional add-on.
+  - Output explains that peer feedback must target concept and communication, not only aesthetics, and states why.
+  - Output notes that export format, LMS, and media pipeline choices vary by classroom policy.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a real Alice smoke test.
+rubric:
+  - criterion: Camera or audio polish choice and reasoning
+    evidence:
+      - Polish guide records the one cue the student chose and a one-sentence reason.
+      - Polish guide confirms the student added a caption or text label for the chosen cue.
+  - criterion: Sharecase card completeness
+    evidence:
+      - Sharecase card names the artifact and the cue added.
+      - Peer-feedback question in the sharecase card targets concept or communication rather than only aesthetics.
+  - criterion: Sharing plan fallback coverage
+    evidence:
+      - Sharing plan lists at least two delivery alternatives.
+      - Each alternative states what it requires from the receiving peer or teacher.
+  - criterion: Accessibility integration
+    evidence:
+      - One accessibility-aware communication choice is present and described as a real design decision.
+      - The choice is not framed as an optional extra or a fallback for failed designs.
+avoid:
+  - Assuming one exact export format, LMS, or media pipeline.
+  - Framing the accessibility-aware communication choice as optional or as a compensating fallback.
+  - Directing peer feedback only at aesthetics without also addressing concept or communication.
+  - Requiring a specific Alice character model, scene name, or project template.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or a real Alice smoke test.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes audio-camera-and-export-sharecase
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/audio-camera-and-export-sharecase.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  camera_and_audio_polish_guide: agentic://instructor/camera-and-audio-polish-guide
+  student_sharecase_card: agentic://student/sharecase-card
+  accessibility_aware_sharing_plan: agentic://instructor/accessibility-aware-sharing-plan
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited Alice-facing resources, fail visibly and report the missing evidence.
+  Do not replace instructor judgment with launch, screenshot, or
+  export-preflight artifacts. Do not claim full user interface automation,
+  automated creative assessment, learner-world grading, complete Alice coverage,
+  or a real Alice smoke test.
