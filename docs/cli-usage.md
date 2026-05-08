@@ -246,14 +246,17 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
   --json
 ```
 
-This consumes the embedded target launch manifests and first-lesson automation
-scenario evidence. It reports each RabbitHole boundary separately: Select
-Project, procedure/edit, Save, visible rendering, grading, creative assessment,
-and first-lesson completion. Missing, malformed, ambiguous, unsafe, or uncertain
-evidence remains visible as a blocker. Boundary metadata may show that a
-boundary was declared or observed, but it does not prove desktop Save
-completion, rendering correctness, grading, creative assessment, or first-lesson
-completion unless the matching boundary evidence exists.
+This consumes the embedded target launch manifests and current first-lesson
+readiness progress evidence. Current JSON reports explicit
+`evidence_progress.items[]` states, including Save Project and Select Project
+proof-artifact entries. The planned boundary-reporting shard will add separate
+RabbitHole boundaries for Select Project, procedure/edit, Save, visible
+rendering, grading, creative assessment, and first-lesson completion. Missing,
+malformed, ambiguous, unsafe, or uncertain evidence remains visible as a blocker.
+Boundary metadata may show that a boundary was declared or observed, but it does
+not prove bounded Save completion, rendering correctness, grading, creative
+assessment, or first-lesson completion unless the matching boundary evidence
+exists.
 
 The report includes `role_readiness` for `instructor` and `student`, plus the
 legacy `lesson_session_readiness` student envelope. The normalized `status` is
@@ -285,8 +288,8 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run. Plain output keeps blockers
-scenario-focused:
+manual smoke skip from a failed desktop proof run. The planned boundary shard
+will keep plain-output blockers scenario-focused:
 
 ```text
 First-lesson automation scenario readiness: not ready
@@ -305,12 +308,12 @@ Blockers:
 ```
 
 With `--execute`, non-baseline Alice scenarios still require
-`EATME_REAL_ALICE=1`. The command preserves the same boundaries: it does not
-create a complete instructor assignment, consume a complete student lesson,
+`EATME_REAL_ALICE=1`. The command preserves the same conservative scope: it does
+not create a complete instructor assignment, consume a complete student lesson,
 perform creative assessment, grade learner worlds, or claim broad Alice
 compatibility.
 
-For the complete conservative boundary schema, see
+For the planned conservative boundary schema, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). For
 instructor/student usage recipes, see
 [Lesson Session Readiness](lesson-session-readiness.md).
@@ -347,13 +350,15 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The automation scenario writes launch, log, window, screenshot, and
-first-lesson scenario evidence. Readiness reports Select Project,
-procedure/edit, Save, visible rendering, grading, creative assessment, and
-first-lesson completion independently as `present`, `missing`, `invalid`,
-`not_observed`, or `blocked`. The report treats each result as boundary-specific
-evidence only, not full UI coverage, rendering correctness, grading, creative
-assessment, or completed lesson proof.
+The automation scenario writes launch, log, window, screenshot, action-contract,
+and current first-lesson readiness progress evidence. Current readiness reports
+Save Project and Select Project proof-artifact states through
+`evidence_progress.items[]`. The planned boundary shard will report Select
+Project, procedure/edit, Save, visible rendering, grading, creative assessment,
+and first-lesson completion independently as `present`, `missing`, `invalid`,
+`not_observed`, or `blocked`. The report treats each result as
+boundary-specific evidence only, not full UI coverage, rendering correctness,
+grading, creative assessment, or completed lesson proof.
 
 Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow

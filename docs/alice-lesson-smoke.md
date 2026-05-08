@@ -75,19 +75,21 @@ launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
 
 The `first-lessons-real-ui-actions` scenario is different: it is the executable
-automation scenario for first-lesson evidence boundaries. It launches Alice,
-verifies an Alice Stage IDE window from window-manager evidence, records the
-first-lesson scenario evidence contract, and reports Select Project,
-procedure/edit, Save, visible rendering, grading, creative assessment, and
-first-lesson completion independently. Missing declarations remain visible as
-`missing`; malformed or unsafe evidence is `invalid`; a producer that ran without
-the expected observation is `not_observed`; explicit RabbitHole blockers are
-`blocked`.
+automation scenario for first-lesson readiness progress evidence and the planned
+first-lesson evidence boundary shard. It launches Alice, verifies an Alice Stage
+IDE window from window-manager evidence, records the first-lesson scenario
+evidence contract, and currently reports readiness progress entries including
+Save Project and Select Project proof-artifact states. The planned boundary
+shard will report Select Project, procedure/edit, Save, visible rendering,
+grading, creative assessment, and first-lesson completion independently. Missing
+declarations remain visible as `missing`; malformed or unsafe evidence is
+`invalid`; a producer that ran without the expected observation is
+`not_observed`; explicit RabbitHole blockers are `blocked`.
 
-Present boundary evidence is boundary-specific only. It does not prove full Alice
-UI automation, visible rendering correctness, desktop Save completion, grading,
-creative assessment, learner-world grading, or first-lesson completion unless
-the matching evidence boundary is present.
+Present planned boundary evidence is boundary-specific only. It does not prove
+full Alice UI automation, visible rendering correctness, bounded Save
+completion, grading, creative assessment, learner-world grading, or
+first-lesson completion unless the matching evidence boundary is present.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -125,7 +127,7 @@ and explicit instructor/student deliverables.
 | Need | Scenario | What to collect |
 | --- | --- | --- |
 | Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, first-lesson scenario evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
+| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, current readiness progress evidence, and planned explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
 The evidence levels are intentionally separate:
@@ -144,8 +146,8 @@ quality, and does not grade a saved world.
 
 ### Evidence reporting vocabulary
 
-First-lesson automation scenario reporting uses explicit states for each
-boundary:
+Current first-lesson readiness reporting uses explicit states for progress
+items. The planned boundary shard uses the same vocabulary for each boundary:
 
 | State | Meaning | Boundary |
 | --- | --- | --- |
@@ -161,7 +163,7 @@ scenario evidence, visible rendering scenario evidence, grading scenario
 evidence, creative assessment scenario evidence, and first-lesson completion
 scenario evidence. Do not replace any boundary state with claims of full UI
 automation, rendering correctness, grading, creative assessment, broad Alice
-compatibility, desktop Save completion, or finished lesson execution.
+compatibility, bounded Save completion, or finished lesson execution.
 
 ### Student first-lesson recipe
 
@@ -210,14 +212,16 @@ non-empty placement artifact plus a scene/project diff for the named gallery
 object. Treat every other outcome as a boundary signal, not as completed UI
 coverage.
 
-Readiness always reports Select Project, procedure/edit, Save, visible
-rendering, grading, creative assessment, and first-lesson completion as separate
-scenario evidence boundaries. Declarations can explain what RabbitHole attempted
-or observed, but declarations alone remain `missing` for completion-sensitive
-claims. Aggregate progress counts present entries in `evidence_progress.present`,
-but that count is only evidence availability. Emitted artifact paths are
-evidence-root-relative summaries, artifact contents are never read or emitted,
-and blockers are preserved as normalized summaries.
+Current readiness always reports Save Project and Select Project proof-artifact
+states in `evidence_progress.items[]`. The planned boundary shard will report
+Select Project, procedure/edit, Save, visible rendering, grading, creative
+assessment, and first-lesson completion as separate scenario evidence
+boundaries. Declarations can explain what RabbitHole attempted or observed, but
+declarations alone remain `missing` for completion-sensitive claims. Aggregate
+progress counts present entries in `evidence_progress.present`, but that count
+is only evidence availability. Emitted artifact paths are evidence-root-relative
+summaries, artifact contents are never read or emitted, and blockers are
+preserved as normalized summaries.
 
 For the complete boundary contract, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
