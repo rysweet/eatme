@@ -249,14 +249,15 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 This consumes the embedded target launch manifests and first-lesson readiness
 progress evidence. JSON reports explicit `evidence_boundaries[]` and
 `evidence_progress.items[]` states, including Save Project and Select Project
-proof-artifact entries. It reports separate original Alice and RabbitHole
-boundaries for Select Project, procedure/edit, Save, visible rendering, grading,
-creative assessment, and first-lesson completion. Missing, malformed, ambiguous,
-unsafe, manifest-only, incomplete, out-of-order, or uncertain evidence remains
-visible as a blocker. Boundary metadata may show that a boundary was declared or
-observed, but it does not prove bounded Save completion, rendering correctness,
-grading, creative assessment, or first-lesson completion unless the matching
-boundary evidence exists.
+proof-artifact entries. It reports original Alice and RabbitHole launch/action
+diagnostics in `target_evidence[]`, then reports one normalized boundary state
+per first-lesson scenario claim for Select Project, procedure/edit, Save, visible
+rendering, grading, creative assessment, and first-lesson completion. Missing,
+malformed, ambiguous, unsafe, manifest-only, incomplete, out-of-order, or
+uncertain evidence remains visible as a blocker. Boundary metadata may show that
+a boundary was declared or observed, but it does not prove bounded Save
+completion, rendering correctness, grading, creative assessment, or first-lesson
+completion unless the matching boundary evidence exists.
 
 The report includes `role_readiness` for `instructor` and `student`, plus the
 legacy `lesson_session_readiness` student envelope. The normalized `status` is
@@ -292,7 +293,7 @@ manual smoke skip from a failed desktop proof run. Boundary reporting keeps
 plain-output blockers scenario-focused:
 
 ```text
-First-lesson automation scenarios readiness: not ready
+First-lesson automation scenario readiness: not ready
 
 Evidence present:
 - Alice launch scenario evidence is present.

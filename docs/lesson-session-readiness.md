@@ -209,9 +209,10 @@ normalizes the target evidence:
       ],
       "no_go_contracts": [
         {
-          "affordance": "object_placement",
-          "decision": "no_go",
-          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "modernized.object_placement",
+          "reason": "deterministic object-placement affordance is unavailable",
+          "message": "RabbitHole object-placement evidence is blocked until deterministic desktop support exists."
         }
       ]
     }
@@ -483,8 +484,10 @@ automation. It reports what happened to the modernized desktop proof attempt:
 | `launched_but_unverified` | Alice launch evidence exists, but Run-window, desktop execution, screenshot, or pixel-observation proof is missing, blocked, invalid, or not observed. |
 | `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, rendering correctness, grading, save behavior, or creative assessment. |
 
-The contract includes `reason_code`, `detail`, `target_role`, and optional
-`artifact` fields so CI and reports can preserve the exact skip/blocker shape.
+This legacy desktop proof contract includes `reason_code`, `detail`,
+`target_role`, and optional `artifact` fields so CI and reports can preserve the
+exact skip shape. First-lesson unsupported-action blockers use the canonical
+`code`, `action`, `reason`, and safe `message` shape described below.
 
 ### Project proof-artifact states
 
@@ -622,32 +625,28 @@ backward-compatible student envelope.
       ],
       "no_go_contracts": [
         {
-          "target_role": "baseline",
-          "affordance": "object_placement",
-          "decision": "no_go",
-          "reason": "missing deterministic desktop affordance for artifact proves a named object was added to the scene and placed without coordinate guessing",
-          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "baseline.object_placement",
+          "reason": "deterministic object-placement affordance is unavailable",
+          "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
         },
         {
-          "target_role": "baseline",
-          "affordance": "procedure_edit",
-          "decision": "no_go",
-          "reason": "missing deterministic desktop affordance for artifact proves a procedure or code block was edited",
-          "missing_affordance_id": "deterministic-alice-procedure-edit-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "baseline.procedure_edit",
+          "reason": "deterministic procedure-edit affordance is unavailable",
+          "message": "Original Alice procedure/edit evidence is blocked until deterministic desktop support exists."
         },
         {
-          "target_role": "baseline",
-          "affordance": "world_run",
-          "decision": "no_go",
-          "reason": "missing deterministic desktop affordance for artifact proves the world run control or equivalent runtime entry point executed after the first-lesson edit",
-          "missing_affordance_id": "deterministic-alice-world-run-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "baseline.world_run",
+          "reason": "deterministic world-run affordance is unavailable",
+          "message": "Original Alice world-run evidence is blocked until deterministic desktop support exists."
         },
         {
-          "target_role": "baseline",
-          "affordance": "project_save",
-          "decision": "no_go",
-          "reason": "missing deterministic desktop affordance for saved .a3p project artifact exists, is non-empty, and can be read after the first-lesson run proof",
-          "missing_affordance_id": "deterministic-alice-project-save-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "baseline.project_save",
+          "reason": "deterministic project-save affordance is unavailable",
+          "message": "Original Alice project-save evidence is blocked until deterministic desktop support exists."
         }
       ]
     },
@@ -665,11 +664,10 @@ backward-compatible student envelope.
       ],
       "no_go_contracts": [
         {
-          "target_role": "baseline",
-          "affordance": "object_placement",
-          "decision": "no_go",
-          "reason": "missing deterministic desktop affordance for artifact proves a named object was added to the scene and placed without coordinate guessing",
-          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
+          "code": "unsupported_desktop_action",
+          "action": "baseline.object_placement",
+          "reason": "deterministic object-placement affordance is unavailable",
+          "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
         }
       ]
     }
@@ -688,11 +686,10 @@ backward-compatible student envelope.
     ],
     "no_go_contracts": [
       {
-        "target_role": "baseline",
-        "affordance": "object_placement",
-        "decision": "no_go",
-        "reason": "missing deterministic desktop affordance for artifact proves a named object was added to the scene and placed without coordinate guessing",
-        "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
+        "code": "unsupported_desktop_action",
+        "action": "baseline.object_placement",
+        "reason": "deterministic object-placement affordance is unavailable",
+        "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
       }
     ]
   }
@@ -744,34 +741,34 @@ save-project
 
 ## Unsupported-action (`no_go`) contract API
 
-The JSON schema uses `no_go` for known unsupported desktop actions. Those
-entries make missing desktop action support explicit. They are aggregated from UI
-action precondition probes and required-action entries whose
-`decision` is `no_go` or whose `contract_required.unsafe_until_available` flag
-is true. They prevent the harness, adapters, and docs from converting
-unsupported actions into silent success.
+The JSON schema uses structured unsupported-action blockers for known unsupported
+desktop actions. Those entries make missing desktop action support explicit. They
+are aggregated from UI action precondition probes and required-action entries
+whose source contract says `decision: "no_go"` or whose
+`contract_required.unsafe_until_available` flag is true. They prevent the
+harness, adapters, and docs from converting unsupported actions into silent
+success.
 
-Each unsupported-action entry has this shape:
+Each unsupported-action entry uses the canonical structured blocker shape:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `target_role` | string | Target that reported the blocker, usually `baseline` or `modernized`. |
-| `affordance` | string | Schema field name for the affected action, such as `object_placement`, `procedure_edit`, `world_run`, or `project_save`. |
-| `decision` | string | Always `no_go` for this contract. |
-| `reason` | string | Human-readable reason the action cannot be claimed. |
-| `missing_affordance_id` | string or null | Specific missing Alice action support that must exist before the action can pass. |
+| `code` | string | Stable machine-readable blocker category, such as `unsupported_desktop_action`. |
+| `action` | string or null | Target-qualified action or boundary, such as `baseline.object_placement`, `baseline.procedure_edit`, `baseline.world_run`, or `baseline.project_save`. |
+| `reason` | string | Stable reason phrase suitable for logs and CI. |
+| `message` | string | Safe human-readable message. It must not expose absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw framework internals. |
 
-Known missing affordance ids:
+Known unsupported action reasons:
 
-| Missing affordance id | Affordance | Meaning |
+| Reason | Action | Meaning |
 | --- | --- | --- |
-| `deterministic-alice-object-gallery-placement-affordance` | `object_placement` | A stable Alice-side way to place a named gallery object and produce durable evidence is unavailable. |
-| `deterministic-alice-procedure-edit-affordance` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and prove the edit is unavailable. |
-| `deterministic-alice-world-run-affordance` | `world_run` | A stable Alice-side way to prove the world ran after student edits is unavailable. |
-| `deterministic-alice-project-save-affordance` | `project_save` | A stable Alice-side way to prove a project save artifact is unavailable. |
+| `deterministic object-placement affordance is unavailable` | `object_placement` | A stable Alice-side way to place a named gallery object and produce durable evidence is unavailable. |
+| `deterministic procedure-edit affordance is unavailable` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and prove the edit is unavailable. |
+| `deterministic world-run affordance is unavailable` | `world_run` | A stable Alice-side way to prove the world ran after student edits is unavailable. |
+| `deterministic project-save affordance is unavailable` | `project_save` | A stable Alice-side way to prove a project save artifact is unavailable. |
 
-Consumers must treat `decision: "no_go"` as a blocked action, not as a failed
-test to hide and not as a pass to override.
+Consumers must treat `code: "unsupported_desktop_action"` as a blocked action,
+not as a failed test to hide and not as a pass to override.
 
 ## Configuration
 
@@ -835,7 +832,7 @@ This is acceptable first-lesson evidence when the report also includes
 Boundary reporting makes plain output name scenario evidence boundaries:
 
 ```text
-First-lesson automation scenarios readiness: blocked
+First-lesson automation scenario readiness: not ready
 
 Evidence present:
 - Select Project scenario evidence is present.
@@ -847,9 +844,9 @@ Blockers:
 - First-lesson completion scenario evidence is missing.
 ```
 
-JSON output exposes the same conservative states in mandatory
-`evidence_boundaries[]` entries. This excerpt shows only two entries from the
-longer boundary array:
+JSON output exposes the same conservative states in `evidence_boundaries[]`
+entries. Target-local launch/action details remain in `target_evidence[]`. This
+excerpt shows only two entries from the longer boundary array:
 
 ```json
 [
@@ -942,10 +939,11 @@ or deployed-service status.
 4. Add explicit blockers for missing desktop affordances instead of implying
    silent success; explain that they report `blocked`.
 5. If the scenario consumes RabbitHole first-lesson evidence, preserve
-   `evidence_boundaries[]`, `evidence_progress.items[]`, and project
-   proof-artifact states. Report Select Project, procedure/edit, Save, visible
-   rendering, grading, creative assessment, and first-lesson completion
-   separately as `present`, `missing`, `invalid`, `not_observed`, or `blocked`.
+   `target_evidence[]`, `evidence_boundaries[]`, `evidence_progress.items[]`,
+   and project proof-artifact states. Report Select Project, procedure/edit,
+   Save, visible rendering, grading, creative assessment, and first-lesson
+   completion separately as `present`, `missing`, `invalid`, `not_observed`, or
+   `blocked`.
    Preserve blocker information as a normalized summary and keep boundary
    evidence separate from UI success, rendering correctness, grading, creative
    assessment, and completion language.
@@ -989,8 +987,8 @@ summary in the PR description:
 | --- | --- |
 | Scenario validation | `cargo run -q -p eatme-cli -- assets validate --json` passed. |
 | Gadugi freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` passed, or adapters were regenerated and committed. |
-| Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
-| First-lesson scenario evidence | Reports preserve project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
+| Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `target_evidence[]`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
+| First-lesson scenario evidence | Reports preserve target-local launch/action diagnostics, project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
 | Boundaries | The change does not claim full UI automation, visible rendering correctness, bounded Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

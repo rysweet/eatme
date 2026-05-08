@@ -1,9 +1,9 @@
 # First-lesson evidence readiness
 
 First-lesson evidence readiness is the comparison-runner contract for original
-Alice and RabbitHole automation scenarios. It reports whether each target has
-explicit, executable evidence for the bounded first-lesson action claims that the
-runner is allowed to make.
+Alice and RabbitHole automation scenarios. It combines per-target launch/action
+evidence with scenario boundary states so the runner only reports bounded
+first-lesson action claims that have explicit, executable evidence.
 
 The report is conservative. Missing, malformed, ambiguous, unsafe, incomplete,
 manifest-only, out-of-order, unsupported, or uncertain evidence stays visible as
@@ -60,7 +60,7 @@ or whether rendering is correct.
 
 | Result | Meaning | What to do |
 | --- | --- | --- |
-| `ready` | Every required boundary has explicit evidence for each required target and no known blocker remains. | Use the report only for the bounded claims named by the automation scenarios. |
+| `ready` | Every required target and boundary has explicit evidence and no known blocker remains. | Use the report only for the bounded claims named by the automation scenarios. |
 | `not_ready` | Required evidence is missing, malformed, ambiguous, unsafe, incomplete, manifest-only, out of order, or uncertain. | Treat each invalid or missing boundary as a blocker and collect or repair the evidence. |
 | `blocked` | Evidence exists for some boundaries, but a known unsupported desktop action or explicit RabbitHole blocker prevents a claim. | Keep the blocker visible. Do not convert it into success or hide it as a generic failure. |
 
@@ -73,10 +73,10 @@ First-lesson readiness requires both comparison targets:
 | `baseline` | Original Alice target | Launch manifest, `ui-action-contract.json`, required action entries, action assertions, and any unsupported-action entries for original Alice. |
 | `modernized` | RabbitHole target | The same launch/action evidence as baseline, plus RabbitHole desktop evidence such as Run-window observation, desktop execution observation, visible screenshot evidence, and project proof-artifact states. |
 
-The comparison manifest must use `scenario_id: "first-lessons-real-ui-actions"`
-and must be produced with execution enabled.
-Manifest-only comparisons are `not_ready` because they do not contain executable
-evidence for either target.
+The comparison manifest must use `scenario_id: "first-lessons-real-ui-actions"`.
+It must be produced with execution enabled to be `ready` or to support present
+executable evidence. Manifest-only comparisons are valid inputs, but they report
+`not_ready` because they do not contain executable evidence for either target.
 
 Readiness fails closed for evidence that cannot be safely resolved under the
 comparison evidence root. Absolute paths, parent traversal, symlink escapes,
@@ -85,9 +85,17 @@ outside the evidence root are not accepted as present evidence.
 
 ## Evidence boundaries
 
+First-lesson readiness has two evidence layers:
+
+| Layer | Granularity | Purpose |
+| --- | --- | --- |
+| `target_evidence[]` | One entry per comparison target. | Shows original Alice and RabbitHole launch/action evidence, missing actions, and unsupported-action blockers. |
+| `evidence_boundaries[]` | One entry per bounded scenario claim. | Shows whether the named first-lesson claim is present, missing, invalid, not observed, or blocked after the required target evidence is considered. |
+
 `evidence_boundaries[]` is mandatory in first-lesson readiness reports. It names
 each bounded scenario evidence claim independently so one present boundary cannot
-imply another.
+imply another. Boundary entries are not the per-target API; use
+`target_evidence[]` for target-local launch/action diagnostics.
 
 | Boundary id | Human label | Required evidence | Must not imply |
 | --- | --- | --- | --- |
@@ -117,13 +125,15 @@ first-lesson completion present.
 
 ## Human output contract
 
-Plain output is written for reviewers who need to decide what is blocked. It uses
-`automation scenarios` and scenario-focused labels in user-facing text.
+Plain output is written for reviewers who need to decide what is blocked. The
+sequence command prints `ready` or `not ready`; known blockers stay visible in
+the blocker lines and in JSON `status: "blocked"` when the structured report can
+distinguish a coherent blocker from missing or invalid evidence.
 
 Example with missing evidence:
 
 ```text
-First-lesson automation scenarios readiness: not ready
+First-lesson automation scenario readiness: not ready
 
 Evidence present:
 - Alice launch scenario evidence is present for original Alice.
@@ -146,12 +156,12 @@ first-lesson completion.
 Example with a known blocker:
 
 ```text
-First-lesson automation scenarios readiness: blocked
+First-lesson automation scenario readiness: not ready
 
 Evidence present:
-- Select Project scenario evidence is present for original Alice and RabbitHole.
-- Procedure/edit scenario evidence is present for RabbitHole.
-- Visible rendering scenario evidence is present for RabbitHole.
+- Select Project scenario evidence is present.
+- Procedure/edit scenario evidence is present.
+- Visible rendering scenario evidence is present.
 
 Blockers:
 - Procedure/edit scenario evidence is blocked for original Alice: deterministic
@@ -193,6 +203,18 @@ Top-level fields:
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when evidence is present. |
 
+### Structured blocker shape
+
+When a first-lesson report exposes a structured blocker, it uses the same field
+names everywhere:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | string | Stable machine-readable blocker category. |
+| `action` | string or null | Scenario action or boundary affected by the blocker, such as `save_project` or `procedure_edit`. |
+| `reason` | string | Stable reason phrase suitable for logs and CI. |
+| `message` | string | Safe human-readable message. It must not contain absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw framework internals. |
+
 ### `evidence_boundaries[]`
 
 Each boundary entry has this shape:
@@ -202,15 +224,12 @@ Each boundary entry has this shape:
 | `id` | string | Stable boundary id: `select_project`, `procedure_edit`, `save_project`, `visible_rendering`, `grading`, `creative_assessment`, or `first_lesson_completion`. |
 | `label` | string | Human-readable scenario evidence label. |
 | `status` | string | `present`, `missing`, `invalid`, `not_observed`, or `blocked`. |
-| `target_role` | string or null | `baseline`, `modernized`, or `null` when the boundary applies across targets. |
-| `target_label` | string or null | Human label such as `original Alice` or `RabbitHole`. |
 | `source` | string or null | Short source category, such as `ui_action_contract`, `rabbithole`, `comparison_manifest`, or `scenario_asset`. |
 | `metadata_state` | string or null | Optional boundary metadata state, such as `declared` or `observed`. Metadata state never upgrades the boundary to completion evidence. |
-| `action_id` | string or null | Required action id when the boundary maps to a `ui-action-contract.json` action. |
-| `reason_code` | string or null | Stable blocker or invalid-evidence reason. |
-| `detail` | string | Plain detail safe for JSON consumers and CLI summaries. |
+| `detail` | string | Plain boundary summary safe for JSON consumers and CLI summaries. Structured blockers use `message` in the blocker shape. |
 | `claim` | string | The exact bounded claim this boundary supports when `status` is `present`. |
 | `does_not_prove` | array of strings | Claims that remain unsupported by this boundary. |
+| `artifact` | object or omitted | Safe artifact metadata when the boundary has accepted evidence rooted under the comparison evidence directory. |
 
 Example:
 
@@ -226,14 +245,10 @@ Example:
       "id": "select_project",
       "label": "Select Project scenario evidence",
       "status": "present",
-      "target_role": "baseline",
-      "target_label": "original Alice",
       "source": "ui_action_contract",
       "metadata_state": "observed",
-      "action_id": "verify-specific-alice-window",
-      "reason_code": null,
-      "detail": "Select Project scenario evidence is present for original Alice.",
-      "claim": "The Select Project boundary has auditable scenario evidence for original Alice.",
+      "detail": "Select Project scenario evidence is present.",
+      "claim": "The Select Project boundary has auditable scenario evidence.",
       "does_not_prove": [
         "full Alice UI automation",
         "first-lesson completion"
@@ -243,13 +258,9 @@ Example:
       "id": "save_project",
       "label": "Save scenario evidence",
       "status": "missing",
-      "target_role": "modernized",
-      "target_label": "RabbitHole",
       "source": "rabbithole",
       "metadata_state": "declared",
-      "action_id": "save-project",
-      "reason_code": "missing_completion_evidence",
-      "detail": "Save scenario metadata was declared for RabbitHole, but bounded Save evidence is missing.",
+      "detail": "Save scenario metadata was declared, but bounded Save evidence is missing.",
       "claim": "No Save completion claim is supported.",
       "does_not_prove": [
         "bounded Save completion",
@@ -309,9 +320,9 @@ The first lesson is complete.
 
 ### Repair a missing original Alice action boundary
 
-If a baseline boundary is `missing`, repair the original Alice action evidence
-for the named `action_id` and rerun readiness. Do not treat any of these as
-evidence for the action:
+If target-local original Alice action evidence is missing, repair the relevant
+`target_evidence[]` entry or structured blocker `action`, then rerun readiness.
+Do not treat any of these as evidence for the action:
 
 - a comparison manifest without execution;
 - a launch manifest without a readable `ui-action-contract.json`;
