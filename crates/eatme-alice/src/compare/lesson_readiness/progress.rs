@@ -49,7 +49,7 @@ pub(super) fn evidence_progress(
     target_evidence: &[LessonTargetEvidence],
     issues: &[String],
 ) -> LessonReadinessEvidenceProgress {
-    let mut items = Vec::new();
+    let mut items = Vec::with_capacity(required_evidence.len());
     let baseline = target_evidence
         .iter()
         .find(|target| target.role == "baseline");
@@ -131,25 +131,22 @@ pub(super) fn evidence_progress(
         |next_action| &next_action.select_project_proof_artifact,
     ));
 
-    let present = count_state(&items, "present");
-    let missing = count_state(&items, "missing");
-    let invalid = count_state(&items, "invalid");
-    let not_observed = count_state(&items, "not_observed");
-    let blocked = count_state(&items, "blocked");
+    let counts = progress_counts(&items);
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
     let summary = format!(
-        "{present} of {total_required} required evidence items are present; {missing} missing, {invalid} invalid, {not_observed} not observed, {blocked} blocked."
+        "{} of {total_required} required evidence items are present; {} missing, {} invalid, {} not observed, {} blocked.",
+        counts.present, counts.missing, counts.invalid, counts.not_observed, counts.blocked
     );
 
     LessonReadinessEvidenceProgress {
         total_required,
-        present,
-        missing,
-        invalid,
-        not_observed,
-        blocked,
+        present: counts.present,
+        missing: counts.missing,
+        invalid: counts.invalid,
+        not_observed: counts.not_observed,
+        blocked: counts.blocked,
         summary,
         next_actionable_blocker,
         next_missing_real_desktop_proof,
@@ -189,8 +186,28 @@ fn project_proof_progress_item(
     progress_item(evidence, artifact.state(), artifact.detail.clone())
 }
 
-fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
+#[derive(Default)]
+struct ProgressCounts {
+    present: usize,
+    missing: usize,
+    invalid: usize,
+    not_observed: usize,
+    blocked: usize,
+}
+
+fn progress_counts(items: &[LessonReadinessEvidenceProgressItem]) -> ProgressCounts {
+    let mut counts = ProgressCounts::default();
+    for item in items {
+        match item.state.as_str() {
+            "present" => counts.present += 1,
+            "missing" => counts.missing += 1,
+            "invalid" => counts.invalid += 1,
+            "not_observed" => counts.not_observed += 1,
+            "blocked" => counts.blocked += 1,
+            _ => {}
+        }
+    }
+    counts
 }
 
 fn progress_item_id(evidence: &str) -> String {

@@ -78,20 +78,17 @@ impl DesktopEvidenceCheck {
 }
 
 pub(crate) fn check_visible_desktop_evidence(
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     ui_action_contract_path: &Path,
 ) -> DesktopEvidenceCheck {
     let Some(run_dir) = ui_action_contract_path.parent() else {
         return missing();
     };
     let candidate = run_dir.join(RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT);
-    let Ok(root) = evidence_root.canonicalize() else {
-        return missing();
-    };
     let Ok(artifact) = candidate.canonicalize() else {
         return missing();
     };
-    if !artifact.starts_with(root) {
+    if !artifact.starts_with(canonical_evidence_root) {
         return missing();
     }
     let Ok(metadata) = fs::metadata(&artifact) else {
@@ -108,20 +105,17 @@ pub(crate) fn check_visible_desktop_evidence(
 }
 
 pub(crate) fn check_pixel_boundary_evidence(
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     ui_action_contract_path: &Path,
 ) -> DesktopRunPixelBoundaryEvidence {
     let Some(run_dir) = ui_action_contract_path.parent() else {
         return missing_pixel_boundary();
     };
     let candidate = run_dir.join(DESKTOP_RUN_PIXEL_BOUNDARY);
-    let Ok(root) = evidence_root.canonicalize() else {
-        return missing_pixel_boundary();
-    };
     let Ok(artifact) = candidate.canonicalize() else {
         return missing_pixel_boundary();
     };
-    if !artifact.starts_with(root) {
+    if !artifact.starts_with(canonical_evidence_root) {
         return missing_pixel_boundary();
     }
     let Ok(text) = fs::read_to_string(&artifact) else {
@@ -165,20 +159,17 @@ pub(crate) fn check_pixel_boundary_evidence(
 }
 
 pub(crate) fn check_pixel_observation_evidence(
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     ui_action_contract_path: &Path,
 ) -> DesktopRunPixelObservationEvidence {
     let Some(run_dir) = ui_action_contract_path.parent() else {
         return missing_pixel_observation();
     };
     let candidate = run_dir.join(DESKTOP_RUN_PIXEL_OBSERVATION);
-    let Ok(root) = evidence_root.canonicalize() else {
-        return missing_pixel_observation();
-    };
     let Ok(artifact) = candidate.canonicalize() else {
         return missing_pixel_observation();
     };
-    if !artifact.starts_with(root) {
+    if !artifact.starts_with(canonical_evidence_root) {
         return missing_pixel_observation();
     }
     let Ok(text) = fs::read_to_string(&artifact) else {

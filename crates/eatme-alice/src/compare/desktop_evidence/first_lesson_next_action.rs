@@ -138,20 +138,17 @@ impl DesktopFirstLessonNextActionEvidence {
 }
 
 pub(crate) fn check_first_lesson_next_action_evidence(
-    evidence_root: &Path,
+    canonical_evidence_root: &Path,
     ui_action_contract_path: &Path,
 ) -> DesktopFirstLessonNextActionEvidence {
     let Some(run_dir) = ui_action_contract_path.parent() else {
         return missing_first_lesson_next_action();
     };
     let candidate = run_dir.join(DESKTOP_FIRST_LESSON_NEXT_ACTION);
-    let Ok(root) = evidence_root.canonicalize() else {
-        return missing_first_lesson_next_action();
-    };
     let Ok(artifact) = candidate.canonicalize() else {
         return missing_first_lesson_next_action();
     };
-    if !artifact.starts_with(&root) {
+    if !artifact.starts_with(canonical_evidence_root) {
         return missing_first_lesson_next_action();
     }
     let Ok(text) = fs::read_to_string(&artifact) else {
@@ -192,7 +189,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         requires_next_evidence: requires_next_evidence(&json),
         save_project_proof_artifact: project_proof_artifact(
             &json,
-            &root,
+            canonical_evidence_root,
             run_dir,
             "save_project_proof_artifact",
             "saveProjectProofArtifact",
@@ -200,7 +197,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         ),
         select_project_proof_artifact: project_proof_artifact(
             &json,
-            &root,
+            canonical_evidence_root,
             run_dir,
             "select_project_proof_artifact",
             "selectProjectProofArtifact",
@@ -257,7 +254,7 @@ fn project_proof_artifact(
         return ProjectProofArtifactEvidence::missing(label);
     };
 
-    let blocker = declaration.get("blocker").cloned();
+    let blocker = declaration.get("blocker");
     if declaration
         .get("status")
         .and_then(serde_json::Value::as_str)
@@ -266,7 +263,7 @@ fn project_proof_artifact(
     {
         return ProjectProofArtifactEvidence {
             status: ProofArtifactState::Blocked,
-            detail: blocker::project_proof_artifact_blocker_detail(label, blocker.as_ref())
+            detail: blocker::project_proof_artifact_blocker_detail(label, blocker)
                 .unwrap_or_else(|| format!("{label} is blocked")),
             artifact: None,
         };
