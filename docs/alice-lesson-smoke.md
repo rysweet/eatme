@@ -466,30 +466,38 @@ not broad Alice compatibility.
 
 #### Instructor-editable readiness evidence wording
 
-The canonical source for the first-lesson automation scenario wording is:
+The canonical source for the first-lesson automation scenario wording is still:
 
 ```text
 assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
 ```
 
-Scenario authors can refine the instructor-facing readiness language by editing
-exactly one existing text field in that YAML asset. Prefer `purpose` for the
-small wording update because it is the summary that explains what the scenario
-proves before a reviewer inspects acceptance criteria, steps, or artifacts.
+The current canonical asset and asset contract tests still require the legacy
+phrase "preflight launch/action-contract readiness evidence only". The wording
+below is the planned retcon for the feature we will build; do not describe it as
+the current scenario contract until the YAML asset and its tests are updated in
+the same change.
 
-The finished wording describes preflight automation scenario readiness evidence
-for setup, launch support, handoff artifacts, and classroom-support
-preparation. It keeps these boundaries intact:
+When the asset retcon lands, scenario authors can refine the instructor-facing
+readiness language by editing exactly one existing text field in that YAML asset.
+Prefer `purpose` for the small wording update because it is the summary that
+explains what the scenario proves before a reviewer inspects acceptance
+criteria, steps, or artifacts.
+
+The planned wording describes preflight automation scenario readiness evidence
+for setup, launch support, handoff artifacts, and classroom-support preparation.
+It keeps these boundaries intact:
 
 | Boundary | Required wording behavior |
 | --- | --- |
-| Evidence claim | Say "automation scenario readiness evidence", "readiness evidence", or "preflight evidence". |
-| Legacy wording | Avoid the older phrase "preflight launch/action-contract readiness evidence only" in new user-facing text; use automation scenario wording instead. |
+| Current legacy contract | Until the asset retcon lands, the canonical asset and tests still require "preflight launch/action-contract readiness evidence only". |
+| Planned evidence claim | After the retcon, say "automation scenario readiness evidence", "readiness evidence", or "preflight evidence". |
+| Planned legacy wording replacement | After the retcon, avoid introducing the older phrase in new user-facing text; use automation scenario wording instead. |
 | Scenario identity | Keep `id: first-lessons-real-ui-actions` and the same scenario inventory. |
 | Generated adapters | Do not hand-edit `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml`; regenerate or check it from the canonical asset. |
 | Non-claims | Keep the exact limits: "not full UI automation", "not visible rendering correctness", "not bounded Save completion", "not creative assessment", "not learner-world grading", "not production readiness", "not lesson completion", "not complete end-to-end lesson execution", and "not broad Alice compatibility". |
 
-Example complete `purpose` wording:
+Planned replacement `purpose` wording:
 
 ```yaml
 purpose: >-
@@ -503,7 +511,8 @@ purpose: >-
   editing, world run, project save, and a captured action evidence artifact. When
   deterministic desktop manipulation beyond safe window activation, shortcut
   dispatch, and backend proof hooks is missing, the harness fails loudly with a
-  preflight automation scenario evidence instead of reporting a silent pass.
+  preflight automation scenario evidence blocker/report instead of reporting a
+  silent pass.
   This is preflight automation scenario readiness evidence only for setup,
   launch support, handoff artifacts, and classroom support preparation. It is
   not full Alice UI automation, not visible rendering correctness, not bounded
@@ -512,8 +521,8 @@ purpose: >-
   execution, and not broad Alice compatibility.
 ```
 
-After a wording edit, validate the canonical asset and check generated adapter
-freshness:
+When applying this planned wording edit, validate the canonical asset and check
+generated adapter freshness:
 
 ```bash
 cargo run -q -p eatme-cli -- assets validate --json
