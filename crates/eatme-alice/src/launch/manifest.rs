@@ -51,6 +51,7 @@ pub(super) fn write_blocked_manifest(
             None,
             None,
             None,
+            None,
             Some(&place_object_probe),
             None,
             None,

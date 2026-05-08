@@ -3,8 +3,8 @@ use std::path::Path;
 
 mod lesson_session_helpers;
 use lesson_session_helpers::{
-    assert_contract_contains, ui_action_contract_json, unique_test_dir,
-    write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
+    assert_contract_contains, assert_safe_blocker_message, ui_action_contract_json,
+    unique_test_dir, write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
 };
 
 #[test]
@@ -483,35 +483,4 @@ fn target_evidence_json<'a>(report: &'a serde_json::Value, role: &str) -> &'a se
         .iter()
         .find(|target| target["role"] == role)
         .unwrap_or_else(|| panic!("missing target_evidence role {role}: {report}"))
-}
-
-fn assert_safe_blocker_message(message: &str) {
-    for unsafe_text in [
-        "/",
-        "\\",
-        "ui-action-contract.json",
-        "desktop-run-pixel",
-        "screenshot",
-        "stdout",
-        "stderr",
-        "environment variable",
-    ] {
-        assert!(
-            !message.contains(unsafe_text),
-            "blocker message must not expose unsafe detail {unsafe_text:?}: {message}"
-        );
-    }
-    for unsupported_claim in [
-        "full Alice UI automation",
-        "grading",
-        "creative assessment",
-        "visible rendering correctness",
-        "Save completion",
-        "first-lesson completion",
-    ] {
-        assert!(
-            !message.contains(unsupported_claim),
-            "blocker message must not claim {unsupported_claim:?}: {message}"
-        );
-    }
 }

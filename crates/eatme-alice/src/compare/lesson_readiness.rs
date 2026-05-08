@@ -8,7 +8,10 @@ use super::{
         first_lesson_evidence_boundaries, resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
-    ui_action_contract::{action_ids, inspect_ui_action_contract},
+    ui_action_contract::{
+        UiActionEvidenceBlocker, action_ids, inspect_ui_action_contract,
+        ui_action_evidence_blockers,
+    },
 };
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -100,6 +103,7 @@ pub struct LessonTargetEvidence {
     pub required_actions: Vec<String>,
     pub missing_assertions: Vec<String>,
     pub missing_required_actions: Vec<String>,
+    blockers: Vec<UiActionEvidenceBlocker>,
     pub no_go_contracts: Vec<LessonSessionNoGoContract>,
 }
 
@@ -275,6 +279,7 @@ fn inspect_target_evidence(
                 .iter()
                 .map(|value| (*value).into())
                 .collect(),
+            blockers: Vec::new(),
             no_go_contracts: Vec::new(),
         };
     };
@@ -356,6 +361,7 @@ fn inspect_target_evidence(
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
     let mut desktop_first_lesson_next_action = None;
+    let mut blockers = Vec::new();
     let mut no_go_contracts = Vec::new();
 
     if let Some(path) = &ui_action_contract_path {
@@ -365,6 +371,7 @@ fn inspect_target_evidence(
                     Ok(contract) => {
                         ui_action_contract_readable = true;
                         inspect_ui_action_contract(role, &contract, issues);
+                        blockers = ui_action_evidence_blockers(role, &contract);
                         no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
@@ -430,6 +437,7 @@ fn inspect_target_evidence(
         required_actions,
         missing_assertions,
         missing_required_actions,
+        blockers,
         no_go_contracts,
     }
 }

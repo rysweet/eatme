@@ -43,6 +43,7 @@ pub fn write_preflight_blocked_manifest(
             None,
             None,
             None,
+            None,
             Some(&place_object_probe),
             None,
             None,

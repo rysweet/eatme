@@ -28,7 +28,7 @@ use crate::launch_run_window::probe_run_window_after_shortcut;
 use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
-    probe_alice_window_activation, probe_place_object_preconditions,
+    probe_alice_window_activation, probe_place_object_preconditions, probe_specific_alice_window,
     record_alice_window_activation, record_ui_action_blockers, ui_action_failure_category,
 };
 use crate::launch_window_activation::ui_action_activation_failure_category;
@@ -288,6 +288,10 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             failure_category = window_search.failure_category().map(str::to_string);
         }
     }
+    let alice_window_verification_probe = options
+        .scenario
+        .requires_real_ui_actions()
+        .then(|| probe_specific_alice_window(&window_search));
     let alice_window_activation_probe = if options.scenario.requires_real_ui_actions() {
         let probe = probe_alice_window_activation(&runner, display.name(), &window_text);
         record_alice_window_activation(&mut assertions, &probe);
@@ -424,6 +428,7 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             specific_alice_window_ok,
             smoke_ready_visual_evidence,
             log_ok,
+            alice_window_verification_probe.as_ref(),
             alice_window_activation_probe.as_ref(),
             desktop_save_shortcut_probe.as_ref(),
             Some(&desktop_run_shortcut_probe),

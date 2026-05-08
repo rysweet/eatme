@@ -226,6 +226,15 @@ pub(super) fn ui_action_contract_json(omit_save_action: bool) -> serde_json::Val
             "log_captured": true
         },
         "executed_action_probes": [{
+            "id": "verify-specific-alice-window",
+            "status": "passed",
+            "detail": "wmctrl or xwininfo identified Alice main window 0x001",
+            "window_id": "0x001",
+            "command": "wmctrl/xwininfo window discovery",
+            "exit_status": 0,
+            "stdout": "",
+            "stderr": ""
+        }, {
             "id": "activate-specific-alice-window",
             "status": "passed",
             "detail": "wmctrl activated Alice window 0x001",
@@ -283,6 +292,37 @@ pub(super) fn assert_contract_contains(entries: &[String], expected: &str) {
         entries.iter().any(|entry| entry.contains(expected)),
         "contract entries should contain {expected:?}: {entries:?}"
     );
+}
+
+pub(super) fn assert_safe_blocker_message(message: &str) {
+    for unsafe_text in [
+        "/",
+        "\\",
+        "ui-action-contract.json",
+        "desktop-run-pixel",
+        "screenshot",
+        "stdout",
+        "stderr",
+        "environment variable",
+    ] {
+        assert!(
+            !message.contains(unsafe_text),
+            "blocker message must not expose unsafe detail {unsafe_text:?}: {message}"
+        );
+    }
+    for unsupported_claim in [
+        "full Alice UI automation",
+        "grading",
+        "creative assessment",
+        "visible rendering correctness",
+        "Save completion",
+        "first-lesson completion",
+    ] {
+        assert!(
+            !message.contains(unsupported_claim),
+            "blocker message must not claim {unsupported_claim:?}: {message}"
+        );
+    }
 }
 
 pub(super) fn unique_test_dir(prefix: &str) -> PathBuf {
