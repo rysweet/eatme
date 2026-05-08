@@ -21,7 +21,7 @@ purpose: >-
   activation, shortcut dispatch, and backend proof hooks is wired,
   the harness must fail loudly with a preflight/action contract instead of
   reporting a silent pass.
-  This instructor-editable asset records preflight launch/action-contract
+  This instructor-editable asset records reusable preflight launch/action-contract
   readiness evidence only for setup, launch support, handoff artifacts, and
   classroom support preparation. It is not full UI automation, not creative
   assessment, not learner-world grading, not production readiness, not lesson
