@@ -125,8 +125,14 @@ replaying Alice internals.
 
 The real Alice integration proves launch readiness. It does not yet drive a full
 lesson UI path, edit procedures, run the world, save projects, grade a student
-world, or automate creative assessment. The `first-lessons-real-ui-actions`
-scenario now probes one deterministic object-placement candidate:
+world, or automate creative assessment. Readiness reports can consume Save
+Project and Select Project proof-artifact declarations from RabbitHole evidence,
+but those declarations report artifact availability only. Both categories remain
+visible as `missing` when declarations are absent. Emitted proof-artifact paths
+are evidence-root-relative summaries, artifact contents are never read or
+emitted, and blocker details are normalized before reporting. The
+`first-lessons-real-ui-actions` scenario now probes one deterministic
+object-placement candidate:
 `tools/eatme-place-object` inside the Alice checkout. That Alice-side command
 must accept the opened project, named object identifier, and evidence directory,
 then return JSON with non-empty `placement_artifact` and

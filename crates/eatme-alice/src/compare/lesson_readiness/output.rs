@@ -94,6 +94,8 @@ fn required_evidence() -> Vec<String> {
         "modernized desktop execution evidence",
         "screenshot, log, and window artifacts",
         "ui-action-contract.json",
+        "Save Project proof artifact",
+        "Select Project proof artifact",
     ]
     .into_iter()
     .map(str::to_string)

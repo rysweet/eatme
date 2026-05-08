@@ -77,15 +77,21 @@ UI automation, not creative assessment, and not learner-world grading.
 The `first-lessons-real-ui-actions` scenario is different: it is an executable
 harness contract for the first real UI actions. It launches Alice, verifies an
 Alice Stage IDE window from window-manager evidence, writes
-`ui-action-contract.json`, and fails loudly with
+`ui-action-contract.json`, reports Save Project and Select Project
+proof-artifact categories from RabbitHole next-action evidence, defaulting each
+category to `missing` when the next-action evidence or declaration is absent, and
+fails loudly with
 `ui_action_automation_unimplemented` until a deterministic
 `deterministic-alice-object-gallery-placement-affordance` can place a named
 object without coordinate guessing. Once object placement is proven, the
 contract records the next missing affordance,
 `deterministic-alice-procedure-edit-affordance`, before follow-on automation
 can run the world or save a project.
-This is launch/action-contract evidence only. It is not full UI automation, not
-creative assessment, and not learner-world grading.
+Save Project and Select Project proof-artifact states are artifact availability
+signals only: `present`, `missing`, or `blocked`. They do not prove a complete
+selection workflow, project save success, lesson completion, creative
+assessment, or learner-world grading.
+This is launch/action-contract evidence only. It is not full UI automation.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -123,15 +129,17 @@ and explicit instructor/student deliverables.
 | Need | Scenario | What to collect |
 | --- | --- | --- |
 | Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, and `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations. |
+| Prove the student first-lesson scenario has an executable action contract | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, `ui-action-contract.json` with object placement, procedure edit, run-world, and save-project expectations, plus explicit Save Project and Select Project proof-artifact states that stay visible as `missing` when RabbitHole does not declare them. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
-The three evidence levels are intentionally separate:
+The evidence levels are intentionally separate:
 
 1. Launch evidence proves Alice started for the selected scenario id.
 2. Action-contract evidence records the first UI actions that future automation
    must perform deterministically.
-3. Mission evidence is the human or agent-reviewed classroom output, such as a
+3. Project proof-artifact evidence records Save Project and Select Project
+   artifact availability or blockers without claiming UI success.
+4. Mission evidence is the human or agent-reviewed classroom output, such as a
    learner reflection or instructor handout.
 
 Do not collapse those levels into one pass/fail claim. Passing launch smoke does
@@ -168,6 +176,8 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
 |-- alice.log
 |-- window-list.txt
 |-- ui-action-contract.json
+|-- run-window-evidence/
+|   `-- desktop-first-lesson-next-action.json
 `-- screenshots/
     `-- startup.png
 ```
@@ -182,6 +192,15 @@ and only passes object placement when that Alice-side command returns a
 non-empty placement artifact plus a scene/project diff for the named gallery
 object. Treat every other outcome as a boundary signal, not as completed UI
 coverage.
+
+Readiness always reports `save_project_proof_artifact` and
+`select_project_proof_artifact` as `present`, `missing`, or `blocked`.
+Declarations in `desktop-first-lesson-next-action.json` can make a category
+`present` or `blocked`; absent next-action evidence or absent declarations remain
+visible as `missing` instead of being folded into generic readiness language. A
+present declaration is only proof-artifact availability. Emitted artifact paths
+are evidence-root-relative summaries, artifact contents are never read or
+emitted, and blockers are preserved as normalized summaries.
 
 ### Instructor remix recipe
 

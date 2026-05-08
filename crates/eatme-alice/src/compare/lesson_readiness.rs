@@ -19,6 +19,7 @@ mod desktop_proof;
 mod no_go;
 mod output;
 mod progress;
+mod project_proof;
 pub use assertions::LessonActionAssertionEvidence;
 use assertions::{
     action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,

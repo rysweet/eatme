@@ -205,6 +205,26 @@ pub(super) fn overwrite_modernized_pixel_observation(manifest_path: &Path, conte
 }
 
 pub(super) fn overwrite_modernized_first_lesson_next_action(manifest_path: &Path, content: &str) {
+    let evidence_dir = modernized_run_window_evidence_dir(manifest_path);
+    fs::write(
+        evidence_dir.join("desktop-first-lesson-next-action.json"),
+        content,
+    )
+    .unwrap();
+}
+
+pub(super) fn write_modernized_run_window_evidence_file(
+    manifest_path: &Path,
+    relative_file: &str,
+    content: &str,
+) {
+    let evidence_dir = modernized_run_window_evidence_dir(manifest_path);
+    let path = evidence_dir.join(relative_file);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, content).unwrap();
+}
+
+fn modernized_run_window_evidence_dir(manifest_path: &Path) -> PathBuf {
     let value: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
     let contract_path = PathBuf::from(
@@ -212,15 +232,7 @@ pub(super) fn overwrite_modernized_first_lesson_next_action(manifest_path: &Path
             .as_str()
             .unwrap(),
     );
-    fs::write(
-        contract_path
-            .parent()
-            .unwrap()
-            .join("run-window-evidence")
-            .join("desktop-first-lesson-next-action.json"),
-        content,
-    )
-    .unwrap();
+    contract_path.parent().unwrap().join("run-window-evidence")
 }
 
 fn launch_manifest_json(

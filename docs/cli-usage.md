@@ -6,8 +6,10 @@ The eatme command line is exposed through the `eatme-cli` Cargo package:
 cargo run -q -p eatme-cli -- <command>
 ```
 
-All current command results are printed as JSON. The `--json` flags are accepted
-for explicit caller intent and compatibility with scripts and adapters.
+Commands that accept `--json` print JSON when the flag is present. Without
+`--json`, `alice run-first-lesson-readiness` prints a plain readiness report for
+humans, including explicit Save Project and Select Project proof-artifact
+states.
 
 ## Command overview
 
@@ -246,10 +248,16 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 ```
 
 This consumes the embedded target launch manifests and each
-`ui-action-contract.json`. It passes only when both comparison targets include
-real Alice execution evidence, specific Alice window evidence, the required
-place/edit/run/save action assertions, and a readable action contract with the
-matching required action ids. The report now includes a
+`ui-action-contract.json`. It always reports Save Project and Select Project
+proof-artifact categories. Declarations come from
+`desktop-first-lesson-next-action.json`; if that evidence artifact or a category
+declaration is absent, the category remains visible as `missing`. Each category
+is normalized to `present`, `missing`, or `blocked`. The structural readiness
+check is valid only
+when both comparison targets include real Alice execution evidence, specific
+Alice window evidence, the required place/edit/run/save action assertions, a
+readable action contract with the matching required action ids, and no unhandled
+readiness issues. The report now includes a
 `role_readiness` array for `instructor` and `student`, plus the legacy
 `lesson_session_readiness` student envelope, whose normalized `status` is one of
 `ready`, `not_ready`, or `blocked`. Action-level unsupported affordances are
@@ -261,6 +269,14 @@ can still have
 the concrete artifacts are present and the only accepted blocker is the current
 lack of deterministic UI actions. It is not full UI automation, not creative
 assessment, and not learner-world grading.
+
+Proof-artifact presence means artifact availability only. A present Save Project
+or Select Project artifact can summarize an evidence-root-relative path, size,
+hash, or normalized metadata in `detail`, but it does not prove UI automation
+succeeded, a lesson was completed, grading occurred, or creative quality was
+assessed. Readiness output must not emit absolute host paths or artifact
+contents. Missing evidence is printed as missing; blocked evidence is printed as
+blocked and includes a normalized blocker summary when RabbitHole supplies one.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -285,6 +301,14 @@ detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
 manual smoke skip from a failed desktop proof run.
+Plain output includes the same shared evidence-progress items that JSON exposes:
+
+```text
+Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):
+- missing: Save Project proof artifact (no Save Project proof artifact declaration was found)
+- blocked: Select Project proof artifact (blocked: project selector proof is unavailable)
+```
+
 With `--execute`, non-baseline Alice scenarios still require
 `EATME_REAL_ALICE=1`. The command preserves the same boundaries: it does not
 create a complete instructor assignment, consume a complete student lesson,
@@ -332,8 +356,11 @@ The action-contract scenario writes manifest/log/window/screenshot evidence and
 `ui_action_automation_unimplemented`. With a valid placement hook it advances to
 `ui_action_remaining_steps_unimplemented` and records the next missing contract:
 `deterministic-alice-procedure-edit-affordance`. Editing a procedure, running
-the world, and saving from the desktop are still not automated. Neither result
-is full UI coverage.
+the world, and saving from the desktop are still not automated. Readiness always
+reports Save Project and Select Project proof-artifact availability categories.
+RabbitHole declarations can make those categories `present` or `blocked`; absent
+declarations stay visible as `missing`. The report treats each result as
+auditable artifact state only, not full UI coverage.
 
 Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow

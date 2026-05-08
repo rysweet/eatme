@@ -1,5 +1,6 @@
 use super::LessonTargetEvidence;
-use serde::Serialize;
+use super::project_proof::{save_project_proof_progress_item, select_project_proof_progress_item};
+use serde::{Serialize, Serializer, ser::SerializeStruct};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonReadinessEvidenceProgress {
@@ -17,11 +18,25 @@ pub struct LessonReadinessEvidenceProgress {
     pub items: Vec<LessonReadinessEvidenceProgressItem>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct LessonReadinessEvidenceProgressItem {
     pub evidence: String,
     pub state: String,
     pub detail: String,
+}
+
+impl Serialize for LessonReadinessEvidenceProgressItem {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("LessonReadinessEvidenceProgressItem", 4)?;
+        state.serialize_field("id", &progress_item_id(&self.evidence))?;
+        state.serialize_field("evidence", &self.evidence)?;
+        state.serialize_field("state", &self.state)?;
+        state.serialize_field("detail", &self.detail)?;
+        state.end()
+    }
 }
 
 pub(super) fn evidence_progress(
@@ -98,6 +113,14 @@ pub(super) fn evidence_progress(
         ui_action_contract_state(baseline, modernized),
         "readable ui-action-contract.json for both targets",
     ));
+    items.push(save_project_proof_progress_item(
+        &required_evidence[8],
+        modernized,
+    ));
+    items.push(select_project_proof_progress_item(
+        &required_evidence[9],
+        modernized,
+    ));
 
     let present = count_state(&items, "present");
     let missing = count_state(&items, "missing");
@@ -125,7 +148,7 @@ pub(super) fn evidence_progress(
     }
 }
 
-fn progress_item(
+pub(super) fn progress_item(
     evidence: &str,
     state: &str,
     detail: impl Into<String>,
@@ -139,6 +162,27 @@ fn progress_item(
 
 fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
     items.iter().filter(|item| item.state == state).count()
+}
+
+fn progress_item_id(evidence: &str) -> String {
+    match evidence {
+        "Save Project proof artifact" => "save_project_proof_artifact".into(),
+        "Select Project proof artifact" => "select_project_proof_artifact".into(),
+        _ => evidence
+            .chars()
+            .map(|ch| {
+                if ch.is_ascii_alphanumeric() {
+                    ch.to_ascii_lowercase()
+                } else {
+                    '_'
+                }
+            })
+            .collect::<String>()
+            .split('_')
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("_"),
+    }
 }
 
 fn next_actionable_blocker(target: Option<&LessonTargetEvidence>) -> Option<String> {
