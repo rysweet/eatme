@@ -23,6 +23,8 @@ mod report;
 mod repository_policy_tests;
 mod schema;
 #[cfg(test)]
+mod setup_preflight_ready_to_create_tests;
+#[cfg(test)]
 mod student_reflection_artifact_tests;
 mod validation;
 
@@ -120,7 +122,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 89);
+        assert_eq!(report.scenario_asset_count, 91);
     }
 
     #[test]
