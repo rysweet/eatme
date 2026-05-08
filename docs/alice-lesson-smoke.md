@@ -133,8 +133,8 @@ and explicit instructor/student deliverables.
 The evidence levels are intentionally separate:
 
 1. Launch evidence proves Alice started for the selected scenario id.
-2. Action-contract evidence records the first UI actions that future automation
-   must perform deterministically.
+2. Automation scenario action evidence records the first UI actions that future
+   automation must perform deterministically.
 3. Project proof-artifact evidence records Save Project and Select Project
    artifact availability or blockers without claiming UI success.
 4. Mission evidence is the human or agent-reviewed classroom output, such as a
@@ -167,8 +167,8 @@ compatibility, bounded Save completion, or finished lesson execution.
 
 ### Student first-lesson recipe
 
-Run the action-contract scenario when the student scenario requires evidence for the
-first real Alice action path:
+Run the first-lesson automation scenario when the student scenario requires
+evidence for the first real Alice action path:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -436,11 +436,11 @@ eatme alice launch-smoke \
   [--offline-package]
 ```
 
-### Real UI action contract
+### First-lesson automation scenario
 
-Use the action contract scenario when the intended evidence is a declared
-first-action contract toward user-visible Alice behavior rather than
-manifest-only startup:
+Use the first-lesson automation scenario when the intended evidence is a
+declared first-action automation scenario toward user-visible Alice behavior
+rather than manifest-only startup:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -455,17 +455,18 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 When required executable evidence is missing, incomplete, or blocked, this
-command exits non-zero after writing a manifest and `ui-action-contract.json`.
+command exits non-zero after writing the automation scenario evidence artifacts.
 Treat that explicit failure as the contract, not as passing coverage. These
-automation scenarios provide preflight launch/action-contract readiness evidence
-only for setup, launch support, handoff artifacts, and classroom support
-preparation. They are not full Alice UI automation, not creative assessment, not
-learner-world grading, not production readiness, not lesson completion, not
-complete end-to-end lesson execution, and not broad Alice compatibility.
+automation scenarios provide preflight readiness evidence only for setup, launch
+support, handoff artifacts, and classroom support preparation. They are not full
+Alice UI automation, not visible rendering correctness, not bounded Save
+completion, not creative assessment, not learner-world grading, not production
+readiness, not lesson completion, not complete end-to-end lesson execution, and
+not broad Alice compatibility.
 
 #### Instructor-editable readiness evidence wording
 
-The canonical source for the first-lesson action-contract wording is:
+The canonical source for the first-lesson automation scenario wording is:
 
 ```text
 assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
@@ -476,16 +477,17 @@ exactly one existing text field in that YAML asset. Prefer `purpose` for the
 small wording update because it is the summary that explains what the scenario
 proves before a reviewer inspects acceptance criteria, steps, or artifacts.
 
-The finished wording describes preflight launch/action-contract readiness
-evidence for setup, launch support, handoff artifacts, and classroom-support
+The finished wording describes preflight automation scenario readiness evidence
+for setup, launch support, handoff artifacts, and classroom-support
 preparation. It keeps these boundaries intact:
 
 | Boundary | Required wording behavior |
 | --- | --- |
-| Evidence claim | Say "readiness evidence", "launch/action-contract evidence", or "preflight evidence". |
+| Evidence claim | Say "automation scenario readiness evidence", "readiness evidence", or "preflight evidence". |
+| Legacy wording | Avoid the older phrase "preflight launch/action-contract readiness evidence only" in new user-facing text; use automation scenario wording instead. |
 | Scenario identity | Keep `id: first-lessons-real-ui-actions` and the same scenario inventory. |
 | Generated adapters | Do not hand-edit `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml`; regenerate or check it from the canonical asset. |
-| Non-claims | Keep the exact limits: "not full UI automation", "not creative assessment", "not learner-world grading", "not production readiness", "not lesson completion", "not complete end-to-end lesson execution", and "not broad Alice compatibility". |
+| Non-claims | Keep the exact limits: "not full UI automation", "not visible rendering correctness", "not bounded Save completion", "not creative assessment", "not learner-world grading", "not production readiness", "not lesson completion", "not complete end-to-end lesson execution", and "not broad Alice compatibility". |
 
 Example complete `purpose` wording:
 
@@ -498,13 +500,14 @@ purpose: >-
   when Alice exposes it, consuming edit proof when Alice exposes it, and
   dispatching Alice's documented Run shortcut after edit proof exists. The
   contract requires explicit evidence for object placement, procedure/code
-  editing, world run, project save, and a captured contract artifact. When
+  editing, world run, project save, and a captured action evidence artifact. When
   deterministic desktop manipulation beyond safe window activation, shortcut
   dispatch, and backend proof hooks is missing, the harness fails loudly with a
-  preflight/action contract instead of reporting a silent pass. This is
-  preflight launch/action-contract readiness evidence only for setup, launch
-  support, handoff artifacts, and classroom support preparation. It is not full
-  Alice UI automation, not creative assessment, not learner-world grading, not
+  preflight automation scenario evidence instead of reporting a silent pass.
+  This is preflight automation scenario readiness evidence only for setup,
+  launch support, handoff artifacts, and classroom support preparation. It is
+  not full Alice UI automation, not visible rendering correctness, not bounded
+  Save completion, not creative assessment, not learner-world grading, not
   production readiness, not lesson completion, not complete end-to-end lesson
   execution, and not broad Alice compatibility.
 ```
@@ -825,10 +828,11 @@ screenshot or window evidence, `real_alice_execution_evidence`, and passing
 assertions. They do not reimplement or configure Alice launch internals.
 
 The `first-lessons-real-ui-actions` adapter is the deliberate exception. It
-preserves the current action-contract boundary by expecting the launch step to
-exit `1` with `"failure_category": "ui_action_automation_unimplemented"` after
-real Alice launch evidence and `ui-action-contract.json` have been written. Do
-not reinterpret that non-zero result as completed UI automation; it remains a
+preserves the current automation scenario evidence boundary by expecting the
+launch step to exit `1` with
+`"failure_category": "ui_action_automation_unimplemented"` after real Alice
+launch evidence and first-lesson action evidence have been written. Do not
+reinterpret that non-zero result as completed UI automation; it remains a
 declared first-action contract until deterministic object/place/edit/run/save
 automation exists.
 

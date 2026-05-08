@@ -66,10 +66,10 @@ RabbitHole-produced desktop evidence:
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. Current readiness can mark the next first-lesson action `ready` only
 after RabbitHole evidence files show launch, the Run window, desktop execution,
-screenshot artifacts, log artifacts, window artifacts, a readable action
-contract, the current project proof-artifact states, and explicit boundary
-states for Select Project, procedure/edit, Save, visible rendering, grading,
-creative assessment, and first-lesson completion.
+screenshot artifacts, log artifacts, window artifacts, readable automation
+scenario action evidence, the current project proof-artifact states, and
+explicit boundary states for Select Project, procedure/edit, Save, visible
+rendering, grading, creative assessment, and first-lesson completion.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
@@ -85,8 +85,8 @@ readiness.
 
 The comparison evidence must include both `baseline` and `modernized` targets
 for the same `first-lessons-real-ui-actions` scenario. Both targets must satisfy
-the shared launch and action-contract checks. The modernized target also owns
-the RabbitHole desktop execution check.
+the shared launch and automation scenario action checks. The modernized target
+also owns the RabbitHole desktop execution check.
 
 | Required evidence | Existing artifact or assertion | `not_ready` or `blocked` condition |
 | --- | --- | --- |
@@ -95,17 +95,18 @@ the RabbitHole desktop execution check.
 | Specific Alice window evidence | `specific_alice_window_detected` and `activate_alice_window_ui_action` assertions | No specific Alice Stage IDE window, or activation evidence is absent. |
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
-| Action contract artifact | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
+| Automation scenario action evidence | Readable action evidence referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, failed original Alice action evidence, missing original Alice action evidence, or missing explicit unsupported-action entries. |
 | Save Project proof artifact | `save_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove bounded Save completion without a completion signal. |
 | Select Project proof artifact | `select_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
-| Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
+| Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized automation scenario action evidence, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
 
-Current readiness directly resolves and validates the UI action contract path,
-the modernized visible desktop screenshot, and the first-lesson next-action
-proof-artifact states. Other launch artifacts such as logs, window lists, and
-startup screenshots are represented through launch-manifest assertions;
-readiness does not independently revalidate every referenced launch artifact.
+Current readiness directly resolves and validates the automation scenario action
+evidence path, the modernized visible desktop screenshot, and the first-lesson
+next-action proof-artifact states. Other launch artifacts such as logs, window
+lists, and startup screenshots are represented through launch-manifest
+assertions; readiness does not independently revalidate every referenced launch
+artifact.
 
 The required first-lesson action ids stay the same:
 
@@ -166,8 +167,8 @@ the expected RabbitHole artifact set must not imply success.
 
 RabbitHole evidence is accepted through the existing readiness JSON API. This
 excerpt shows the shape a consumer should use when it finds the modernized
-target, inspects its launch manifest, loads `ui-action-contract.json`, and
-normalizes the target evidence:
+target, inspects its launch manifest, loads automation scenario action evidence,
+and normalizes the target evidence:
 
 ```json
 {
@@ -290,23 +291,23 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
   --json
 ```
 
-The command consumes embedded target launch manifests and each
-`ui-action-contract.json`. It requires real Alice execution evidence, specific
-Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow. Current output always reports Save Project and Select
-Project proof-artifact categories in `evidence_progress.items[]`. Declarations
-come from the modernized target's `desktop-first-lesson-next-action.json`; if
-that evidence artifact or a category declaration is absent, the category remains
-visible as `missing`.
+The command consumes embedded target launch manifests and each target's
+automation scenario action evidence. It requires real Alice execution evidence,
+specific Alice window evidence, action assertions, and matching action ids for
+the student first-lesson flow. Current output always reports Save Project and
+Select Project proof-artifact categories in `evidence_progress.items[]`.
+Declarations come from the modernized target's
+`desktop-first-lesson-next-action.json`; if that evidence artifact or a category
+declaration is absent, the category remains visible as `missing`.
 
 ### Check the RabbitHole evidence needed before continuing
 
 Use the same readiness command for RabbitHole. The comparison manifest must
 include the modernized/RabbitHole target and must reference the target launch
 manifest plus evidence files showing launch, the Run window, desktop execution,
-screenshot artifacts, log artifacts, window artifacts, and
-`ui-action-contract.json`. The modernized target also reports the Save Project
-and Select Project proof-artifact states as `present`, `missing`, or `blocked`:
+screenshot artifacts, log artifacts, window artifacts, and automation scenario
+action evidence. The modernized target also reports the Save Project and Select
+Project proof-artifact states as `present`, `missing`, or `blocked`:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-readiness \
@@ -616,7 +617,7 @@ backward-compatible student envelope.
       "role": "instructor",
       "status": "blocked",
       "blocked_reason": "blocked_until_ui_automation",
-      "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+      "human_summary": "first-lessons-real-ui-actions has automation scenario evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
         "ui-action-contract.json",
@@ -655,7 +656,7 @@ backward-compatible student envelope.
       "role": "student",
       "status": "blocked",
       "blocked_reason": "blocked_until_ui_automation",
-      "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+      "human_summary": "first-lessons-real-ui-actions has automation scenario evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
         "ui-action-contract.json",
@@ -677,7 +678,7 @@ backward-compatible student envelope.
     "role": "student",
     "status": "blocked",
     "blocked_reason": "blocked_until_ui_automation",
-    "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+    "human_summary": "first-lessons-real-ui-actions has automation scenario evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
     "required_evidence": [
       "comparison-manifest.json",
       "ui-action-contract.json",
@@ -719,13 +720,14 @@ Each `target_evidence[]` entry describes one comparison target:
 | `target_status` | string or null | Target comparison status. |
 | `failure_category` | string or null | Launch/action failure category from the target manifest. |
 | `launch_manifest_present` | boolean | Whether the target has a readable launch manifest reference. |
-| `ui_action_contract_path` | string or null | Path to the target `ui-action-contract.json`. |
-| `ui_action_contract_readable` | boolean | Whether the UI action contract could be parsed. |
+| `ui_action_contract_path` | string or null | Path to the target automation scenario action evidence artifact, currently `ui-action-contract.json`. |
+| `ui_action_contract_readable` | boolean | Whether the automation scenario action evidence could be parsed. |
 | `desktop_first_lesson_next_action` | object or null | Parsed `desktop-first-lesson-next-action.json` evidence for the modernized target. Save Project and Select Project categories still appear in `evidence_progress.items[]` as `missing` when declarations are absent. |
 | `action_assertions` | array | Required action assertions and their pass/fail status. |
-| `required_actions` | array of strings | Action ids discovered from the UI action contract. |
+| `required_actions` | array of strings | Action ids discovered from automation scenario action evidence. |
 | `missing_assertions` | array of strings | Required assertions absent from the target evidence. |
-| `missing_required_actions` | array of strings | Required action ids absent from the UI action contract. |
+| `missing_required_actions` | array of strings | Required action ids absent from automation scenario action evidence. |
+| `blockers` | array | Target-local blockers for required automation scenario action evidence. Original Alice missing or failed action evidence uses `code: "missing_real_action_evidence"`, the required `action` id, and a safe `reason`. |
 | `no_go_contracts` | array | Target-local unsupported-action entries. |
 
 Required action ids for the current first-lesson flow are:
@@ -738,6 +740,39 @@ edit-procedure-or-code-block
 run-world
 save-project
 ```
+
+Original Alice action-evidence blocker example:
+
+```json
+{
+  "role": "baseline",
+  "target_id": "original-alice",
+  "target_status": "failed",
+  "ui_action_contract_readable": true,
+  "required_actions": [
+    "verify-specific-alice-window",
+    "activate-specific-alice-window",
+    "place-object",
+    "edit-procedure-or-code-block",
+    "run-world",
+    "save-project"
+  ],
+  "blockers": [
+    {
+      "code": "missing_real_action_evidence",
+      "action": "save-project",
+      "reason": "Required original Alice action evidence is missing from automation scenarios."
+    }
+  ],
+  "no_go_contracts": []
+}
+```
+
+This blocker is an evidence-readiness result, not a UI automation result. It
+means the original Alice automation scenarios did not provide passing evidence
+for the required action. It does not prove full UI automation, Save completion,
+visible rendering correctness, grading, creative assessment, learner-world
+grading, or first-lesson completion.
 
 ## Unsupported-action (`no_go`) contract API
 
@@ -824,7 +859,7 @@ Expected interpretation:
 ```
 
 This is acceptable first-lesson evidence when the report also includes
-`ui-action-contract.json` evidence and action-level `no_go_contracts`
+automation scenario action evidence and action-level `no_go_contracts`
 (unsupported-action entries). It is not a completed UI automation pass.
 
 ### Student flow: inspect first-lesson scenario evidence
@@ -899,7 +934,7 @@ cargo run -q -p eatme-cli -- assets validate \
 ```
 
 The instructor handoff asset uses the real Alice manifest, log, window list,
-screenshot, and `ui-action-contract.json` as evidence inputs. It produces:
+screenshot, and automation scenario action evidence as inputs. It produces:
 
 | Output | Required content |
 | --- | --- |

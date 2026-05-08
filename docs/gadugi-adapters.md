@@ -93,7 +93,7 @@ the generated adapters as consumers of eatme's explicit contracts:
 | Canonical scenario | Adapter expectation |
 | --- | --- |
 | `real-alice-launch-smoke` | Run the launch smoke and inspect manifest-level launch evidence. |
-| `first-lessons-real-ui-actions` | Preserve the action-contract boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
+| `first-lessons-real-ui-actions` | Preserve the automation scenario evidence boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
 | `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
 
 Standard launch-smoke adapters expect command success and a `null`

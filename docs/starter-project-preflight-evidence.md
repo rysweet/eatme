@@ -22,7 +22,7 @@ The evidence boundary is intentionally narrow:
 | Assertions | Records deterministic harness assertions, including real Alice execution evidence. |
 | Window or screenshot evidence | Shows that a smoke-ready Alice desktop session was observed. |
 | Logs | Preserve Alice launch output for review and troubleshooting. |
-| Inspectable launch-smoke outputs | Give instructor, student, or adapter reviewers setup evidence for later save, reopen, export, or action-contract review. |
+| Inspectable launch-smoke outputs | Give instructor, student, or adapter reviewers setup evidence for later save, reopen, export, or automation scenario review. |
 
 This scenario does not write `ui-action-contract.json`; that artifact belongs to
 scenarios that explicitly exercise or specify user-like UI actions, such as
@@ -141,7 +141,7 @@ Good wording:
 purpose: >-
   Prove that the real Alice harness opens the bundled starter project and
   records manifest, log, and screenshot or window evidence for review before
-  save, reopen, export, or later action-contract work is claimed.
+  save, reopen, export, or later automation scenario work is claimed.
 ```
 
 Good limitation wording:

@@ -70,7 +70,7 @@ First-lesson readiness requires both comparison targets:
 
 | Target role | Meaning | Required evidence |
 | --- | --- | --- |
-| `baseline` | Original Alice target | Launch manifest, `ui-action-contract.json`, required action entries, action assertions, and any unsupported-action entries for original Alice. |
+| `baseline` | Original Alice target | Launch manifest, automation scenario action evidence, required action entries, action assertions, structured blockers for missing or failed original Alice action evidence, and any unsupported-action entries for original Alice. |
 | `modernized` | RabbitHole target | The same launch/action evidence as baseline, plus RabbitHole desktop evidence such as Run-window observation, desktop execution observation, visible screenshot evidence, and project proof-artifact states. |
 
 The comparison manifest must use `scenario_id: "first-lessons-real-ui-actions"`.
@@ -203,10 +203,56 @@ Top-level fields:
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when evidence is present. |
 
-### Structured blocker shape
+### `target_evidence[].blockers`
 
-When a first-lesson report exposes a structured blocker, it uses the same field
-names everywhere:
+`target_evidence[].blockers` is an additive JSON field on every target evidence
+entry. It is an array and is present even when empty.
+
+Original Alice target evidence uses this array to expose required automation
+scenario action evidence that is missing or failed. Each blocker has this shape:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | string | Stable machine-readable category. Missing or failed original Alice action evidence uses `missing_real_action_evidence`. |
+| `action` | string | Required action id affected by the blocker, such as `save-project` or `edit-procedure-or-code-block`. |
+| `reason` | string | Safe human-readable reason. Missing evidence reports `Required original Alice action evidence is missing from automation scenarios.` Failed evidence reports `Required original Alice action evidence from automation scenarios did not pass.` |
+
+Example:
+
+```json
+{
+  "role": "baseline",
+  "target_id": "original-alice",
+  "ui_action_contract_readable": true,
+  "required_actions": [
+    "verify-specific-alice-window",
+    "activate-specific-alice-window",
+    "place-object",
+    "edit-procedure-or-code-block",
+    "run-world",
+    "save-project"
+  ],
+  "blockers": [
+    {
+      "code": "missing_real_action_evidence",
+      "action": "save-project",
+      "reason": "Required original Alice action evidence is missing from automation scenarios."
+    }
+  ],
+  "no_go_contracts": []
+}
+```
+
+Consumers should treat these blockers as target-local evidence blockers. They do
+not prove action failure in the Alice UI, do not prove Save completion, and do
+not imply first-lesson completion. They say only that the original Alice
+automation scenarios did not provide passing executable evidence for the named
+required action.
+
+### Structured `no_go` blocker shape
+
+Unsupported-action blockers in `no_go_contracts[]` keep the existing field
+names:
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -226,7 +272,7 @@ Each boundary entry has this shape:
 | `status` | string | `present`, `missing`, `invalid`, `not_observed`, or `blocked`. |
 | `source` | string or null | Short source category, such as `ui_action_contract`, `rabbithole`, `comparison_manifest`, or `scenario_asset`. |
 | `metadata_state` | string or null | Optional boundary metadata state, such as `declared` or `observed`. Metadata state never upgrades the boundary to completion evidence. |
-| `detail` | string | Plain boundary summary safe for JSON consumers and CLI summaries. Structured blockers use `message` in the blocker shape. |
+| `detail` | string | Plain boundary summary safe for JSON consumers and CLI summaries. Unsupported-action blockers use `message` in the `no_go_contracts[]` shape. |
 | `claim` | string | The exact bounded claim this boundary supports when `status` is `present`. |
 | `does_not_prove` | array of strings | Claims that remain unsupported by this boundary. |
 | `artifact` | object or omitted | Safe artifact metadata when the boundary has accepted evidence rooted under the comparison evidence directory. |
@@ -325,8 +371,8 @@ If target-local original Alice action evidence is missing, repair the relevant
 Do not treat any of these as evidence for the action:
 
 - a comparison manifest without execution;
-- a launch manifest without a readable `ui-action-contract.json`;
-- a required action id listed in metadata but missing from the action contract;
+- a launch manifest without readable automation scenario action evidence;
+- a required action id listed in metadata but missing from automation scenario action evidence;
 - a required action entry without executable evidence or an explicit blocker;
 - an artifact path outside the comparison evidence root;
 - a screenshot that does not explicitly describe the observed boundary.

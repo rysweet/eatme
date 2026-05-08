@@ -163,12 +163,12 @@ behavior, revision, and reflection still have to be supplied by the mission.
 
 The `first-lessons-real-ui-actions` scenario is the student Alice lesson
 scenario evidence contract for the first real Alice actions. It records a
-scenario-labeled real Alice launch path, manifest/log/window/screenshot evidence,
-Alice window
-detection, and `ui-action-contract.json` expectations for place object, edit
-procedure, run world, and save project. This is launch/action-contract evidence
-only. It is not full UI automation, not creative assessment, and not
-learner-world grading.
+scenario-labeled real Alice launch path, manifest/log/window/screenshot
+evidence, Alice window detection, and automation scenario action evidence for
+place object, edit procedure, run world, and save project. This is preflight
+automation scenario readiness evidence only. It is not full UI automation, not
+visible rendering correctness, not bounded Save completion, not creative
+assessment, and not learner-world grading.
 
 ### First lesson evidence packet
 
@@ -179,7 +179,7 @@ machine evidence and learner evidence:
 | --- | --- | --- |
 | Launch manifest | `runs/first-lessons-real-ui-actions/<run-id>/manifest.json` | Alice launched for the scenario id and reported deterministic assertions. |
 | Alice log/window/screenshot artifacts | Run artifact directory | The desktop session produced observable startup evidence. |
-| Action contract | `ui-action-contract.json` | The first object/code/run/save actions are declared for deterministic automation. |
+| Automation scenario action evidence | `ui-action-contract.json` | The first object/code/run/save actions are declared for deterministic automation and checked for missing original Alice action evidence blockers. |
 | Learner prediction | Student response | The learner stated expected visible behavior before running. |
 | Learner observation and revision | Student response or artifact | The learner compared actual behavior and changed one meaningful thing. |
 | Reflection | Student response | The learner explained cause and effect in their own words. |

@@ -116,7 +116,7 @@ same honest readiness language:
 first-lessons-real-ui-actions
 instructor-lesson-materials-remix
 real-alice-launch-smoke
-preflight launch/action-contract readiness evidence only
+preflight automation scenario readiness evidence only
 not full UI automation
 not creative assessment
 not learner-world grading

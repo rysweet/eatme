@@ -16,7 +16,7 @@ manually chosen values.
 - [Examples](#examples)
 - [Authoring tutorial](#authoring-tutorial)
 - [Strict validation behavior](#strict-validation-behavior)
-- [Real UI action contract](#real-ui-action-contract)
+- [First-lesson automation scenario](#first-lesson-automation-scenario)
 
 ## Source of truth
 
@@ -373,16 +373,17 @@ resource_basis:
 ```
 
 Missing required semantic fields also fail validation. For example, lesson smoke
-and real UI action scenarios must define non-empty capability, adapter,
+and first-lesson automation scenarios must define non-empty capability, adapter,
 launcher, evidence, timeout, artifact, and persona references appropriate for
 their kind.
 
-## Real UI action contract
+## First-lesson automation scenario
 
-`first-lessons-real-ui-actions` is an explicit real Alice UI action contract.
+`first-lessons-real-ui-actions` is an explicit first-lesson automation scenario.
 Its generated adapter is not a passing UI automation run. The adapter expects
-eatme to launch real Alice, collect deterministic evidence, and fail loudly with
-a UI action failure category such as:
+eatme to launch real Alice, collect deterministic evidence, preserve blockers
+for missing original Alice action evidence, and fail loudly with a UI action
+failure category such as:
 
 ```json
 {

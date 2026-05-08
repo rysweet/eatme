@@ -22,7 +22,7 @@ humans, including plain blockers for first-lesson automation scenario evidence.
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
-| `alice check-lesson-readiness` | Check first-lesson comparison artifacts, including `ui-action-contract.json` |
+| `alice check-lesson-readiness` | Check first-lesson automation scenario evidence and blockers |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
 ## Validate assets
@@ -220,7 +220,7 @@ selected scenario's instructor/student boundary explicit:
 - lesson-labeled launch smoke records the same startup evidence under the chosen
   scenario id;
 - `first-lessons-real-ui-actions` records the required instructor/student
-  session steps, the current `ui-action-contract.json` evidence, and the
+  session steps, automation scenario evidence, and the
   `action_contract_blocked_until_ui_automation` boundary until deterministic
   Alice desktop actions are implemented.
 
@@ -234,8 +234,7 @@ cargo run -q -p eatme-cli -- alice check-lesson-session \
 
 The check fails when `lesson_session_contract` is missing, when its scenario does
 not match the comparison manifest, or when the first-lesson contract omits the
-open/change/run/save steps, `ui-action-contract.json` evidence, or required
-non-claims.
+open/change/run/save steps, automation scenario evidence, or required non-claims.
 
 Check executable first-lesson readiness evidence after running a comparison with
 `--execute`:
@@ -351,7 +350,7 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The automation scenario writes launch, log, window, screenshot, action-contract,
+The automation scenario writes launch, log, window, screenshot, action evidence,
 and first-lesson readiness progress evidence. Readiness reports Save Project and
 Select Project proof-artifact states through `evidence_progress.items[]` and
 reports Select Project, procedure/edit, Save, visible rendering, grading,
