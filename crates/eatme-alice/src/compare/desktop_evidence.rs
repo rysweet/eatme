@@ -7,6 +7,7 @@ mod blocker;
 mod first_lesson_next_action;
 
 pub use first_lesson_next_action::DesktopFirstLessonNextActionEvidence;
+pub(crate) use first_lesson_next_action::ProjectProofArtifactEvidence;
 pub(crate) use first_lesson_next_action::check_first_lesson_next_action_evidence;
 
 const RUN_WINDOW_AFTER_DISPATCH_SCREENSHOT: &str = "screenshots/run-window-after-dispatch.png";
@@ -369,6 +370,35 @@ pub(super) fn resolve_artifact_path(manifest_path: &Path, artifact_path: &str) -
         return canonical_artifact_under_root(&path, &root);
     }
     Ok(candidate)
+}
+
+pub(super) fn resolve_run_dir_artifact_path_under_root(
+    canonical_evidence_root: &Path,
+    run_dir: &Path,
+    artifact_path: &str,
+) -> Result<PathBuf> {
+    let path = PathBuf::from(artifact_path);
+    if path.as_os_str().is_empty() {
+        bail!("artifact path must not be empty");
+    }
+
+    if path.is_absolute() {
+        let artifact = path
+            .canonicalize()
+            .with_context(|| format!("resolving artifact path {}", path.display()))?;
+        if !artifact.starts_with(canonical_evidence_root) {
+            bail!(
+                "absolute artifact path {} must stay under comparison evidence root {}",
+                artifact.display(),
+                canonical_evidence_root.display()
+            );
+        }
+        return Ok(artifact);
+    }
+
+    reject_unsafe_relative_path(&path)?;
+    let candidate = run_dir.join(&path);
+    canonical_artifact_under_root(&candidate, canonical_evidence_root)
 }
 
 pub(super) fn comparison_evidence_root(manifest_path: &Path) -> PathBuf {

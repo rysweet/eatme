@@ -51,6 +51,8 @@ fn readiness_passes_with_visible_run_window_screenshot() {
             "modernized desktop execution evidence",
             "screenshot, log, and window artifacts",
             "ui-action-contract.json",
+            "Save Project proof artifact",
+            "Select Project proof artifact",
         ]
     );
     assert_eq!(
@@ -74,15 +76,16 @@ fn readiness_passes_with_visible_run_window_screenshot() {
     assert_eq!(pixel_observation.status, "blocked");
     assert!(pixel_observation.blocker.is_some());
     assert!(pixel_observation.component_state.is_some());
-    assert_eq!(report.evidence_progress.total_required, 8);
+    assert_eq!(report.evidence_progress.total_required, 10);
     assert_eq!(report.evidence_progress.present, 6);
+    assert_eq!(report.evidence_progress.missing, 2);
     assert_eq!(report.evidence_progress.not_observed, 1);
     assert_eq!(report.evidence_progress.blocked, 1);
     assert!(
         report
             .evidence_progress
             .summary
-            .contains("6 of 8 required evidence items are present")
+            .contains("6 of 10 required evidence items are present")
     );
     let next_blocker = report
         .evidence_progress

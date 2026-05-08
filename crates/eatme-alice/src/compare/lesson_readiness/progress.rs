@@ -1,5 +1,11 @@
 use super::LessonTargetEvidence;
-use serde::Serialize;
+use crate::compare::desktop_evidence::{
+    DesktopFirstLessonNextActionEvidence, ProjectProofArtifactEvidence,
+};
+use serde::{Serialize, Serializer, ser::SerializeStruct};
+
+const SAVE_PROJECT_PROOF_LABEL: &str = "Save Project proof artifact";
+const SELECT_PROJECT_PROOF_LABEL: &str = "Select Project proof artifact";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonReadinessEvidenceProgress {
@@ -17,11 +23,25 @@ pub struct LessonReadinessEvidenceProgress {
     pub items: Vec<LessonReadinessEvidenceProgressItem>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct LessonReadinessEvidenceProgressItem {
     pub evidence: String,
     pub state: String,
     pub detail: String,
+}
+
+impl Serialize for LessonReadinessEvidenceProgressItem {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("LessonReadinessEvidenceProgressItem", 4)?;
+        state.serialize_field("id", &progress_item_id(&self.evidence))?;
+        state.serialize_field("evidence", &self.evidence)?;
+        state.serialize_field("state", &self.state)?;
+        state.serialize_field("detail", &self.detail)?;
+        state.end()
+    }
 }
 
 pub(super) fn evidence_progress(
@@ -98,6 +118,18 @@ pub(super) fn evidence_progress(
         ui_action_contract_state(baseline, modernized),
         "readable ui-action-contract.json for both targets",
     ));
+    items.push(project_proof_progress_item(
+        &required_evidence[8],
+        SAVE_PROJECT_PROOF_LABEL,
+        modernized,
+        |next_action| &next_action.save_project_proof_artifact,
+    ));
+    items.push(project_proof_progress_item(
+        &required_evidence[9],
+        SELECT_PROJECT_PROOF_LABEL,
+        modernized,
+        |next_action| &next_action.select_project_proof_artifact,
+    ));
 
     let present = count_state(&items, "present");
     let missing = count_state(&items, "missing");
@@ -125,7 +157,7 @@ pub(super) fn evidence_progress(
     }
 }
 
-fn progress_item(
+pub(super) fn progress_item(
     evidence: &str,
     state: &str,
     detail: impl Into<String>,
@@ -137,8 +169,49 @@ fn progress_item(
     }
 }
 
+fn project_proof_progress_item(
+    evidence: &str,
+    label: &str,
+    target: Option<&LessonTargetEvidence>,
+    artifact: fn(&DesktopFirstLessonNextActionEvidence) -> &ProjectProofArtifactEvidence,
+) -> LessonReadinessEvidenceProgressItem {
+    let Some(artifact) = target
+        .and_then(|target| target.desktop_first_lesson_next_action.as_ref())
+        .map(artifact)
+    else {
+        return progress_item(
+            evidence,
+            "missing",
+            format!("{label} is missing; no next-action proof-artifact declaration was read."),
+        );
+    };
+
+    progress_item(evidence, artifact.state(), artifact.detail.clone())
+}
+
 fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
     items.iter().filter(|item| item.state == state).count()
+}
+
+fn progress_item_id(evidence: &str) -> String {
+    match evidence {
+        "Save Project proof artifact" => "save_project_proof_artifact".into(),
+        "Select Project proof artifact" => "select_project_proof_artifact".into(),
+        _ => {
+            let mut id = String::with_capacity(evidence.len());
+            for ch in evidence.chars() {
+                if ch.is_ascii_alphanumeric() {
+                    id.push(ch.to_ascii_lowercase());
+                } else if !id.ends_with('_') && !id.is_empty() {
+                    id.push('_');
+                }
+            }
+            if id.ends_with('_') {
+                id.pop();
+            }
+            id
+        }
+    }
 }
 
 fn next_actionable_blocker(target: Option<&LessonTargetEvidence>) -> Option<String> {

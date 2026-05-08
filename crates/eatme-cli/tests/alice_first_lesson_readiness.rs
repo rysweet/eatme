@@ -61,7 +61,7 @@ targets:
             "artifact": null
         })
     );
-    assert_eq!(report["evidence_progress"]["total_required"], 8);
+    assert_eq!(report["evidence_progress"]["total_required"], 10);
     assert!(
         report["evidence_progress"]["summary"]
             .as_str()
@@ -75,6 +75,12 @@ targets:
             .unwrap()
             .ends_with("comparison-manifest.json")
     );
+    let save_item = progress_item(&report, "save_project_proof_artifact");
+    let select_item = progress_item(&report, "select_project_proof_artifact");
+    assert_eq!(save_item["state"], "missing");
+    assert_eq!(select_item["state"], "missing");
+    assert_eq!(save_item["evidence"], "Save Project proof artifact");
+    assert_eq!(select_item["evidence"], "Select Project proof artifact");
 }
 
 #[test]
@@ -121,18 +127,21 @@ targets:
     assert!(stdout.contains("Evidence progress:"));
     assert!(stdout.contains("required evidence items are present"));
     assert!(stdout.contains(
-        "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
+        "Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):"
     ));
     assert!(
         stdout.contains("present: comparison-manifest.json with baseline and modernized targets")
     );
     assert!(stdout.contains("missing: launch evidence for each target"));
     assert!(stdout.contains("modernized desktop-run-pixel-observation.json status"));
+    assert!(stdout.contains("missing: Save Project proof artifact"));
+    assert!(stdout.contains("missing: Select Project proof artifact"));
     assert!(stdout.contains("Limits:"));
     assert!(stdout.contains("does not prove full Alice UI automation"));
     assert!(stdout.contains("does not prove visible rendering correctness"));
     assert!(stdout.contains("does not prove first-lesson completion"));
     assert!(stdout.contains("Still missing or blocked:"));
+    assert_plain_output_avoids_project_proof_success_claims(&stdout);
 }
 
 #[test]
@@ -224,4 +233,32 @@ fn assert_exit_code(output: &std::process::Output, code: i32) {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn progress_item<'a>(report: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
+    report["evidence_progress"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == id)
+        .unwrap_or_else(|| panic!("missing evidence_progress item {id}"))
+}
+
+fn assert_plain_output_avoids_project_proof_success_claims(stdout: &str) {
+    let stdout = stdout.to_ascii_lowercase();
+    for forbidden in [
+        "ui automation succeeded",
+        "automation passed",
+        "lesson completed",
+        "grading occurred",
+        "creative assessment passed",
+        "creative quality assessed",
+        "save project succeeded",
+        "select project succeeded",
+    ] {
+        assert!(
+            !stdout.contains(forbidden),
+            "plain output must not claim {forbidden:?}"
+        );
+    }
 }

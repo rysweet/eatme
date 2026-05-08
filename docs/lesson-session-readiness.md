@@ -15,10 +15,11 @@ connects four surfaces:
 | Readiness reports | Normalize the result as `ready`, `not_ready`, or `blocked` for humans, CI, and adapters. |
 
 The readiness contract is deliberately outside-in. It proves that required
-assets, manifests, UI action contracts, and known unsupported-action blockers are visible and
-machine-readable. It does not implement missing Alice desktop affordances, does
-not automate a complete lesson, does not perform creative assessment, and does
-not grade student worlds.
+assets, manifests, UI action contracts, Save Project proof-artifact state,
+Select Project proof-artifact state, and known unsupported-action blockers are
+visible and machine-readable. It does not implement missing Alice desktop
+affordances, does not automate a complete lesson, does not perform creative
+assessment, and does not grade student worlds.
 
 ## Scenario map
 
@@ -58,8 +59,9 @@ RabbitHole-produced desktop evidence:
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. eatme can mark the next first-lesson action `ready` only after
 RabbitHole evidence files show launch, the Run window, desktop execution,
-screenshot artifacts, log artifacts, window artifacts, and
-`ui-action-contract.json`.
+screenshot artifacts, log artifacts, window artifacts,
+`ui-action-contract.json`, and explicit Save Project and Select Project
+proof-artifact states.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
@@ -86,14 +88,16 @@ the RabbitHole desktop execution check.
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
 | Action contract artifact | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
+| Save Project proof artifact | `save_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. |
+| Select Project proof artifact | `select_project_proof_artifact` declaration from `run-window-evidence/desktop-first-lesson-next-action.json`, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
 | Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
 
-Current readiness directly resolves and validates the UI action contract path and
-the modernized visible desktop screenshot. Other launch artifacts such as logs,
-window lists, and startup screenshots are represented through launch-manifest
-assertions; readiness does not independently revalidate every referenced launch
-artifact.
+Current readiness directly resolves and validates the UI action contract path,
+the modernized visible desktop screenshot, and the first-lesson next-action
+proof-artifact states. Other launch artifacts such as logs, window lists, and
+startup screenshots are represented through launch-manifest assertions;
+readiness does not independently revalidate every referenced launch artifact.
 
 The required first-lesson action ids stay the same:
 
@@ -112,6 +116,28 @@ execution evidence records that desktop execution started and produced runtime
 statement evidence. Neither evidence item proves rendered output correctness,
 creative quality, learner understanding, saved-world grading, or completed
 lesson execution.
+
+### Evidence status vocabulary
+
+Readiness reports use explicit evidence states so human readers and automation
+do not have to infer whether evidence is available, absent, malformed, not yet
+observed, or blocked:
+
+| Evidence state | Where it appears | Meaning |
+| --- | --- | --- |
+| `present` | `evidence_progress.items[].state` and `evidence_progress.present` | The named artifact declaration or proof summary is available and safe to report. This is artifact availability only. |
+| `missing` | `evidence_progress.items[].state` and `evidence_progress.missing` | The declaration, artifact metadata, or safe evidence-root-relative path is absent or unusable. |
+| `invalid` | `evidence_progress.items[].state` and `evidence_progress.invalid` | A producer supplied malformed or explicitly invalid desktop evidence. |
+| `not_observed` | `evidence_progress.items[].state` and `evidence_progress.not_observed` | A desktop evidence producer ran, but the expected visible observation was not made. |
+| `blocked` | `evidence_progress.items[].state`, `evidence_progress.blocked`, and readiness `status` when applicable | RabbitHole supplied a normalized blocker, or a known unsupported desktop affordance prevents continuing. |
+
+Save Project and Select Project proof-artifact entries intentionally use only
+`present`, `missing`, or `blocked`. The broader readiness progress object can
+also emit `invalid` and `not_observed` for desktop pixel evidence. Malformed,
+unsafe, or out-of-root project proof-artifact declarations are not promoted to
+`present`; they remain `missing` and may also appear in `issues` so the caller
+knows what to repair. `blocked` remains separate from `missing`: blocked means
+the report received an explicit reason proof collection could not proceed.
 
 ### Readiness results
 
@@ -258,7 +284,10 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow.
+student first-lesson flow. It always reports Save Project and Select Project
+proof-artifact categories. Declarations come from the modernized target's
+`desktop-first-lesson-next-action.json`; if that evidence artifact or a category
+declaration is absent, the category remains visible as `missing`.
 
 ### Check the RabbitHole evidence needed before continuing
 
@@ -266,7 +295,8 @@ Use the same readiness command for RabbitHole. The comparison manifest must
 include the modernized/RabbitHole target and must reference the target launch
 manifest plus evidence files showing launch, the Run window, desktop execution,
 screenshot artifacts, log artifacts, window artifacts, and
-`ui-action-contract.json`:
+`ui-action-contract.json`. The modernized target also reports the Save Project
+and Select Project proof-artifact states as `present`, `missing`, or `blocked`:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-readiness \
@@ -337,6 +367,12 @@ Interpret the states this way:
 | `not_ready` | Required evidence is missing, invalid, incomplete, stale, inconsistent, insufficient, or was produced without execution. | Fix assets, regenerate adapters, rerun comparison with `--execute`, or inspect `issues`. |
 | `blocked` | Required evidence is present, but at least one target reports a known unsupported desktop action. | Treat the blocker as the honest boundary; do not mark the lesson as fully automated. |
 
+A missing Save Project or Select Project proof artifact is reported as missing
+artifact availability, not as a failed save or select action. A blocked Save
+Project or Select Project proof artifact is reported separately from missing
+evidence and preserves a normalized blocker summary when RabbitHole supplies
+one.
+
 A report can have `passed: true`, `status: "blocked"`, and
 `readiness_status: "blocked_until_ui_automation"`. That means structural
 evidence exists, the target failure category is a known UI-action blocker, and
@@ -368,17 +404,58 @@ Top-level fields:
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Single-sentence human explanation of the readiness result. |
 | `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
-| `evidence_progress` | object | Required-evidence counts plus next blocker/proof hints. |
-| `required_evidence` | array of strings | Durable artifact names required by the readiness check. |
+| `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints using explicit `present`, `missing`, `invalid`, `not_observed`, and `blocked` states. |
+| `required_evidence` | array of strings | Durable evidence names required by the readiness check, including Save Project and Select Project proof-artifact state entries. |
 | `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
 | `lesson_session_readiness` | object | Backward-compatible normalized student readiness envelope. |
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
-| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, or Run pixel observation. |
+| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, Save Project proof artifact, or Select Project proof artifact. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Non-claims that remain true even when the report passes. |
+
+### Evidence progress API
+
+`evidence_progress` is the shared progress object used by JSON output and plain
+CLI output. It reports observed evidence state only; it does not grade the
+lesson, prove UI completion, or collapse blocked evidence into missing evidence.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `total_required` | number | Number of required evidence items represented in `items`. |
+| `present` | number | Count of items whose `state` is `present`. This is artifact availability, not lesson completion. |
+| `missing` | number | Count of items whose `state` is `missing`. |
+| `invalid` | number | Count of items whose `state` is `invalid`. |
+| `not_observed` | number | Count of items whose `state` is `not_observed`. |
+| `blocked` | number | Count of items whose `state` is `blocked`. |
+| `summary` | string | Human-readable aggregate count summary. |
+| `next_actionable_blocker` | string or omitted | Next unsupported action blocker reported by RabbitHole. |
+| `items` | array | Required evidence entries. Each entry has `id`, `evidence`, `state`, and `detail`. |
+| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. |
+
+Across the full progress object, `items[].state` can be `present`, `missing`,
+`invalid`, `not_observed`, or `blocked`. The Save Project and Select Project
+proof-artifact entries are the narrower subset that use only `present`,
+`missing`, or `blocked`: use `present` for observed artifact availability,
+`missing` for absent or unusable evidence, and `blocked` only when RabbitHole
+supplies an explicit blocker.
+
+Project proof-artifact item example:
+
+```json
+{
+  "id": "select_project_proof_artifact",
+  "evidence": "Select Project proof artifact",
+  "state": "blocked",
+  "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
+}
+```
+
+This means proof collection hit an explicit boundary. It does not mean Alice
+completed a lesson, saved a learner world through full UI automation, or graded
+creative work.
 
 ### Desktop proof contract
 
@@ -394,6 +471,119 @@ automation. It reports what happened to the modernized desktop proof attempt:
 
 The contract includes `reason_code`, `detail`, `target_role`, and optional
 `artifact` fields so CI and reports can preserve the exact skip/blocker shape.
+
+### Project proof-artifact states
+
+Save Project and Select Project are proof-artifact categories. They describe
+whether RabbitHole supplied an auditable artifact declaration for the action
+boundary. They do not say that Alice UI automation succeeded, that a lesson was
+completed, that a saved world was graded, or that creative quality was assessed.
+
+The modernized target reads optional declarations from:
+
+```text
+run-window-evidence/desktop-first-lesson-next-action.json
+```
+
+The accepted declaration fields are:
+
+```json
+{
+  "save_project_proof_artifact": {
+    "artifact": {
+      "path": "project-save/saved-project.a3p",
+      "size_bytes": 81342,
+      "sha256": "2d6f6f7e9c5a..."
+    },
+    "metadata": {
+      "source": "tools/eatme-save-project"
+    }
+  },
+  "select_project_proof_artifact": {
+    "blocker": {
+      "reason": "project selector proof is not available in this RabbitHole run",
+      "codes": ["select_project_proof_unavailable"]
+    }
+  }
+}
+```
+
+A minimal blocked declaration without detail is also valid:
+
+```json
+{
+  "save_project_proof_artifact": {
+    "status": "blocked"
+  }
+}
+```
+
+Normalization uses this precedence for each category:
+
+| Normalized state | Condition | Boundary |
+| --- | --- | --- |
+| `blocked` | The declaration has blocker metadata, or declares `status: "blocked"`. | Report the blocker reason, codes, next action, or component state when present. If no detail exists, report only that the proof artifact is blocked. |
+| `present` | The declaration has `ArtifactInfo` metadata or a safe comparison-evidence-root-relative artifact path. | Report artifact availability only. These entries count toward `evidence_progress.present`. Path, `size_bytes`, `sha256`, and normalized metadata summaries may be included. |
+| `missing` | No declaration exists, the declaration has no usable artifact metadata, or the path is absent or unsafe. | Report missing artifact availability plainly. Do not convert this to success language. |
+
+`blocked` remains distinct from `missing`: blocked means RabbitHole supplied an
+explicit reason that proof collection could not proceed; missing means the
+readiness report did not receive a usable proof-artifact declaration. An unsafe
+absolute path, traversal path, or artifact outside the evidence root is not
+treated as present.
+
+Both project proof-artifact categories are reported even when
+`desktop-first-lesson-next-action.json` is missing or does not declare them. In
+that case the Save Project and Select Project entries appear as `missing`
+instead of disappearing from the report.
+
+Artifact paths emitted by readiness are evidence-root-relative paths from the
+declaration. The readiness report must not emit absolute host paths for Save
+Project or Select Project proof artifacts, must not read the referenced project
+artifact contents, and must not embed artifact contents in JSON or plain output.
+RabbitHole metadata and blockers are normalized into summaries; raw metadata and
+raw blocker objects are not part of the shared progress-item schema.
+
+The shared progress entries use stable evidence labels:
+
+| Declaration key | Human label | States |
+| --- | --- | --- |
+| `save_project_proof_artifact` | Save Project proof artifact | `present`, `missing`, `blocked` |
+| `select_project_proof_artifact` | Select Project proof artifact | `present`, `missing`, `blocked` |
+
+Example `evidence_progress.items[]` entries:
+
+```json
+[
+  {
+    "evidence": "Save Project proof artifact",
+    "state": "present",
+    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f6f7e9c5a...; presence is not proof of full UI automation"
+  },
+  {
+    "evidence": "Select Project proof artifact",
+    "state": "blocked",
+    "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
+  }
+]
+```
+
+A minimal `status: "blocked"` declaration without detail emits a progress item
+like:
+
+```json
+{
+  "evidence": "Save Project proof artifact",
+  "state": "blocked",
+  "detail": "blocked"
+}
+```
+
+Consumers that only need a human-readable report can read `evidence`, `state`,
+and `detail`. Consumers that audit artifacts should inspect the original
+RabbitHole evidence artifact separately; the readiness progress API emits
+normalized summaries, not raw artifact metadata, raw blocker JSON, or artifact
+contents.
 
 ### Normalized envelope
 
@@ -412,7 +602,9 @@ backward-compatible student envelope.
       "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
-        "ui-action-contract.json"
+        "ui-action-contract.json",
+        "Save Project proof artifact",
+        "Select Project proof artifact"
       ],
       "no_go_contracts": [
         {
@@ -453,7 +645,9 @@ backward-compatible student envelope.
       "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
-        "ui-action-contract.json"
+        "ui-action-contract.json",
+        "Save Project proof artifact",
+        "Select Project proof artifact"
       ],
       "no_go_contracts": [
         {
@@ -474,7 +668,9 @@ backward-compatible student envelope.
     "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
     "required_evidence": [
       "comparison-manifest.json",
-      "ui-action-contract.json"
+      "ui-action-contract.json",
+      "Save Project proof artifact",
+      "Select Project proof artifact"
     ],
     "no_go_contracts": [
       {
@@ -498,7 +694,7 @@ Envelope fields:
 | `status` | string | `ready`, `not_ready`, or `blocked`. |
 | `blocked_reason` | string or null | Blocker reason when status is `blocked`. |
 | `human_summary` | string | Human-readable state summary. |
-| `required_evidence` | array of strings | Required durable evidence artifacts. |
+| `required_evidence` | array of strings | Required durable evidence artifacts and proof-artifact state entries. |
 | `no_go_contracts` | array | Unsupported-action entries that prevent silent success. |
 
 ### Target evidence
@@ -514,6 +710,7 @@ Each `target_evidence[]` entry describes one comparison target:
 | `launch_manifest_present` | boolean | Whether the target has a readable launch manifest reference. |
 | `ui_action_contract_path` | string or null | Path to the target `ui-action-contract.json`. |
 | `ui_action_contract_readable` | boolean | Whether the UI action contract could be parsed. |
+| `desktop_first_lesson_next_action` | object or null | Parsed `desktop-first-lesson-next-action.json` evidence for the modernized target. Save Project and Select Project categories still appear in `evidence_progress.items[]` as `missing` when declarations are absent. |
 | `action_assertions` | array | Required action assertions and their pass/fail status. |
 | `required_actions` | array of strings | Action ids discovered from the UI action contract. |
 | `missing_assertions` | array of strings | Required assertions absent from the target evidence. |
@@ -574,6 +771,16 @@ test to hide and not as a pass to override.
 | `ALICE_BASELINE_HOME` | Comparison/readiness sequence | Reference Alice checkout used as the baseline target. |
 | `ALICE_MODERNIZED_HOME` | Comparison/readiness sequence | Candidate Alice checkout used as the modernized target. |
 
+The saved local preference for Node-based runner capacity is:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+```
+
+Change that preference in your local Amplihack config when local agentic or
+wrapper tooling needs a different heap. The Rust readiness commands do not use
+Node to parse Save Project or Select Project proof artifacts.
+
 ### Real desktop requirements
 
 Real Alice launch/action evidence requires the desktop dependency set documented
@@ -608,6 +815,44 @@ Expected interpretation:
 This is acceptable first-lesson evidence when the report also includes
 `ui-action-contract.json` evidence and action-level `no_go_contracts`
 (unsupported-action entries). It is not a completed UI automation pass.
+
+### Student flow: inspect Save and Select Project proof artifacts
+
+Plain output always names the project proof-artifact categories:
+
+```text
+Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):
+- present: Save Project proof artifact (artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f...)
+- blocked: Select Project proof artifact (blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable)
+```
+
+JSON output exposes the same states in `evidence_progress.items[]`. This
+excerpt shows only the project proof-artifact entries from the longer progress
+array:
+
+```json
+[
+  {
+    "id": "save_project_proof_artifact",
+    "evidence": "Save Project proof artifact",
+    "state": "present",
+    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f..."
+  },
+  {
+    "id": "select_project_proof_artifact",
+    "evidence": "Select Project proof artifact",
+    "state": "blocked",
+    "detail": "blocked: project selector proof is not available in this RabbitHole run; codes: select_project_proof_unavailable"
+  }
+]
+```
+
+The Save Project line says only that a save proof artifact is available for
+audit. The Select Project line says proof collection is blocked and preserves
+the RabbitHole blocker as a normalized summary. If a category has no declaration
+or no usable relative artifact path, it remains visible as `missing`; if it only
+declares `status: "blocked"`, its detail can be just `blocked`. Neither line
+proves lesson completion, full UI automation, grading, or creative assessment.
 
 ### Student flow: fix a not-ready report
 
@@ -675,7 +920,11 @@ or deployed-service status.
 3. Use `ready`, `not_ready`, and `blocked` wording for readiness outputs.
 4. Add explicit `no_go` entries for missing desktop affordances instead of
    implying silent success; explain that they report `blocked`.
-5. Validate the changed asset:
+5. If the scenario consumes RabbitHole next-action proof, declare Save Project
+   and Select Project proof-artifact state separately as `present`, `missing`, or
+   `blocked`. Preserve blocker information as a normalized summary and keep
+   artifact presence language separate from UI success language.
+6. Validate the changed asset:
 
    ```bash
    cargo run -q -p eatme-cli -- assets validate \
@@ -683,24 +932,25 @@ or deployed-service status.
      --json
    ```
 
-6. Check generated adapter freshness:
+7. Check generated adapter freshness:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
    ```
 
-7. If adapters are stale, regenerate them:
+8. If adapters are stale, regenerate them:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --json
    ```
 
-8. For student first-lesson changes, run or inspect a readiness report and confirm
-   it exposes `status`, `lesson_session_readiness`, and `no_go_contracts`. For
+9. For student first-lesson changes, run or inspect a readiness report and
+   confirm it exposes `status`, `lesson_session_readiness`, `no_go_contracts`,
+   `save_project_proof_artifact`, and `select_project_proof_artifact`. For
    instructor-only asset changes, keep the evidence boundary in scenario
    validation and generated adapters unless an executable instructor harness is
    added.
-9. Run the repository quality gate before handoff:
+10. Run the repository quality gate before handoff:
 
    ```bash
    ./scripts/quality-gates.sh
@@ -716,6 +966,7 @@ summary in the PR description:
 | Scenario validation | `cargo run -q -p eatme-cli -- assets validate --json` passed. |
 | Gadugi freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` passed, or adapters were regenerated and committed. |
 | Readiness output | Student first-lesson reports expose normalized `status` and `lesson_session_readiness`; instructor-only changes do not claim a readiness report unless a harness produces one. |
+| Project proof artifacts | Save Project and Select Project proof-artifact entries are visible as `present`, `missing`, or `blocked`; aggregate progress counts `present` entries in `evidence_progress.present`, and blocked entries preserve normalized blocker summaries when supplied. |
 | Unsupported-action entries | Unsupported desktop actions are explicit `decision: "no_go"` entries that report `blocked`. |
 | Boundaries | The change does not claim full UI automation, creative assessment, learner-world grading, complete Alice coverage, or deployed-service status. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

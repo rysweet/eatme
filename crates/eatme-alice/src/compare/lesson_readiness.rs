@@ -354,30 +354,22 @@ fn inspect_target_evidence(
                             ));
                         }
                         if role == "modernized" {
-                            let pixel_boundary = check_pixel_boundary_evidence(
-                                &comparison_evidence_root(manifest_path),
-                                &resolved,
-                            );
+                            let evidence_root = comparison_evidence_root(manifest_path);
+                            let pixel_boundary =
+                                check_pixel_boundary_evidence(&evidence_root, &resolved);
                             issues.extend(pixel_boundary.issue_when_missing_or_invalid());
                             desktop_run_pixel_boundary = Some(pixel_boundary);
-                            let pixel_observation = check_pixel_observation_evidence(
-                                &comparison_evidence_root(manifest_path),
-                                &resolved,
-                            );
+                            let pixel_observation =
+                                check_pixel_observation_evidence(&evidence_root, &resolved);
                             issues.extend(pixel_observation.issue_when_missing_or_invalid());
                             desktop_run_pixel_observation = Some(pixel_observation);
-                            let first_lesson_next_action = check_first_lesson_next_action_evidence(
-                                &comparison_evidence_root(manifest_path),
-                                &resolved,
-                            );
+                            let first_lesson_next_action =
+                                check_first_lesson_next_action_evidence(&evidence_root, &resolved);
                             issues.extend(first_lesson_next_action.issue_when_invalid());
                             desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
-                                check_visible_desktop_evidence(
-                                    &comparison_evidence_root(manifest_path),
-                                    &resolved,
-                                )
-                                .issue_when_missing(),
+                                check_visible_desktop_evidence(&evidence_root, &resolved)
+                                    .issue_when_missing(),
                             );
                         }
                     }

@@ -1,10 +1,14 @@
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use std::fs;
 use std::path::{Path, PathBuf};
+
+use super::{blocker, resolve_run_dir_artifact_path_under_root};
 
 const DESKTOP_FIRST_LESSON_NEXT_ACTION: &str =
     "run-window-evidence/desktop-first-lesson-next-action.json";
 const MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE: &str = "missing desktop first-lesson next-action evidence; expected run-window-evidence/desktop-first-lesson-next-action.json under the comparison evidence root";
+const SAVE_PROJECT_PROOF_LABEL: &str = "Save Project proof artifact";
+const SELECT_PROJECT_PROOF_LABEL: &str = "Select Project proof artifact";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct DesktopFirstLessonNextActionEvidence {
@@ -14,6 +18,82 @@ pub struct DesktopFirstLessonNextActionEvidence {
     pub candidate_actions: Vec<String>,
     pub blocker: Option<serde_json::Value>,
     pub requires_next_evidence: Vec<String>,
+    pub save_project_proof_artifact: ProjectProofArtifactEvidence,
+    pub select_project_proof_artifact: ProjectProofArtifactEvidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProofArtifactState {
+    Present,
+    Missing,
+    Blocked,
+}
+
+impl ProofArtifactState {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Present => "present",
+            Self::Missing => "missing",
+            Self::Blocked => "blocked",
+        }
+    }
+}
+
+impl Serialize for ProofArtifactState {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ProjectProofArtifactEvidence {
+    pub status: ProofArtifactState,
+    pub detail: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub artifact: Option<ProjectProofArtifactInfo>,
+}
+
+impl ProjectProofArtifactEvidence {
+    pub(crate) fn missing(label: &str) -> Self {
+        Self::missing_with_detail(format!(
+            "{label} is missing; artifact availability was not declared."
+        ))
+    }
+
+    fn declared_missing(label: &str, declaration: &serde_json::Value) -> Self {
+        let detail = string_field(declaration, "reason")
+            .or_else(|| string_field(declaration, "detail"))
+            .map(|detail| format!("{label} is missing: {detail}"))
+            .unwrap_or_else(|| {
+                format!("{label} is missing; artifact availability was declared missing.")
+            });
+        Self::missing_with_detail(detail)
+    }
+
+    fn missing_with_detail(detail: impl Into<String>) -> Self {
+        Self {
+            status: ProofArtifactState::Missing,
+            detail: detail.into(),
+            artifact: None,
+        }
+    }
+
+    pub(crate) fn state(&self) -> &'static str {
+        self.status.as_str()
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ProjectProofArtifactInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
 }
 
 impl DesktopFirstLessonNextActionEvidence {
@@ -71,7 +151,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     let Ok(artifact) = candidate.canonicalize() else {
         return missing_first_lesson_next_action();
     };
-    if !artifact.starts_with(root) {
+    if !artifact.starts_with(&root) {
         return missing_first_lesson_next_action();
     }
     let Ok(text) = fs::read_to_string(&artifact) else {
@@ -110,31 +190,176 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         candidate_actions: string_array(&json, "candidate_actions"),
         blocker: json.get("blocker").cloned(),
         requires_next_evidence: requires_next_evidence(&json),
+        save_project_proof_artifact: project_proof_artifact(
+            &json,
+            &root,
+            run_dir,
+            "save_project_proof_artifact",
+            "saveProjectProofArtifact",
+            SAVE_PROJECT_PROOF_LABEL,
+        ),
+        select_project_proof_artifact: project_proof_artifact(
+            &json,
+            &root,
+            run_dir,
+            "select_project_proof_artifact",
+            "selectProjectProofArtifact",
+            SELECT_PROJECT_PROOF_LABEL,
+        ),
     }
 }
 
 fn missing_first_lesson_next_action() -> DesktopFirstLessonNextActionEvidence {
-    DesktopFirstLessonNextActionEvidence {
-        status: "missing".into(),
-        artifact: None,
-        detail: MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE.into(),
-        candidate_actions: Vec::new(),
-        blocker: None,
-        requires_next_evidence: Vec::new(),
-    }
+    first_lesson_next_action_with_empty_proof_artifacts(
+        "missing",
+        None,
+        MISSING_FIRST_LESSON_NEXT_ACTION_EVIDENCE,
+    )
 }
 
 fn invalid_first_lesson_next_action(
     artifact: Option<PathBuf>,
     detail: &str,
 ) -> DesktopFirstLessonNextActionEvidence {
+    first_lesson_next_action_with_empty_proof_artifacts("invalid", artifact, detail)
+}
+
+fn first_lesson_next_action_with_empty_proof_artifacts(
+    status: &str,
+    artifact: Option<PathBuf>,
+    detail: &str,
+) -> DesktopFirstLessonNextActionEvidence {
     DesktopFirstLessonNextActionEvidence {
-        status: "invalid".into(),
+        status: status.into(),
         artifact: artifact.map(|path| path.display().to_string()),
         detail: detail.into(),
         candidate_actions: Vec::new(),
         blocker: None,
         requires_next_evidence: Vec::new(),
+        save_project_proof_artifact: ProjectProofArtifactEvidence::missing(
+            SAVE_PROJECT_PROOF_LABEL,
+        ),
+        select_project_proof_artifact: ProjectProofArtifactEvidence::missing(
+            SELECT_PROJECT_PROOF_LABEL,
+        ),
+    }
+}
+
+fn project_proof_artifact(
+    json: &serde_json::Value,
+    canonical_evidence_root: &Path,
+    run_dir: &Path,
+    snake_key: &str,
+    camel_key: &str,
+    label: &str,
+) -> ProjectProofArtifactEvidence {
+    let Some(declaration) = json.get(snake_key).or_else(|| json.get(camel_key)) else {
+        return ProjectProofArtifactEvidence::missing(label);
+    };
+
+    let blocker = declaration.get("blocker").cloned();
+    if declaration
+        .get("status")
+        .and_then(serde_json::Value::as_str)
+        == Some("blocked")
+        || blocker.is_some()
+    {
+        return ProjectProofArtifactEvidence {
+            status: ProofArtifactState::Blocked,
+            detail: blocker::project_proof_artifact_blocker_detail(label, blocker.as_ref())
+                .unwrap_or_else(|| format!("{label} is blocked")),
+            artifact: None,
+        };
+    }
+    if declaration
+        .get("status")
+        .and_then(serde_json::Value::as_str)
+        == Some("missing")
+    {
+        return ProjectProofArtifactEvidence::declared_missing(label, declaration);
+    }
+
+    let artifact_value = declaration.get("artifact").unwrap_or(declaration);
+    let path =
+        string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"));
+    let resolved_path = path.as_deref().and_then(|path| {
+        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, path).ok()
+    });
+    let reported_path = path.as_deref().and_then(|path| {
+        reportable_artifact_path(canonical_evidence_root, path, resolved_path.as_deref())
+    });
+    let declared_size = artifact_value
+        .get("size_bytes")
+        .or_else(|| artifact_value.get("sizeBytes"))
+        .and_then(serde_json::Value::as_u64);
+    let size_bytes = declared_size.or_else(|| {
+        resolved_path
+            .as_ref()
+            .and_then(|path| fs::metadata(path).ok())
+            .filter(|metadata| metadata.is_file())
+            .map(|metadata| metadata.len())
+    });
+    let artifact = ProjectProofArtifactInfo {
+        path: reported_path,
+        size_bytes,
+        sha256: string_field(artifact_value, "sha256"),
+    };
+
+    if resolved_path.is_some() || artifact_has_metadata(&artifact) {
+        return ProjectProofArtifactEvidence {
+            status: ProofArtifactState::Present,
+            detail: present_artifact_detail(label, &artifact),
+            artifact: Some(artifact),
+        };
+    }
+
+    ProjectProofArtifactEvidence::missing(label)
+}
+
+fn reportable_artifact_path(
+    canonical_evidence_root: &Path,
+    artifact_path: &str,
+    resolved_path: Option<&Path>,
+) -> Option<String> {
+    let path = Path::new(artifact_path);
+    if path.is_relative()
+        && path
+            .components()
+            .all(|component| matches!(component, std::path::Component::Normal(_)))
+    {
+        return Some(path.to_string_lossy().replace('\\', "/"));
+    }
+
+    let resolved_path = resolved_path?;
+    resolved_path
+        .strip_prefix(canonical_evidence_root)
+        .ok()
+        .map(|path| path.to_string_lossy().replace('\\', "/"))
+}
+
+fn artifact_has_metadata(artifact: &ProjectProofArtifactInfo) -> bool {
+    artifact.path.is_some() || artifact.size_bytes.is_some() || artifact.sha256.is_some()
+}
+
+fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> String {
+    let mut parts = Vec::new();
+    if let Some(path) = &artifact.path {
+        parts.push(path.clone());
+    }
+    if let Some(size_bytes) = artifact.size_bytes {
+        parts.push(format!("{size_bytes} bytes"));
+    }
+    if let Some(sha256) = &artifact.sha256 {
+        parts.push(format!("sha256: {sha256}"));
+    }
+
+    if parts.is_empty() {
+        format!("{label} is present as artifact availability only")
+    } else {
+        format!(
+            "{label} is present as artifact availability only: {}",
+            parts.join("; ")
+        )
     }
 }
 
@@ -157,6 +382,14 @@ fn string_array(json: &serde_json::Value, key: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .collect()
+}
+
+fn string_field(json: &serde_json::Value, key: &str) -> Option<String> {
+    json.get(key)
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
 }
 
 fn requires_next_evidence(json: &serde_json::Value) -> Vec<String> {

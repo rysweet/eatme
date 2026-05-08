@@ -54,50 +54,64 @@ fn write_first_lesson_readiness_result(
     writeln!(
         writer,
         "First-lesson readiness: {}",
-        report.readiness_status
+        terminal_plain(&report.readiness_status)
     )?;
     writeln!(
         writer,
         "Desktop proof: {} ({}) - {}",
-        report.desktop_proof_contract.status,
-        report.desktop_proof_contract.reason_code,
-        report.desktop_proof_contract.detail
+        terminal_plain(&report.desktop_proof_contract.status),
+        terminal_plain(&report.desktop_proof_contract.reason_code),
+        terminal_plain(&report.desktop_proof_contract.detail)
     )?;
     writeln!(
         writer,
         "Evidence progress: {}",
-        report.evidence_progress.summary
+        terminal_plain(&report.evidence_progress.summary)
     )?;
     if let Some(blocker) = next_actionable_blocker_line(&report.evidence_progress) {
-        writeln!(writer, "{blocker}")?;
+        writeln!(writer, "{}", terminal_plain(&blocker))?;
     }
     if let Some(proof) = &report.evidence_progress.next_missing_real_desktop_proof {
-        writeln!(writer, "{proof}")?;
+        writeln!(writer, "{}", terminal_plain(proof))?;
     }
     writeln!(
         writer,
-        "Required evidence file status (present/missing/invalid/blocked; present is not proof of full UI automation):"
+        "Required evidence file status (present/missing/invalid/blocked; present is artifact availability only, not proof of full UI automation):"
     )?;
     for item in &report.evidence_progress.items {
         writeln!(
             writer,
             "- {}: {} ({})",
-            item.state, item.evidence, item.detail
+            terminal_plain(&item.state),
+            terminal_plain(&item.evidence),
+            terminal_plain(&item.detail)
         )?;
     }
     if !report.limitations.is_empty() {
         writeln!(writer, "Limits:")?;
         for limitation in &report.limitations {
-            writeln!(writer, "- {limitation}")?;
+            writeln!(writer, "- {}", terminal_plain(limitation))?;
         }
     }
     if !report.issues.is_empty() {
         writeln!(writer, "Still missing or blocked:")?;
         for issue in &report.issues {
-            writeln!(writer, "- {issue}")?;
+            writeln!(writer, "- {}", terminal_plain(issue))?;
         }
     }
     Ok(())
+}
+
+fn terminal_plain(value: &str) -> String {
+    let mut text = String::with_capacity(value.len());
+    for ch in value.chars() {
+        if ch.is_control() {
+            text.extend(ch.escape_default());
+        } else {
+            text.push(ch);
+        }
+    }
+    text
 }
 
 fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> Option<String> {
@@ -187,6 +201,29 @@ mod tests {
                 "Next blocker: modernized desktop run execution observation: blocked: no supported Alice desktop automation can run the world yet"
             )
         );
+    }
+
+    #[test]
+    fn plain_output_escapes_control_characters_from_report_data() {
+        let mut progress =
+            progress_with_blocker(Some("blocked proof artifact\x1b[31m\nInjected line"));
+        progress.items[0].detail = "pixel detail\x1b[0m\nInjected detail".into();
+        let report = sequence_report(progress);
+
+        let mut output = Vec::new();
+        write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(
+            !output.contains('\x1b'),
+            "plain output must not contain raw terminal control characters: {output:?}"
+        );
+        assert!(
+            !output.contains("\nInjected"),
+            "plain output must not allow evidence text to inject extra lines: {output:?}"
+        );
+        assert!(output.contains("\\u{1b}"));
+        assert!(output.contains("\\nInjected"));
     }
 
     fn progress_with_blocker(blocker: Option<&str>) -> LessonReadinessEvidenceProgress {

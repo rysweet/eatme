@@ -36,6 +36,21 @@ pub(super) fn next_actionable_pixel_observation_blocker(
     Some(summary)
 }
 
+pub(super) fn project_proof_artifact_blocker_detail(
+    label: &str,
+    blocker: Option<&serde_json::Value>,
+) -> Option<String> {
+    let mut details = Vec::new();
+    if let Some(reason) = blocker_reason(blocker) {
+        details.push(reason);
+    }
+    if let Some(codes) = blocker_code_summary(blocker) {
+        details.push(format!("codes: {codes}"));
+    }
+
+    (!details.is_empty()).then(|| format!("{label} is blocked: {}", details.join("; ")))
+}
+
 fn blocker_reason(blocker: Option<&serde_json::Value>) -> Option<String> {
     blocker?
         .get("reason")
