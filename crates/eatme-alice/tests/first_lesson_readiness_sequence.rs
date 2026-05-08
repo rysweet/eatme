@@ -5,6 +5,14 @@ use std::fs;
 mod launch_smoke_support;
 use launch_smoke_support::{PathOverride, TestFixture};
 
+#[path = "first_lesson_desktop_evidence/support.rs"]
+#[allow(dead_code)]
+mod desktop_evidence_support;
+use desktop_evidence_support::{
+    DesktopFixture, FirstLessonNextActionFixture, PixelObservationFixture,
+    overwrite_modernized_first_lesson_next_action, write_manifest,
+};
+
 #[test]
 fn sequence_executes_fake_targets_until_ui_action_blocker() {
     let fixture = TestFixture::new();
@@ -325,6 +333,88 @@ targets:
     assert_action(modernized, "place-object", true);
 }
 
+#[test]
+fn first_lesson_readiness_missing_next_action_artifact_names_missing_proof_artifact() {
+    let report = eatme_alice::check_lesson_session_readiness(&write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[
+            "place_object_ui_action",
+            "edit_procedure_ui_action",
+            "run_world_ui_action",
+            "save_project_ui_action",
+        ],
+    }))
+    .unwrap();
+
+    let next_proof = report
+        .evidence_progress
+        .next_missing_real_desktop_proof
+        .as_deref()
+        .expect("missing next-action artifact should be the next proof blocker");
+    assert!(
+        next_proof.contains("missing run-window-evidence/desktop-first-lesson-next-action.json")
+    );
+    assert!(next_proof.contains("Save Project proof artifact"));
+    let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
+    assert_no_unsupported_readiness_claims(&report_text);
+}
+
+#[test]
+fn first_lesson_readiness_blocked_save_project_proof_artifact_is_actionable() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[
+            "place_object_ui_action",
+            "edit_procedure_ui_action",
+            "run_world_ui_action",
+            "save_project_ui_action",
+        ],
+    });
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"]}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+    );
+
+    let report = eatme_alice::check_lesson_session_readiness(&manifest_path).unwrap();
+    let next_proof = report
+        .evidence_progress
+        .next_missing_real_desktop_proof
+        .as_deref()
+        .expect("blocked Save Project proof artifact should be the next proof blocker");
+    assert!(next_proof.contains("blocked Save Project proof artifact"));
+    assert!(next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
+
+    let save_item = report
+        .evidence_progress
+        .items
+        .iter()
+        .find(|item| item.evidence == "Save Project proof artifact")
+        .expect("Save Project progress item");
+    assert_eq!(save_item.state, "blocked");
+    assert!(
+        save_item
+            .detail
+            .contains("blocked Save Project proof artifact")
+    );
+    assert!(
+        save_item
+            .detail
+            .contains("run-window-evidence/desktop-first-lesson-next-action.json")
+    );
+    let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
+    assert_no_unsupported_readiness_claims(&report_text);
+}
+
 fn assert_action(
     target: &eatme_alice::compare::LessonTargetEvidence,
     action_id: &str,
@@ -354,4 +444,22 @@ fn assert_action_detail_contains(
         action.detail.contains(expected_detail),
         "expected {expected_detail:?} in {action:?}"
     );
+}
+
+fn assert_no_unsupported_readiness_claims(text: &str) {
+    for forbidden in [
+        "save completion evidence",
+        "save completed",
+        "save project succeeded",
+        "lesson completed",
+        "ui automation succeeded",
+        "grading occurred",
+        "creative assessment passed",
+        "creative quality assessed",
+    ] {
+        assert!(
+            !text.contains(forbidden),
+            "readiness output must not claim {forbidden:?}: {text}"
+        );
+    }
 }

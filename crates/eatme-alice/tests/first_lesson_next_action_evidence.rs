@@ -221,6 +221,14 @@ fn missing_save_and_select_project_proof_artifacts_are_visible_in_shared_progres
 
     assert_eq!(save_item["state"], "missing");
     assert_eq!(select_item["state"], "missing");
+    assert_detail_contains(
+        save_item,
+        "run-window-evidence/desktop-first-lesson-next-action.json",
+    );
+    assert_detail_contains(
+        select_item,
+        "run-window-evidence/desktop-first-lesson-next-action.json",
+    );
     assert_detail_contains(save_item, "Save Project proof artifact is missing");
     assert_detail_contains(select_item, "Select Project proof artifact is missing");
     assert_no_project_proof_success_claims(save_item);
@@ -250,6 +258,11 @@ fn blocked_project_proof_artifacts_reuse_known_blocker_details() {
 
     assert_eq!(save_item["state"], "blocked");
     assert_eq!(select_item["state"], "missing");
+    assert_detail_contains(save_item, "blocked Save Project proof artifact");
+    assert_detail_contains(
+        save_item,
+        "run-window-evidence/desktop-first-lesson-next-action.json",
+    );
     assert_detail_contains(
         save_item,
         "Save dialog owner does not expose a stable proof-artifact handoff yet.",
@@ -318,6 +331,8 @@ fn assert_detail_contains(item: &serde_json::Value, expected: &str) {
 fn assert_no_project_proof_success_claims(item: &serde_json::Value) {
     let text = serde_json::to_string(item).unwrap().to_ascii_lowercase();
     for forbidden in [
+        "save completion evidence",
+        "save completed",
         "ui automation succeeded",
         "automation passed",
         "lesson completed",

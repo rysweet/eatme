@@ -83,12 +83,12 @@ fn boundary_specs() -> &'static [BoundarySpec] {
         BoundarySpec {
             id: "save_project",
             label: "Save scenario evidence",
-            missing_detail: "Save scenario evidence is missing.",
+            missing_detail: "Save boundary evidence is missing.",
             metadata_noun: "Save scenario metadata",
-            evidence_noun: "bounded Save completion evidence",
-            present_claim: "Bounded Save completion evidence is present for this scenario boundary.",
+            evidence_noun: "Save boundary evidence",
+            present_claim: "Save action evidence is present for this scenario boundary.",
             does_not_prove: &[
-                "desktop Save completion beyond this bounded scenario evidence",
+                "desktop Save completion",
                 "grading",
                 "creative assessment",
                 "first-lesson completion",
@@ -163,9 +163,9 @@ fn normalize_boundary(
             status: "present".into(),
             source,
             metadata_state: metadata_state.unwrap_or_else(|| "observed".into()),
-            detail: scenario_focused_detail(value)
+            detail: scenario_focused_detail(spec, value)
                 .unwrap_or_else(|| format!("{} is present.", spec.label)),
-            claim: scenario_focused_claim(value).unwrap_or_else(|| spec.present_claim.into()),
+            claim: scenario_focused_claim(spec, value).unwrap_or_else(|| spec.present_claim.into()),
             does_not_prove: merged_does_not_prove(spec, value),
             artifact: artifact_result.ok().flatten(),
         },
@@ -180,7 +180,8 @@ fn normalize_boundary(
                 detail: if status == "invalid" {
                     format!("{} is invalid.", spec.label)
                 } else {
-                    scenario_focused_detail(value).unwrap_or_else(|| spec.missing_detail.into())
+                    scenario_focused_detail(spec, value)
+                        .unwrap_or_else(|| spec.missing_detail.into())
                 },
                 claim: missing_claim(spec),
                 does_not_prove: merged_does_not_prove(spec, value),
@@ -294,18 +295,39 @@ fn boundary_artifact(
     }))
 }
 
-fn scenario_focused_detail(value: &serde_json::Value) -> Option<String> {
+fn scenario_focused_detail(spec: &BoundarySpec, value: &serde_json::Value) -> Option<String> {
     string_field(value, "detail").filter(|detail| {
-        detail.contains("scenario")
-            && !contains_implementation_jargon(detail)
+        let save_boundary_wording = is_save_boundary_wording(spec, detail);
+        (detail.contains("scenario")
+            || detail.contains("automation scenarios")
+            || save_boundary_wording)
+            && (!contains_implementation_jargon(detail) || save_boundary_wording)
             && !detail.to_ascii_lowercase().contains(" is proven")
+            && !unsafe_boundary_wording(spec, detail)
     })
 }
 
-fn scenario_focused_claim(value: &serde_json::Value) -> Option<String> {
+fn scenario_focused_claim(spec: &BoundarySpec, value: &serde_json::Value) -> Option<String> {
     string_field(value, "claim").filter(|claim| {
-        !contains_implementation_jargon(claim) && !claim.to_ascii_lowercase().contains(" is proven")
+        !contains_implementation_jargon(claim)
+            && !claim.to_ascii_lowercase().contains(" is proven")
+            && !unsafe_boundary_wording(spec, claim)
     })
+}
+
+fn unsafe_boundary_wording(spec: &BoundarySpec, value: &str) -> bool {
+    let value = value.to_ascii_lowercase();
+    spec.id == "save_project"
+        && ["save completion evidence", "bounded save completion"]
+            .iter()
+            .any(|forbidden| value.contains(forbidden))
+}
+
+fn is_save_boundary_wording(spec: &BoundarySpec, value: &str) -> bool {
+    spec.id == "save_project"
+        && ["Save action evidence", "Save boundary evidence"]
+            .iter()
+            .any(|required| value.contains(required))
 }
 
 fn contains_implementation_jargon(value: &str) -> bool {
