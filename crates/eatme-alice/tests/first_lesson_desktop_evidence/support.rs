@@ -13,6 +13,10 @@ pub(super) struct DesktopFixture {
     pub(super) pixel_boundary_present: bool,
     pub(super) pixel_observation: PixelObservationFixture,
     pub(super) first_lesson_next_action: FirstLessonNextActionFixture,
+    /// Hook assertion IDs to mark as `passed: true` in the launch manifest.
+    /// Valid values: `"place_object_ui_action"`, `"edit_procedure_ui_action"`,
+    /// `"run_world_ui_action"`, `"save_project_ui_action"`.
+    pub(super) hook_actions_passed: &'static [&'static str],
 }
 
 #[derive(Clone, Copy)]
@@ -237,6 +241,10 @@ fn launch_manifest_json(
         "save_project_ui_action": {"passed": false, "detail": "blocked: no supported Alice desktop automation can save the project yet"},
         "ui_action_artifact_captured": {"passed": true, "detail": "ui action contract artifact exists and is non-empty"}
     });
+    // Override individual hook assertions to passed for fixtures that simulate partial progress.
+    for &hook_id in fixture.hook_actions_passed {
+        assertions[hook_id]["passed"] = serde_json::json!(true);
+    }
     if role == "modernized" {
         assertions["run_world_desktop_toolbar_window_observed"] = serde_json::json!({
             "passed": fixture.run_frame_present,
