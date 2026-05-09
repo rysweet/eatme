@@ -89,9 +89,9 @@ Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. Readiness marks the next first-lesson action `ready` only after
 RabbitHole evidence files show launch, the Run window, desktop execution,
 screenshot artifacts, log artifacts, window artifacts, a readable action
-contract, project proof-artifact states, and explicit boundary states for Select
-Project, procedure/edit, Save, visible rendering, grading, creative assessment,
-and first-lesson completion.
+contract, project proof-artifact states, and explicit boundary states for the
+selected project, editing step, saved-artifact signal, visible rendering,
+review boundary areas, and first-lesson stopping point.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
