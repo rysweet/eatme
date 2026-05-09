@@ -1,5 +1,5 @@
 site_name: eatme
-site_description: Agentic Alice outside-in quality assurance harness
+site_description: Alice scenario documentation and quality evidence
 repo_url: https://github.com/rysweet/eatme
 docs_dir: docs
 site_dir: site
@@ -9,19 +9,19 @@ theme:
 
 nav:
   - Home: index.md
+  - Lesson Session Readiness: lesson-session-readiness.md
+  - Scenario Authoring: scenario-authoring.md
+  - Alice Lesson Smoke: alice-lesson-smoke.md
+  - First-Lesson Evidence Guide: first-lesson-evidence-readiness.md
   - Installation: installation.md
   - CLI Usage: cli-usage.md
-  - Scenario Authoring: scenario-authoring.md
   - Generated Scenario Runners: gadugi-adapters.md
   - Generated File Consistency: generated-asset-consistency.md
   - Validation and Quality Gates: validation-quality-gates.md
-  - Outside-in Alice Test Modules: outside-in-alice-test-modules.md
+  - Alice Test Modules: outside-in-alice-test-modules.md
   - Alice Integration: alice-integration.md
-  - Alice Lesson Smoke: alice-lesson-smoke.md
-  - Lesson Session Readiness: lesson-session-readiness.md
-  - First-Lesson Evidence Guide: first-lesson-evidence-readiness.md
   - Starter Project Preflight Evidence: starter-project-preflight-evidence.md
-  - Default-workflow PR Readiness: default-workflow-pr-readiness.md
+  - Pull Request Readiness: default-workflow-pr-readiness.md
   - Live Studio Workshop Evidence: live-studio-workshop-evidence.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md

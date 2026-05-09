@@ -8,7 +8,7 @@ runner files.
 
 1. Edit eatme scenarios first.
 2. Keep scenario ids stable and filename-aligned.
-3. Describe visible learner or harness evidence, not private implementation
+3. Describe visible learner or run evidence, not private Alice
    details.
 4. State unsupported behavior explicitly instead of allowing silent skips.
 5. Validate assets before committing.
@@ -40,7 +40,7 @@ assets/personas/
 | --- | --- |
 | `real-alice-launch-smoke` | Baseline repeatable Alice desktop smoke |
 | Alice lesson smoke scenarios | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
-| Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
+| Instructor guided flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
 Lesson smoke scenarios route through:
 
@@ -52,8 +52,16 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --json
 ```
 
-Instructor agentic flows stay at the prompt, acceptance-probe, and rubric
-boundary. They do not own Alice desktop launch internals.
+Instructor guided flows stay at the prompt, acceptance-probe, and rubric
+boundary. They do not own Alice desktop launch details.
+
+To choose the first-lesson scenario and understand the launch evidence it
+produces, continue to [Alice Lesson Smoke](alice-lesson-smoke.md).
+
+Reader-facing docs call these guided flows. The canonical YAML schema keeps
+`kind: instructor_agentic_flow`, `agentic_flow`, `agentic_test_prompt`, and
+related `agentic_*` fields for compatibility with existing generated runner
+files and command output.
 
 ## Required scenario shape
 

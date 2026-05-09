@@ -1,7 +1,7 @@
 # eatme documentation
 
-`eatme` is the documentation, scenario, and launch-smoke harness for Alice
-quality assurance. It describes classroom missions as editable scenario files,
+`eatme` is the documentation, scenario, and launch-smoke toolkit for Alice
+quality checks. It describes classroom missions as editable scenario files,
 checks those files before they are trusted, keeps generated runner files aligned,
 and records repeatable evidence when real Alice is launched.
 
@@ -10,7 +10,7 @@ Eatme has three layers:
 | Layer | Purpose |
 | --- | --- |
 | Mission files | Persona crews and scenario YAML owned by this repository |
-| Harness commands | CLI commands for validation, Alice discovery, packaging, generated runner files, and launch smoke |
+| CLI commands | Commands for validation, Alice discovery, packaging, generated runner files, and launch smoke |
 | Published docs | This MkDocs site, built locally and deployed through GitHub Pages |
 
 ## Audience routes
@@ -23,29 +23,30 @@ Eatme has three layers:
 | Running generated scenarios | [Gadugi Adapters](gadugi-adapters.md) |
 | Keeping generated files in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
-| Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
+| Maintaining Alice Rust tests | [Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
-| Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
+| Choosing real Alice lesson scenarios | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 | Following the first-lesson readiness path | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reading exactly what first-lesson evidence proves | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
-| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Checking pull request readiness | [Pull Request Readiness](default-workflow-pr-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
 
-## Silver-thread lesson path
+## First-lesson readiness path
 
-Use this path when you need the shortest end-to-end route from a scenario to
-trustworthy first-lesson evidence:
+Use this path when a reader needs the shortest route from the docs home page to
+trusted first-lesson evidence:
 
-1. Confirm how real Alice is launched in [Alice Integration](alice-integration.md).
-2. Review the scenario roster and launch evidence in
-   [Alice Lesson Smoke](alice-lesson-smoke.md).
-3. Run or inspect the first-lesson readiness report in
+1. Start with the learner and instructor route in
    [Lesson Session Readiness](lesson-session-readiness.md).
-4. Interpret the `Shown`, `Not yet shown`, and `Unproven` sections in
+2. Review editable scenario expectations in
+   [Scenario Authoring](scenario-authoring.md).
+3. Choose the scenario and launch evidence in
+   [Alice Lesson Smoke](alice-lesson-smoke.md).
+4. Interpret the validation evidence in
    [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 5. Use [Instructor Missions](instructor-missions.md) or
    [Student Missions](student-missions.md) for the classroom handoff.
@@ -65,7 +66,7 @@ actions were automated unless a specific report shows that exact evidence.
 ## What eatme proves
 
 Eatme proves that Alice-facing scenario files and generated runner files agree
-before they are used by people or agents. For real Alice smoke scenarios, it also
+before they are used by reviewers or runners. For real Alice smoke scenarios, it also
 proves that the desktop application can be packaged, launched, observed, and
 reported through repeatable evidence.
 
@@ -87,13 +88,13 @@ A passing launch smoke records:
 The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
 evidence for a scenario-labeled Alice run. They do not drive an entire lesson
 through the Alice interface, score learner creativity, inspect private Alice
-implementation details, or grade saved learner worlds.
+details, or grade saved learner worlds.
 
 Instructor and student mission docs describe the intended classroom path.
-Runtime validation stays explicit about which parts are proven by the harness and
-which parts still need human or agent review.
+Runtime validation stays explicit about which parts are proven by the CLI and
+which parts still need human review.
 
-## Outside-in evidence for Alice lesson scenarios
+## Evidence for Alice lesson scenarios
 
 This evidence connects instructor and student Alice lesson scenarios to a real
 Alice launch path without overstating what the launch smoke proves.
@@ -102,7 +103,7 @@ Alice launch path without overstating what the launch smoke proves.
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, run summary, log, window, screenshot, and repeatable assertion evidence. |
 | [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Instructors, students, and reviewers | First-lesson readiness evidence for original and modernized Alice; the report summarizes shown evidence, optional next desktop action evidence, not-yet-shown states, and explicit unproven claims. |
-| `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
+| `instructor-lesson-materials-remix` | Instructors and reviewers | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 | [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Instructors and students | Handoff card, readiness note, and student action prompt that separate launch/action evidence from classroom observation. |
 | [`instructor-student-outcomes-rubric`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml) | Instructors and students | Student-visible outcomes rubric and feedback frame without claiming automated creative assessment or learner-world grading. |
 
@@ -133,8 +134,8 @@ Follow the instructor/student first-lesson readiness path:
 Review exactly what first-lesson evidence proves:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
-Record exact-head pull request readiness:
-[Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+Check pull request readiness:
+[Pull Request Readiness](default-workflow-pr-readiness.md).
 
 Build the docs site:
 

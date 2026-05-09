@@ -2,22 +2,22 @@ use serde_yaml::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const SILVER_THREAD_SCENARIOS: &[&str] = &[
+const FIRST_LESSON_READER_SCENARIOS: &[&str] = &[
     "first-lessons-real-ui-actions",
     "instructor-student-launch-evidence-handoff",
     "instructor-student-outcomes-rubric",
 ];
 
 #[test]
-fn mkdocs_nav_exposes_the_silver_thread_reader_path_in_order() {
+fn mkdocs_nav_exposes_the_first_lesson_reader_path_in_order() {
     let mkdocs = read_repo_file("mkdocs.yml");
 
     assert_in_order(
         &mkdocs,
         &[
-            "Alice Integration: alice-integration.md",
-            "Alice Lesson Smoke: alice-lesson-smoke.md",
             "Lesson Session Readiness: lesson-session-readiness.md",
+            "Scenario Authoring: scenario-authoring.md",
+            "Alice Lesson Smoke: alice-lesson-smoke.md",
             "First-Lesson Evidence Guide: first-lesson-evidence-readiness.md",
             "Instructor Missions: instructor-missions.md",
             "Student Missions: student-missions.md",
@@ -26,7 +26,7 @@ fn mkdocs_nav_exposes_the_silver_thread_reader_path_in_order() {
 }
 
 #[test]
-fn silver_thread_docs_link_to_their_canonical_scenario_assets() {
+fn first_lesson_reader_docs_link_to_their_canonical_scenario_assets() {
     let required_links = [
         (
             "docs/index.md",
@@ -74,13 +74,53 @@ fn silver_thread_docs_link_to_their_canonical_scenario_assets() {
 
     assert!(
         missing.is_empty(),
-        "silver-thread docs must make canonical scenario assets clickable:\n{}",
+        "first-lesson reader docs must make canonical scenario assets clickable:\n{}",
         missing.join("\n")
     );
 }
 
 #[test]
-fn silver_thread_reader_sections_use_plain_outcome_language() {
+fn first_lesson_reader_path_links_each_page_to_the_next_step() {
+    let expected_path = [
+        (
+            "docs/index.md",
+            "Lesson Session Readiness",
+            "lesson-session-readiness.md",
+        ),
+        (
+            "docs/lesson-session-readiness.md",
+            "Scenario Authoring",
+            "scenario-authoring.md",
+        ),
+        (
+            "docs/scenario-authoring.md",
+            "Alice Lesson Smoke",
+            "alice-lesson-smoke.md",
+        ),
+        (
+            "docs/alice-lesson-smoke.md",
+            "First-Lesson Evidence Readiness",
+            "first-lesson-evidence-readiness.md",
+        ),
+    ];
+
+    let mut missing = Vec::new();
+    for (doc_path, label, target) in expected_path {
+        let contents = read_repo_file(doc_path);
+        if !has_markdown_link(&contents, label, target) {
+            missing.push(format!("{doc_path} must link `{label}` to {target}"));
+        }
+    }
+
+    assert!(
+        missing.is_empty(),
+        "first-lesson reader path must link forward from docs entry point to validation evidence:\n{}",
+        missing.join("\n")
+    );
+}
+
+#[test]
+fn first_lesson_reader_sections_use_plain_outcome_language() {
     let index = read_repo_file("docs/index.md");
     let alice_lesson_smoke = read_repo_file("docs/alice-lesson-smoke.md");
     let lesson_session_readiness = read_repo_file("docs/lesson-session-readiness.md");
@@ -90,7 +130,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
             "docs/index.md",
             section(
                 &index,
-                "## Silver-thread lesson path",
+                "## First-lesson readiness path",
                 "## What eatme proves",
             ),
         ),
@@ -98,7 +138,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
             "docs/index.md",
             section(
                 &index,
-                "## Outside-in evidence for Alice lesson scenarios",
+                "## Evidence for Alice lesson scenarios",
                 "## Main workflows",
             ),
         ),
@@ -106,7 +146,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
             "docs/alice-lesson-smoke.md",
             section(
                 &alice_lesson_smoke,
-                "## Outside-in evidence guide for Alice lesson scenarios",
+                "## Evidence guide for Alice lesson scenarios",
                 "### Evidence reporting vocabulary",
             ),
         ),
@@ -127,16 +167,16 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
 
     assert!(
         violations.is_empty(),
-        "reader-facing silver-thread sections must use outcome language instead of implementation terms:\n{}",
+        "first-lesson reader sections must use outcome language instead of implementation terms:\n{}",
         violations.join("\n")
     );
 }
 
 #[test]
-fn canonical_silver_thread_scenario_prose_uses_plain_reader_language() {
+fn canonical_first_lesson_scenario_prose_uses_plain_reader_language() {
     let mut violations = Vec::new();
 
-    for scenario_id in SILVER_THREAD_SCENARIOS {
+    for scenario_id in FIRST_LESSON_READER_SCENARIOS {
         let path = format!("assets/scenarios/eatme/{scenario_id}.yaml");
         let yaml = read_repo_file(&path);
         let value = serde_yaml::from_str::<Value>(&yaml).expect("scenario YAML parses");
@@ -175,6 +215,11 @@ fn has_markdown_link_to_scenario_asset(contents: &str, scenario_id: &str) -> boo
     markdown_links(contents).any(|(label, target)| {
         label.trim_matches('`') == scenario_id && target.contains(&expected_target)
     })
+}
+
+fn has_markdown_link(contents: &str, expected_label: &str, expected_target: &str) -> bool {
+    markdown_links(contents)
+        .any(|(label, target)| label.trim() == expected_label && target.contains(expected_target))
 }
 
 fn markdown_links(contents: &str) -> impl Iterator<Item = (&str, &str)> + '_ {

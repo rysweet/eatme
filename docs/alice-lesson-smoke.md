@@ -19,7 +19,7 @@ first-lesson path, continue to
 | --- | --- | --- |
 | `building-a-scene-first-world` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
 | `code-editor-first-run` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
-| `reusable-methods-and-parameters` | Alice.org lesson smoke | Gate agentic method/parameter review on real launch evidence. |
+| `reusable-methods-and-parameters` | Alice.org lesson smoke | Gate method/parameter review on real launch evidence. |
 | `functions-as-questions-about-the-world` | Alice.org lesson smoke | Gate function/state review on real launch evidence. |
 | `loops-and-conditionals-mini-challenge` | Alice.org lesson smoke | Gate loop/conditional review on real launch evidence. |
 | `events-collision-proximity-game` | Alice.org lesson smoke | Gate event/proximity review on real launch evidence. |
@@ -31,18 +31,18 @@ first-lesson path, continue to
 | `arrays-collection-choreography` | Student data/state smoke | Gate array/list/index review on real launch evidence. |
 | `mythic-choice-event-tree` | Student interactive narrative smoke | Gate choice, event, branch, and peer-playtest review on real launch evidence. |
 | `vr-camera-perspective-tour` | Student camera/VR smoke | Gate audience viewpoint and non-VR fallback review on real launch evidence. |
-| `first-lessons-real-ui-actions` | First-lesson readiness path | Launch Alice, detect the Alice window, record first-lesson evidence boundaries, and fail explicitly until repeatable desktop evidence exists. |
+| `first-lessons-real-ui-actions` | First-lesson readiness path | Launch Alice, detect the Alice window, record first-lesson evidence boundaries, and fail explicitly when required repeatable desktop evidence is unavailable. |
 | `modified-class-portability` | Class portability evidence | Validate the export/import evidence requirements and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
 desktop QA journeys, and editable student creative scenarios. They prove that the
 desktop harness can reach a smoke-ready Alice session for resource-grounded paths
-before agentic instructor/student evaluation is trusted. The UI action and class
+before instructor/student review is trusted. The UI action and class
 portability scenarios intentionally add explicit evidence requirements around
 the launch smoke instead of pretending the launch smoke already performs those
 user actions.
 
-The outside-in Alice QA expansion commits these additional desktop scenarios:
+Additional desktop scenarios cover these setup and classroom support paths:
 
 | Scenario | Role | What it proves |
 | --- | --- | --- |
@@ -112,16 +112,16 @@ defines the export package, import report, and after-import behavior evidence
 required before anyone claims a modified class travels between Alice projects.
 The shared launch-smoke path records the scenario run summary; class
 export/import proof remains an explicit evidence requirement for follow-on
-automation or agentic review.
+automation or reviewer use.
 
 The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight rule:
 real headset or Alice Player VR execution is optional, but availability must be
 recorded. If real VR is unavailable, evidence must state
 `real_vr_available=false` and include the desktop launch summary plus
 camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
-outside-in and evidence-based instead of silently skipping unavailable hardware.
+evidence-based instead of silently skipping unavailable hardware.
 
-The expanded instructor/student outside-in scenarios use the same rule. Real Alice
+The expanded instructor/student scenarios use the same rule. Real Alice
 execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
 run summary proves the selected scenario reached a smoke-ready desktop session;
 it does not replace the scenario-specific readiness checklist, migration map,
@@ -134,9 +134,9 @@ scenario-labeled prompts, acceptance probes, teacher plan, student handout, exit
 ticket, and instructor review/remix language without claiming automated creative
 grading or learner-world assessment.
 
-## Outside-in evidence guide for Alice lesson scenarios
+## Evidence guide for Alice lesson scenarios
 
-Use outside-in evidence for instructor and student Alice lesson scenarios when a
+Use scenario evidence for instructor and student Alice lesson scenarios when a
 reviewer needs to connect a classroom scenario to real Alice startup artifacts
 and explicit instructor/student deliverables.
 
@@ -151,11 +151,11 @@ and explicit instructor/student deliverables.
 The evidence levels are intentionally separate:
 
 1. Launch evidence proves Alice started for the selected scenario id.
-2. First-action evidence records the first UI actions that future automation
-   must perform repeatably.
+2. First-action evidence records the first UI actions that must be performed
+   repeatably.
 3. Project proof-artifact evidence records Save Project and Select Project
    artifact availability or blockers without claiming UI success.
-4. Mission evidence is the human or agent-reviewed classroom output, such as a
+4. Mission evidence is the human- or runner-reviewed classroom output, such as a
    learner reflection or instructor handout.
 
 Do not collapse those levels into one pass/fail claim. Passing launch smoke does
@@ -175,7 +175,7 @@ each boundary:
 | `not_observed` | A producer ran but did not observe the expected boundary result. | The report stays not ready for that boundary. |
 | `blocked` | RabbitHole supplied a blocker, or a known unsupported desktop affordance prevents evidence collection. | The blocker remains visible; do not turn it into a pass or a generic missing state. |
 
-Use scenario-focused labels in PR text, scenario notes, and handoff material:
+Use scenario-focused labels in review notes, scenario notes, and handoff material:
 Select Project scenario evidence, procedure/edit scenario evidence, Save
 scenario evidence, visible rendering scenario evidence, grading scenario
 evidence, creative assessment scenario evidence, and first-lesson completion
@@ -219,7 +219,7 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
     `-- startup.png
 ```
 
-This tree is the internal artifact layout for audit and troubleshooting. Alice
+This tree is the artifact layout for audit and troubleshooting. Alice
 readiness/progress output should use the display-safe label `desktop next-action
 evidence` instead of exposing `run-window-evidence/desktop-first-lesson-next-action.json`
 as a user-facing blocker.
@@ -631,7 +631,7 @@ gadugi adapters. Important fields for lesson smoke consumers are:
 | `failure_category` | Failure classification, or `null` for a passing smoke. |
 
 Consumers should treat `assertions` and `failure_category` as the source of
-truth for smoke status. Gadugi adapters should not inspect desktop internals
+truth for smoke status. Gadugi adapters should not inspect desktop details
 outside the manifest and captured artifacts.
 
 `startup_screenshot` is an assertion key under `assertions`, not a top-level
@@ -721,7 +721,7 @@ Validated fields:
 | `real_alice.gated_by` | Real Alice gate, `EATME_REAL_ALICE=1`. |
 | `smoke_ready.evidence` | Evidence that defines smoke-ready state. |
 | `acceptance_criteria` | Editable Given/When/Then checks where useful. |
-| `steps` | Human- and agent-readable smoke steps. |
+| `steps` | Human- and runner-readable smoke steps. |
 | `timeouts` | Scenario and launch timeout values. |
 | `artifacts` | Expected manifest, screenshot, and log locations. |
 | `unsupported_policy` | Behavior when prerequisites are unavailable. |
@@ -746,7 +746,7 @@ runtime inputs.
 | `EATME_REAL_ALICE=1` | Yes for lesson-labeled real launch | Enables non-baseline lesson smoke scenarios. Without it, those scenarios fail fast. |
 | `ALICE_HOME` | Yes for real launch | Alice checkout used by `--alice-home`. |
 | `RUN_ID` | Optional | Convenience value used by scenario YAML and gadugi adapters. |
-| `NODE_OPTIONS=--max-old-space-size=32768` | Optional | Preserved environment preference for Node-based wrappers or agent tooling; the Rust CLI does not require it. |
+| `NODE_OPTIONS=--max-old-space-size=32768` | Optional | Preserved environment preference for Node-based wrappers or runner tooling; the Rust CLI does not require it. |
 
 Host dependencies for real launch are the same as the baseline smoke: Java 21,
 Maven, Xvfb, `xdpyinfo`, `wmctrl`, `xwininfo`, `xdotool`, a screenshot tool, and
@@ -840,22 +840,22 @@ The adapter performs three kinds of work:
 Standard launch-smoke adapters assert command success and manifest-level output
 such as the selected `"scenario_id"`, `"failure_category": null`, startup
 screenshot or window evidence, `real_alice_execution_evidence`, and passing
-assertions. They do not reimplement or configure Alice launch internals.
+assertions. They do not reimplement or configure Alice launch details.
 
 The `first-lessons-real-ui-actions` adapter is the deliberate exception. It
-preserves the current action-contract boundary by expecting the launch step to
+preserves the first-action evidence boundary by expecting the launch step to
 exit `1` with `"failure_category": "ui_action_automation_unimplemented"` after
 real Alice launch evidence and `ui-action-contract.json` have been written. Do
 not reinterpret that non-zero result as completed UI automation; it remains a
-declared first-action contract until deterministic object/place/edit/run/save
-automation exists.
+declared first-action contract when deterministic object/place/edit/run/save
+automation is not present.
 
 Use `assets/scenarios/gadugi/validation-failure-exit-code.yaml` as the negative
 counterpart: it creates a malformed scenario asset and expects
 `eatme assets validate --path ...` to exit `1` with `"passed": false`.
 
 The committed gadugi adapters are generated from the canonical eatme scenario
-assets and portable: the agent config uses `cwd: .` and shell commands begin
+assets and portable: the runner config uses `cwd: .` and shell commands begin
 with `cd "${EATME_REPO:-.}"`, so a runner may set `EATME_REPO` without baking
 in a checkout-specific path. Run these scenarios from the checkout under test so
 asset validation counts the assets in that checkout, including gadugi-only

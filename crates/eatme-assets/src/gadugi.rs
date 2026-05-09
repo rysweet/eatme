@@ -257,6 +257,9 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
         return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
     }
+    if scenario.id == "first-lessons-real-ui-actions" {
+        return "gadugi invokes eatme commands and checks first-lesson readiness evidence";
+    }
 
     "gadugi invokes eatme commands and checks manifest-level evidence only"
 }
@@ -272,6 +275,9 @@ fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
         && text.contains("not creative assessment")
         && text.contains("not learner-world grading")
     {
+        if scenario.id == "first-lessons-real-ui-actions" {
+            return " This adapter keeps honest limits: not full UI automation, not creative assessment, and not learner-world grading.";
+        }
         " This adapter preserves the source boundary: not full UI automation, not creative assessment, and not learner-world grading."
     } else {
         ""

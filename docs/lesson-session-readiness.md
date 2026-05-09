@@ -13,10 +13,10 @@ stay validated as editable classroom assets. The path connects four surfaces:
 | Alice run reports | Record original and modernized launch and action evidence for the same lesson scenario. |
 | Readiness reports | State the result as `ready`, `not_ready`, or `blocked` for humans, CI, and automation. |
 
-The readiness path is deliberately outside-in. It reports required scenario
-files, run reports, first-lesson evidence, and not-yet-shown states in both
-plain output and JSON. It does not add missing Alice desktop behavior, automate a
-complete lesson, perform creative assessment, or grade student worlds.
+The readiness path is evidence-first. It reports required scenario files, run
+reports, first-lesson evidence, and not-yet-shown states in both plain output and
+JSON. It does not add missing Alice desktop behavior, automate a complete lesson,
+perform creative assessment, or grade student worlds.
 
 For the plain evidence guide covering Select Project, procedure/edit, Save
 option/action evidence, visible rendering, grading, creative assessment, and
@@ -26,9 +26,12 @@ defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
 `Desktop next action`, and `Unproven` sections, plus matching JSON fields for
 automation consumers.
 
+For the editable scenario rules and generated runner workflow behind this path,
+continue to [Scenario Authoring](scenario-authoring.md).
+
 ## Reader path
 
-Use this order when you need the silver-thread first-lesson path:
+Use this order when you need the primary first-lesson readiness path:
 
 1. Validate the editable scenario files.
 2. Check that generated runner files are fresh.
@@ -61,7 +64,7 @@ Instructor and teacher mean the same role in this guide unless a scenario
 explicitly distinguishes them.
 
 Technical names remain intentional where they match files, JSON fields, and
-existing command output. In prose for instructors, students, and PR readers,
+existing command output. In prose for instructors, students, and reviewers,
 prefer first-lesson readiness evidence or first-action evidence unless you are
 naming an exact file or legacy API field.
 
@@ -69,7 +72,7 @@ naming an exact file or legacy API field.
 
 eatme checks whether RabbitHole has produced the evidence needed before
 continuing to the next first-lesson action. It reports `ready`, `not_ready`, or
-`blocked`. This is not a lesson-completion implementation.
+`blocked`. This is not a lesson-completion claim.
 
 The required evidence check separates repository-local readiness evidence from
 RabbitHole-produced desktop evidence:
@@ -172,7 +175,7 @@ Treat these states as the decision for the next first-lesson action:
 | Readiness result | Meaning | Required response |
 | --- | --- | --- |
 | `status: "not_ready"` | RabbitHole evidence is absent, incomplete, malformed, outside the expected evidence root, or not linked to the first-lesson scenario. | Do not proceed. Produce or repair the RabbitHole evidence artifact, then rerun readiness. |
-| `status: "blocked"` | Required evidence is readable and coherent, the target failure category is a known UI-action blocker, and unsupported actions remain represented by explicit `no_go` entries. | Do not claim full first-lesson automation. Keep the blocker visible until repeatable action evidence replaces the unsupported-action entry. |
+| `status: "blocked"` | Required evidence is readable and coherent, the target failure category is a known UI-action blocker, and unsupported actions remain represented by explicit `no_go` entries. | Do not claim full first-lesson automation. Keep the blocker visible and replace it only with repeatable action evidence. |
 | `status: "ready"` | Required RabbitHole and repository evidence is present, coherent, and free of known unsupported desktop action blockers. | Treat the report as readiness to proceed to the next bounded first-lesson action only. Do not treat it as lesson completion. |
 
 Local validation, launcher readiness, archive recovery, Run-window evidence, and
@@ -273,7 +276,7 @@ Generated runner files must match editable scenario assets:
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
-Use check mode in CI and before opening a PR. If check mode reports stale or
+Use check mode in CI and before review. If check mode reports stale or
 missing generated files, regenerate from the editable scenarios:
 
 ```bash
@@ -396,7 +399,7 @@ Interpret the states this way:
 | State | Meaning | Common next action |
 | --- | --- | --- |
 | `ready` | Required RabbitHole evidence is present, valid, and sufficient. | Use the report as readiness evidence for the selected first-lesson scenario. |
-| `not_ready` | Required evidence is missing, invalid, incomplete, stale, inconsistent, insufficient, or was produced without execution. | Fix assets, regenerate adapters, rerun comparison with `--execute`, or inspect `issues`. |
+| `not_ready` | Required evidence is missing, invalid, incomplete, stale, inconsistent, insufficient, or was produced without execution. | Fix assets, regenerate generated runner files, rerun comparison with `--execute`, or inspect `issues`. |
 | `blocked` | Required evidence is present, but at least one target reports a known unsupported desktop action. | Treat the blocker as the honest boundary; do not mark the lesson as fully automated. |
 
 A missing Save Project or Select Project proof artifact is reported as missing
@@ -448,7 +451,7 @@ Top-level fields:
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
-| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than internal artifact paths. |
+| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than machine-only artifact paths. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the canonical six `unproven_claims`. |
@@ -475,7 +478,7 @@ lesson, prove UI completion, or collapse blocked evidence into missing evidence.
 | `summary` | string | Human-readable aggregate count summary. |
 | `next_actionable_blocker` | string or omitted | Next unsupported action blocker reported by RabbitHole. |
 | `items` | array | Required evidence entries. Each entry has `id`, `evidence`, `state`, and `detail`. |
-| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. When the missing proof is the next-action artifact, the value includes the label `desktop next-action evidence`, not an internal artifact path. |
+| `next_missing_real_desktop_proof` | string or omitted | The next real-desktop proof to collect when evidence is missing or blocked. When the missing proof is the next-action artifact, the value includes the label `desktop next-action evidence`, not a machine-only artifact path. |
 
 Across the full progress object, `items[].state` can be `present`, `missing`,
 `invalid`, `not_observed`, or `blocked`. The Save Project and Select Project
@@ -782,7 +785,7 @@ Each unsupported-action entry uses the canonical structured blocker shape:
 | `code` | string | Stable machine-readable blocker category, such as `unsupported_desktop_action`. |
 | `action` | string or null | Target-qualified action or boundary, such as `baseline.object_placement`, `baseline.procedure_edit`, `baseline.world_run`, or `baseline.project_save`. |
 | `reason` | string | Stable reason phrase suitable for logs and CI. |
-| `message` | string | Safe human-readable message. It must not expose absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw framework internals. |
+| `message` | string | Safe human-readable message. It must not expose absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw tool details. |
 
 Known unsupported action reasons:
 
@@ -802,7 +805,7 @@ not as a failed test to hide and not as a pass to override.
 
 | Variable | Required for | Description |
 | --- | --- | --- |
-| `NODE_OPTIONS=--max-old-space-size=32768` | Agentic/Gadugi-heavy local runs | Keeps Node-based runners from failing under large prompt or adapter workloads. |
+| `NODE_OPTIONS=--max-old-space-size=32768` | Node-based generated-runner tools | Keeps Node-based runners from failing under large prompt or generated-runner workloads. |
 | `EATME_REAL_ALICE=1` | Non-baseline real Alice execution | Explicit opt-in gate for real desktop runs. |
 | `ALICE_HOME` | Single-target Alice commands | Alice checkout for `alice discover`, `alice package`, and `alice launch-smoke`. |
 | `ALICE_BASELINE_HOME` | Comparison/readiness sequence | Reference Alice checkout used as the baseline target. |
@@ -814,9 +817,9 @@ The saved local preference for Node-based runner capacity is:
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
 
-Change that preference in your local Amplihack config when local agentic or
-wrapper tooling needs a different heap. The Rust readiness commands do not use
-Node to parse Save Project or Select Project proof artifacts.
+Store a different local preference only when your Node-based wrapper tooling
+needs a different heap. The Rust readiness commands do not use Node to parse Save
+Project or Select Project proof artifacts.
 
 ### Real desktop requirements
 

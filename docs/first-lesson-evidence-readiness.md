@@ -21,7 +21,7 @@ readiness result. The safe reading order is:
 3. `Not yet shown` lists evidence that is missing, unsafe, incomplete, or
    blocked.
 4. `Desktop next action`, when present, describes the next bounded desktop step.
-5. `Unproven` lists claims that must stay out of summaries and PR text.
+5. `Unproven` lists claims that must stay out of summaries and review notes.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
@@ -117,7 +117,7 @@ blocked states.
 
 ## Plain report shape
 
-Plain output is for reviewers, instructors, and PR readers. It renders the
+Plain output is for reviewers and instructors. It renders the
 readiness heading, one `Desktop proof` line, and then the user-facing sections in
 this order:
 
@@ -174,7 +174,7 @@ when that evidence is required for the current claim.
 
 Human output may include short evidence-root-relative summaries. It must not
 expose absolute paths, raw artifact contents, screenshots, logs, environment
-variables, secrets, raw blocker objects, framework-internal names, or internal
+variables, secrets, raw blocker objects, tool-specific names, or
 next-action artifact paths. Use `desktop next-action evidence` as the display
 label instead of artifact filenames.
 
@@ -206,7 +206,7 @@ language:
 | `not_observed` | `not yet shown` | A producer ran, but the expected observation was not made. |
 | `blocked` | `not yet shown` or `not yet proven` with the supplied reason | RabbitHole or original Alice supplied an explicit reason the claim cannot yet be shown. |
 
-Primary human output avoids internal terms such as `no_go`,
+Primary human output avoids machine-only terms such as `no_go`,
 `ui-action-contract`, `desktop-run-pixel`, and raw artifact paths. JSON reference
 sections may document those stable field names for automation consumers.
 
@@ -364,7 +364,7 @@ Boundary entries remain available for consumers that need the scenario contract.
 
 | Setting | Required for | Description |
 | --- | --- | --- |
-| `NODE_OPTIONS=--max-old-space-size=32768` | Agentic/Gadugi-heavy local runs | Recommended Node heap setting for agentic/Gadugi-heavy local runs. |
+| `NODE_OPTIONS=--max-old-space-size=32768` | Node-based generated-runner tools | Recommended Node heap setting for large generated-runner or wrapper workloads. |
 | `EATME_REAL_ALICE=1` | Non-baseline real Alice execution | Explicit opt-in gate for desktop execution. |
 | `ALICE_BASELINE_HOME` | `alice run-first-lesson-readiness --execute` | Original Alice checkout. |
 | `ALICE_MODERNIZED_HOME` | `alice run-first-lesson-readiness --execute` | RabbitHole Alice checkout. |
@@ -384,14 +384,14 @@ readiness report.
 
 ## Tutorials
 
-### Review RabbitHole first-lesson readiness after implementation
+### Review RabbitHole first-lesson readiness
 
 1. Run `alice check-lesson-readiness` against the current comparison manifest.
 2. Read `Shown` first. Treat each line as a bounded evidence fact only.
 3. Read every `Not yet shown` line before deciding what to collect next.
 4. Read `Desktop next action` when it appears. It describes RabbitHole's next
    observations or candidate actions, not completion.
-5. Keep every `Unproven` line in handoffs, PRs, and release notes.
+5. Keep every `Unproven` line in handoffs, review notes, and release notes.
 
 ### Interpret Save evidence safely
 
@@ -450,14 +450,14 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --json
 Do not encode readiness facts only in generated runner files, binary artifacts,
 or one-off run outputs.
 
-## Writing readiness-related docs and PRs
+## Writing readiness summaries
 
 Use user-facing wording:
 
 | Say | Avoid |
 | --- | --- |
 | `RabbitHole launch/action evidence is shown.` | `modernized ui-action-contract passed.` |
-| `Desktop next-action evidence is not yet shown.` | Internal next-action artifact paths. |
+| `Desktop next-action evidence is not yet shown.` | Machine-only next-action artifact paths. |
 | `Save option evidence is shown as an observed option/action only.` | `Save completed.` |
 | `Visible rendering evidence is shown, but correctness is not proven.` | `Rendering is correct.` |
 | `First-lesson completion is not yet shown.` | `The lesson is complete.` |
@@ -466,14 +466,14 @@ The durable rule is simple: report what the evidence explicitly shows, report
 missing states as not yet shown or not yet proven, and keep the six unproven
 claims visible.
 
-## Implementation rules
+## Readiness output rules
 
-The Rust implementation:
+The report:
 
 1. Emits `shown_evidence[]`, `not_yet_shown[]`, optional
    `desktop_next_action`, `unproven_claims`, and boundary-facing evidence items.
 2. Maps existing progress and boundary states to user-facing `shown`, `not yet
-   shown`, and `not yet proven` wording without exposing internal artifact paths
+   shown`, and `not yet proven` wording without exposing machine-only artifact paths
    in plain output.
 3. Emits top-level `desktop_next_action` only for valid, safe, current RabbitHole
    evidence; otherwise it leaves the condition in `not_yet_shown`, `issues`, or

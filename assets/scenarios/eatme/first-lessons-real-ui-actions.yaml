@@ -14,9 +14,9 @@ purpose: >-
   recording safe window activation plus save-shortcut dispatch probes, and using
   object-placement, edit, and Run evidence when Alice exposes it. The run still
   requires explicit evidence for object placement, procedure/code editing, world
-  run, project save, and a captured first-action evidence file. Until repeatable
+  run, project save, and a captured first-action evidence file. When repeatable
   desktop action proof beyond safe window activation, shortcut dispatch, and
-  backend proof hooks is wired, the harness must fail loudly with preflight
+  backend proof hooks is unavailable, the run must fail loudly with preflight
   action evidence instead of reporting a silent pass. This instructor-editable
   asset records reusable preflight launch/action readiness evidence only for
   setup, launch support, handoff artifacts, and classroom support preparation.
@@ -96,7 +96,7 @@ acceptance_criteria:
   - given: documented Run shortcut dispatch succeeds
     when: the harness inspects windows after Ctrl+F5
     then: run assertions include run_world_desktop_window_observed, passing only when an Alice Run window is visible and otherwise recording the observed blocker
-  - given: repeatable Alice desktop manipulation is not fully wired yet
+  - given: repeatable Alice desktop evidence is unavailable for a required boundary
     when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
     then: the run fails loudly with ui_action_automation_unimplemented when object placement is missing, or ui_action_remaining_steps_unimplemented after object placement proof exists, and writes ui-action-contract.json
   - given: reviewers use this scenario as first-lesson evidence
@@ -140,7 +140,7 @@ steps:
       - manifest assertions include run_world_ui_action
       - manifest assertions include save_project_ui_action
       - manifest assertions include ui_action_artifact_captured
-      - manifest failure_category is a UI action blocker until actions are automated
+      - manifest failure_category is a UI action blocker when required action evidence is unavailable
       - ui-action-contract.json exists and is non-empty
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#building-a-scene-first-world
@@ -169,7 +169,7 @@ artifacts:
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. If Alice launches but real
-  actions are not automated, fail with ui_action_automation_unimplemented or
+  required action evidence is unavailable, fail with ui_action_automation_unimplemented or
   ui_action_remaining_steps_unimplemented and capture ui-action-contract.json rather than silently passing. This is
   bounded setup, launch, handoff, and classroom-support readiness evidence only.
   It is not full UI automation, not creative assessment, not learner-world

@@ -197,6 +197,36 @@ fn generated_first_lesson_adapters_preserve_honest_boundary_language() {
 }
 
 #[test]
+fn generated_first_lesson_adapter_description_uses_reader_language() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/first-lessons-real-ui-actions.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let description = adapter["description"]
+        .as_str()
+        .expect("generated adapter has a description")
+        .to_lowercase();
+
+    for blocked in ["manifest-level evidence only", "source boundary"] {
+        assert!(
+            !description.contains(blocked),
+            "{source} generated description must avoid internal generator wording {blocked:?}:\n{description}"
+        );
+    }
+    for required in [
+        "first-lesson readiness",
+        "not full ui automation",
+        "not creative assessment",
+        "not learner-world grading",
+    ] {
+        assert!(
+            description.contains(required),
+            "{source} generated description must preserve reader-facing boundary {required:?}:\n{description}"
+        );
+    }
+}
+
+#[test]
 fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_boundaries() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml";
@@ -235,6 +265,15 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
             "{source} generated adapter must not use internal {blocked:?} shorthand:\n{generated}"
         );
     }
+}
+
+fn generated_adapter_value(generated: &str) -> Value {
+    let yaml_without_header = generated
+        .lines()
+        .filter(|line| !line.starts_with("# "))
+        .collect::<Vec<_>>()
+        .join("\n");
+    serde_yaml::from_str(&yaml_without_header).unwrap()
 }
 
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
