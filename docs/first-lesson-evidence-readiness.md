@@ -560,8 +560,8 @@ The Rust implementation:
 5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
    as compatibility output that includes those six.
 6. Renders `alice run-first-lesson-readiness` plain output as readiness heading,
-   `Desktop proof`, optional `Original Alice action evidence`, `Shown`, `Not yet
-   shown`, optional `Desktop next action`, and `Unproven`. The original Alice
+   `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`,
+   optional `Original Alice action evidence`, and `Unproven`. The original Alice
    section appears only when original Alice action evidence is missing.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.
