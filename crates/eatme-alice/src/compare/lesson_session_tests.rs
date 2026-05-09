@@ -2,8 +2,9 @@ use super::*;
 use std::path::Path;
 
 mod lesson_session_helpers;
+mod original_action_evidence;
 use lesson_session_helpers::{
-    assert_contract_contains, assert_safe_blocker_text, ui_action_contract_json, unique_test_dir,
+    assert_contract_contains, ui_action_contract_json, unique_test_dir,
     write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
 };
 
@@ -227,52 +228,6 @@ fn lesson_session_readiness_reports_creative_assessment_gap_plainly() {
 }
 
 #[test]
-fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
-    let root = unique_test_dir("original-alice-action-evidence-blocker");
-    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
-    let mut manifest: serde_json::Value =
-        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
-    manifest["targets"]["baseline"]["launch_manifest"]["assertions"]
-        .as_object_mut()
-        .unwrap()
-        .remove("save_project_ui_action");
-    fs::write(
-        &manifest_path,
-        serde_json::to_vec_pretty(&manifest).unwrap(),
-    )
-    .unwrap();
-
-    let report = check_lesson_session_readiness(&manifest_path).unwrap();
-
-    assert!(!report.passed);
-    assert_eq!(
-        (
-            report.status.as_str(),
-            report.readiness_status.as_str(),
-            report.lesson_session_readiness.status.as_str()
-        ),
-        ("not_ready", "incomplete", "not_ready")
-    );
-    let report_json = serde_json::to_value(&report).unwrap();
-    let baseline = target_evidence_json(&report_json, "baseline");
-    let blockers = baseline["blockers"]
-        .as_array()
-        .unwrap_or_else(|| panic!("baseline target should expose blockers: {baseline}"));
-    let blocker = blockers
-        .iter()
-        .find(|blocker| {
-            blocker["code"] == "missing_real_action_evidence" && blocker["action"] == "save-project"
-        })
-        .unwrap_or_else(|| panic!("missing baseline action-evidence blocker: {blockers:?}"));
-    assert_eq!(
-        blocker["reason"],
-        "Required original Alice action evidence is missing from automation scenarios."
-    );
-    assert_safe_blocker_text(blocker["reason"].as_str().unwrap_or_default());
-    assert!(blocker.get("message").is_none(), "{blocker}");
-}
-
-#[test]
 fn lesson_session_readiness_requires_modernized_visible_desktop_evidence() {
     let root = unique_test_dir("missing-modernized-desktop-evidence-check");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
@@ -454,6 +409,16 @@ targets:
     assert_eq!(report.scenario_id, FIRST_LESSON_SCENARIO_ID);
     assert_eq!(report.status, "not_ready");
     assert_eq!(report.readiness_status, "incomplete");
+    let report_json = serde_json::to_value(&report).unwrap();
+    assert_eq!(
+        report_json["original_alice_action_evidence"]["status"],
+        "available"
+    );
+    assert_eq!(
+        report_json["original_alice_action_evidence"],
+        report_json["readiness_report"]["original_alice_action_evidence"],
+        "first-lesson sequence output must preserve readiness original Alice action evidence state"
+    );
     for role in ["instructor", "student"] {
         let readiness = report
             .role_readiness
@@ -479,13 +444,4 @@ fn assert_no_go_affordance(contracts: &[LessonSessionNoGoContract], affordance: 
         }),
         "missing {affordance} no-go contract: {contracts:?}"
     );
-}
-
-fn target_evidence_json<'a>(report: &'a serde_json::Value, role: &str) -> &'a serde_json::Value {
-    report["target_evidence"]
-        .as_array()
-        .unwrap_or_else(|| panic!("report should expose target_evidence[]: {report}"))
-        .iter()
-        .find(|target| target["role"] == role)
-        .unwrap_or_else(|| panic!("missing target_evidence role {role}: {report}"))
 }
