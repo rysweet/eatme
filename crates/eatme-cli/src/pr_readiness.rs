@@ -6,6 +6,7 @@ mod github;
 mod recovery;
 mod recovery_model;
 mod recovery_safety;
+mod recovery_scope;
 mod report;
 
 pub use github::{GitHubPrSnapshotRequest, fetch_github_pr_snapshot};
@@ -22,15 +23,23 @@ const PR_204_BRANCH: &str = "wave7-eatme-nonclaim-audit-1778303500";
 
 const FORBIDDEN_CLAIMS: &[&str] = &[
     "full Alice UI automation",
+    "full UI automation",
+    "full world execution",
+    "UI rendering correctness",
+    "visible rendering correctness",
     "grading",
     "creative assessment",
-    "visible rendering correctness",
     "Save completion",
+    "deployed sharing/platform success",
     "first-lesson completion",
+    "full lesson completion",
+    "complete Alice coverage",
+    "full Tweedle/player decode",
 ];
 const NONCLAIM_MARKERS: &[&str] = &[
     "nonclaims",
     "does not validate",
+    "does not claim",
     "do not claim",
     "must not imply",
     "cannot convert",
@@ -281,7 +290,7 @@ fn label_stale_evidence(item: &str, current_sha: &str) -> String {
 
 fn validate_forbidden_claims_are_nonclaims(docs: &str) -> Result<(), ReadinessError> {
     for claim in FORBIDDEN_CLAIMS {
-        for (position, _) in docs.match_indices(claim) {
+        for position in ascii_case_insensitive_match_positions(docs, claim) {
             let context = paragraph_around(docs, position);
             if !is_nonclaim_context(context) {
                 return Err(ReadinessError::new(format!(
@@ -305,6 +314,16 @@ fn is_nonclaim_context(context: &str) -> bool {
     NONCLAIM_MARKERS
         .iter()
         .any(|marker| contains_ascii_case_insensitive(context, marker))
+}
+
+fn ascii_case_insensitive_match_positions(haystack: &str, needle: &str) -> Vec<usize> {
+    let needle = needle.as_bytes();
+    haystack
+        .as_bytes()
+        .windows(needle.len())
+        .enumerate()
+        .filter_map(|(index, window)| window.eq_ignore_ascii_case(needle).then_some(index))
+        .collect()
 }
 
 fn contains_ascii_case_insensitive(haystack: &str, needle: &str) -> bool {

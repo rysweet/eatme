@@ -6,10 +6,26 @@ use super::{
     RecoveryReadinessStatus, ReviewNoteInput,
 };
 
+const REVIEW_NOTE_NONCLAIMS: &[&str] = &[
+    "full Alice UI automation",
+    "full world execution",
+    "UI rendering correctness",
+    "visible rendering correctness",
+    "grading",
+    "creative assessment",
+    "Save completion",
+    "deployed sharing/platform success",
+    "first-lesson completion",
+    "full lesson completion",
+    "complete Alice coverage",
+    "full Tweedle/player decode",
+];
+
 pub fn render_review_note(input: ReviewNoteInput) -> String {
     let snapshot = input.snapshot;
     let evidence_sha = snapshot.pr_head_sha.as_str();
     let check_summary = render_check_summary(&snapshot.checks);
+    let nonclaims = REVIEW_NOTE_NONCLAIMS.join(", ");
 
     format!(
         "Default-workflow readiness recorded for PR #{}.\n\
@@ -27,9 +43,7 @@ pub fn render_review_note(input: ReviewNoteInput) -> String {
          - mergeStateStatus={} and mergeable={} for {evidence_sha}\n\
          - older tested-head evidence is {} and is not presented as current validation\n\
          \n\
-         Nonclaims: this does not validate full Alice UI automation, grading, \
-         creative assessment, visible rendering correctness, Save completion, \
-         or first-lesson completion.",
+         Nonclaims: this does not validate {nonclaims}.",
         snapshot.pr_number,
         report_value(&snapshot.branch),
         evidence_word(input.local_evidence.asset_validation, evidence_sha),
@@ -50,42 +64,35 @@ pub fn render_review_note(input: ReviewNoteInput) -> String {
 }
 
 pub fn render_final_report(report: &RecoveryReadinessReport) -> String {
-    let status_label = match report.status {
-        RecoveryReadinessStatus::MergeReady => "MERGE_READY",
-        RecoveryReadinessStatus::NotMergeReady => "NOT_MERGE_READY",
-    };
     let mut body =
         String::with_capacity(768 + report.blockers.iter().map(String::len).sum::<usize>());
-    let _ = writeln!(body, "{status_label}");
-    let _ = writeln!(body, "Branch: {}", report_value(&report.branch));
-    let _ = writeln!(
-        body,
-        "Expected remote HEAD: {}",
-        report
-            .expected_remote_head_sha
-            .as_deref()
-            .unwrap_or("missing")
-    );
-    let _ = writeln!(body, "Final HEAD: {}", report.final_head_sha);
-    let _ = writeln!(body, "Validation status: {}", report.validation_status);
-
-    match &report.change_outcome {
-        ChangeOutcome::NoOp { justification } => {
-            let _ = writeln!(body, "No-op justification: {}", report_value(justification));
-        }
-        ChangeOutcome::FilesModified(files) => {
-            body.push_str("Files modified: ");
-            push_comma_separated(&mut body, files);
-            body.push('\n');
-        }
-    }
-
+    push_report_header(&mut body, report);
+    push_change_outcome(&mut body, report);
     body.push_str("Required GitHub checks: ");
     push_comma_separated(&mut body, &report.required_github_checks);
     body.push('\n');
     push_github_checks(&mut body, report);
     push_qa_evidence(&mut body, report);
     push_quality_audit_evidence(&mut body, report);
+    push_report_evidence_metadata(&mut body, report);
+    push_blockers(&mut body, &report.blockers);
+    body
+}
+
+fn push_change_outcome(body: &mut String, report: &RecoveryReadinessReport) {
+    match &report.change_outcome {
+        ChangeOutcome::NoOp { justification } => {
+            let _ = writeln!(body, "No-op justification: {}", report_value(justification));
+        }
+        ChangeOutcome::FilesModified(files) => {
+            body.push_str("Files modified: ");
+            push_comma_separated(body, files);
+            body.push('\n');
+        }
+    }
+}
+
+fn push_report_evidence_metadata(body: &mut String, report: &RecoveryReadinessReport) {
     let _ = writeln!(
         body,
         "Diff scope: focused={} changed_files={}",
@@ -105,15 +112,36 @@ pub fn render_final_report(report: &RecoveryReadinessReport) -> String {
         report.pr_description_evidence.contains_bounded_nonclaims
     );
     body.push_str("Historical wrapper failures (context only, not readiness evidence): ");
-    wrapper_failures_summary(&mut body, &report.wrapper_failures);
+    wrapper_failures_summary(body, &report.wrapper_failures);
     body.push('\n');
-    if !report.blockers.is_empty() {
+}
+
+fn push_blockers(body: &mut String, blockers: &[String]) {
+    if !blockers.is_empty() {
         body.push_str("Blockers:\n");
-        for blocker in &report.blockers {
+        for blocker in blockers {
             let _ = writeln!(body, "- {}", report_value(blocker));
         }
     }
-    body
+}
+
+fn push_report_header(body: &mut String, report: &RecoveryReadinessReport) {
+    let status_label = match report.status {
+        RecoveryReadinessStatus::MergeReady => "MERGE_READY",
+        RecoveryReadinessStatus::NotMergeReady => "NOT_MERGE_READY",
+    };
+    let _ = writeln!(body, "{status_label}");
+    let _ = writeln!(body, "Branch: {}", report_value(&report.branch));
+    let _ = writeln!(
+        body,
+        "Expected remote HEAD: {}",
+        report
+            .expected_remote_head_sha
+            .as_deref()
+            .unwrap_or("missing")
+    );
+    let _ = writeln!(body, "Final HEAD: {}", report.final_head_sha);
+    let _ = writeln!(body, "Validation status: {}", report.validation_status);
 }
 
 fn push_github_checks(body: &mut String, report: &RecoveryReadinessReport) {

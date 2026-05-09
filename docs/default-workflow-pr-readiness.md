@@ -53,7 +53,7 @@ being reviewed.
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
 | Scenario wording | Canonical scenarios preserve user-facing language unless a narrowly required nonclaim/readiness fix is needed. |
-| Overclaim boundary | Scenarios, docs, PR text, and comments do not claim first-lesson completion, grading, creative assessment, full Alice UI automation, full world execution, visible rendering correctness, Save completion, deployed sharing/platform success, or complete Alice coverage. |
+| Overclaim boundary | Scenarios, docs, PR text, and comments do not claim first-lesson completion, full lesson completion, grading, creative assessment, full Alice UI automation, full world execution, UI rendering correctness, visible rendering correctness, Save completion, deployed sharing/platform success, complete Alice coverage, or full Tweedle/player decode. |
 | Asset validation | Scenario and persona assets pass the repository asset validator. |
 | Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected or the recovery lane explicitly requires adapter evidence. |
 | Scope | No unrelated files or behavior are changed. |
@@ -118,9 +118,10 @@ wave7-eatme-nonclaim-audit-1778303500
 
 The branch is a recovery lane, not a product-readiness claim. Its PR can record
 validated asset, adapter, documentation, mergeability, and exact-head evidence.
-It must not imply full Alice UI automation, full world execution, visible rendering
-correctness, grading, creative assessment, Save completion, deployed
-sharing/platform success, or first-lesson completion.
+It must not imply full Alice UI automation, full world execution, UI rendering
+correctness, visible rendering correctness, grading, creative assessment, Save
+completion, deployed sharing/platform success, first-lesson completion, full
+lesson completion, or full Tweedle/player decode.
 
 ## Generic readiness procedure
 
@@ -400,6 +401,9 @@ nonclaim audit lane, focused scope includes:
 | Readiness documentation | `docs/default-workflow-pr-readiness.md`, index links, and directly related usage text. |
 | Readiness CLI/tests | `crates/eatme-cli/src/pr_readiness.rs`, `crates/eatme-cli/src/pr_readiness/recovery.rs`, `crates/eatme-cli/src/main.rs`, and targeted tests. |
 | uvx recovery wrapper | `src/eatme_uvx/cli.py` when remote-branch `uvx --from git+... amplihack ...` execution is the recovery blocker. |
+| uvx packaging | `pyproject.toml` when remote-branch packaging or entry-point behavior is part of the recovery blocker. |
+| Quality-gate tooling | `.pre-commit-config.yaml` and `scripts/check-module-size.sh` when they enforce the readiness gate used by this lane. |
+| Command runner support | `crates/eatme-core/src/command.rs` when GitHub snapshot collection needs bounded command execution or retry behavior. |
 | Canonical scenario wording | Narrow nonclaim corrections in `assets/scenarios/eatme/*.yaml`. |
 | Generated adapters | `assets/scenarios/gadugi/*.yaml` generated from canonical scenario changes. |
 | PR-facing evidence | PR description or comment text that records exact-head readiness or blockers. |
@@ -458,7 +462,7 @@ The description contains:
 | GitHub Actions | Required checks complete successfully for the same SHA; skipped optional checks called skipped. |
 | Diff scope | A focused-scope statement naming the categories changed. |
 | Change outcome | Either `Files modified: ...` or `No-op justification: ...`. |
-| Nonclaims | Explicitly states that evidence does not validate full Alice UI automation, full world execution, visible rendering correctness, grading, creative assessment, Save completion, deployed sharing/platform success, first-lesson completion, or complete Alice coverage. |
+| Nonclaims | Explicitly states that evidence does not validate full Alice UI automation, full world execution, UI rendering correctness, visible rendering correctness, grading, creative assessment, Save completion, deployed sharing/platform success, first-lesson completion, full lesson completion, complete Alice coverage, or full Tweedle/player decode. |
 | Blockers | `NOT_MERGE_READY` plus explicit blockers when any gate is missing or failing. |
 
 Do not mark the PR ready from a comment alone when the PR description still
@@ -490,12 +494,14 @@ The wording must not say or imply that the scenario proves:
 | Unsupported claim | Required boundary |
 | --- | --- |
 | First-lesson completion | It is starter-project preflight evidence only. |
+| Full lesson completion | It is bounded recovery evidence only, not proof that a learner completed a lesson. |
 | Grading or learner-world grading | It records evidence for review; it does not grade. |
 | Creative assessment | It may name an editable change; it does not assess creativity. |
 | Full UI automation | It records bounded launch/opened-project evidence and explicit gaps. |
 | Visible rendering correctness | Screenshot or window evidence is observation evidence only. |
 | Full Save completion | Save, reopen, and export remain readiness gaps until user-like evidence exists. |
 | Complete Alice coverage | The scenario covers only the stated preflight contract. |
+| Full Tweedle/player decode | Parser or launch evidence cannot prove complete source or player semantics. |
 
 Use the generated adapter only as a consumer of this contract. Do not hand-edit
 generated Gadugi YAML to change mission intent.
@@ -855,9 +861,10 @@ This readiness evidence is bounded to asset validation, generated Gadugi
 freshness, repository quality gates, GitHub checks, mergeability, and exact-head
 verification for <sha>.
 
-It does not claim full Alice UI automation, full world execution, visible rendering
-correctness, grading, creative assessment, Save completion, deployed sharing or
-platform success, or first-lesson completion.
+It does not claim full Alice UI automation, full world execution, UI rendering
+correctness, visible rendering correctness, grading, creative assessment, Save
+completion, deployed sharing or platform success, first-lesson completion, full
+lesson completion, or full Tweedle/player decode.
 ```
 
 ## PR #204 nonclaim audit readiness record
@@ -884,10 +891,10 @@ The PR #204 readiness note contains this bounded evidence:
 | Quality audit | Name at least three SEEK/VALIDATE/FIX cycles and state that the final cycle was clean. |
 | GitHub checks | Summarize `statusCheckRollup` for that same SHA; required successful checks may be called successful or green, skipped optional checks are called skipped. |
 | Merge metadata | Name `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE` only when reported for that same SHA. |
-| Diff scope | State that every changed file is focused on readiness recovery, docs, tests, canonical scenario wording, generated adapters, or PR evidence as applicable. Include the complete changed-file list from `git diff --name-status origin/master...HEAD`; do not summarize a subset as the full scope. |
+| Diff scope | State that every changed file is focused on readiness recovery, docs, tests, uvx packaging, quality-gate tooling, command runner support, canonical scenario wording, generated adapters, or PR evidence as applicable. Include the complete changed-file list from `git diff --name-status origin/master...HEAD`; do not summarize a subset as the full scope. |
 | PR description | State that the PR description itself contains exact-head readiness evidence or explicit `NOT_MERGE_READY` blockers. |
 | Stale evidence | State that older tested-head evidence was removed, replaced, or labeled stale/non-current and is not current validation. |
-| Nonclaims | State that the evidence does not validate full Alice UI automation, full world execution, grading, creative assessment, visible rendering correctness, Save completion, deployed sharing/platform success, first-lesson completion, or complete Alice coverage. |
+| Nonclaims | State that the evidence does not validate full Alice UI automation, full world execution, grading, creative assessment, UI rendering correctness, visible rendering correctness, Save completion, deployed sharing/platform success, first-lesson completion, full lesson completion, complete Alice coverage, or full Tweedle/player decode. |
 
 Use this comment body shape after the last commit on PR #204:
 
@@ -919,9 +926,10 @@ Verified for this exact SHA:
   repository changes>
 
 Nonclaims: this does not validate full Alice UI automation, full world execution,
-grading, creative assessment, visible rendering correctness, Save completion,
-deployed sharing/platform success, first-lesson completion, or complete Alice
-coverage.
+grading, creative assessment, UI rendering correctness, visible rendering
+correctness, Save completion, deployed sharing/platform success,
+first-lesson completion, full lesson completion, complete Alice coverage, or
+full Tweedle/player decode.
 ```
 
 If a new commit appears after this comment is posted, the comment is
@@ -977,7 +985,7 @@ Example:
 ```text
 Default-workflow readiness recorded for PR <pr-number> at exact head <sha>.
 
-Verified gates: exact PR head, required GitHub checks completed successfully for that head with optional skipped checks reported only as skipped, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded scenario/readiness wording, no unsupported claims for first-lesson completion/grading/creative assessment/full Alice UI automation/full world execution/visible rendering correctness/Save completion/deployed sharing or platform success/complete Alice coverage, stale tested-head evidence replaced or labeled stale/non-current, asset validation, generated Gadugi adapter freshness when required by the lane, and either Files modified or No-op justification.
+Verified gates: exact PR head, required GitHub checks completed successfully for that head with optional skipped checks reported only as skipped, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded scenario/readiness wording, no unsupported claims for first-lesson completion/full lesson completion/grading/creative assessment/full Alice UI automation/full world execution/UI rendering correctness/visible rendering correctness/Save completion/deployed sharing or platform success/complete Alice coverage/full Tweedle/player decode, stale tested-head evidence replaced or labeled stale/non-current, asset validation, generated Gadugi adapter freshness when required by the lane, and either Files modified or No-op justification.
 
 The prior non-zero wrapper exit is not treated as a blocker because direct verification passed at this exact head.
 ```

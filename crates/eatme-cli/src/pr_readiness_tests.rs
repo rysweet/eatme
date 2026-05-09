@@ -178,7 +178,7 @@ mergeStateStatus=CLEAN and mergeable=MERGEABLE for {EVIDENCE_HEAD}
 older tested-head evidence is stale/non-current and is not current validation
 Nonclaims: this does not validate full Alice UI automation, grading,
 creative assessment, visible rendering correctness, Save completion, or
-first-lesson completion.
+first-lesson completion, full lesson completion, and full Tweedle/player decode.
 "#
     );
 
@@ -191,9 +191,9 @@ fn readiness_documentation_validator_rejects_forbidden_current_validation_claims
         r#"
 Exact SHA: {EVIDENCE_HEAD}
 Branch: {PR_204_BRANCH}
-Verified full Alice UI automation, grading, creative assessment, visible
-rendering correctness, Save completion, and first-lesson completion for
-{EVIDENCE_HEAD}.
+Verified Full Alice UI Automation, Grading, creative assessment, UI rendering
+correctness, Save completion, full lesson completion, and full Tweedle/player
+decode for {EVIDENCE_HEAD}.
 "#
     );
 
@@ -363,38 +363,13 @@ fn valid_recovery_input(change_outcome: ChangeOutcome) -> RecoveryReadinessInput
         snapshot: pr_204_snapshot(PR_204_BRANCH, EVIDENCE_HEAD, EVIDENCE_HEAD),
         validation_sha: EVIDENCE_HEAD.into(),
         required_github_checks: vec!["quality-gates".into()],
-        asset_validation: RecoveryValidationEvidence {
-            name: "asset validation".into(),
-            command: ASSET_VALIDATE_COMMAND.into(),
-            evidence_sha: EVIDENCE_HEAD.into(),
-            exit_status: 0,
-            summary: "asset validation completed without failures".into(),
-            passed: true,
-        },
-        generated_gadugi_check: RecoveryValidationEvidence {
-            name: "generated Gadugi freshness".into(),
-            command: GADUGI_CHECK_COMMAND.into(),
-            evidence_sha: EVIDENCE_HEAD.into(),
-            exit_status: 0,
-            summary: "generated Gadugi freshness completed without failures".into(),
-            passed: true,
-        },
-        quality_gate: RecoveryValidationEvidence {
-            name: "repository quality gates".into(),
-            command: QUALITY_GATE_COMMAND.into(),
-            evidence_sha: EVIDENCE_HEAD.into(),
-            exit_status: 0,
-            summary: "repository quality gates completed without failures".into(),
-            passed: true,
-        },
-        documentation_build: RecoveryValidationEvidence {
-            name: "documentation build".into(),
-            command: DOCS_BUILD_COMMAND.into(),
-            evidence_sha: EVIDENCE_HEAD.into(),
-            exit_status: 0,
-            summary: "documentation build completed without failures".into(),
-            passed: true,
-        },
+        asset_validation: recovery_evidence("asset validation", ASSET_VALIDATE_COMMAND),
+        generated_gadugi_check: recovery_evidence(
+            "generated Gadugi freshness",
+            GADUGI_CHECK_COMMAND,
+        ),
+        quality_gate: recovery_evidence("repository quality gates", QUALITY_GATE_COMMAND),
+        documentation_build: recovery_evidence("documentation build", DOCS_BUILD_COMMAND),
         quality_audit_cycles: clean_quality_audit_cycles(),
         diff_scope: DiffScopeEvidence {
             changed_files: vec!["crates/eatme-cli/src/pr_readiness_tests.rs".into()],
@@ -412,6 +387,17 @@ fn valid_recovery_input(change_outcome: ChangeOutcome) -> RecoveryReadinessInput
         stale_evidence_handled: true,
         wrapper_failures: vec!["rate-limit".into(), "no-op guard".into()],
         change_outcome,
+    }
+}
+
+fn recovery_evidence(name: &str, command: &str) -> RecoveryValidationEvidence {
+    RecoveryValidationEvidence {
+        name: name.into(),
+        command: command.into(),
+        evidence_sha: EVIDENCE_HEAD.into(),
+        exit_status: 0,
+        summary: format!("{name} completed without failures"),
+        passed: true,
     }
 }
 
@@ -452,11 +438,16 @@ fn review_note_input() -> ReviewNoteInput {
 fn assert_forbidden_behavior_is_nonclaimed(note: &str) {
     for nonclaim in [
         "full Alice UI automation",
+        "full world execution",
+        "UI rendering correctness",
         "grading",
         "creative assessment",
         "visible rendering correctness",
         "Save completion",
         "first-lesson completion",
+        "full lesson completion",
+        "complete Alice coverage",
+        "full Tweedle/player decode",
     ] {
         let nonclaim_position = note
             .find(nonclaim)

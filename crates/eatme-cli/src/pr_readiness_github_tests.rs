@@ -38,6 +38,18 @@ fn github_snapshot_adapter_fetches_exact_head_and_marks_required_checks() {
     let snapshot = fetch_github_pr_snapshot(&request, &runner).unwrap();
     let specs = runner.specs.lock().unwrap();
 
+    assert_snapshot_marks_required_checks(&snapshot);
+    assert_eq!(specs[0].program, "gh");
+    assert_eq!(
+        specs[0].args[0..5],
+        ["pr", "view", "204", "--repo", "rysweet/eatme"]
+    );
+    assert_eq!(specs[0].attempts, 3);
+    assert_eq!(specs[0].retry_delay, Duration::from_millis(500));
+    assert_eq!(specs[0].timeout, Some(Duration::from_secs(20)));
+}
+
+fn assert_snapshot_marks_required_checks(snapshot: &super::pr_readiness::PrReadinessSnapshot) {
     assert_eq!(snapshot.pr_head_sha, EVIDENCE_HEAD);
     assert_eq!(snapshot.local_head_sha, EVIDENCE_HEAD);
     assert_eq!(snapshot.branch, PR_204_BRANCH);
@@ -55,14 +67,6 @@ fn github_snapshot_adapter_fetches_exact_head_and_marks_required_checks() {
         "{:#?}",
         snapshot.checks
     );
-    assert_eq!(specs[0].program, "gh");
-    assert_eq!(
-        specs[0].args[0..5],
-        ["pr", "view", "204", "--repo", "rysweet/eatme"]
-    );
-    assert_eq!(specs[0].attempts, 3);
-    assert_eq!(specs[0].retry_delay, Duration::from_millis(500));
-    assert_eq!(specs[0].timeout, Some(Duration::from_secs(20)));
 }
 
 #[test]

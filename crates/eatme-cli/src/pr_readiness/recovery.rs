@@ -5,11 +5,12 @@ use super::recovery_safety::{
     sanitize_qa_evidence, sanitize_quality_audit_cycles, sanitize_report_text,
     sanitize_report_texts,
 };
+use super::recovery_scope::{collect_diff_scope, collect_docs_impact};
 use super::{
     ChangeOutcome, CheckConclusion, CheckStatus, PR_204_BRANCH, PrReadinessSnapshot,
-    QualityAuditOutcome, QualityAuditPhase, ReadinessError, RecoveryReadinessInput,
-    RecoveryReadinessReport, RecoveryReadinessStatus, RecoveryValidationEvidence, validate_sha,
-    validate_target_branch,
+    QualityAuditCycle, QualityAuditOutcome, QualityAuditPhase, ReadinessError,
+    RecoveryReadinessInput, RecoveryReadinessReport, RecoveryReadinessStatus,
+    RecoveryValidationEvidence, validate_sha, validate_target_branch,
 };
 
 const RECOVERY_SCHEMA_VERSION: &str = "pr-readiness-recovery.v1";
@@ -21,6 +22,11 @@ const QUALITY_GATE_COMMAND: &str =
 const DOCS_BUILD_COMMAND: &str = "mkdocs build --strict";
 
 pub fn evaluate_recovery_readiness(input: &RecoveryReadinessInput) -> RecoveryReadinessReport {
+    let blockers = collect_recovery_blockers(input);
+    build_recovery_report(input, blockers)
+}
+
+fn collect_recovery_blockers(input: &RecoveryReadinessInput) -> Vec<String> {
     let mut blockers = Vec::new();
 
     push_blocker(&mut blockers, validate_schema(input));
@@ -34,6 +40,21 @@ pub fn evaluate_recovery_readiness(input: &RecoveryReadinessInput) -> RecoveryRe
         &input.required_github_checks,
     );
     push_blocker(&mut blockers, validate_mergeability(&input.snapshot));
+    collect_all_required_evidence(&mut blockers, input);
+    collect_quality_audit(&mut blockers, input);
+    collect_diff_scope(&mut blockers, input);
+    collect_docs_impact(&mut blockers, input);
+    push_blocker(&mut blockers, validate_pr_description_evidence(input));
+    push_blocker(&mut blockers, validate_stale_evidence_handled(input));
+    push_blocker(
+        &mut blockers,
+        validate_change_outcome(&input.change_outcome, &input.validation_sha),
+    );
+
+    sanitize_report_texts(blockers)
+}
+
+fn collect_all_required_evidence(blockers: &mut Vec<String>, input: &RecoveryReadinessInput) {
     for (evidence, name, command) in [
         (
             &input.asset_validation,
@@ -56,24 +77,14 @@ pub fn evaluate_recovery_readiness(input: &RecoveryReadinessInput) -> RecoveryRe
             DOCS_BUILD_COMMAND,
         ),
     ] {
-        collect_required_evidence(
-            &mut blockers,
-            evidence,
-            name,
-            command,
-            &input.validation_sha,
-        );
+        collect_required_evidence(blockers, evidence, name, command, &input.validation_sha);
     }
-    collect_quality_audit(&mut blockers, input);
-    collect_diff_scope(&mut blockers, input);
-    collect_docs_impact(&mut blockers, input);
-    push_blocker(&mut blockers, validate_pr_description_evidence(input));
-    push_blocker(&mut blockers, validate_stale_evidence_handled(input));
-    push_blocker(
-        &mut blockers,
-        validate_change_outcome(&input.change_outcome, &input.validation_sha),
-    );
+}
 
+fn build_recovery_report(
+    input: &RecoveryReadinessInput,
+    blockers: Vec<String>,
+) -> RecoveryReadinessReport {
     let is_merge_ready = blockers.is_empty();
     let status = if is_merge_ready {
         RecoveryReadinessStatus::MergeReady
@@ -91,7 +102,6 @@ pub fn evaluate_recovery_readiness(input: &RecoveryReadinessInput) -> RecoveryRe
         &input.quality_gate,
         &input.documentation_build,
     ];
-    let blockers = sanitize_report_texts(blockers);
 
     RecoveryReadinessReport {
         status,
@@ -167,6 +177,16 @@ fn collect_required_checks(
     validation_sha: &str,
     required_github_checks: &[String],
 ) {
+    collect_required_check_names(blockers, validation_sha, required_github_checks);
+    collect_check_head_evidence(blockers, snapshot, validation_sha);
+    collect_required_check_results(blockers, snapshot, validation_sha, required_github_checks);
+}
+
+fn collect_required_check_names(
+    blockers: &mut Vec<String>,
+    validation_sha: &str,
+    required_github_checks: &[String],
+) {
     if required_github_checks.is_empty() {
         blockers.push(format!(
             "required_github_checks must name trusted required GitHub checks for exact head {validation_sha}"
@@ -182,7 +202,13 @@ fn collect_required_checks(
             ));
         }
     }
+}
 
+fn collect_check_head_evidence(
+    blockers: &mut Vec<String>,
+    snapshot: &PrReadinessSnapshot,
+    validation_sha: &str,
+) {
     if snapshot.checks.is_empty() {
         blockers.push(format!(
             "GitHub Actions evidence is missing for exact head {validation_sha}"
@@ -204,7 +230,14 @@ fn collect_required_checks(
             ));
         }
     }
+}
 
+fn collect_required_check_results(
+    blockers: &mut Vec<String>,
+    snapshot: &PrReadinessSnapshot,
+    validation_sha: &str,
+    required_github_checks: &[String],
+) {
     for required_name in required_github_checks {
         if required_name.trim().is_empty() {
             continue;
@@ -305,35 +338,12 @@ fn collect_quality_audit(blockers: &mut Vec<String>, input: &RecoveryReadinessIn
     }
 
     for (expected_cycle_number, cycle) in (1..).zip(input.quality_audit_cycles.iter()) {
-        if cycle.cycle_number != expected_cycle_number {
-            blockers.push(format!(
-                "quality-audit cycle numbers must be contiguous and strictly increasing from 1; expected cycle {expected_cycle_number}, got {}",
-                cycle.cycle_number
-            ));
-        }
-        if let Err(error) = validate_sha(&cycle.head_sha) {
-            blockers.push(format!(
-                "quality-audit cycle {} has invalid head SHA: {error}",
-                cycle.cycle_number
-            ));
-        } else if cycle.head_sha != input.validation_sha {
-            blockers.push(format!(
-                "quality-audit cycle {} names {}, not exact head {}",
-                cycle.cycle_number, cycle.head_sha, input.validation_sha
-            ));
-        }
-        if !has_all_quality_audit_phases(&cycle.phases) {
-            blockers.push(format!(
-                "quality-audit cycle {} must include SEEK, VALIDATE, and FIX phases",
-                cycle.cycle_number
-            ));
-        }
-        if cycle.summary.trim().is_empty() {
-            blockers.push(format!(
-                "quality-audit cycle {} must include a summary",
-                cycle.cycle_number
-            ));
-        }
+        collect_quality_audit_cycle(
+            blockers,
+            expected_cycle_number,
+            cycle,
+            &input.validation_sha,
+        );
     }
 
     if input
@@ -344,6 +354,43 @@ fn collect_quality_audit(blockers: &mut Vec<String>, input: &RecoveryReadinessIn
         blockers.push(format!(
             "final cycle clean quality-audit outcome is required for {}",
             input.validation_sha
+        ));
+    }
+}
+
+fn collect_quality_audit_cycle(
+    blockers: &mut Vec<String>,
+    expected_cycle_number: u64,
+    cycle: &QualityAuditCycle,
+    validation_sha: &str,
+) {
+    if cycle.cycle_number != expected_cycle_number {
+        blockers.push(format!(
+            "quality-audit cycle numbers must be contiguous and strictly increasing from 1; expected cycle {expected_cycle_number}, got {}",
+            cycle.cycle_number
+        ));
+    }
+    if let Err(error) = validate_sha(&cycle.head_sha) {
+        blockers.push(format!(
+            "quality-audit cycle {} has invalid head SHA: {error}",
+            cycle.cycle_number
+        ));
+    } else if cycle.head_sha != validation_sha {
+        blockers.push(format!(
+            "quality-audit cycle {} names {}, not exact head {validation_sha}",
+            cycle.cycle_number, cycle.head_sha
+        ));
+    }
+    if !has_all_quality_audit_phases(&cycle.phases) {
+        blockers.push(format!(
+            "quality-audit cycle {} must include SEEK, VALIDATE, and FIX phases",
+            cycle.cycle_number
+        ));
+    }
+    if cycle.summary.trim().is_empty() {
+        blockers.push(format!(
+            "quality-audit cycle {} must include a summary",
+            cycle.cycle_number
         ));
     }
 }
@@ -365,48 +412,6 @@ fn has_all_quality_audit_phases(phases: &[QualityAuditPhase]) -> bool {
     }
 
     false
-}
-
-fn collect_diff_scope(blockers: &mut Vec<String>, input: &RecoveryReadinessInput) {
-    if !input.diff_scope.focused {
-        blockers.push(format!(
-            "focused diff scope evidence is required for {}",
-            input.validation_sha
-        ));
-    }
-
-    for file in &input.diff_scope.changed_files {
-        if !is_focused_recovery_path(file) {
-            blockers.push(format!(
-                "focused diff scope excludes unrelated path {file}; keep recovery changes in readiness CLI, uvx wrapper, docs, or tests"
-            ));
-        }
-    }
-}
-
-fn is_focused_recovery_path(file: &str) -> bool {
-    file == "crates/eatme-cli/src/main.rs"
-        || file.starts_with("crates/eatme-cli/src/pr_readiness")
-        || file == "src/eatme_uvx/cli.py"
-        || file == "docs/default-workflow-pr-readiness.md"
-        || file == "docs/index.md"
-}
-
-fn collect_docs_impact(blockers: &mut Vec<String>, input: &RecoveryReadinessInput) {
-    if input.docs_impact.docs_changed && !input.docs_impact.strict_build_required {
-        blockers.push(format!(
-            "docs impact requires strict documentation build evidence with `{DOCS_BUILD_COMMAND}`"
-        ));
-    }
-
-    if (input.docs_impact.docs_changed || input.docs_impact.strict_build_required)
-        && (!input.documentation_build.passed || input.documentation_build.exit_status != 0)
-    {
-        blockers.push(format!(
-            "docs impact is not satisfied for {}; `{DOCS_BUILD_COMMAND}` must pass when docs changed",
-            input.validation_sha
-        ));
-    }
 }
 
 fn validate_pr_description_evidence(input: &RecoveryReadinessInput) -> Result<(), ReadinessError> {

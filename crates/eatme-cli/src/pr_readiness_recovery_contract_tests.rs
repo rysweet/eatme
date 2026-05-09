@@ -114,17 +114,20 @@ fn quality_audit_diff_scope_and_docs_impact_are_fail_closed() {
 }
 
 #[test]
-fn focused_diff_scope_accepts_uvx_wrapper_for_remote_branch_recovery() {
-    let mut input = valid_recovery_input(ChangeOutcome::FilesModified(vec![
-        "src/eatme_uvx/cli.py".into(),
+fn focused_diff_scope_accepts_current_recovery_lane_files() {
+    let focused_files = vec![
+        ".pre-commit-config.yaml".into(),
+        "crates/eatme-cli/src/main.rs".into(),
         "crates/eatme-cli/src/pr_readiness/recovery.rs".into(),
+        "crates/eatme-core/src/command.rs".into(),
         "docs/default-workflow-pr-readiness.md".into(),
-    ]));
-    input.diff_scope.changed_files = vec![
+        "docs/index.md".into(),
+        "pyproject.toml".into(),
+        "scripts/check-module-size.sh".into(),
         "src/eatme_uvx/cli.py".into(),
-        "crates/eatme-cli/src/pr_readiness/recovery.rs".into(),
-        "docs/default-workflow-pr-readiness.md".into(),
     ];
+    let mut input = valid_recovery_input(ChangeOutcome::FilesModified(focused_files.clone()));
+    input.diff_scope.changed_files = focused_files;
 
     let report = evaluate_recovery_readiness(&input);
 
