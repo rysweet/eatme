@@ -8,13 +8,44 @@ use crate::compare::desktop_evidence::{
 };
 use serde::Serialize;
 
-const UNPROVEN_CLAIMS: &[&str] = &[
-    "Full Alice UI automation is not proven.",
-    "Grading is not proven.",
-    "Creative assessment is not proven.",
-    "Visible rendering correctness is not proven.",
-    "Save completion is not proven.",
-    "First-lesson completion is not proven.",
+#[derive(Clone, Copy)]
+struct UnprovenClaim {
+    sentence: &'static str,
+    non_claim: &'static str,
+}
+
+const FULL_ALICE_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
+    sentence: "Full Alice UI automation is not proven.",
+    non_claim: "Full Alice UI automation",
+};
+const GRADING: UnprovenClaim = UnprovenClaim {
+    sentence: "Grading is not proven.",
+    non_claim: "grading",
+};
+const CREATIVE_ASSESSMENT: UnprovenClaim = UnprovenClaim {
+    sentence: "Creative assessment is not proven.",
+    non_claim: "creative assessment",
+};
+const VISIBLE_RENDERING_CORRECTNESS: UnprovenClaim = UnprovenClaim {
+    sentence: "Visible rendering correctness is not proven.",
+    non_claim: "visible rendering correctness",
+};
+const SAVE_COMPLETION: UnprovenClaim = UnprovenClaim {
+    sentence: "Save completion is not proven.",
+    non_claim: "Save completion",
+};
+const FIRST_LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
+    sentence: "First-lesson completion is not proven.",
+    non_claim: "first-lesson completion",
+};
+
+const UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
+    FULL_ALICE_UI_AUTOMATION,
+    GRADING,
+    CREATIVE_ASSESSMENT,
+    VISIBLE_RENDERING_CORRECTNESS,
+    SAVE_COMPLETION,
+    FIRST_LESSON_COMPLETION,
 ];
 
 const LEGACY_LIMITATIONS: &[&str] = &[
@@ -26,15 +57,6 @@ const LEGACY_LIMITATIONS: &[&str] = &[
     "does not prove visible rendering correctness",
     "does not prove first-lesson completion",
     "does not prove broad Alice compatibility beyond the selected scenario",
-];
-
-const DESKTOP_NEXT_ACTION_NON_CLAIMS: &[&str] = &[
-    "Full Alice UI automation",
-    "Save completion",
-    "first-lesson completion",
-    "grading",
-    "creative assessment",
-    "visible rendering correctness",
 ];
 
 #[derive(Clone, Debug, Serialize)]
@@ -272,14 +294,18 @@ pub(super) fn not_yet_shown(
 }
 
 pub(super) fn unproven_claims() -> Vec<String> {
-    strings(UNPROVEN_CLAIMS)
+    UNPROVEN_CLAIMS
+        .iter()
+        .map(|claim| claim.sentence.to_string())
+        .collect()
 }
 
 pub(super) fn limitations() -> Vec<String> {
     UNPROVEN_CLAIMS
         .iter()
-        .chain(LEGACY_LIMITATIONS)
-        .map(|claim| (*claim).to_string())
+        .map(|claim| claim.sentence)
+        .chain(LEGACY_LIMITATIONS.iter().copied())
+        .map(str::to_string)
         .collect()
 }
 
@@ -384,11 +410,11 @@ fn boundary_subject(boundary: &FirstLessonEvidenceBoundary) -> String {
 fn boundary_does_not_prove(boundary: &FirstLessonEvidenceBoundary) -> Vec<String> {
     let mut claims = boundary.does_not_prove.clone();
     if boundary.id == "save_project" {
-        push_unique(&mut claims, "Save completion");
-        push_unique(&mut claims, "first-lesson completion");
+        push_unique(&mut claims, SAVE_COMPLETION.non_claim);
+        push_unique(&mut claims, FIRST_LESSON_COMPLETION.non_claim);
     }
     if boundary.id == "visible_rendering" {
-        push_unique(&mut claims, "visible rendering correctness");
+        push_unique(&mut claims, VISIBLE_RENDERING_CORRECTNESS.non_claim);
     }
     claims
 }
@@ -437,7 +463,10 @@ fn add_proof_artifact_observation(
 }
 
 fn desktop_next_action_non_claims(evidence: &DesktopFirstLessonNextActionEvidence) -> Vec<String> {
-    let mut claims = strings(DESKTOP_NEXT_ACTION_NON_CLAIMS);
+    let mut claims = UNPROVEN_CLAIMS
+        .iter()
+        .map(|claim| claim.non_claim.to_string())
+        .collect();
     for claim in &evidence.does_not_claim {
         push_unique(&mut claims, claim);
     }
@@ -452,8 +481,4 @@ fn push_unique(claims: &mut Vec<String>, claim: &str) {
     if !claims.iter().any(|existing| existing == claim) {
         claims.push(claim.to_string());
     }
-}
-
-fn strings(values: &[&str]) -> Vec<String> {
-    values.iter().map(|value| (*value).to_string()).collect()
 }
