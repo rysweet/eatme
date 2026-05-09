@@ -127,11 +127,14 @@ fn default_workflow_pr_readiness_doc() -> &'static str {
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize_whitespace(text);
-    let missing = needles
-        .iter()
-        .filter(|needle| !normalized_text.contains(&normalize_whitespace(needle)))
-        .copied()
-        .collect::<Vec<_>>();
+    let mut normalized_needle = String::new();
+    let mut missing = Vec::new();
+    for needle in needles {
+        normalize_whitespace_into(needle, &mut normalized_needle);
+        if !normalized_text.contains(&normalized_needle) {
+            missing.push(*needle);
+        }
+    }
     assert!(
         missing.is_empty(),
         "{label} is missing required evidence language: {missing:?}"
@@ -143,16 +146,17 @@ fn assert_contains_all_across(label: &str, texts: &[&str], needles: &[&str]) {
         .iter()
         .map(|text| normalize_whitespace(text))
         .collect::<Vec<_>>();
-    let missing = needles
-        .iter()
-        .filter(|needle| {
-            let normalized_needle = normalize_whitespace(needle);
-            !normalized_texts
-                .iter()
-                .any(|text| text.contains(&normalized_needle))
-        })
-        .copied()
-        .collect::<Vec<_>>();
+    let mut normalized_needle = String::new();
+    let mut missing = Vec::new();
+    for needle in needles {
+        normalize_whitespace_into(needle, &mut normalized_needle);
+        if !normalized_texts
+            .iter()
+            .any(|text| text.contains(&normalized_needle))
+        {
+            missing.push(*needle);
+        }
+    }
     assert!(
         missing.is_empty(),
         "{label} is missing required evidence language across traceable surfaces: {missing:?}"
@@ -161,11 +165,14 @@ fn assert_contains_all_across(label: &str, texts: &[&str], needles: &[&str]) {
 
 fn assert_not_contains_any(label: &str, text: &str, needles: &[String]) {
     let normalized_text = normalize_whitespace(text).to_lowercase();
-    let present = needles
-        .iter()
-        .filter(|needle| normalized_text.contains(&normalize_whitespace(needle).to_lowercase()))
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut normalized_needle = String::new();
+    let mut present = Vec::new();
+    for needle in needles {
+        normalize_whitespace_into(needle, &mut normalized_needle);
+        if normalized_text.contains(&normalized_needle.to_lowercase()) {
+            present.push(needle.clone());
+        }
+    }
     assert!(
         present.is_empty(),
         "{label} contains non-portable wording: {present:?}"
@@ -214,11 +221,16 @@ fn assert_no_success_claims(label: &str, text: &str) {
 
 fn normalize_whitespace(text: &str) -> String {
     let mut normalized = String::with_capacity(text.len());
+    normalize_whitespace_into(text, &mut normalized);
+    normalized
+}
+
+fn normalize_whitespace_into(text: &str, normalized: &mut String) {
+    normalized.clear();
     for word in text.split_whitespace() {
         if !normalized.is_empty() {
             normalized.push(' ');
         }
         normalized.push_str(word);
     }
-    normalized
 }
