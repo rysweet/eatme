@@ -24,6 +24,14 @@ impl QaCommand {
     }
 }
 
+const REQUIRED_QA_COMMANDS: [QaCommand; 5] = [
+    QaCommand::CargoWorkspaceAllFeatures,
+    QaCommand::AssetsValidateJson,
+    QaCommand::GenerateGadugiCheckJson,
+    QaCommand::MkdocsBuildStrict,
+    QaCommand::QualityGatesWithTmpdir,
+];
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QaOutcome {
     pub command: QaCommand,
@@ -72,15 +80,28 @@ pub struct ScopedQaRunner;
 
 impl ScopedQaRunner {
     pub fn summarize(outcomes: Vec<QaOutcome>) -> Result<QaReport, RecoveryError> {
-        let required = [
-            QaCommand::CargoWorkspaceAllFeatures,
-            QaCommand::AssetsValidateJson,
-            QaCommand::GenerateGadugiCheckJson,
-            QaCommand::MkdocsBuildStrict,
-            QaCommand::QualityGatesWithTmpdir,
-        ];
-        for command in required {
-            if !outcomes.iter().any(|outcome| outcome.command == command) {
+        let mut seen_required = [false; REQUIRED_QA_COMMANDS.len()];
+        let mut blockers = Vec::new();
+
+        for outcome in &outcomes {
+            seen_required[required_index(outcome.command)] = true;
+
+            if !outcome.passed_status() {
+                blockers.push(StructuredBlocker {
+                    code: "scoped_qa_failed".into(),
+                    status: "blocked".into(),
+                    subject: outcome.command.label().into(),
+                    reason: format!(
+                        "QA command exited {}: {}",
+                        outcome.exit_code, outcome.summary
+                    ),
+                    resolution: "Rerun and resolve the failing PR #199 recovery QA command.".into(),
+                });
+            }
+        }
+
+        for (index, command) in REQUIRED_QA_COMMANDS.iter().enumerate() {
+            if !seen_required[index] {
                 return Err(RecoveryError::new(
                     "scoped_qa_missing_command",
                     format!("missing required QA command: {}", command.label()),
@@ -88,20 +109,6 @@ impl ScopedQaRunner {
             }
         }
 
-        let blockers = outcomes
-            .iter()
-            .filter(|outcome| !outcome.passed_status())
-            .map(|outcome| StructuredBlocker {
-                code: "scoped_qa_failed".into(),
-                status: "blocked".into(),
-                subject: outcome.command.label().into(),
-                reason: format!(
-                    "QA command exited {}: {}",
-                    outcome.exit_code, outcome.summary
-                ),
-                resolution: "Rerun and resolve the failing PR #199 recovery QA command.".into(),
-            })
-            .collect::<Vec<_>>();
         let passed = blockers.is_empty();
 
         Ok(QaReport {
@@ -109,5 +116,15 @@ impl ScopedQaRunner {
             passed,
             blockers,
         })
+    }
+}
+
+fn required_index(command: QaCommand) -> usize {
+    match command {
+        QaCommand::CargoWorkspaceAllFeatures => 0,
+        QaCommand::AssetsValidateJson => 1,
+        QaCommand::GenerateGadugiCheckJson => 2,
+        QaCommand::MkdocsBuildStrict => 3,
+        QaCommand::QualityGatesWithTmpdir => 4,
     }
 }

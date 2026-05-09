@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt;
+use std::fmt::Write as _;
 use std::path::PathBuf;
 
 mod evidence;
@@ -62,20 +63,29 @@ pub(crate) fn required_text(
 }
 
 pub(crate) fn summarize_names(names: &[String]) -> String {
-    if names.is_empty() {
-        "0".into()
-    } else {
-        format!("{} [{}]", names.len(), names.join(", "))
-    }
+    summarize_items(names.len(), names.iter().map(String::as_str))
 }
 
 pub(crate) fn summarize_paths(paths: &[PathBuf]) -> String {
-    if paths.is_empty() {
+    summarize_items(paths.len(), paths.iter().map(|path| path.display()))
+}
+
+fn summarize_items<I, T>(count: usize, items: I) -> String
+where
+    I: IntoIterator<Item = T>,
+    T: fmt::Display,
+{
+    if count == 0 {
         return "0".into();
     }
-    let names = paths
-        .iter()
-        .map(|path| path.display().to_string())
-        .collect::<Vec<_>>();
-    format!("{} [{}]", names.len(), names.join(", "))
+
+    let mut summary = format!("{count} [");
+    for (index, item) in items.into_iter().enumerate() {
+        if index > 0 {
+            summary.push_str(", ");
+        }
+        let _ = write!(&mut summary, "{item}");
+    }
+    summary.push(']');
+    summary
 }

@@ -117,9 +117,9 @@ fn github_pr_state_client_fetches_pr199_state_with_retry_and_check_mapping() {
                 {"path": "docs/index.md"}
             ],
             "statusCheckRollup": [
-                {"__typename": "CheckRun", "name": "workspace tests", "status": "COMPLETED", "conclusion": "SUCCESS"},
+                {"__typename": "CheckRun", "name": "workspace tests", "status": "completed", "conclusion": "success"},
                 {"__typename": "CheckRun", "name": "optional preview", "status": "COMPLETED", "conclusion": "SKIPPED"},
-                {"__typename": "CheckRun", "name": "quality gates", "status": "IN_PROGRESS", "conclusion": null},
+                {"__typename": "CheckRun", "name": "quality gates", "status": "in_progress", "conclusion": null},
                 {"__typename": "StatusContext", "context": "legacy linux", "state": "ERROR"},
                 {"__typename": "CheckRun", "name": "cancelled stale run", "status": "COMPLETED", "conclusion": "CANCELLED"}
             ]

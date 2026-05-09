@@ -11,6 +11,23 @@ use super::{RecoveryError, required_text};
 
 const PR199: u32 = 199;
 const PR199_JSON_FIELDS: &str = "number,headRefName,headRefOid,files,statusCheckRollup";
+const PENDING_STATUSES: [&str; 6] = [
+    "EXPECTED",
+    "PENDING",
+    "QUEUED",
+    "REQUESTED",
+    "WAITING",
+    "IN_PROGRESS",
+];
+const FAILURE_CONCLUSIONS: [&str; 7] = [
+    "FAILURE",
+    "ERROR",
+    "ACTION_REQUIRED",
+    "TIMED_OUT",
+    "STARTUP_FAILURE",
+    "STALE",
+    "NEUTRAL",
+];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GitHubPrStateClientConfig {
@@ -155,16 +172,23 @@ fn check_run_from_rollup_entry(entry: &Value) -> Result<CheckRun, RecoveryError>
 }
 
 fn github_conclusion(value: &str) -> Result<CheckConclusion, RecoveryError> {
-    match value.trim().to_ascii_uppercase().as_str() {
-        "SUCCESS" => Ok(CheckConclusion::Success),
-        "CANCELLED" => Ok(CheckConclusion::Cancelled),
-        "SKIPPED" => Ok(CheckConclusion::Skipped),
-        "FAILURE" | "ERROR" | "ACTION_REQUIRED" | "TIMED_OUT" | "STARTUP_FAILURE" | "STALE"
-        | "NEUTRAL" => Ok(CheckConclusion::Failure),
-        other => Err(RecoveryError::new(
+    let value = value.trim();
+    if value.eq_ignore_ascii_case("SUCCESS") {
+        Ok(CheckConclusion::Success)
+    } else if value.eq_ignore_ascii_case("CANCELLED") {
+        Ok(CheckConclusion::Cancelled)
+    } else if value.eq_ignore_ascii_case("SKIPPED") {
+        Ok(CheckConclusion::Skipped)
+    } else if FAILURE_CONCLUSIONS
+        .iter()
+        .any(|failure| value.eq_ignore_ascii_case(failure))
+    {
+        Ok(CheckConclusion::Failure)
+    } else {
+        Err(RecoveryError::new(
             "github_pr_state_unknown_check_conclusion",
-            format!("unknown GitHub check conclusion: {other}"),
-        )),
+            format!("unknown GitHub check conclusion: {value}"),
+        ))
     }
 }
 
@@ -177,10 +201,11 @@ fn first_string_field<'a>(entry: &'a Value, names: &[&str]) -> Option<&'a str> {
 }
 
 fn is_pending_status(status: &str) -> bool {
-    matches!(
-        status.trim().to_ascii_uppercase().as_str(),
-        "" | "EXPECTED" | "PENDING" | "QUEUED" | "REQUESTED" | "WAITING" | "IN_PROGRESS"
-    )
+    let status = status.trim();
+    status.is_empty()
+        || PENDING_STATUSES
+            .iter()
+            .any(|pending| status.eq_ignore_ascii_case(pending))
 }
 
 fn external_error_excerpt(output: &CommandOutput) -> String {
