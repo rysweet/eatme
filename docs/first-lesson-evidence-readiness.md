@@ -53,6 +53,31 @@ Use `--json` when a consumer needs the structured API instead of the plain human
 report. The same commands remain the entry points for plain and structured
 readiness reporting.
 
+To script the first unavailable desktop proof, read
+`evidence_progress.next_missing_real_desktop_proof` from JSON output:
+
+```bash
+cargo run -q -p eatme-cli -- alice check-lesson-readiness \
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json \
+  --json > /tmp/first-lesson-readiness.json
+
+python3 - <<'PY'
+import json
+
+with open("/tmp/first-lesson-readiness.json", encoding="utf-8") as handle:
+    report = json.load(handle)
+
+print(report["evidence_progress"].get(
+    "next_missing_real_desktop_proof",
+    "no next desktop proof hint; inspect evidence_progress.items and issues",
+))
+PY
+```
+
+The field names the first missing or blocked desktop proof that must be
+addressed next. If the first unavailable proof is blocked, the text preserves
+that blocked state instead of reporting it as missing.
+
 ## What the report decides
 
 The report answers one bounded question:
@@ -243,7 +268,7 @@ Top-level fields:
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable. |
 | `unproven_claims` | array | Canonical non-claims that always remain visible. |
 | `evidence_boundaries` | array | Boundary-specific evidence states. |
-| `evidence_progress` | object | Backward-compatible progress counts and project proof-artifact entries. |
+| `evidence_progress` | object | Backward-compatible progress counts, project proof-artifact entries, and first unavailable desktop proof hints. |
 | `required_evidence` | array of strings | Durable evidence names required by the readiness check. |
 | `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
 | `target_evidence` | array | Per-target original Alice and RabbitHole launch/action evidence. |
@@ -341,6 +366,43 @@ Boundary entries remain available for consumers that need the scenario contract.
 | `claim` | string | Exact bounded claim supported when `status` is `present`; otherwise a statement that the claim is not proven. |
 | `does_not_prove` | array of strings | Claims that remain unsupported by this boundary. |
 | `artifact` | object or omitted | Safe artifact metadata rooted under the comparison evidence directory. |
+
+### `evidence_progress.next_missing_real_desktop_proof`
+
+`next_missing_real_desktop_proof` is a compatibility field whose value may name
+either missing evidence or blocked evidence. Read it as the first unavailable
+real-desktop proof in canonical readiness order.
+
+When the field refers to a project proof artifact, preserve the state from the
+matching `evidence_progress.items[]` entry:
+
+```json
+{
+  "evidence_progress": {
+    "next_missing_real_desktop_proof": "next missing real-desktop proof: blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet.",
+    "items": [
+      {
+        "id": "save_project_proof_artifact",
+        "evidence": "Save Project proof artifact",
+        "state": "blocked",
+        "detail": "blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet."
+      },
+      {
+        "id": "select_project_proof_artifact",
+        "evidence": "Select Project proof artifact",
+        "state": "missing",
+        "detail": "missing Select Project proof artifact in desktop next-action evidence: Select Project proof artifact is missing; artifact availability was not declared."
+      }
+    ]
+  }
+}
+```
+
+In this example the Save Project proof artifact is surfaced first and remains
+`blocked`; the later missing Select Project proof artifact does not replace it.
+The wording describes artifact availability only and does not claim Save
+completion, full UI automation, visible rendering correctness, grading, creative
+assessment, or first-lesson completion.
 
 ## Configuration
 
@@ -455,8 +517,9 @@ The Rust implementation:
 1. Emits `shown_evidence[]`, `not_yet_shown[]`, optional
    `desktop_next_action`, `unproven_claims`, and boundary-facing evidence items.
 2. Maps existing progress and boundary states to user-facing `shown`, `not yet
-   shown`, and `not yet proven` wording without exposing internal artifact paths
-   in plain output.
+   shown`, and `not yet proven` wording. Project proof and desktop next-action
+   cases avoid exposing the internal desktop next-action artifact path in plain
+   output.
 3. Emits top-level `desktop_next_action` only for valid, safe, current RabbitHole
    evidence; otherwise it leaves the condition in `not_yet_shown`, `issues`, or
    legacy progress/boundary fields.
@@ -468,3 +531,6 @@ The Rust implementation:
    yet shown`, optional `Desktop next action`, and `Unproven`.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.
+8. Sets `evidence_progress.next_missing_real_desktop_proof` to the first
+   unavailable desktop proof in canonical readiness order and keeps blocked
+   project proof artifacts blocked rather than normalizing them to missing.

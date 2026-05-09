@@ -364,56 +364,87 @@ fn first_lesson_readiness_missing_next_action_artifact_names_missing_proof_artif
 }
 
 #[test]
-fn first_lesson_readiness_blocked_save_project_proof_artifact_is_actionable() {
-    let manifest_path = write_manifest(DesktopFixture {
-        run_frame_present: true,
-        vm_statement_execution_present: true,
-        visible_desktop_screenshot_present: true,
-        pixel_boundary_present: true,
-        pixel_observation: PixelObservationFixture::Observed,
-        first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
-        hook_actions_passed: &[
-            "place_object_ui_action",
-            "edit_procedure_ui_action",
-            "run_world_ui_action",
-            "save_project_ui_action",
-        ],
-    });
-    overwrite_modernized_first_lesson_next_action(
-        &manifest_path,
-        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"]}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
-    );
-
-    let report = eatme_alice::check_lesson_session_readiness(&manifest_path).unwrap();
-    let next_proof = report
-        .evidence_progress
-        .next_missing_real_desktop_proof
-        .as_deref()
-        .expect("blocked Save Project proof artifact should be the next proof blocker");
-    assert!(next_proof.contains("blocked Save Project proof artifact"));
-    assert!(next_proof.contains("desktop next-action evidence"));
-    assert!(!next_proof.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
-
-    let save_item = report
-        .evidence_progress
-        .items
-        .iter()
-        .find(|item| item.evidence == "Save Project proof artifact")
-        .expect("Save Project progress item");
-    assert_eq!(save_item.state, "blocked");
-    assert!(
-        save_item
-            .detail
-            .contains("blocked Save Project proof artifact")
-    );
-    assert!(save_item.detail.contains("desktop next-action evidence"));
-    assert!(
-        !save_item
-            .detail
-            .contains("run-window-evidence/desktop-first-lesson-next-action.json")
-    );
-    let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
-    assert_no_unsupported_readiness_claims(&report_text);
+fn first_lesson_readiness_reports_first_unavailable_desktop_proof_artifact() {
+    for (next_action_json, expected_save_state, expected_select_state, expected_first, later) in [
+        (
+            r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"]}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+            "blocked",
+            "missing",
+            "blocked Save Project proof artifact",
+            "missing Select Project proof artifact",
+        ),
+        (
+            r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"missing","reason":"Save Project proof artifact is not available from the desktop next-action evidence yet."},"select_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Select dialog owner does not expose a stable proof-artifact handoff yet.","codes":["select_project_artifact_handoff_not_bound"]}},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+            "missing",
+            "blocked",
+            "missing Save Project proof artifact",
+            "blocked Select Project proof artifact",
+        ),
+    ] {
+        let manifest_path = write_manifest(DesktopFixture {
+            run_frame_present: true,
+            vm_statement_execution_present: true,
+            visible_desktop_screenshot_present: true,
+            pixel_boundary_present: true,
+            pixel_observation: PixelObservationFixture::Observed,
+            first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+            hook_actions_passed: &[
+                "place_object_ui_action",
+                "edit_procedure_ui_action",
+                "run_world_ui_action",
+                "save_project_ui_action",
+            ],
+        });
+        overwrite_modernized_first_lesson_next_action(&manifest_path, next_action_json);
+        let report = eatme_alice::check_lesson_session_readiness(&manifest_path).unwrap();
+        let item_index = |evidence: &str| {
+            report
+                .evidence_progress
+                .items
+                .iter()
+                .position(|item| item.evidence == evidence)
+                .unwrap_or_else(|| panic!("{evidence} progress item"))
+        };
+        let save_index = item_index("Save Project proof artifact");
+        let select_index = item_index("Select Project proof artifact");
+        assert!(
+            save_index < select_index,
+            "Save Project proof artifact should be checked before Select Project proof artifact"
+        );
+        let save_item = &report.evidence_progress.items[save_index];
+        let select_item = &report.evidence_progress.items[select_index];
+        assert_eq!(save_item.state, expected_save_state);
+        assert_eq!(select_item.state, expected_select_state);
+        let next_proof = report
+            .evidence_progress
+            .next_missing_real_desktop_proof
+            .as_deref()
+            .expect("expected first unavailable desktop proof artifact");
+        let expected_next_proof = format!("next missing real-desktop proof: {}", save_item.detail);
+        assert_eq!(next_proof, expected_next_proof);
+        let progress_json = serde_json::to_value(&report.evidence_progress).unwrap();
+        assert_eq!(
+            progress_json["items"][save_index]["state"].as_str(),
+            Some(expected_save_state)
+        );
+        assert_eq!(
+            progress_json["next_missing_real_desktop_proof"].as_str(),
+            Some(expected_next_proof.as_str())
+        );
+        assert!(save_item.detail.contains(expected_first));
+        assert!(save_item.detail.contains("desktop next-action evidence"));
+        assert!(
+            !save_item
+                .detail
+                .contains("run-window-evidence/desktop-first-lesson-next-action.json")
+        );
+        assert!(
+            !next_proof.contains(later),
+            "later unavailable proof artifacts must not be surfaced before the first one"
+        );
+        let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
+        assert_no_unsupported_readiness_claims(&report_text);
+    }
 }
 
 fn assert_action(

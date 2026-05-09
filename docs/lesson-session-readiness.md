@@ -430,7 +430,7 @@ Top-level fields:
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
-| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than internal artifact paths. |
+| `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. Project proof and desktop next-action cases use display-safe evidence labels rather than exposing the internal desktop next-action artifact path; other proof hints may include safe relative artifact paths when that is the proof to inspect. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the canonical six `unproven_claims`. |
@@ -465,6 +465,59 @@ proof-artifact entries are the narrower subset that use only `present`,
 `missing`, or `blocked`: use `present` for observed artifact availability,
 `missing` for absent or unusable evidence, and `blocked` only when RabbitHole
 supplies an explicit blocker.
+
+#### First unavailable desktop proof
+
+`evidence_progress.next_missing_real_desktop_proof` identifies the first
+unavailable required real-desktop proof. The field name is retained for
+compatibility, but the value can describe a blocked proof as well as a missing
+proof. Consumers must preserve the state from the matching progress item instead
+of rewriting `blocked` as `missing`.
+
+Selection is deterministic:
+
+1. Required modernized desktop actions are checked before project proof
+   artifacts: Alice main-window identification, Alice main-window activation,
+   Run-window observation, desktop Run execution, visible artifact capture,
+   Run-pixel boundary/observation, and first-lesson hook evidence.
+2. Desktop next-action evidence is checked before project proof-artifact
+   declarations.
+3. Project proof artifacts are checked in canonical order: Save Project proof
+   artifact, then Select Project proof artifact.
+4. For a given project proof artifact, `blocked` is surfaced as blocked and
+   `missing` is surfaced as missing.
+5. Later unavailable artifacts do not replace the first unavailable artifact.
+
+Blocked first-artifact example:
+
+```json
+{
+  "evidence_progress": {
+    "blocked": 1,
+    "missing": 1,
+    "next_missing_real_desktop_proof": "next missing real-desktop proof: blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet.",
+    "items": [
+      {
+        "id": "save_project_proof_artifact",
+        "evidence": "Save Project proof artifact",
+        "state": "blocked",
+        "detail": "blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet."
+      },
+      {
+        "id": "select_project_proof_artifact",
+        "evidence": "Select Project proof artifact",
+        "state": "missing",
+        "detail": "missing Select Project proof artifact in desktop next-action evidence: Select Project proof artifact is missing; artifact availability was not declared."
+      }
+    ]
+  }
+}
+```
+
+This directs automation and reviewers to address the blocked Save Project proof
+artifact first. It does not claim Save completion, full UI automation, visible
+rendering correctness, grading, creative assessment, or completed first-lesson
+work.
 
 Project proof-artifact item example:
 
