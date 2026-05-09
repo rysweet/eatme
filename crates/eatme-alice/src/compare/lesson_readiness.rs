@@ -14,11 +14,11 @@ use anyhow::{Context, Result};
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
-
 mod assertions;
 mod desktop_proof;
 mod launch_smoke;
 mod no_go;
+mod original_action_evidence;
 mod output;
 mod progress;
 pub use assertions::LessonActionAssertionEvidence;
@@ -30,6 +30,10 @@ use desktop_proof::desktop_proof_contract;
 use launch_smoke::check_launch_smoke_readiness;
 pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
+use original_action_evidence::original_alice_action_evidence;
+pub use original_action_evidence::{
+    OriginalAliceActionEvidenceReport, OriginalAliceActionEvidenceStatus,
+};
 pub use output::{
     DesktopNextActionSummary, LessonSessionReadinessEnvelope, LessonTargetEvidence,
     LessonTargetEvidenceBlocker, ReadinessEvidenceItem,
@@ -40,9 +44,7 @@ use output::{
 };
 use progress::evidence_progress;
 pub use progress::{LessonReadinessEvidenceProgress, LessonReadinessEvidenceProgressItem};
-
 const REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID: &str = "real-alice-launch-smoke";
-
 const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
     "specific_alice_window_detected",
@@ -55,7 +57,6 @@ const REQUIRED_FIRST_LESSON_ASSERTIONS: &[&str] = &[
     "save_project_ui_action",
     "ui_action_artifact_captured",
 ];
-
 const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "verify-specific-alice-window",
     "activate-specific-alice-window",
@@ -64,11 +65,11 @@ const REQUIRED_UI_ACTION_IDS: &[&str] = &[
     "run-world",
     "save-project",
 ];
-
 const REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS: &[&str] = &[
     "run_world_desktop_toolbar_window_observed",
     "run_world_desktop_execution_observed",
 ];
+const MISSING_REAL_ACTION_EVIDENCE_CODE: &str = "missing_real_action_evidence";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
@@ -85,6 +86,7 @@ pub struct LessonSessionReadinessReport {
     pub not_yet_shown: Vec<ReadinessEvidenceItem>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub desktop_next_action: Option<DesktopNextActionSummary>,
+    pub original_alice_action_evidence: OriginalAliceActionEvidenceReport,
     pub unproven_claims: Vec<String>,
     pub evidence_progress: LessonReadinessEvidenceProgress,
     pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
@@ -195,6 +197,7 @@ pub fn check_lesson_session_readiness(
     let shown_evidence = shown_evidence(&evidence_progress, &evidence_boundaries);
     let not_yet_shown = not_yet_shown(&evidence_progress, &evidence_boundaries);
     let desktop_next_action = desktop_next_action_summary(&target_evidence);
+    let original_alice_action_evidence = original_alice_action_evidence(&target_evidence);
     let unproven_claims = unproven_claims();
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
@@ -209,6 +212,7 @@ pub fn check_lesson_session_readiness(
         shown_evidence,
         not_yet_shown,
         desktop_next_action,
+        original_alice_action_evidence,
         unproven_claims,
         evidence_progress,
         evidence_boundaries,
@@ -462,7 +466,7 @@ fn required_action_evidence_blockers(
                 None => "Required original Alice action evidence is missing from automation scenarios.",
             };
             Some(LessonTargetEvidenceBlocker {
-                code: "missing_real_action_evidence",
+                code: MISSING_REAL_ACTION_EVIDENCE_CODE,
                 action: (*action_id).to_string(),
                 reason: reason.into(),
             })

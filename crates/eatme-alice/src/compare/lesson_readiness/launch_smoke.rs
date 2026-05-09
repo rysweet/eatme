@@ -1,5 +1,6 @@
 use super::{
-    LessonSessionReadinessReport, REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID,
+    LessonSessionReadinessReport, OriginalAliceActionEvidenceReport,
+    REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID,
     desktop_proof::DesktopProofContract,
     output::{
         LessonTargetEvidence, ReadinessOutput, build_launch_smoke_readiness_output,
@@ -127,6 +128,7 @@ fn launch_smoke_readiness_report(
         shown_evidence,
         not_yet_shown,
         desktop_next_action: None,
+        original_alice_action_evidence: OriginalAliceActionEvidenceReport::available(),
         unproven_claims: launch_smoke_unproven_claims(),
         evidence_progress,
         evidence_boundaries: Vec::new(),

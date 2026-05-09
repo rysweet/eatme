@@ -33,6 +33,7 @@ Eatme has three layers:
 | Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -116,6 +117,9 @@ Recover PR #188 with bounded current-head evidence:
 
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
+
+Recover PR #199 merge-readiness evidence after the manual-fallback violation:
+[PR #199 Recovery Workflow](pr-199-recovery-workflow.md).
 
 Build the docs site:
 

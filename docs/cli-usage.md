@@ -9,8 +9,9 @@ cargo run -q -p eatme-cli -- <command>
 Commands that accept `--json` print JSON when the flag is present. Without
 `--json`, readiness commands print a plain bounded report with scenario-focused
 `Shown`, `Not yet shown`, and `Unproven` sections. First-lesson readiness also
-prints `Desktop proof` and may print `Desktop next action` when valid current
-RabbitHole evidence exists.
+prints `Desktop proof` and emits proof details in this order: `Shown`, `Not yet
+shown`, optional `Desktop next action`, optional `Original Alice action evidence`,
+and `Unproven`.
 
 ## Command overview
 
@@ -247,12 +248,17 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 
 This consumes the embedded target launch manifests and first-lesson readiness
 progress evidence. The report adds user-facing
-`shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`, and
-`unproven_claims`, while preserving legacy `evidence_boundaries[]` and
-`evidence_progress.items[]` states for automation consumers. It reports original
-Alice and RabbitHole launch/action diagnostics in `target_evidence[]`, then
-reports one normalized boundary state per first-lesson scenario claim for Select
-Project, procedure/edit, Save option/action evidence, visible rendering, grading,
+`shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`,
+`original_alice_action_evidence`, and `unproven_claims`, while preserving legacy
+`evidence_boundaries[]` and `evidence_progress.items[]` states for automation
+consumers. It reports original Alice and RabbitHole launch/action diagnostics in
+`target_evidence[]` and summarizes original Alice action evidence in
+`original_alice_action_evidence`. If
+`original_alice_action_evidence.status` is `missing`, that state remains visible
+as structured JSON; the `alice run-first-lesson-readiness` plain renderer also
+shows it in the `Original Alice action evidence` section. The report then emits
+one normalized boundary state per first-lesson scenario claim for Select Project,
+procedure/edit, Save option/action evidence, visible rendering, grading,
 creative assessment, and first-lesson completion. Missing, malformed, ambiguous,
 unsafe, manifest-only, incomplete, out-of-order, or uncertain evidence remains
 visible as `Not yet shown`. Boundary metadata may show that a boundary was
@@ -333,6 +339,10 @@ Not yet shown:
 - Grading is not yet shown.
 - Creative assessment is not yet shown.
 - First-lesson completion is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.

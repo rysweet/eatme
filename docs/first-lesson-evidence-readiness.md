@@ -108,9 +108,9 @@ rather than hand-editing generated files.
 
 ## Plain report contract
 
-Plain output is for reviewers, instructors, and PR readers. It renders the
-readiness heading, one `Desktop proof` line, and then the user-facing sections in
-this order:
+Plain output from `alice run-first-lesson-readiness` without `--json` is for
+reviewers, instructors, and PR readers. It renders the readiness heading, one
+`Desktop proof` line, and then the user-facing sections in this order:
 
 | Section | When it appears | Meaning |
 | --- | --- | --- |
@@ -118,6 +118,7 @@ this order:
 | `Shown` | One or more bounded evidence facts are present. | Evidence was read and is safe to summarize for the named claim only. |
 | `Not yet shown` | Any required evidence is missing, invalid, not observed, or blocked. | The claim is not yet shown or not yet proven in user-facing wording. |
 | `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
+| `Original Alice action evidence` | `original_alice_action_evidence.status` is `missing`. | Explicitly reports `Original Alice action evidence is missing.` It is reportable state, not a completion claim. |
 | `Unproven` | Always. | The eight required non-claims that the report must not imply. |
 
 Example plain report:
@@ -127,7 +128,6 @@ First-lesson automation scenario readiness: not ready
 Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch lacks modernized-target proof
 
 Shown:
-- Original Alice launch/action evidence is shown.
 - RabbitHole launch/action evidence is shown.
 - RabbitHole Run-window observation is shown.
 - Save option evidence is shown as an observed option/action only.
@@ -148,6 +148,10 @@ Desktop next action:
 - Save option/action evidence is present as an observation only.
 - Next evidence needed: Collect explicit Save completion evidence before reporting Save completion.
 
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
+
 Unproven:
 - Full Alice UI automation is not proven.
 - Full world execution is not proven.
@@ -164,6 +168,20 @@ not applicable, the top-level `Desktop next action` section is omitted. That
 omission is not silent: the missing or invalid condition must still appear in
 `Not yet shown`, `issues`, legacy progress fields, or the relevant boundary item
 when that evidence is required for the current claim.
+
+If original Alice action evidence is missing, the plain report always includes
+the `Original Alice action evidence` section before `Unproven` with this fixed
+summary:
+
+```text
+Original Alice action evidence is missing.
+```
+
+Missing original Alice action evidence is not fatal by itself and does not
+change readiness or exit behavior on its own. It also does not turn missing
+evidence into a completion, assessment, grading, Save, or full-UI claim. When
+original Alice action evidence is available, the section is omitted and the
+structured JSON field remains available for automation consumers.
 
 Human output may include short evidence-root-relative summaries. It must not
 expose absolute paths, raw artifact contents, screenshots, logs, environment
@@ -247,7 +265,10 @@ evidence, optional desktop next-action evidence, and canonical unproven claims.
 The `alice run-first-lesson-readiness` sequence wraps the same readiness result
 in `eatme.first-lesson-readiness-sequence/v1`, using
 `comparison_manifest_path` for the manifest it wrote and `readiness_report` for
-the nested readiness report.
+the nested readiness report. The sequence also exposes
+`original_alice_action_evidence` at the sequence top level, copied from
+`readiness_report.original_alice_action_evidence`, so callers do not have to
+open the nested readiness payload to preserve the missing-evidence state.
 
 Top-level fields:
 
@@ -262,6 +283,7 @@ Top-level fields:
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Plain scenario-focused summary. |
 | `desktop_proof_contract` | object | Modernized desktop proof status rendered as the plain `Desktop proof` line. |
+| `original_alice_action_evidence` | object | Structured original Alice action evidence state. Reports `missing` when target evidence contains a blocker with `code: "missing_real_action_evidence"`; otherwise reports `available`. |
 | `shown_evidence` | array | User-facing facts that were shown by accepted evidence. |
 | `not_yet_shown` | array | User-facing missing, invalid, not-observed, or blocked claims. |
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable. |
@@ -277,6 +299,78 @@ Top-level fields:
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the eight canonical `unproven_claims`. |
+
+### `original_alice_action_evidence`
+
+`original_alice_action_evidence` is an additive top-level readiness field. It
+keeps the original Alice action evidence state visible even when the same
+condition also appears inside `target_evidence[]` blockers.
+
+The field is derived only from existing target evidence blockers. If any
+`target_evidence[].blockers[]` entry has `code: "missing_real_action_evidence"`,
+the report emits `status: "missing"`. If no such blocker exists, it emits
+`status: "available"`. Unknown blocker codes do not affect this field.
+`available` only means no `missing_real_action_evidence` blocker was found; it
+does not prove full UI automation, Save completion, lesson completion, grading,
+or creative assessment.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `available` or `missing`. |
+| `summary` | string | Fixed plain summary: `Original Alice action evidence is missing.` or `Original Alice action evidence is available.` |
+| `detail` | string | Fixed bounded detail for the selected status. |
+
+Missing example:
+
+```json
+{
+  "original_alice_action_evidence": {
+    "status": "missing",
+    "summary": "Original Alice action evidence is missing.",
+    "detail": "Original Alice action evidence was not found in the comparison target evidence."
+  }
+}
+```
+
+Available example:
+
+```json
+{
+  "original_alice_action_evidence": {
+    "status": "available",
+    "summary": "Original Alice action evidence is available.",
+    "detail": "The readiness report did not find a missing original Alice action evidence blocker."
+  }
+}
+```
+
+This field does not replace `target_evidence[]`. Consumers that need per-target
+diagnostics should still read `target_evidence[]`, including its blockers and
+action assertions. Missing original Alice action evidence is not fatal by itself;
+it reports state without changing exit/readiness behavior on its own. The new
+field is the stable summary for readiness dashboards and the first-lesson
+readiness sequence wrapper, including that wrapper's plain CLI output.
+
+First-lesson sequence example:
+
+```json
+{
+  "schema_version": "eatme.first-lesson-readiness-sequence/v1",
+  "comparison_manifest_path": "runs/comparisons/first-lessons-real-ui-actions/local-first-lesson-readiness/comparison-manifest.json",
+  "original_alice_action_evidence": {
+    "status": "missing",
+    "summary": "Original Alice action evidence is missing.",
+    "detail": "Original Alice action evidence was not found in the comparison target evidence."
+  },
+  "readiness_report": {
+    "original_alice_action_evidence": {
+      "status": "missing",
+      "summary": "Original Alice action evidence is missing.",
+      "detail": "Original Alice action evidence was not found in the comparison target evidence."
+    }
+  }
+}
+```
 
 ### User-facing evidence item
 
@@ -469,7 +563,8 @@ claims visible.
 The Rust implementation:
 
 1. Emits `shown_evidence[]`, `not_yet_shown[]`, optional
-   `desktop_next_action`, `unproven_claims`, and boundary-facing evidence items.
+   `desktop_next_action`, `unproven_claims`,
+   `original_alice_action_evidence`, and boundary-facing evidence items.
 2. Maps existing progress and boundary states to user-facing `shown`, `not yet
    shown`, and `not yet proven` wording without exposing internal artifact paths
    in plain output.
@@ -480,7 +575,9 @@ The Rust implementation:
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
 5. Makes `unproven_claims` the canonical eight non-claims and keeps
    `limitations` as compatibility output that includes those eight.
-6. Renders the plain CLI as readiness heading, `Desktop proof`, `Shown`, `Not
-   yet shown`, optional `Desktop next action`, and `Unproven`.
+6. Renders `alice run-first-lesson-readiness` plain output as readiness heading,
+   `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`,
+   optional `Original Alice action evidence`, and `Unproven`. The original Alice
+   section appears only when original Alice action evidence is missing.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.
