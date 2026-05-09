@@ -18,10 +18,12 @@ const REQUIRED_OUTPUTS: &[&str] = &[
 const REQUIRED_HANDOFF_TEXT: &[&str] = &[
     "starter-project preflight evidence",
     "starter project opens",
+    "inspectable setup evidence",
     "save the work with a clear name and location",
     "reopen the saved work",
     "export/share evidence package",
     "hand off the evidence",
+    "setup evidence, not as save, reopen, export, or sharing proof",
     "operational evidence quality",
     "human review",
     "not full user interface automation",
@@ -31,11 +33,12 @@ const REQUIRED_HANDOFF_TEXT: &[&str] = &[
     "not proof of student learning",
 ];
 const REQUIRED_ADAPTER_TEXT: &[&str] = &[
-    "practical Alice starter-project handoff after preflight evidence exists",
+    "practical Alice starter-project handoff after preflight setup evidence exists",
     "save the work with a clear name and location",
     "reopen the saved work",
     "export/share evidence package",
     "hand off the evidence",
+    "setup evidence, not as save, reopen, export, or sharing proof",
     "observable checks",
     "human review",
     "not full user interface automation",
@@ -58,12 +61,7 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
     let resources = scenario
         .resource_basis
         .iter()
-        .map(|resource| {
-            format!(
-                "{}\n{}\n{}",
-                resource.name, resource.url, resource.use_note
-            )
-        })
+        .map(|resource| format!("{}\n{}\n{}", resource.name, resource.url, resource.use_note))
         .collect::<Vec<_>>()
         .join("\n");
     let expected_outputs = scenario
@@ -94,7 +92,15 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
             "share-packet boundaries",
         ],
     );
-    assert_contains_all("save/reopen/export handoff scenario", &text, REQUIRED_HANDOFF_TEXT);
+    assert_contains_all(
+        "save/reopen/export handoff scenario",
+        &text,
+        REQUIRED_HANDOFF_TEXT,
+    );
+    assert!(
+        !normalize_whitespace(&text.to_lowercase()).contains("inspectable action evidence"),
+        "scenario must describe preflight as setup evidence, not action evidence"
+    );
     assert_contains_all(
         "save/reopen/export handoff outputs",
         &expected_outputs.join("\n"),
@@ -196,7 +202,12 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
     let acceptance_boundary = scenario
         .acceptance_criteria
         .iter()
-        .map(|criterion| format!("{}\n{}\n{}", criterion.given, criterion.when, criterion.then))
+        .map(|criterion| {
+            format!(
+                "{}\n{}\n{}",
+                criterion.given, criterion.when, criterion.then
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
     let boundary_text = [
