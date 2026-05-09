@@ -39,11 +39,7 @@ fn collects_github_metadata_checks_diff_and_local_state() {
     assert_eq!(report.checks[0].conclusion.as_deref(), Some("SUCCESS"));
     let commands = runner.commands();
     assert!(commands.iter().all(|command| command.attempts == 3));
-    assert!(
-        commands
-            .iter()
-            .all(|command| !command.display.starts_with("gh run list"))
-    );
+    assert!(!has_run_list(&commands));
 }
 
 #[test]
@@ -109,11 +105,7 @@ fn checkout_option_still_falls_back_to_workflow_runs_when_status_rollup_is_empty
         commands[2].display,
         format!("git switch --detach {HEAD_SHA}")
     );
-    assert!(
-        commands
-            .iter()
-            .any(|command| command.display.starts_with("gh run list"))
-    );
+    assert!(has_run_list(&commands));
 }
 
 #[test]
@@ -141,12 +133,7 @@ fn falls_back_to_workflow_runs_when_status_rollup_is_empty() {
     assert_eq!(report.checks[0].name, "quality-gates");
     assert_eq!(report.checks[0].status, "COMPLETED");
     assert_eq!(report.checks[0].conclusion.as_deref(), Some("SUCCESS"));
-    assert!(
-        runner
-            .commands()
-            .iter()
-            .any(|command| command.display.starts_with("gh run list"))
-    );
+    assert!(has_run_list(&runner.commands()));
 }
 
 #[test]
@@ -175,12 +162,7 @@ fn falls_back_to_workflow_runs_when_status_rollup_is_not_complete_evidence() {
     .unwrap();
 
     assert_eq!(report.checks[0].name, "quality-gates");
-    assert!(
-        runner
-            .commands()
-            .iter()
-            .any(|command| command.display.starts_with("gh run list"))
-    );
+    assert!(has_run_list(&runner.commands()));
 }
 
 #[test]
@@ -318,12 +300,7 @@ fn rejects_invalid_status_rollup_head_sha() {
     .to_string();
 
     assert!(error.contains("GitHub status rollup headSha"));
-    assert!(
-        runner
-            .commands()
-            .iter()
-            .all(|command| !command.display.starts_with("gh run list"))
-    );
+    assert!(!has_run_list(&runner.commands()));
 }
 
 #[test]
@@ -338,10 +315,22 @@ fn maps_status_context_state_to_completed_successful_check() {
     assert_eq!(check.name, "branch-protection");
     assert_eq!(check.status, "COMPLETED");
     assert_eq!(check.conclusion.as_deref(), Some("SUCCESS"));
-    let skipped = serde_json::json!({"name": "optional docs deploy", "conclusion": "skipped"});
-    let check = check_from_rollup_item(&skipped, HEAD_SHA).unwrap().unwrap();
-    assert_eq!(check.conclusion.as_deref(), Some("SKIPPED"));
-    assert!(!check.required);
+    assert!(check.required);
+
+    let optional = serde_json::json!({
+        "name": "Deploy to GitHub Pages",
+        "workflowName": "Documentation Site",
+        "conclusion": "skipped"
+    });
+    let optional_check = check_from_rollup_item(&optional, HEAD_SHA)
+        .unwrap()
+        .unwrap();
+    assert_eq!(optional_check.conclusion.as_deref(), Some("SKIPPED"));
+    assert!(!optional_check.required);
+
+    let skipped = serde_json::json!({"name": "required gate", "conclusion": "skipped"});
+    let skipped_check = check_from_rollup_item(&skipped, HEAD_SHA).unwrap().unwrap();
+    assert!(skipped_check.required);
 }
 
 fn pr_view_json() -> &'static str {
@@ -496,4 +485,10 @@ impl CommandRunner for RecordingRunner {
         output.command = spec.shell_display();
         Ok(output)
     }
+}
+
+fn has_run_list(commands: &[RecordedCommand]) -> bool {
+    commands
+        .iter()
+        .any(|command| command.display.starts_with("gh run list"))
 }

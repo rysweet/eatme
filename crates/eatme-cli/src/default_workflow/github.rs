@@ -275,19 +275,36 @@ fn check_from_rollup_item(item: &Value, head_ref_oid: &str) -> Result<Option<Che
         None => head_ref_oid.to_string(),
     };
 
+    let workflow_name = item.get("workflowName").and_then(Value::as_str);
+    let required =
+        !is_optional_conditional_rollup_check(&name, workflow_name, conclusion.as_deref());
+
     Ok(Some(CheckEvidence {
         name,
         head_sha,
         status,
-        required: !is_skipped_rollup_check(conclusion.as_deref()),
+        required,
         conclusion,
     }))
 }
 
-fn is_skipped_rollup_check(conclusion: Option<&str>) -> bool {
-    conclusion
+fn is_optional_conditional_rollup_check(
+    name: &str,
+    workflow_name: Option<&str>,
+    conclusion: Option<&str>,
+) -> bool {
+    if !conclusion
         .map(|value| value.eq_ignore_ascii_case("SKIPPED"))
         .unwrap_or(false)
+    {
+        return false;
+    }
+
+    matches!(
+        (workflow_name.unwrap_or_default(), name),
+        ("Documentation Site", "Deploy to GitHub Pages")
+            | ("Quality Gates", "manual real Alice launch smoke")
+    )
 }
 
 fn normalize_status(value: &str) -> String {
