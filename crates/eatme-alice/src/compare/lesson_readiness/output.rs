@@ -18,6 +18,10 @@ const FULL_ALICE_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
     sentence: "Full Alice UI automation is not proven.",
     non_claim: "Full Alice UI automation",
 };
+const FULL_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
+    sentence: "Full UI automation is not proven.",
+    non_claim: "full UI automation",
+};
 const GRADING: UnprovenClaim = UnprovenClaim {
     sentence: "Grading is not proven.",
     non_claim: "grading",
@@ -38,6 +42,14 @@ const FIRST_LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
     sentence: "First-lesson completion is not proven.",
     non_claim: "first-lesson completion",
 };
+const LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
+    sentence: "Lesson completion is not proven.",
+    non_claim: "lesson completion",
+};
+const VISIBLE_CORRECTNESS: UnprovenClaim = UnprovenClaim {
+    sentence: "Visible correctness is not proven.",
+    non_claim: "visible correctness",
+};
 
 const UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
     FULL_ALICE_UI_AUTOMATION,
@@ -57,6 +69,23 @@ const LEGACY_LIMITATIONS: &[&str] = &[
     "does not prove visible rendering correctness",
     "does not prove first-lesson completion",
     "does not prove broad Alice compatibility beyond the selected scenario",
+];
+
+const LAUNCH_SMOKE_UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
+    LESSON_COMPLETION,
+    GRADING,
+    CREATIVE_ASSESSMENT,
+    FULL_UI_AUTOMATION,
+    VISIBLE_CORRECTNESS,
+];
+
+const LAUNCH_SMOKE_LIMITATIONS: &[&str] = &[
+    "bounded to existing launch-smoke manifest metadata",
+    "does not add lesson-action detection",
+    "does not grade student worlds",
+    "does not perform creative assessment",
+    "does not prove full UI automation",
+    "does not prove visible correctness",
 ];
 
 #[derive(Clone, Debug, Serialize)]
@@ -181,6 +210,60 @@ pub(super) fn build_readiness_output(
     }
 }
 
+pub(super) fn build_launch_smoke_readiness_output(
+    scenario_id: Option<&str>,
+    readiness_status: &str,
+    role_statuses: &[(&str, &str)],
+) -> ReadinessOutput {
+    let scenario = scenario_id.unwrap_or("real-alice-launch-smoke");
+    let status = normalized_readiness_status(readiness_status).to_string();
+    let blocked_reason = None;
+    let required_evidence = launch_smoke_required_evidence();
+    let human_summary = match status.as_str() {
+        "ready" => format!(
+            "{scenario} launch-smoke readiness is ready from existing target launch-smoke manifest evidence only."
+        ),
+        _ => format!(
+            "{scenario} launch-smoke readiness is not ready because required launch-smoke manifest evidence is missing, failed, malformed, or incomplete."
+        ),
+    };
+    let role_readiness = role_statuses
+        .iter()
+        .map(|(role, role_status)| LessonSessionReadinessEnvelope {
+            scenario_id: scenario_id.map(str::to_string),
+            role: (*role).into(),
+            status: (*role_status).into(),
+            blocked_reason: None,
+            human_summary: launch_smoke_role_summary(scenario, role, role_status),
+            required_evidence: required_evidence.clone(),
+            no_go_contracts: Vec::new(),
+        })
+        .collect::<Vec<_>>();
+    let lesson_session_readiness = role_readiness
+        .iter()
+        .find(|readiness| readiness.role == "modernized")
+        .cloned()
+        .unwrap_or_else(|| LessonSessionReadinessEnvelope {
+            scenario_id: scenario_id.map(str::to_string),
+            role: "launch-smoke".into(),
+            status: status.clone(),
+            blocked_reason: None,
+            human_summary: human_summary.clone(),
+            required_evidence: required_evidence.clone(),
+            no_go_contracts: Vec::new(),
+        });
+
+    ReadinessOutput {
+        status,
+        blocked_reason,
+        human_summary,
+        required_evidence,
+        no_go_contracts: Vec::new(),
+        lesson_session_readiness,
+        role_readiness,
+    }
+}
+
 fn normalized_readiness_status(readiness_status: &str) -> &'static str {
     match readiness_status {
         "ready" => "ready",
@@ -205,6 +288,29 @@ fn required_evidence() -> Vec<String> {
     .into_iter()
     .map(str::to_string)
     .collect()
+}
+
+fn launch_smoke_required_evidence() -> Vec<String> {
+    [
+        "comparison manifest with baseline and modernized targets for real-alice-launch-smoke",
+        "embedded launch-smoke manifest for each target",
+        "each target status is passed with no launch failure category",
+        "required launch-smoke assertions passed for each target",
+        "launch-smoke artifact metadata for window list, screenshot, and log",
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect()
+}
+
+fn launch_smoke_role_summary(scenario: &str, role: &str, status: &str) -> String {
+    if status == "ready" {
+        format!("{scenario} {role} target has bounded launch-smoke manifest evidence only.")
+    } else {
+        format!(
+            "{scenario} {role} target launch-smoke manifest evidence is missing, failed, malformed, or incomplete."
+        )
+    }
 }
 
 fn human_summary(
@@ -305,6 +411,22 @@ pub(super) fn limitations() -> Vec<String> {
         .iter()
         .map(|claim| claim.sentence)
         .chain(LEGACY_LIMITATIONS.iter().copied())
+        .map(str::to_string)
+        .collect()
+}
+
+pub(super) fn launch_smoke_unproven_claims() -> Vec<String> {
+    LAUNCH_SMOKE_UNPROVEN_CLAIMS
+        .iter()
+        .map(|claim| claim.sentence.to_string())
+        .collect()
+}
+
+pub(super) fn launch_smoke_limitations() -> Vec<String> {
+    LAUNCH_SMOKE_UNPROVEN_CLAIMS
+        .iter()
+        .map(|claim| claim.sentence)
+        .chain(LAUNCH_SMOKE_LIMITATIONS.iter().copied())
         .map(str::to_string)
         .collect()
 }

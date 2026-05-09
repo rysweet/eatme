@@ -70,9 +70,20 @@ kickoff, learner-visible first-scene, first-animation, evidence, and reflection
 expectations live in editable YAML as agentic follow-on contracts; runtime smoke
 still stops at deterministic launch-ready evidence.
 
-The baseline `real-alice-launch-smoke` scenario proves only the scenario-labeled
+The baseline `real-alice-launch-smoke` scenario shows only the scenario-labeled
 launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
+
+`alice check-lesson-readiness` maps `real-alice-launch-smoke` comparison
+manifests into bounded launch-smoke readiness output. That report summarizes only
+existing launch-smoke manifest evidence: scenario identity, required launch
+assertions, failure-category state, target launch manifests, and manifest-level
+artifact metadata. It does not add detection, grading, assessment, or UI
+automation behavior. Missing, partial, malformed, manifest-only, failed, unsafe,
+or contradictory evidence stays non-ready; explicit known blockers stay blocked.
+The report keeps lesson completion, grading, creative assessment, full UI
+automation, and visible correctness unproven. See
+[Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md).
 
 The `first-lessons-real-ui-actions` scenario is different: it is the executable
 automation scenario for first-lesson readiness progress evidence and

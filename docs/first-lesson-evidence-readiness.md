@@ -6,6 +6,12 @@ have shown, what is not yet shown, and which claims remain explicitly unproven.
 It consumes existing comparison, launch, desktop, and editable scenario evidence;
 it does not generate new proof.
 
+The same CLI readiness entry point also has a separate exact
+`real-alice-launch-smoke` branch for bounded baseline launch-smoke readiness.
+That branch is documented in
+[Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) and
+does not use the first-lesson evidence boundaries below.
+
 The Rust API and JSON output preserve legacy fields such as
 `evidence_progress`, `evidence_boundaries`, `issues`, and `limitations` for
 existing consumers while adding the user-facing report shape described here. The

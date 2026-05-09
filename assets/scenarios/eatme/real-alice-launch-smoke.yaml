@@ -7,12 +7,11 @@ resource_basis:
   - name: Alice 3 source
     url: https://github.com/TheAliceProject/alice3
 purpose: >-
-  Prove that the harness can package and launch the real Alice desktop
-  application under Xvfb, then capture deterministic evidence before any
-  agentic classroom behavior is trusted. The baseline launch smoke proves a
-  scenario-labeled launch path with manifest/log/window/screenshot evidence
-  only; it is not full UI automation, not creative assessment, and not
-  learner-world grading.
+  Record bounded readiness that the harness packaged and launched the real
+  Alice desktop application under Xvfb, then captured manifest/log/window/screenshot
+  evidence before any agentic classroom behavior is trusted. The baseline launch
+  smoke is manifest-level evidence only; it is not full UI automation, not
+  creative assessment, and not learner-world grading.
 capabilities:
   required:
     - rust-cli
@@ -76,5 +75,5 @@ artifacts:
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, or Maven prerequisites are missing, fail
   loudly with a missing_dependency category. Do not silently skip. This baseline
-  proves launch smoke only: it is not full UI automation, not creative
+  maps launch smoke only: it is not full UI automation, not creative
   assessment, and not learner-world grading.

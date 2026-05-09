@@ -7,9 +7,10 @@ cargo run -q -p eatme-cli -- <command>
 ```
 
 Commands that accept `--json` print JSON when the flag is present. Without
-`--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
-`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
-`Unproven`.
+`--json`, readiness commands print a plain bounded report with scenario-focused
+`Shown`, `Not yet shown`, and `Unproven` sections. First-lesson readiness also
+prints `Desktop proof` and may print `Desktop next action` when valid current
+RabbitHole evidence exists.
 
 ## Command overview
 
@@ -23,7 +24,7 @@ Commands that accept `--json` print JSON when the flag is present. Without
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
-| `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
+| `alice check-lesson-readiness` | Report bounded readiness evidence for supported scenarios, including first-lesson readiness and `real-alice-launch-smoke` launch-smoke readiness |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
 ## Validate assets
@@ -271,6 +272,26 @@ invalid, unsafe, stale, or non-applicable desktop next-action evidence omits tha
 top-level summary and remains represented through `Not yet shown`, `issues`, or
 legacy progress and boundary fields. Display-safe wording uses
 `desktop next-action evidence` instead of exposing the internal artifact path.
+
+Check bounded launch-smoke readiness for the baseline real Alice smoke:
+
+```bash
+cargo run -q -p eatme-cli -- alice check-lesson-readiness \
+  --manifest runs/comparisons/real-alice-launch-smoke/local-comparison/comparison-manifest.json \
+  --json
+```
+
+For `scenario_id="real-alice-launch-smoke"`, the readiness path maps existing
+launch-smoke manifest evidence into launch-smoke readiness only. A ready result
+means the required launch-smoke manifests, assertions, failure-category state,
+and manifest-level artifact metadata were present and coherent. Missing,
+partial, malformed, manifest-only, failed, unsafe, or contradictory evidence is
+reported as `not_ready`; coherent evidence with an explicit known blocker is
+reported as `blocked`. The output must keep lesson completion, grading, creative
+assessment, full UI automation, and visible correctness explicitly unproven.
+
+See [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md)
+for the plain output and JSON API contract.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 

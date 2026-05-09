@@ -28,6 +28,7 @@ Eatme has three layers:
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
+| Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -73,7 +74,7 @@ Alice launch path without overstating what the launch smoke proves.
 
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
-| `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
+| `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, deterministic assertion evidence, and bounded launch-smoke readiness output. |
 | `first-lessons-real-ui-actions` | Instructors, students, and reviewers | First-lesson readiness evidence for original Alice and RabbitHole; the report summarizes shown evidence, optional desktop next-action evidence, not-yet-shown states, and explicit unproven claims. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 

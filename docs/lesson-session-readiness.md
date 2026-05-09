@@ -34,15 +34,22 @@ Use these canonical scenarios for instructor/student lesson-session evidence:
 
 | Scenario | Role | Evidence contract |
 | --- | --- | --- |
+| `real-alice-launch-smoke` | Harness and CI/manual preflight | Existing launch-smoke manifest evidence mapped into bounded readiness output. This branch reports launch-smoke readiness only and keeps lesson completion, grading, creative assessment, full UI automation, and visible correctness unproven. |
 | `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress evidence, first-lesson automation scenario evidence boundaries, and plain not-yet-shown states for missing desktop affordances. |
 | `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
 | `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
 | `instructor-student-outcomes-rubric` | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
 
-The `alice check-lesson-readiness` and `alice run-first-lesson-readiness`
-commands bind to `first-lessons-real-ui-actions`. Instructor scenarios are
-canonical lesson-session evidence assets, not separate executable readiness
-targets unless a harness owns that behavior.
+The `alice check-lesson-readiness` command has an exact
+`real-alice-launch-smoke` branch for bounded launch-smoke readiness and keeps the
+existing first-lesson branch for `first-lessons-real-ui-actions`.
+`alice run-first-lesson-readiness` remains fixed to
+`first-lessons-real-ui-actions`. Instructor scenarios are canonical
+lesson-session evidence assets, not separate executable readiness targets unless
+a harness owns that behavior.
+
+For the baseline launch-smoke report, see
+[Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md).
 
 Instructor and teacher mean the same role in this contract unless a scenario
 explicitly distinguishes them.
