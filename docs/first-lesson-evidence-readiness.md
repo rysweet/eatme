@@ -94,20 +94,23 @@ rather than hand-editing generated files.
 
 ## Plain report contract
 
-Plain output is for reviewers, instructors, and PR readers. It uses four user
-sections:
+Plain output is for reviewers, instructors, and PR readers. It renders the
+readiness heading, one `Desktop proof` line, and then the user-facing sections in
+this order:
 
 | Section | When it appears | Meaning |
 | --- | --- | --- |
+| `Desktop proof` | Always, as a single line after the readiness heading. | Machine-readable desktop proof status rendered for humans. It is not a completion claim. |
 | `Shown` | One or more bounded evidence facts are present. | Evidence was read and is safe to summarize for the named claim only. |
-| `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
 | `Not yet shown` | Any required evidence is missing, invalid, not observed, or blocked. | The claim is not yet shown or not yet proven in user-facing wording. |
+| `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
 | `Unproven` | Always. | The six required non-claims that the report must not imply. |
 
 Example plain report:
 
 ```text
 First-lesson automation scenario readiness: not ready
+Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch has not been verified by the modernized target
 
 Shown:
 - Original Alice launch/action evidence is shown.
@@ -115,16 +118,17 @@ Shown:
 - RabbitHole Run-window observation is shown.
 - Save option evidence is shown as an observed option/action only.
 
-Desktop next action:
-- RabbitHole reported project-save as the next candidate action.
-- Save Project proof artifact is available as artifact availability only.
-
 Not yet shown:
 - Save completion is not yet proven.
 - Visible rendering correctness is not yet proven.
 - Grading is not yet shown.
 - Creative assessment is not yet shown.
 - First-lesson completion is not yet shown.
+
+Desktop next action:
+- Desktop next-action evidence was shown as an observation only.
+- Save option/action evidence is present as an observation only.
+- Next evidence needed: Collect explicit Save completion evidence before reporting Save completion.
 
 Unproven:
 - Full Alice UI automation is not proven.
@@ -203,10 +207,14 @@ unproven unless a distinct explicit Save-completion evidence item exists.
 
 ## JSON API
 
-The readiness schema is `eatme.alice-lesson-session-readiness/v1`. Existing
-fields remain available for older consumers. The user-facing report shape adds
-shown evidence, missing evidence, optional desktop next-action evidence, and
-canonical unproven claims.
+The readiness schema emitted by `alice check-lesson-readiness` is
+`eatme.alice-lesson-session-readiness/v1`. Existing fields remain available for
+older consumers. The user-facing report shape adds shown evidence, missing
+evidence, optional desktop next-action evidence, and canonical unproven claims.
+The `alice run-first-lesson-readiness` sequence wraps the same readiness result
+in `eatme.first-lesson-readiness-sequence/v1`, using
+`comparison_manifest_path` for the manifest it wrote and `readiness_report` for
+the nested readiness report.
 
 Top-level fields:
 
@@ -218,16 +226,22 @@ Top-level fields:
 | `passed` | boolean | Structural evidence check result. |
 | `status` | string | `ready`, `not_ready`, or `blocked`. |
 | `readiness_status` | string | Backward-compatible detailed status. |
+| `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Plain scenario-focused summary. |
+| `desktop_proof_contract` | object | Modernized desktop proof status rendered as the plain `Desktop proof` line. |
 | `shown_evidence` | array | User-facing facts that were shown by accepted evidence. |
 | `not_yet_shown` | array | User-facing missing, invalid, not-observed, or blocked claims. |
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable. |
 | `unproven_claims` | array | Canonical non-claims that always remain visible. |
 | `evidence_boundaries` | array | Boundary-specific evidence states. |
 | `evidence_progress` | object | Backward-compatible progress counts and project proof-artifact entries. |
+| `required_evidence` | array of strings | Durable evidence names required by the readiness check. |
+| `no_go_contracts` | array | Aggregated unsupported-action entries from target evidence. |
 | `target_evidence` | array | Per-target original Alice and RabbitHole launch/action evidence. |
 | `role_readiness` | array | Role-specific readiness envelopes. |
 | `lesson_session_readiness` | object | Backward-compatible student readiness envelope. |
+| `contract_check` | object | Result from `alice check-lesson-session`. |
+| `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the six canonical `unproven_claims`. |
 
@@ -238,28 +252,21 @@ Top-level fields:
 | Field | Type | Description |
 | --- | --- | --- |
 | `id` | string | Stable evidence or boundary id. |
-| `label` | string | Display label. |
-| `target` | string or null | `baseline`, `modernized`, `RabbitHole`, or null when the claim is cross-target. |
 | `state` | string | Machine state: `present`, `missing`, `invalid`, `not_observed`, or `blocked`. |
 | `summary` | string | User-facing sentence safe for CLI output. |
-| `source` | string or null | Short source category for API consumers. |
-| `artifact` | object or omitted | Safe evidence-root-relative metadata only. |
-| `does_not_prove` | array of strings | Claims still unsupported by this evidence item. |
+| `detail` | string | Display-safe detail for automation and debugging. |
+| `does_not_prove` | array of strings, omitted when empty | Claims still unsupported by this evidence item. |
 
 Example:
 
 ```json
 {
   "id": "save_project",
-  "label": "Save option/action scenario evidence",
-  "target": "RabbitHole",
   "state": "present",
-  "summary": "Save option evidence is shown as an observed option/action only.",
-  "source": "desktop_next_action",
+  "summary": "Save option/action evidence is shown as observed option/action only.",
+  "detail": "Save option/action scenario evidence is present.",
   "does_not_prove": [
     "Save completion",
-    "grading",
-    "creative assessment",
     "first-lesson completion"
   ]
 }
@@ -281,7 +288,6 @@ appropriate for the failure mode.
 | `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole. |
 | `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next. |
 | `observations` | array of strings | Plain observations from the next-action evidence. |
-| `proof_artifacts` | array | Save Project and Select Project proof-artifact availability summaries. |
 | `does_not_prove` | array of strings | Non-claims preserved for the desktop next-action section. |
 
 Example:
@@ -290,20 +296,15 @@ Example:
 {
   "desktop_next_action": {
     "status": "present",
-    "summary": "RabbitHole desktop next-action evidence is shown for the current run.",
+    "summary": "Desktop next-action evidence was shown as an observation only.",
     "candidate_actions": ["save-project"],
     "requires_next_evidence": [
       "Collect explicit Save completion evidence before reporting Save completion."
     ],
     "observations": [
-      "Save option evidence is shown as an observed option/action only."
-    ],
-    "proof_artifacts": [
-      {
-        "id": "save_project_proof_artifact",
-        "state": "present",
-        "summary": "Save Project proof artifact is available as artifact availability only."
-      }
+      "Desktop next-action evidence was shown with status present.",
+      "Save option/action evidence is present as an observation only.",
+      "Select Project option/action evidence is missing as an observation only."
     ],
     "does_not_prove": [
       "full Alice UI automation",
@@ -354,9 +355,9 @@ new proof-generation timing policy.
 
 1. Run `alice check-lesson-readiness` against the current comparison manifest.
 2. Read `Shown` first. Treat each line as a bounded evidence fact only.
-3. Read `Desktop next action` when it appears. It describes RabbitHole's next
+3. Read every `Not yet shown` line before deciding what to collect next.
+4. Read `Desktop next action` when it appears. It describes RabbitHole's next
    observations or candidate actions, not completion.
-4. Read every `Not yet shown` line before deciding what to collect next.
 5. Keep every `Unproven` line in handoffs, PRs, and release notes.
 
 ### Interpret Save evidence safely
@@ -432,7 +433,7 @@ The Rust implementation:
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
 5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
    as compatibility output that includes those six.
-6. Renders the plain CLI with `Shown`, optional `Desktop next action`, `Not yet
-   shown`, and `Unproven`.
+6. Renders the plain CLI as readiness heading, `Desktop proof`, `Shown`, `Not
+   yet shown`, optional `Desktop next action`, and `Unproven`.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.

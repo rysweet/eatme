@@ -23,10 +23,10 @@ For the conservative original Alice and RabbitHole boundary contract for Select
 Project, procedure/edit, Save option/action evidence, visible rendering, grading,
 creative assessment, and first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
-defines the user-facing `Shown`, optional `Desktop next action`, `Not yet shown`,
-and `Unproven` sections, plus additive JSON `shown_evidence[]`,
-`not_yet_shown[]`, `desktop_next_action`, and `unproven_claims` fields while
-preserving legacy progress and boundary fields.
+defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
+`Desktop next action`, and `Unproven` output, plus additive JSON
+`shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
+`unproven_claims` fields while preserving legacy progress and boundary fields.
 
 ## Scenario map
 
@@ -293,8 +293,8 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow. The plain output separates `Shown`, optional
-`Desktop next action`, `Not yet shown`, and `Unproven` sections. JSON adds
+student first-lesson flow. The plain output renders `Desktop proof`, `Shown`,
+`Not yet shown`, optional `Desktop next action`, and `Unproven`. JSON adds
 the matching user-facing arrays while still keeping Save Project and Select
 Project proof-artifact categories in legacy `evidence_progress.items[]`.
 Declarations come from the modernized target's desktop next-action evidence; if
@@ -842,6 +842,7 @@ evidence boundaries:
 
 ```text
 First-lesson automation scenario readiness: not ready
+Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch has not been verified by the modernized target
 
 Shown:
 - Select Project scenario evidence is shown.

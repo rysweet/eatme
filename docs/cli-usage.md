@@ -8,8 +8,8 @@ cargo run -q -p eatme-cli -- <command>
 
 Commands that accept `--json` print JSON when the flag is present. Without
 `--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
-`Shown`, optional `Desktop next action`, `Not yet shown`, and `Unproven`
-sections.
+`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
+`Unproven`.
 
 ## Command overview
 
@@ -266,11 +266,11 @@ valid; that means the report found coherent evidence plus an explicit blocker,
 not that full Alice UI automation is complete.
 Valid RabbitHole desktop next-action evidence that applies to the current run
 emits top-level `desktop_next_action` in JSON and a
-`Desktop next action` section in plain output. Missing, invalid, unsafe, stale,
-or non-applicable desktop next-action evidence omits that top-level summary and
-remains represented through `Not yet shown`, `issues`, or legacy progress and
-boundary fields. Display-safe wording uses `desktop next-action evidence` instead
-of exposing the internal artifact path.
+`Desktop next action` section after `Not yet shown` in plain output. Missing,
+invalid, unsafe, stale, or non-applicable desktop next-action evidence omits that
+top-level summary and remains represented through `Not yet shown`, `issues`, or
+legacy progress and boundary fields. Display-safe wording uses
+`desktop next-action evidence` instead of exposing the internal artifact path.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -300,6 +300,7 @@ plain output scenario-focused:
 
 ```text
 First-lesson automation scenario readiness: not ready
+Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof
 
 Shown:
 - Alice launch scenario evidence is shown.
