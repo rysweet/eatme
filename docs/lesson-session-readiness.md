@@ -27,6 +27,9 @@ defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
 `Desktop next action`, and `Unproven` output, plus additive JSON
 `shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
 `unproven_claims` fields while preserving legacy progress and boundary fields.
+For the artifact shape, filler rejection, and non-claim wording contract applied
+to those evidence surfaces, see
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Scenario map
 

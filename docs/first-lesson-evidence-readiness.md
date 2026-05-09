@@ -16,6 +16,8 @@ Save shortcut, artifact path, screenshot, or desktop observation can support onl
 the bounded claim named in the report. It never implies full UI automation,
 grading, creative assessment, visible rendering correctness, Save completion, or
 first-lesson completion unless explicit evidence for that exact claim exists.
+The artifact shape and wording rules that enforce this boundary are documented
+in [Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Quick start
 
