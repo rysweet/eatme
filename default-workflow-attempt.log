@@ -1,3 +1,206 @@
-Fri May  8 00:58:21 UTC 2026
-DEFAULT-WORKFLOW FAILED — proceeding manually
-Reason: 'amplihack run' subcommand not found; same outcome as prior session log in eatme master
+# PR #175 Evidence Artifact Contract
+
+Generated: 2026-05-09T08:26:15Z
+
+This artifact records bounded evidence and review results for PR #175. It is
+intentionally limited to observed repository state, command results, asset
+validation, generated adapter checks, quality gate status, and GitHub PR
+metadata.
+
+## Scope
+
+- Repository: `rysweet/eatme`
+- Recovery branch/worktree: `wave6-evidence-artifact-contract-1778302300`
+- Local `HEAD`: `f6525cc6311043bd38c57fe0e2519a48ebdc612a`
+- PR #175 `headRefOid`: `c39dd9afaabb8a953d02a46205a2e17d09754cb8`
+- Evidence head match: no; local `HEAD` is one commit ahead of the
+  observed PR #175 `headRefOid`.
+
+All command evidence below was collected with local `HEAD` at
+`f6525cc6311043bd38c57fe0e2519a48ebdc612a` and with intentional uncommitted
+evidence artifact and evidence-contract test edits present. This artifact does
+not claim that the committed tree at that SHA alone contains these final edits.
+
+## Workflow note
+
+The prior artifact content only recorded that `amplihack run` did not provide the
+expected subcommand and that manual recovery continued. This refreshed artifact
+keeps that operational context by documenting the evidence collected manually.
+It does not treat the unavailable subcommand as a readiness signal.
+
+## Repository state evidence
+
+Collected with local `HEAD` at `f6525cc6311043bd38c57fe0e2519a48ebdc612a`
+while refreshing this artifact and its contract tests:
+
+| Command | Exit code | Observed result |
+| --- | ---: | --- |
+| `git rev-parse --abbrev-ref HEAD` | 0 | `wave6-evidence-artifact-contract-1778302300` |
+| `git rev-parse HEAD` | 0 | `f6525cc6311043bd38c57fe0e2519a48ebdc612a` |
+| `git status --short --branch` | 0 | Branch tracks `origin/wave6-evidence-artifact-contract-1778302300`, is ahead by 1 local commit, and has intentional uncommitted evidence artifact and evidence-contract test edits. |
+| `git diff --name-only --diff-filter=U` | 0 | No unmerged files reported. |
+| `rg -n '^(<<<<<<<|=======|>>>>>>>)' --glob '!target/**' --glob '!**/.git/**' .` | 1 (no matches) | No conflict markers reported. |
+
+Additional merge/rebase state checks found no `.git/MERGE_HEAD`,
+`.git/rebase-merge`, or `.git/rebase-apply` state.
+
+Post-update status: the dirty worktree state is expected and remains limited to
+intentional evidence artifact and evidence-contract test edits. This artifact
+does not claim clean-worktree PR readiness.
+
+## GitHub PR metadata evidence
+
+Command:
+
+```sh
+gh pr view 175 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+```
+
+Observed result:
+
+- Exit code: 0
+- `headRefOid`: `c39dd9afaabb8a953d02a46205a2e17d09754cb8`
+- `mergeStateStatus`: `CLEAN`
+- `mergeable`: `MERGEABLE`
+- Status check rollup: 9 checks total.
+- Status check conclusions: 7 `SUCCESS`, 2 `SKIPPED`.
+
+Observed status checks:
+
+| Check | Status | Conclusion |
+| --- | --- | --- |
+| Build MkDocs site | `COMPLETED` | `SUCCESS` |
+| detect changed files | `COMPLETED` | `SUCCESS` |
+| Deploy to GitHub Pages | `COMPLETED` | `SKIPPED` |
+| fmt, clippy, module size | `COMPLETED` | `SUCCESS` |
+| tests | `COMPLETED` | `SUCCESS` |
+| coverage | `COMPLETED` | `SUCCESS` |
+| fmt, clippy, tests, module size, coverage | `COMPLETED` | `SUCCESS` |
+| manual real Alice launch smoke | `COMPLETED` | `SKIPPED` |
+| GitGuardian Security Checks | `COMPLETED` | `SUCCESS` |
+
+Impact: GitHub reports PR #175 as mergeable and clean at
+`c39dd9afaabb8a953d02a46205a2e17d09754cb8`. Because local `HEAD` is
+`f6525cc6311043bd38c57fe0e2519a48ebdc612a`, this GitHub metadata does not cover
+the local commit. The skipped checks are not converted into evidence for
+deployment behavior or manual Alice launch behavior.
+
+## Verification gate evidence
+
+### Asset validation
+
+Command:
+
+```sh
+NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json
+```
+
+Observed result:
+
+- Exit code: 0
+- `passed`: `true`
+- `schema_version`: `eatme.assets/validation/v1`
+- `asset_path`: `.`
+- `student_count`: 13
+- `instructor_count`: 11
+- `core_scenario_count`: 25
+- `creative_scenario_count`: 12
+- `scenario_asset_count`: 93
+- `errors`: `[]`
+- `warnings`: `[]`
+
+### Generated Gadugi adapter check
+
+Command:
+
+```sh
+NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+Observed result:
+
+- Exit code: 0
+- `passed`: `true`
+- `schema_version`: `eatme.assets/gadugi-adapter-generation/v1`
+- `root`: `.`
+- `checked_count`: 46
+- `generated_count`: 46
+- `changed`: `[]`
+- `errors`: `[]`
+
+### Repository quality gates
+
+Command:
+
+```sh
+NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+Observed result:
+
+- Exit code: 0
+- The quality gate script completed successfully.
+- The final coverage summary reported:
+  - Regions: 15,849 total, 2,165 missed, 86.34% covered.
+  - Functions: 1,034 total, 107 missed, 89.65% executed.
+  - Lines: 12,318 total, 1,593 missed, 87.07% covered.
+
+## Review evidence
+
+Reviewed for this artifact:
+
+- Local branch and exact `HEAD` identity.
+- PR #175 exact `headRefOid` identity and mergeability metadata.
+- Local worktree, merge/rebase, unmerged-file, and conflict-marker state.
+- Conflict marker scan results excluding `target/` and `.git/`.
+- Asset validation JSON summary.
+- Generated Gadugi adapter check JSON summary.
+- Repository quality gate completion and final coverage summary.
+- Evidence wording in this artifact for unsupported overclaims.
+
+## Bounded readiness statement
+
+At collected local `HEAD` `f6525cc6311043bd38c57fe0e2519a48ebdc612a`, with
+intentional uncommitted evidence artifact and evidence-contract test edits
+present, the evidence supports only the following local validation claims:
+
+- No merge, rebase, unmerged-file, or conflict-marker blocker was observed.
+- Asset validation passed with no reported errors or warnings.
+- Generated Gadugi adapter check passed with no reported changes or errors.
+- `TMPDIR=/tmp ./scripts/quality-gates.sh` completed with exit code 0.
+
+No PR #175 readiness claim is made because local `HEAD` differs from the
+observed PR #175 `headRefOid`.
+
+No broader product, UI, grading, creative quality, rendering, or lesson-completion
+claim is made by this artifact.
+
+## Limitations and unverified areas
+
+This artifact does not verify or claim:
+
+- Full UI automation coverage.
+- Grading correctness.
+- Creative assessment correctness.
+- Visible rendering correctness.
+- First-lesson completion by a learner or automated end-to-end flow.
+- Manual real Alice launch behavior; the GitHub status check named
+  `manual real Alice launch smoke` was observed as `SKIPPED`.
+- GitHub Pages deployment behavior; the GitHub status check named
+  `Deploy to GitHub Pages` was observed as `SKIPPED`.
+- Runtime behavior outside the commands and metadata listed in this artifact.
+
+## Evidence collection blockers
+
+Blocker: local `HEAD` is `f6525cc6311043bd38c57fe0e2519a48ebdc612a`, while PR
+#175 `headRefOid` is `c39dd9afaabb8a953d02a46205a2e17d09754cb8`. Impact: the
+local validation evidence cannot be claimed as PR #175 readiness until PR #175
+points to the local head or evidence is regenerated at the PR head.
+
+The final worktree is expected to contain intentional evidence edits. Impact:
+this artifact does not claim clean-worktree PR readiness; it only records that
+no merge, rebase, unmerged-file, or conflict-marker blocker was observed.
+
+Skipped GitHub checks remain limitations, not readiness evidence. If deployment
+behavior or manual real Alice launch behavior is required for a later readiness
+decision, those checks need direct successful evidence before being claimed.
