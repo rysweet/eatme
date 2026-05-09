@@ -1,5 +1,7 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+const DEFAULT_WORKFLOW_DOC: &str = include_str!("../../../docs/default-workflow-pr-readiness.md");
+const SAVE_REOPEN_DOC: &str = include_str!("../../../docs/save-reopen-readiness.md");
+const STARTER_PREFLIGHT_DOC: &str =
+    include_str!("../../../docs/starter-project-preflight-evidence.md");
 
 const FORBIDDEN_PLAIN_WORDING: &[&str] = &[
     "action evidence",
@@ -29,8 +31,8 @@ const NO_OP_RECOVERY_REQUIRED_WORDING: &[&str] = &[
 
 #[test]
 fn readiness_docs_use_plain_public_wording_for_save_reopen_boundaries() {
-    let save_reopen = read_doc("save-reopen-readiness.md");
-    let starter_preflight = read_doc("starter-project-preflight-evidence.md");
+    let save_reopen = SAVE_REOPEN_DOC;
+    let starter_preflight = STARTER_PREFLIGHT_DOC;
     let combined = format!("{save_reopen}\n{starter_preflight}");
 
     assert_contains_all(
@@ -48,11 +50,11 @@ fn readiness_docs_use_plain_public_wording_for_save_reopen_boundaries() {
 
 #[test]
 fn starter_preflight_doc_does_not_borrow_persistence_or_lesson_completion_claims() {
-    let doc = read_doc("starter-project-preflight-evidence.md");
+    let doc = STARTER_PREFLIGHT_DOC;
 
     assert_contains_all(
         "starter-project preflight doc",
-        &doc,
+        doc,
         &[
             "opening the bundled starter project",
             "does not prove that any save, reopen, or export workflow has completed successfully",
@@ -60,16 +62,16 @@ fn starter_preflight_doc_does_not_borrow_persistence_or_lesson_completion_claims
             "should not inherit completion claims from this document",
         ],
     );
-    assert_contains_none("starter-project preflight doc", &doc, FORBIDDEN_OVERCLAIMS);
+    assert_contains_none("starter-project preflight doc", doc, FORBIDDEN_OVERCLAIMS);
 }
 
 #[test]
 fn save_reopen_doc_requires_reopen_proof_separate_from_ui_action_contract() {
-    let doc = read_doc("save-reopen-readiness.md");
+    let doc = SAVE_REOPEN_DOC;
 
     assert_contains_all(
         "save/reopen readiness doc",
-        &doc,
+        doc,
         &[
             "Do not infer reopen proof from `ui-action-contract.json` unless that file explicitly contains a dedicated `reopen-project` probe",
             "reopen proof requires its own explicit persistence evidence",
@@ -81,11 +83,11 @@ fn save_reopen_doc_requires_reopen_proof_separate_from_ui_action_contract() {
 
 #[test]
 fn missing_or_unsupported_readiness_evidence_is_blocked_not_success() {
-    let doc = read_doc("save-reopen-readiness.md");
+    let doc = SAVE_REOPEN_DOC;
 
     assert_contains_all(
         "save/reopen readiness doc",
-        &doc,
+        doc,
         &[
             "Report unsupported or missing affordances as `blocked`, not as success",
             "A required earlier proof or deterministic Alice affordance is missing",
@@ -98,8 +100,8 @@ fn missing_or_unsupported_readiness_evidence_is_blocked_not_success() {
 
 #[test]
 fn recovery_evidence_requires_files_modified_or_explicit_no_op_with_limitations() {
-    let save_reopen = read_doc("save-reopen-readiness.md");
-    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+    let save_reopen = SAVE_REOPEN_DOC;
+    let default_workflow = DEFAULT_WORKFLOW_DOC;
     let combined = format!("{save_reopen}\n{default_workflow}");
 
     assert_contains_all(
@@ -122,25 +124,25 @@ fn recovery_evidence_requires_files_modified_or_explicit_no_op_with_limitations(
 
 #[test]
 fn no_op_recovery_justification_is_tied_to_current_head_checks_and_starter_save_reopen_scope() {
-    let save_reopen = read_doc("save-reopen-readiness.md");
-    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+    let save_reopen = SAVE_REOPEN_DOC;
+    let default_workflow = DEFAULT_WORKFLOW_DOC;
 
     assert_contains_all(
         "save/reopen no-op recovery template",
-        &save_reopen,
+        save_reopen,
         NO_OP_RECOVERY_REQUIRED_WORDING,
     );
     assert_contains_all(
         "default-workflow no-op recovery template",
-        &default_workflow,
+        default_workflow,
         NO_OP_RECOVERY_REQUIRED_WORDING,
     );
 }
 
 #[test]
 fn durable_recovery_docs_keep_pr_specific_evidence_out_of_committed_templates() {
-    let save_reopen = read_doc("save-reopen-readiness.md");
-    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+    let save_reopen = SAVE_REOPEN_DOC;
+    let default_workflow = DEFAULT_WORKFLOW_DOC;
     let combined = format!("{save_reopen}\n{default_workflow}");
 
     assert_contains_all(
@@ -169,11 +171,11 @@ fn durable_recovery_docs_keep_pr_specific_evidence_out_of_committed_templates() 
 
 #[test]
 fn save_reopen_docs_describe_artifact_evidence_without_semantic_change_overclaim() {
-    let doc = read_doc("save-reopen-readiness.md");
+    let doc = SAVE_REOPEN_DOC;
 
     assert_contains_all(
         "save/reopen readiness doc",
-        &doc,
+        doc,
         &[
             "saved artifact from the edited project path",
             "It does not treat those artifacts as semantic project-change proof",
@@ -182,7 +184,7 @@ fn save_reopen_docs_describe_artifact_evidence_without_semantic_change_overclaim
     );
     assert_contains_none(
         "save/reopen readiness doc",
-        &doc,
+        doc,
         &[
             "changed Alice project artifact",
             "changed `.a3p`",
@@ -190,14 +192,6 @@ fn save_reopen_docs_describe_artifact_evidence_without_semantic_change_overclaim
             "broad product readiness is proven",
         ],
     );
-}
-
-fn read_doc(name: &str) -> String {
-    fs::read_to_string(repository_root().join("docs").join(name)).unwrap()
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
