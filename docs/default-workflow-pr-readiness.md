@@ -4,17 +4,18 @@ Default-workflow PR readiness is the exact-head gate used when a pull request
 needs a clear final readiness decision. It is also the recovery path when an
 outer wrapper fails without a useful structured result.
 
-This page describes the finished behavior for PR readiness recovery: incorporate
-current `master`, verify the exact pull request head, keep evidence-artifact
-claims bounded, validate docs/assets/generated adapters/tests, and return a
-structured result that always explains whether files changed.
+This page describes the intended behavior for the PR readiness recovery feature:
+incorporate current `master`, validate the candidate head locally, push the
+candidate, verify the exact pull request head, keep readiness wording bounded,
+validate docs/assets/generated adapters/tests, and return a structured result
+that always explains whether files changed.
 
 ## Contents
 
 - [Readiness contract](#readiness-contract)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [Evidence-artifact boundary](#evidence-artifact-boundary)
+- [Readiness wording policy](#readiness-wording-policy)
 - [Validation gates](#validation-gates)
 - [GitHub metadata fields](#github-metadata-fields)
 - [Structured workflow output](#structured-workflow-output)
@@ -30,14 +31,14 @@ being reviewed.
 | --- | --- |
 | Branch | The existing recovery branch is used; no replacement branch is created. |
 | Current `master` | The PR branch contains current `origin/master`, preferably by rebase. Merge is used only when rebase is unsafe or conflict-heavy. |
-| Exact head | The local `HEAD` SHA equals the PR `headRefOid`. A mismatch blocks readiness. |
+| Exact head | After push, the local `HEAD` SHA equals the PR `headRefOid`. A mismatch blocks readiness. |
 | GitHub checks | Required checks are green for that same SHA. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
-| Evidence wording | User-facing wording is plain, bounded, and scoped to evidence packaging/readiness. |
+| Readiness wording | User-facing wording is plain, bounded, and scoped to evidence packaging/readiness. |
 | Overclaim boundary | The PR does not claim full UI automation, full world execution, visible rendering correctness, grading, creative assessment, Save completion, deployed sharing/platform success, or first-lesson completion. |
 | Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
-| Scope | Fixes are limited to conflicts, failed checks, stale generated adapters, or wording that violates the evidence-artifact contract. |
+| Scope | Fixes are limited to conflicts, failed checks, stale generated adapters, or wording that violates the readiness wording policy. |
 | Structured output | The final workflow output includes `Files modified` with actual paths, or an explicit no-op justification with exact-head readiness evidence. |
 
 A previous wrapper failure is not a blocker when direct verification proves the
@@ -68,26 +69,33 @@ raw command output in readiness comments.
 
 ## Usage
 
-Use this procedure for PR 175 evidence-artifact readiness recovery and for later
-PRs that need the same exact-head readiness gate.
+Use this generic procedure for evidence-artifact readiness recovery on any PR
+that needs the same exact-head readiness gate. Replace the placeholders before
+running the commands.
+
+```bash
+PR_NUMBER=<pr-number>
+PR_BRANCH=<existing-pr-branch>
+BASE_BRANCH=master
+```
 
 1. Start on the existing PR branch.
 
    ```bash
-   git switch wave6-evidence-artifact-contract-1778302300
+   git switch "$PR_BRANCH"
    ```
 
 2. Fetch the current base branch and PR metadata.
 
    ```bash
-   git fetch origin master wave6-evidence-artifact-contract-1778302300 --prune
-   gh pr view 175 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+   git fetch origin "$BASE_BRANCH" "$PR_BRANCH" --prune
+   gh pr view "$PR_NUMBER" --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
    ```
 
 3. Incorporate current `master`.
 
    ```bash
-   git rebase origin/master
+   git rebase "origin/$BASE_BRANCH"
    ```
 
    If rebase is unsafe or conflict-heavy, stop the rebase and use the minimal
@@ -95,26 +103,35 @@ PRs that need the same exact-head readiness gate.
 
    ```bash
    git rebase --abort
-   git merge origin/master
+   git merge "origin/$BASE_BRANCH"
    ```
 
-4. Confirm the local head equals the PR head.
-
-   ```bash
-   git rev-parse HEAD
-   gh pr view 175 --json headRefOid
-   ```
-
-5. Inspect evidence-artifact wording and generated adapter freshness when the PR
+4. Inspect readiness wording and generated adapter freshness when the PR
    touches scenario assets, generated adapters, readiness docs, or artifact
    contract code.
 
-6. Run the validation gates in [Validation gates](#validation-gates).
+5. Run the validation gates in [Validation gates](#validation-gates) on the
+   candidate local `HEAD` after all fixes.
 
-7. Return the structured workflow output described in
+6. Push the candidate head to the existing PR branch.
+
+   ```bash
+   git push origin "$PR_BRANCH"
+   ```
+
+7. Confirm exact-head readiness only after the push: local `HEAD` must equal the
+   PR `headRefOid`, and required GitHub checks must be green for that SHA.
+
+   ```bash
+   git rev-parse HEAD
+   gh pr view "$PR_NUMBER" --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+   gh pr checks "$PR_NUMBER" --watch --interval 10
+   ```
+
+8. Return the structured workflow output described in
    [Structured workflow output](#structured-workflow-output).
 
-## Evidence-artifact boundary
+## Readiness wording policy
 
 Evidence-artifact readiness is intentionally narrow. It may claim that the PR
 packages, validates, or reports bounded evidence artifacts for review. It must
@@ -140,9 +157,13 @@ Rendering correctness is proven.
 Save and deployed sharing completed successfully.
 ```
 
-The contract applies to user-facing scenario text, readiness output, PR comments,
-and recovery summaries. Generated Gadugi adapters consume the canonical scenario
-contract; do not hand-edit generated Gadugi YAML to change mission intent.
+This readiness wording policy applies to user-facing scenario text, readiness
+output, PR comments, and recovery summaries. It is not the same as the artifact
+text validator in [Evidence Artifact Contract](evidence-artifact-contract.md),
+which validates supplied artifact fields and status-required evidence text
+rather than arbitrary PR prose. Generated Gadugi adapters consume the canonical
+scenario wording; do not hand-edit generated Gadugi YAML to change mission
+intent.
 
 For artifact field-level rules, see
 [Evidence Artifact Contract](evidence-artifact-contract.md).
@@ -150,7 +171,9 @@ For artifact field-level rules, see
 ## Validation gates
 
 Run the gates from the repository root after master incorporation and after any
-fix.
+fix. These local gates validate the candidate `HEAD`; exact-head readiness is
+established only after that candidate is pushed, the PR `headRefOid` matches the
+same SHA, and GitHub checks pass for that SHA.
 
 Build the documentation site:
 
@@ -177,8 +200,9 @@ socket paths stay short enough for the test environment:
 TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
 
-The gate is ready only when each command exits successfully for the exact head
-that matches the PR head.
+The local gate is a candidate result until the branch is pushed. The PR is ready
+only when each command exits successfully for the candidate head, the pushed PR
+head matches that SHA, and required GitHub checks pass for that exact head.
 
 ## GitHub metadata fields
 
@@ -195,7 +219,7 @@ The readiness gate consumes these `gh pr view` fields:
 Fetch the PR head, merge state, mergeability, and check summary:
 
 ```bash
-gh pr view 175 \
+gh pr view "$PR_NUMBER" \
   --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
@@ -229,18 +253,18 @@ readiness evidence:
 ```text
 No-op justification:
 No source changes were needed because the branch already incorporated current
-master, the local HEAD matched PR 175 headRefOid, evidence-artifact wording
-stayed within the bounded contract, generated adapters were fresh, and all
+master, the local HEAD matched the PR headRefOid after push, readiness wording
+stayed within the bounded policy, generated adapters were fresh, and all
 required validation gates passed at that exact head.
 
 Exact-head readiness evidence:
-- Branch: wave6-evidence-artifact-contract-1778302300
+- Branch: <existing-pr-branch>
 - Local HEAD: <sha>
 - PR headRefOid: <same-sha>
 - mergeStateStatus: CLEAN
 - mergeable: MERGEABLE
 - Required checks: green for <same-sha>
-- Validation: mkdocs build --strict; assets validate --json; assets generate-gadugi --check --json; TMPDIR=/tmp ./scripts/quality-gates.sh
+- Validation: NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict; assets validate --json; assets generate-gadugi --check --json; TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
 
 The readiness summary should name only gates that actually ran and passed at the
@@ -248,6 +272,16 @@ exact head. Do not include full logs, secrets, credential paths, or environment
 dumps.
 
 ## Examples
+
+### PR 175 command values
+
+For PR 175 evidence-artifact readiness recovery, the generic placeholders are:
+
+```bash
+PR_NUMBER=175
+PR_BRANCH=wave6-evidence-artifact-contract-1778302300
+BASE_BRANCH=master
+```
 
 ### PR 175 with a documentation-only recovery fix
 
@@ -263,7 +297,7 @@ Verified gates:
 - current master incorporated
 - local HEAD equals PR headRefOid
 - mergeStateStatus=CLEAN and mergeable=MERGEABLE
-- evidence-artifact wording remains bounded
+- readiness wording remains bounded
 - generated Gadugi adapters are fresh
 - docs, assets, adapter freshness, and repository quality gates pass
 ```
@@ -277,7 +311,7 @@ Default-workflow readiness recovery for PR 175 completed at exact head <sha>.
 
 No-op justification:
 No files were changed because the existing branch already satisfied the
-evidence-artifact contract after current master verification.
+readiness wording policy after current master verification.
 
 Exact-head readiness evidence:
 - Branch: wave6-evidence-artifact-contract-1778302300
