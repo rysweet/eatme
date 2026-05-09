@@ -389,11 +389,14 @@ fn assert_launch_smoke_non_claims(report_json: &serde_json::Value) {
         .unwrap()
         .to_ascii_lowercase();
     for required in [
-        "lesson completion",
+        "first-lesson completion",
+        "full world execution",
         "grading",
         "creative assessment",
-        "full ui automation",
-        "visible correctness",
+        "full alice ui automation",
+        "visible rendering correctness",
+        "save completion",
+        "deployed sharing/platform success",
     ] {
         assert!(
             text.contains(required),
@@ -401,11 +404,14 @@ fn assert_launch_smoke_non_claims(report_json: &serde_json::Value) {
         );
     }
     for required in [
-        "lesson completion is not proven",
+        "first-lesson completion is not proven",
+        "full world execution is not proven",
         "grading is not proven",
         "creative assessment is not proven",
-        "full ui automation is not proven",
-        "visible correctness is not proven",
+        "full alice ui automation is not proven",
+        "visible rendering correctness is not proven",
+        "save completion is not proven",
+        "deployed sharing/platform success is not proven",
     ] {
         assert!(
             text.contains(required),
@@ -443,7 +449,6 @@ fn assert_no_first_lesson_readiness_requirements(report_json: &serde_json::Value
         .unwrap()
         .to_ascii_lowercase();
     for forbidden in [
-        "first-lesson",
         "automation scenario action evidence",
         "modernized run-window evidence",
         "modernized desktop-run-pixel",

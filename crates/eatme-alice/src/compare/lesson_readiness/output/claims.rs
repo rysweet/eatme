@@ -8,10 +8,6 @@ const FULL_ALICE_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
     sentence: "Full Alice UI automation is not proven.",
     non_claim: "Full Alice UI automation",
 };
-const FULL_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
-    sentence: "Full UI automation is not proven.",
-    non_claim: "full UI automation",
-};
 const GRADING: UnprovenClaim = UnprovenClaim {
     sentence: "Grading is not proven.",
     non_claim: "grading",
@@ -32,13 +28,13 @@ const FIRST_LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
     sentence: "First-lesson completion is not proven.",
     non_claim: "first-lesson completion",
 };
-const LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
-    sentence: "Lesson completion is not proven.",
-    non_claim: "lesson completion",
+const FULL_WORLD_EXECUTION: UnprovenClaim = UnprovenClaim {
+    sentence: "Full world execution is not proven.",
+    non_claim: "full world execution",
 };
-const VISIBLE_CORRECTNESS: UnprovenClaim = UnprovenClaim {
-    sentence: "Visible correctness is not proven.",
-    non_claim: "visible correctness",
+const DEPLOYED_SHARING_PLATFORM_SUCCESS: UnprovenClaim = UnprovenClaim {
+    sentence: "Deployed sharing/platform success is not proven.",
+    non_claim: "deployed sharing/platform success",
 };
 
 const UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
@@ -62,11 +58,14 @@ const LEGACY_LIMITATIONS: &[&str] = &[
 ];
 
 const LAUNCH_SMOKE_UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
-    LESSON_COMPLETION,
+    FIRST_LESSON_COMPLETION,
+    FULL_WORLD_EXECUTION,
     GRADING,
     CREATIVE_ASSESSMENT,
-    FULL_UI_AUTOMATION,
-    VISIBLE_CORRECTNESS,
+    FULL_ALICE_UI_AUTOMATION,
+    VISIBLE_RENDERING_CORRECTNESS,
+    SAVE_COMPLETION,
+    DEPLOYED_SHARING_PLATFORM_SUCCESS,
 ];
 
 const LAUNCH_SMOKE_LIMITATIONS: &[&str] = &[
