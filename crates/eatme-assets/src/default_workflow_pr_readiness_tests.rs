@@ -1,3 +1,4 @@
+use crate::{generate_gadugi_adapters, validate_assets};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -6,154 +7,178 @@ const READINESS_DOC: &str = "docs/default-workflow-pr-readiness.md";
 const FALLBACK_LOG: &str = "default-workflow-attempt.log";
 const PR_NUMBER: &str = "174";
 const BRANCH_NAME: &str = "wave6-persona-gap-fill-1778302300";
-const CANONICAL_ASSETS: &[&str] = &[
-    "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
-    "assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
-];
-const GENERATED_ADAPTERS: &[&str] = &[
-    "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml",
-    "assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml",
-];
-const REQUIRED_COMMANDS: &[&str] = &[
+const REQUIRED_LOCAL_CHECKS: &[&str] = &[
     "cargo run -q -p eatme-cli -- assets validate --json",
     "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
-    "cargo test -q -p eatme-assets starter_project_preflight_boundary",
-    "cargo test -q -p eatme-assets gadugi",
-    "cargo test -q -p eatme-assets outside_in_alice_expansion_tests",
-    "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
-    "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
 ];
-const PROHIBITED_CLAIMS: &[&str] = &[
-    "full Save completion",
-    "full UI automation",
-    "grading",
-    "creative assessment",
-    "visible rendering correctness",
-    "deployed sharing or platform success",
-    "first-lesson completion",
+const REQUIRED_SOURCE_ASSETS: &[&str] = &[
+    "assets/personas/alice-user-crew.yaml",
+    "assets/scenarios/eatme/*.yaml",
 ];
-const PROHIBITED_PLACEHOLDERS: &[&str] = &[
-    "[PLANNED",
-    "Implementation Pending",
+const REQUIRED_GENERATED_ARTIFACTS: &[&str] = &["assets/scenarios/gadugi/*.yaml"];
+const UNSUPPORTED_REVIEW_CLAIMS: &[&str] = &[
+    "Alice UI automation completed a full user journey",
+    "A learner completed a lesson",
+    "A student world was graded or creatively assessed automatically",
+    "Save/reopen/export was completed in a live Alice session",
+    "Visual rendering, deployed sharing, or classroom success was verified",
+];
+const PROHIBITED_STALE_EVIDENCE: &[&str] = &[
     "$(git branch --show-current)",
-    "$(git rev-parse HEAD)",
-    "Replace command substitutions",
     "PR #164",
+    "885f5e8fd8115815cf2d2d507de5dc68acf5acfa",
     "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
-];
-const PROHIBITED_EVIDENCE_PHRASES: &[&str] = &[
-    "validated exact HEAD",
-    "default-workflow evidence passed",
     "ready for handoff",
+    "validated exact HEAD",
+    "learner-world grading passed",
+    "creative assessment passed",
+    "lesson completion verified",
 ];
 
 #[test]
-fn readiness_doc_names_the_exact_pr_branch_assets_and_commands() {
+fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_values() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
 
     assert_contains_all(
-        "default-workflow readiness inputs",
+        "exact-head readiness contract",
         &evidence,
         &[
-            "# Default-workflow PR readiness",
-            &format!("PR: {PR_NUMBER}"),
-            &format!("Branch: {BRANCH_NAME}"),
-            "Exact HEAD command: git rev-parse HEAD",
-            "Merge source: origin/master",
-            "External service command: gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
-        ],
-    );
-    assert_contains_all("canonical EatMe assets", &evidence, CANONICAL_ASSETS);
-    assert_contains_all("generated Gadugi adapters", &evidence, GENERATED_ADAPTERS);
-    assert_contains_all("required validation commands", &evidence, REQUIRED_COMMANDS);
-    assert_not_contains_any(
-        "default-workflow readiness inputs",
-        &evidence,
-        PROHIBITED_PLACEHOLDERS,
-    );
-    assert_not_contains_any(
-        "default-workflow readiness overclaims",
-        &evidence,
-        PROHIBITED_EVIDENCE_PHRASES,
-    );
-}
-
-#[test]
-fn readiness_doc_requires_external_github_service_state() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
-
-    assert_contains_all(
-        "default-workflow external service gate",
-        &evidence,
-        &[
-            "## External service gate",
-            "Local validation is not enough to call the PR ready",
-            "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
-            "`headRefOid` | The same commit returned by `git rev-parse HEAD`.",
-            "`mergeStateStatus` | `CLEAN`.",
-            "`mergeable` | `MERGEABLE`.",
-            "`statusCheckRollup` | Required checks completed successfully for `headRefOid`.",
-            "If GitHub reports a different `headRefOid`, `DIRTY`, `CONFLICTING`, pending",
-            "block readiness even when local commands pass",
-        ],
-    );
-}
-
-#[test]
-fn readiness_doc_uses_the_git_repository_root_for_linked_worktrees() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
-    let local_home_path = ["/home/", "azureuser"].concat();
-    let recovery_tmp_path = ["/tmp/", "wave7-recovery-"].concat();
-
-    assert_contains_all(
-        "default-workflow linked-worktree no-op guard",
-        &evidence,
-        &[
-            "git rev-parse --show-toplevel",
+            "# PR 174 persona/scenario gap-fill readiness",
+            "Do not treat a checked-in commit SHA as current readiness evidence",
+            "final PR handoff note or CI logs after the last commit has been pushed",
             "git status --short",
-            "linked worktree",
-            "repository root",
-            "not the session directory",
+            "git rev-parse HEAD",
+            "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
+            &format!("| PR | `{PR_NUMBER}` |"),
+            &format!("| Branch | `{BRANCH_NAME}` |"),
+            "| Local HEAD | The final commit SHA from `git rev-parse HEAD`. |",
+            "| PR `headRefOid` | The same SHA as Local HEAD. |",
+            "| GitHub merge state | `CLEAN`. |",
+            "| GitHub mergeability | `MERGEABLE`. |",
         ],
     );
     assert_not_contains_any(
-        "default-workflow linked-worktree no-op guard",
+        "stale exact-head readiness contract",
+        &evidence,
+        PROHIBITED_STALE_EVIDENCE,
+    );
+    assert!(
+        committed_sha_literals(&evidence).is_empty(),
+        "readiness doc must not check in SHA-shaped readiness evidence: {:?}",
+        committed_sha_literals(&evidence)
+    );
+}
+
+#[test]
+fn review_evidence_contract_is_tied_to_the_same_exact_pr_head() {
+    let root = repository_root();
+    let evidence = read_repo_file(&root, READINESS_DOC);
+
+    assert_contains_all(
+        "exact-head review evidence contract",
         &evidence,
         &[
-            local_home_path.as_str(),
-            recovery_tmp_path.as_str(),
-            "non-git path",
+            "## Review evidence",
+            "gh pr view 174 --json headRefOid,reviewDecision,reviews,comments",
+            "`headRefOid` must match `git rev-parse HEAD`",
+            "`reviewDecision`",
+            "`reviews`",
+            "`comments`",
+            "same exact head",
+            "Do not use stale review comments, skipped checks, or local-only validation as review evidence for a moved branch.",
         ],
     );
 }
 
 #[test]
-fn readiness_doc_keeps_claims_and_manual_fallbacks_bounded() {
+fn local_asset_validation_contract_covers_persona_scenarios_and_generated_adapters() {
+    let root = repository_root();
+    let validation_report = validate_assets(&root).unwrap();
+    let adapter_report = generate_gadugi_adapters(&root, true).unwrap();
+
+    assert!(validation_report.passed, "{:?}", validation_report.errors);
+    assert_eq!(validation_report.instructor_count, 11);
+    assert_eq!(validation_report.student_count, 13);
+    assert_eq!(validation_report.scenario_asset_count, 95);
+    assert!(
+        adapter_report.passed,
+        "generated Gadugi adapters must be fresh: {:?}",
+        adapter_report.errors
+    );
+    assert_eq!(adapter_report.generated_count, 47);
+    assert_eq!(adapter_report.checked_count, 47);
+}
+
+#[test]
+fn readiness_doc_keeps_source_of_truth_and_validation_claims_bounded_to_assets() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
+
+    assert_contains_all("editable source assets", &evidence, REQUIRED_SOURCE_ASSETS);
+    assert_contains_all(
+        "generated Gadugi review artifacts",
+        &evidence,
+        REQUIRED_GENERATED_ARTIFACTS,
+    );
+    assert_contains_all("repository-local checks", &evidence, REQUIRED_LOCAL_CHECKS);
+    assert_contains_all(
+        "bounded supported claims",
+        &evidence,
+        &[
+            "PR 174 fills persona/scenario gaps in editable assets",
+            "Persona IDs used by canonical EatMe scenarios resolve through the persona crew",
+            "Generated Gadugi adapters are fresh relative to canonical EatMe scenarios",
+            "Repository-local asset validation passes for the exact PR head",
+            "GitHub metadata names the same exact head and reports the PR mergeable",
+        ],
+    );
+    assert_contains_all(
+        "unsupported review claims",
+        &evidence,
+        UNSUPPORTED_REVIEW_CLAIMS,
+    );
+}
+
+#[test]
+fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
+    let root = repository_root();
+    let evidence = read_repo_file(&root, READINESS_DOC);
+
+    assert_contains_all(
+        "readiness error handling",
+        &evidence,
+        &[
+            "Block readiness if `git status --short` reports local changes",
+            "GitHub reports a different `headRefOid`",
+            "a non-clean merge state",
+            "failed checks",
+            "pending checks",
+            "checks for another commit",
+            "A skipped manual Alice smoke check, for example, must not be cited as Alice UI evidence.",
+            "Skipped checks are acceptable only when they are outside the persona/scenario asset scope and do not expand the readiness claim.",
+        ],
+    );
+}
+
+#[test]
+fn manual_fallback_log_cannot_be_used_as_readiness_or_review_evidence() {
+    let root = repository_root();
     let fallback_log = read_repo_file(&root, FALLBACK_LOG);
 
     assert_contains_all(
-        "default-workflow claim boundary",
-        &evidence,
-        PROHIBITED_CLAIMS,
-    );
-    assert_contains_all(
-        "manual fallback log boundary",
+        "manual fallback evidence boundary",
         &fallback_log,
         &[
-            "not PR readiness evidence",
-            "manual fallback",
-            "must not be used to claim exact-HEAD readiness",
+            "This file is not PR readiness evidence.",
+            "manual fallback log must not be used to claim exact-HEAD readiness",
+            "manual fallback log must not be used to claim exact-HEAD review evidence",
         ],
     );
     assert_not_contains_any(
-        "manual fallback log boundary",
+        "manual fallback stale evidence",
         &fallback_log,
-        PROHIBITED_EVIDENCE_PHRASES,
+        PROHIBITED_STALE_EVIDENCE,
     );
 }
 
@@ -187,9 +212,10 @@ fn read_repo_file(root: &Path, relative_path: &str) -> String {
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
+    let normalized_text = normalize_whitespace(text);
     let missing = needles
         .iter()
-        .filter(|needle| !text.contains(**needle))
+        .filter(|needle| !normalized_text.contains(&normalize_whitespace(needle)))
         .copied()
         .collect::<Vec<_>>();
     assert!(
@@ -199,13 +225,27 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
 }
 
 fn assert_not_contains_any(label: &str, text: &str, needles: &[&str]) {
+    let normalized_text = normalize_whitespace(text);
     let found = needles
         .iter()
-        .filter(|needle| text.contains(**needle))
+        .filter(|needle| normalized_text.contains(&normalize_whitespace(needle)))
         .copied()
         .collect::<Vec<_>>();
     assert!(
         found.is_empty(),
         "{label} contains forbidden text: {found:?}"
     );
+}
+
+fn committed_sha_literals(text: &str) -> Vec<String> {
+    text.split(|character: char| !character.is_ascii_hexdigit())
+        .filter(|token| {
+            token.len() == 40 && token.chars().all(|character| character.is_ascii_hexdigit())
+        })
+        .map(str::to_owned)
+        .collect()
+}
+
+fn normalize_whitespace(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
