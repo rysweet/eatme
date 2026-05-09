@@ -1,5 +1,129 @@
 # Default-workflow PR readiness
 
+## PR #175 evidence contract
+
+This historical section is retained from the evidence artifact contract merged on
+`origin/master`. It is evidence-contract finalization for PR #175, not current
+PR #204 readiness evidence. Treat every claim in this section as limited to the
+command, timestamp, and observed value that supports it.
+
+## Scope
+
+| Field | Observed value |
+| --- | --- |
+| Artifact path | `docs/default-workflow-pr-readiness.md` |
+| Repository | `rysweet/eatme` |
+| PR | [#175 Document evidence artifact contract](https://github.com/rysweet/eatme/pull/175) |
+| Local branch | `wave6-evidence-artifact-contract-1778302300` |
+| Validated evidence head | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| Artifact publication head | not embedded in this committed artifact; committing a documentation refinement changes the PR head. |
+
+Within this historical PR #175 record, `Validated evidence head` means the PR
+head whose metadata and check rollup were captured before publication.
+`Artifact publication head` means the later commit that publishes the page after
+refinement. This section does not claim that its own eventual publication commit
+has checked itself.
+
+## Readiness evidence
+
+### Local Git observations
+
+The PR #175 local Git observations were captured before this refinement changed
+the artifact/test files. They are a pre-refinement observation for the validated
+evidence head, not a claim about the post-edit worktree or the eventual
+publication head. This refinement intentionally changes only the readiness
+artifact and the contract tests that guard it:
+
+```text
+docs/default-workflow-pr-readiness.md
+crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs
+```
+
+### GitHub PR #175 observations
+
+The PR #175 GitHub metadata was captured for
+`a951f34a0a187adfa24cfe0555ca00da6a04197d` and is bounded to that evidence
+head. It is not current validation for PR #204.
+
+### GitHub status-check rollup observation
+
+The PR #175 status-check rollup was observed for the validated evidence head and
+is recorded as historical evidence only.
+
+### Validated evidence-head executable evidence
+
+The PR #175 validated evidence-head commands were run with
+`NODE_OPTIONS=--max-old-space-size=32768` and with no timeout wrapper. The
+recorded executable commands were:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+mkdocs build --strict
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+### Historical same-head outside-in testing evidence
+
+The PR #175 `uvx` evidence used a mutable branch ref as resolved at execution time,
+not an immutable SHA-pinned install reference. Any same-head claim depends on
+the recorded execution context and must not be reused for later PR heads.
+
+## Review evidence
+
+### Location review
+
+The PR #175 location review was bounded to the artifact-contract files and did
+not claim owner approval.
+
+### Content review
+
+The PR #175 content review checked that the evidence was bounded to the recorded
+commands and observed GitHub metadata.
+
+### Security review
+
+The PR #175 security review did not identify a secret or token to remove from
+the readiness artifact.
+
+## Finalization evidence
+
+PR #175 remains unmerged in this historical record. No manual merge was
+performed. This was workflow readiness/review/finalization evidence, with
+Finalization status: `merge-ready-after-publication-head-checks`, and with the
+post-push publication head/check rollup recorded outside this file.
+
+### External publication-head evidence record
+
+The External publication-head evidence record must be recorded outside this
+committed artifact after push. It must include:
+
+- Publication head SHA
+- GitHub check rollup for that exact SHA
+- Merge state
+- Review state
+- Owner-free decision
+- Scope decision
+- Validation decision
+- Finalization decision
+- PR evidence comment
+
+The final PR #175 no-op record needed a literal no-op justification tied to the
+publication head, check rollup, and focused artifact-contract scope, and
+owner-free finalization does not require owner intervention.
+
+## Nonclaims
+
+- No PR approval is claimed.
+- No blanket CI success is claimed beyond the listed validated evidence-head
+  GitHub status-check rollup.
+- No full Alice UI automation, world execution, UI rendering correctness,
+  grading, creative assessment, Save completion, deployed sharing/platform
+  success, first-lesson completion, full lesson completion, complete Alice
+  coverage, or full Tweedle/player decode is claimed.
+
+## Contents
+
 Default-workflow PR readiness defines the intended exact-head gate for pull
 requests that need a clear final readiness decision when the wrapper workflow
 does not produce useful output. It also defines the intended recovery path for
