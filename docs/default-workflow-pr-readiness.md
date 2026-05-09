@@ -117,10 +117,24 @@ owner-free finalization does not require owner intervention.
 - No PR approval is claimed.
 - No blanket CI success is claimed beyond the listed validated evidence-head
   GitHub status-check rollup.
+- No test coverage sufficiency is claimed beyond the reported validated
+  evidence-head coverage summary.
+- No local quality-gate rerun is claimed beyond the validated evidence-head
+  GitHub Quality Gates rollup.
+- No post-push publication-head check rollup is claimed inside this committed
+  artifact.
+- No real Alice desktop execution is claimed.
 - No full Alice UI automation, world execution, UI rendering correctness,
   grading, creative assessment, Save completion, deployed sharing/platform
   success, first-lesson completion, full lesson completion, complete Alice
   coverage, or full Tweedle/player decode is claimed.
+- No claim is made that skipped checks are successful checks.
+- No claim is made inside this file that GitHub has observed an eventual
+  publication commit beyond a recorded validated evidence-head `headRefOid`.
+- No claim is made that future PR heads, checks, reviews, or mergeability match
+  historical observations recorded here.
+- No prior rate-limited/default-workflow session context is required to continue
+  recovery from this artifact.
 
 ## Contents
 
@@ -629,6 +643,28 @@ The wording must not say or imply that the scenario proves:
 
 Use the generated adapter only as a consumer of this contract. Do not hand-edit
 generated Gadugi YAML to change mission intent.
+
+### Executable starter-project boundary check
+
+The executable starter-project boundary check lives in
+`crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs`. It reads
+this contract table and applies the same overclaim rules to canonical scenario
+text, generated Gadugi adapter output, and scoped starter-project preflight
+evidence documentation.
+
+| Prohibited phrase | Bounded replacement |
+| --- | --- |
+| `PR ready` | `starter-project preflight evidence recorded` |
+| `merge ready` | `starter-project evidence boundary satisfied` |
+| `production ready` | `bounded preflight evidence available for review` |
+| `ready for merge` | `readiness gaps are documented for later gates` |
+| `readiness guaranteed` | `readiness depends on the separate readiness gates` |
+| `complete PR readiness` | `starter-project preflight evidence only` |
+| `proves visible rendering correctness` | `screenshot or window evidence is observation evidence only` |
+| `proves save/reopen/export` | `save, reopen, and export remain readiness gaps` |
+| `first lesson is complete` | `starter-project preflight evidence only` |
+| `grades learner work` | `records evidence for review; it does not grade` |
+| `assesses creativity` | `names an editable change without assessing creativity` |
 
 ## Scenario nonclaim boundary
 

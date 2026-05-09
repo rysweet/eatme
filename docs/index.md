@@ -29,7 +29,9 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Recording exact-head PR readiness, planned quality-audit recovery, and nonclaim evidence | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -110,6 +112,9 @@ Audit the readiness artifact shape and wording contract:
 
 Record exact-head pull request readiness and planned nonclaim recovery evidence:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+
+Recover PR #199 merge-readiness evidence after the manual-fallback violation:
+[PR #199 Recovery Workflow](pr-199-recovery-workflow.md).
 
 Build the docs site:
 
