@@ -14,6 +14,7 @@ readiness comment only after every gate passes.
 
 - [Readiness contract](#readiness-contract)
 - [Generic readiness procedure](#generic-readiness-procedure)
+- [Evidence-only recovery after no-op guard failure](#evidence-only-recovery-after-no-op-guard-failure)
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
@@ -55,6 +56,93 @@ Run the gate in this order:
    asset is affected.
 6. Validate assets.
 7. Publish the readiness comment only when every required gate passed.
+
+## Evidence-only recovery after no-op guard failure
+
+Use evidence-only recovery when an existing pull request already contains the
+source, documentation, tests, contracts, and generated outputs under review, but
+the wrapper workflow failed before it produced an accepted implementation
+summary. Recovery does not recreate the PR and does not introduce source edits
+unless exact-head verification exposes stale, missing, or overbroad artifacts.
+
+The recovery lane has four components:
+
+| Component | Responsibility |
+| --- | --- |
+| Evidence collector | Fetch `pull/<number>/head`, resolve the exact head SHA, and collect PR metadata, changed files, mergeability, reviews, and check rollup from GitHub for that same head. |
+| Evidence verifier | Inspect the fetched PR ref, not a stale local branch, for docs, tests, contracts, generated outputs, and bounded readiness wording. |
+| Readiness statement builder | Compose continuation/review readiness language only from verified evidence and explicit non-claims. |
+| Workflow output builder | Emit either a real `Files modified` list or an explicit `No-op justification` accepted by the workflow. |
+
+Run recovery in this order:
+
+1. Fetch and resolve the PR head:
+
+   ```bash
+   git fetch origin pull/172/head:refs/remotes/origin/pr/172 --quiet
+   git rev-parse refs/remotes/origin/pr/172
+   ```
+
+2. Query GitHub metadata for the same PR:
+
+   ```bash
+   gh pr view 172 \
+     --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup,files,commits
+   gh pr checks 172 --json name,state,bucket,completedAt,link
+   ```
+
+3. Compare the fetched ref SHA to `headRefOid`. A mismatch blocks recovery for
+   the old head.
+
+4. Inspect the changed files at the fetched ref. Treat GitHub PR metadata,
+   completed checks, the fetched PR ref, committed docs, Rust tests, and evidence
+   contracts as the evidence sources.
+
+5. For save/reopen work, verify the [Save/reopen Readiness](save-reopen-readiness.md)
+   contract directly. Reopen readiness depends on accepted `save-project` proof
+   from the same run and an explicit `reopen-project` probe or report. Do not
+   infer reopen proof from starter-project preflight evidence.
+
+6. If the fetched ref already contains the required evidence contract and wording,
+   do not edit files to satisfy the wrapper. Emit a `No-op justification` instead.
+   If verification finds stale or missing artifacts, make only the smallest
+   documentation, test, contract, or generated-output change needed and emit
+   `Files modified`.
+
+Safe recovery wording:
+
+```text
+Ready for continuation/review based on available bounded evidence at exact PR head <sha>.
+
+Evidence sources: GitHub PR metadata, fetched pull/<number>/head, completed checks
+for that head, changed-file list, committed docs, and committed tests/contracts.
+
+Limitations: This does not claim full Alice UI automation, grading correctness,
+creative assessment, visible rendering correctness, Save completion,
+first-lesson completion, or end-to-end user success.
+```
+
+When no source or documentation edits are needed, use this output shape:
+
+```text
+No-op justification: Evidence-only recovery for existing PR #<number>. The exact
+PR head was refreshed, the fetched PR ref matched GitHub `headRefOid`, metadata
+and checks were reviewed for that same head, and committed docs/tests/contracts
+already express the bounded readiness contract. No files were changed because
+there was no stale or missing artifact to fix.
+```
+
+When files change, use this output shape:
+
+```text
+Files modified:
+- docs/default-workflow-pr-readiness.md - Documents evidence-only recovery output
+  after a no-op guard failure.
+```
+
+Do not publish recovery readiness as proof of end-to-end user success. The
+strongest accepted claim is ready for continuation/review based on available
+bounded evidence for the exact verified head.
 
 ## Configuration
 

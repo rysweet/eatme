@@ -278,6 +278,12 @@ Use this checklist when reviewing save/reopen readiness:
    success, and first-lesson completion unproven unless exact separate evidence
    exists.
 
+After the checklist passes, describe the result as ready for
+continuation/review based on available bounded evidence. Do not describe it as
+end-to-end user success. If the same run lacks accepted save proof, any reopen
+claim remains blocked no matter how much starter-project or launch evidence is
+present.
+
 ## Non-claims
 
 This readiness contract does not claim:
