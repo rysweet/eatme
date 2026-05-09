@@ -26,6 +26,8 @@ order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 | `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
+| `pr-readiness github-snapshot` | Fetch PR state, mergeability, and check rollup from GitHub |
+| `pr-readiness recovery-evaluate` | Evaluate structured recovery input and produce a merge-readiness verdict |
 
 ## Validate assets
 
@@ -400,6 +402,53 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 Instructor remix evidence is a teacher plan, student handout, exit ticket, and
 review/remix probe set. It may cite launch evidence, but it does not grade
 learner worlds or assess creativity automatically.
+
+## PR readiness
+
+### Fetch a GitHub PR snapshot
+
+```bash
+cargo run -q -p eatme-cli -- pr-readiness github-snapshot \
+  --owner rysweet \
+  --repo eatme \
+  --pr-number 204 \
+  --local-head-sha "$(git rev-parse HEAD)" \
+  --required-check quality-gates \
+  --json
+```
+
+| Option | Description |
+| --- | --- |
+| `--owner <owner>` | GitHub repository owner. |
+| `--repo <repo>` | GitHub repository name. |
+| `--pr-number <n>` | Pull request number. |
+| `--local-head-sha <sha>` | Full 40-character local HEAD SHA. |
+| `--required-check <name>` | Required GitHub Actions check name; repeatable; at least one required. |
+| `--json` | Emit JSON output. |
+
+The command queries `gh pr view` and normalizes the check rollup into a
+`PrReadinessSnapshot`. Missing required checks are synthesized with
+`status=Missing`. See
+[PR Readiness Recovery Evaluation](pr-readiness-recovery-evaluation.md) for the
+full schema.
+
+### Evaluate recovery readiness
+
+```bash
+cargo run -q -p eatme-cli -- pr-readiness recovery-evaluate \
+  --input /path/to/recovery-input.json \
+  --json
+```
+
+| Option | Description |
+| --- | --- |
+| `--input <path>` | Path to a JSON file conforming to `RecoveryReadinessInput`. |
+| `--json` | Emit JSON output; without this, a plain-text report is printed. |
+
+The command evaluates the input against deterministic blocker rules and exits
+non-zero when the verdict is `NOT_MERGE_READY`. See
+[PR Readiness Recovery Evaluation](pr-readiness-recovery-evaluation.md) for the
+input schema, blocker categories, and end-to-end workflow.
 
 ## Output contract
 
