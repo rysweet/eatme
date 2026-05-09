@@ -110,7 +110,7 @@ Example plain report:
 
 ```text
 First-lesson automation scenario readiness: not ready
-Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch has not been verified by the modernized target
+Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch lacks modernized-target proof
 
 Shown:
 - Original Alice launch/action evidence is shown.

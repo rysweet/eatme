@@ -95,14 +95,14 @@ fn desktop_proof_gap(
     if !action_passed(target, "observe-run-window-after-toolbar-button") {
         return (
             "desktop_run_window_unverified".into(),
-            "desktop Run window dispatch has not been verified by the modernized target".into(),
+            "desktop Run window dispatch lacks modernized-target proof".into(),
             None,
         );
     }
     if !action_passed(target, "observe-desktop-run-execution-after-toolbar-button") {
         return (
             "desktop_run_execution_unverified".into(),
-            "desktop Run execution has not been verified by the modernized target".into(),
+            "desktop Run execution lacks modernized-target proof".into(),
             None,
         );
     }
