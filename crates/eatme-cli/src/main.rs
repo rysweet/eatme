@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 
 mod first_lesson;
 use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
+mod default_workflow;
 mod lesson_contract;
 use lesson_contract::{print_lesson_readiness_check, print_lesson_session_check};
 
@@ -38,6 +39,10 @@ enum Commands {
         #[command(subcommand)]
         command: AliceCommand,
     },
+    DefaultWorkflow {
+        #[command(subcommand)]
+        command: DefaultWorkflowCommand,
+    },
 }
 
 #[derive(Subcommand)]
@@ -60,6 +65,32 @@ enum AliceCommand {
     CheckLessonSession(CheckLessonSessionArgs),
     CheckLessonReadiness(CheckLessonSessionArgs),
     RunFirstLessonReadiness(RunFirstLessonReadinessArgs),
+}
+
+#[derive(Subcommand)]
+enum DefaultWorkflowCommand {
+    PrReadiness(DefaultWorkflowPrReadinessArgs),
+    CollectGithubEvidence(DefaultWorkflowCollectGithubEvidenceArgs),
+}
+
+#[derive(Args)]
+struct DefaultWorkflowPrReadinessArgs {
+    #[arg(long)]
+    evidence: PathBuf,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct DefaultWorkflowCollectGithubEvidenceArgs {
+    #[arg(long)]
+    pr: u64,
+    #[arg(long, default_value = "origin")]
+    remote: String,
+    #[arg(long)]
+    checkout: bool,
+    #[arg(long)]
+    json: bool,
 }
 
 #[derive(Args)]
@@ -289,6 +320,28 @@ fn main() -> Result<()> {
                 }
             }
         },
+        Commands::DefaultWorkflow {
+            command: DefaultWorkflowCommand::PrReadiness(args),
+        } => {
+            let outcome = default_workflow::evaluate_pr_readiness_evidence(&args.evidence);
+            print_result(args.json, &outcome.report)?;
+            if outcome.exit_code != 0 {
+                std::process::exit(outcome.exit_code);
+            }
+        }
+        Commands::DefaultWorkflow {
+            command: DefaultWorkflowCommand::CollectGithubEvidence(args),
+        } => {
+            let report = default_workflow::github::collect_github_evidence(
+                &default_workflow::github::GithubEvidenceOptions {
+                    pr_number: args.pr,
+                    remote: &args.remote,
+                    checkout: args.checkout,
+                },
+                &runner,
+            )?;
+            print_result(args.json, &report)?;
+        }
     }
     Ok(())
 }
@@ -349,124 +402,4 @@ fn ensure_real_alice_gate(scenario: &str) -> Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::ffi::OsString;
-    use std::sync::{Mutex, MutexGuard};
-
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
-
-    #[test]
-    fn baseline_launch_smoke_keeps_compatibility_without_gate() {
-        let _gate = EnvOverride::remove("EATME_REAL_ALICE");
-
-        let result = ensure_real_alice_gate("real-alice-launch-smoke");
-
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn lesson_launch_smoke_requires_real_alice_gate() {
-        let _gate = EnvOverride::remove("EATME_REAL_ALICE");
-
-        let result = ensure_real_alice_gate("building-a-scene-first-world");
-
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("EATME_REAL_ALICE=1")
-        );
-    }
-
-    #[test]
-    fn next_lesson_launch_smoke_requires_real_alice_gate() {
-        let _gate = EnvOverride::remove("EATME_REAL_ALICE");
-
-        let result = ensure_real_alice_gate("code-editor-first-run");
-
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("EATME_REAL_ALICE=1")
-        );
-    }
-
-    #[test]
-    fn hour_of_code_launch_smoke_requires_real_alice_gate() {
-        let _gate = EnvOverride::remove("EATME_REAL_ALICE");
-
-        let result = ensure_real_alice_gate("hour-of-code-studio-kickoff");
-
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("EATME_REAL_ALICE=1")
-        );
-    }
-
-    #[test]
-    fn lesson_launch_smoke_accepts_explicit_real_alice_gate() {
-        let _gate = EnvOverride::set("EATME_REAL_ALICE", "1");
-
-        let result = ensure_real_alice_gate("building-a-scene-first-world");
-
-        assert!(result.is_ok());
-    }
-
-    struct EnvOverride<'a> {
-        _guard: MutexGuard<'a, ()>,
-        key: &'static str,
-        old_value: Option<OsString>,
-    }
-
-    impl<'a> EnvOverride<'a> {
-        fn set(key: &'static str, value: &str) -> Self {
-            let guard = ENV_LOCK.lock().unwrap();
-            let old_value = env::var_os(key);
-            unsafe {
-                // SAFETY: environment mutation is process-global. ENV_LOCK keeps
-                // these tests serial until Drop restores the original value.
-                env::set_var(key, value);
-            }
-            Self {
-                _guard: guard,
-                key,
-                old_value,
-            }
-        }
-
-        fn remove(key: &'static str) -> Self {
-            let guard = ENV_LOCK.lock().unwrap();
-            let old_value = env::var_os(key);
-            unsafe {
-                // SAFETY: environment mutation is process-global. ENV_LOCK keeps
-                // these tests serial until Drop restores the original value.
-                env::remove_var(key);
-            }
-            Self {
-                _guard: guard,
-                key,
-                old_value,
-            }
-        }
-    }
-
-    impl Drop for EnvOverride<'_> {
-        fn drop(&mut self) {
-            unsafe {
-                // SAFETY: ENV_LOCK is still held until this drop completes.
-                if let Some(value) = &self.old_value {
-                    env::set_var(self.key, value);
-                } else {
-                    env::remove_var(self.key);
-                }
-            }
-        }
-    }
-}
+mod main_tests;
