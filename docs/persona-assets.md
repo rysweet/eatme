@@ -155,7 +155,7 @@ It requires persona and scenario references for:
 | Media/audio creators | `media-audio-creator` | `media-audio-cue-storyboard` |
 | Model/texture import users | `model-texture-importer` | `model-texture-import-checkpoint` |
 | Alice 2 migration users | `alice-2-migration-mentor` | `alice-2-migration-bridge` |
-| Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop` |
+| Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop`, `instructor-student-save-reopen-export-evidence-handoff`, `student-artifact-package-share-evidence` |
 
 ## Persona-crew scenario coverage
 
@@ -168,12 +168,12 @@ coverage table each have generated Gadugi adapters.
 
 | Coverage area | Scenario IDs |
 | --- | --- |
-| Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight`, `instructor-student-save-reopen-export-evidence-handoff` |
+| Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight` |
 | Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
 | World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
 | Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum`, `arrays-collection-choreography` |
-| Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab` |
-| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop`, `vr-camera-perspective-tour` |
+| Export/share | `audio-camera-and-export-sharecase`, `modified-class-portability`, `classroom-gallery-walk-and-rubric`, `creature-choreography-loop-lab`, `instructor-student-save-reopen-export-evidence-handoff` |
+| Classroom use | `setup-preflight-ready-to-create`, `hour-of-code-studio-kickoff`, `classroom-gallery-walk-and-rubric`, `mars-rover-proximity-mission`, `game-score-timer-win-lose-loop`, `vr-camera-perspective-tour`, `instructor-student-save-reopen-export-evidence-handoff` |
 | Curriculum design | `curriculum-sequence-remix-pack` |
 | IT/setup support | `setup-support-lab-readiness` |
 | Workshops | `workshop-facilitator-live-studio` |
@@ -181,7 +181,7 @@ coverage table each have generated Gadugi adapters.
 | Media/audio creation | `media-audio-cue-storyboard` |
 | Model/texture import | `model-texture-import-checkpoint` |
 | Alice 2 migration | `alice-2-migration-bridge` |
-| Teacher-community sharing | `teacher-community-sharing-loop` |
+| Teacher-community sharing | `teacher-community-sharing-loop`, `instructor-student-save-reopen-export-evidence-handoff`, `student-artifact-package-share-evidence` |
 
 ## Desktop smoke and outside-in scenario assets
 

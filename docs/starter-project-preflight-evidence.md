@@ -1,8 +1,7 @@
 # Starter project preflight evidence
 
-The starter project preflight scenario documents the first real Alice action
-evidence for opening the bundled starter project before save, reopen, or export
-work is reviewed.
+The starter project preflight scenario documents opened-project/setup evidence
+for the bundled starter project before save, reopen, or export work is reviewed.
 
 Use this page when you need to run the scenario, edit its non-code wording,
 inspect its evidence contract, or refresh the generated Gadugi adapter.

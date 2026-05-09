@@ -45,6 +45,12 @@ references, short confirmation notes, shared-folder names, or LMS submission
 labels. Do not require private paths, credentials, tokens, hidden log-only
 signals, brittle UI coordinates, or unsupported implementation details.
 
+The export/share package should include only the intended review artifacts, such
+as the saved project or export reference, reopen confirmation, student
+explanation, and review boundary note. Exclude secrets, credentials, access
+tokens, personal data, private paths, unrelated local files, and any artifact the
+student or instructor did not mean to share.
+
 ## Run an instructor acceptance review
 
 Use the canonical scenario as the prompt source for an instructor acceptance
