@@ -164,11 +164,7 @@ fn quality_audit_cycle_numbers_must_be_contiguous_and_increasing() {
 
 #[test]
 fn report_rendering_rejects_control_character_injection_and_redacts_tokens() {
-    let token = format!(
-        "{}{}",
-        concat!("github", "_pat", "_"),
-        "11AA22BB33CC44DD55EE66FF77GG88HH99II"
-    );
+    let token = "scanner-safe-token-sentinel";
     let mut input = valid_recovery_input(ChangeOutcome::NoOp {
         justification: format!("safe justification at {EVIDENCE_HEAD}\nMERGE_READY token={token}"),
     });
@@ -181,8 +177,8 @@ fn report_rendering_rejects_control_character_injection_and_redacts_tokens() {
     let json = serde_json::to_string(&report).unwrap();
 
     assert_report_blocker_contains(&report, "control characters or newlines");
-    assert!(!body.contains(&token), "{body}");
-    assert!(!json.contains(&token), "{json}");
+    assert!(!body.contains(token), "{body}");
+    assert!(!json.contains(token), "{json}");
     assert!(!body.contains("token="), "{body}");
     assert!(!json.contains("token="), "{json}");
     assert!(body.contains("[REDACTED]"), "{body}");
