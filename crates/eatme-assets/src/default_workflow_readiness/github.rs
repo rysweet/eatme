@@ -178,26 +178,36 @@ where
         let checks = self
             .retry_policy
             .run(|| self.client.check_runs(draft.pr_number))?;
+        let confirmed_pull_request = self
+            .retry_policy
+            .run(|| self.client.pull_request(draft.pr_number))?;
 
-        let pr_evidence = pr_evidence_from_texts(&pull_request);
+        if confirmed_pull_request.head_ref_oid != pull_request.head_ref_oid {
+            return Err(ExternalServiceError::new(
+                ExternalServiceErrorKind::InvalidResponse,
+                "PR head changed while collecting GitHub evidence; retry readiness collection",
+            ));
+        }
+
+        let pr_evidence = pr_evidence_from_texts(&confirmed_pull_request);
         let check_runs = checks
             .into_iter()
             .map(|check| CheckRunEvidence {
                 name: check.name,
                 status: check.status,
                 conclusion: check.conclusion,
-                head_sha: pull_request.head_ref_oid.clone(),
+                head_sha: confirmed_pull_request.head_ref_oid.clone(),
             })
             .collect();
 
         Ok(ReadinessInput {
             pr_number: draft.pr_number,
-            head_ref_name: pull_request.head_ref_name,
-            head_ref_oid: pull_request.head_ref_oid,
+            head_ref_name: confirmed_pull_request.head_ref_name,
+            head_ref_oid: confirmed_pull_request.head_ref_oid,
             local_branch: draft.local_branch,
             local_head_sha: draft.local_head_sha,
-            merge_state_status: pull_request.merge_state_status,
-            mergeable: pull_request.mergeable,
+            merge_state_status: confirmed_pull_request.merge_state_status,
+            mergeable: confirmed_pull_request.mergeable,
             command_evidence: draft.command_evidence,
             check_runs,
             quality_audit_cycles: draft.quality_audit_cycles,

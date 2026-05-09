@@ -11,6 +11,7 @@ use eatme_assets::default_workflow_readiness::{
 const PR_NUMBER: u64 = 193;
 const BRANCH: &str = "feat/issue-176-eatme-wave7-gap-matrix-lane-follow-default-workflo";
 const HEAD: &str = "8255dcb33d4c22214c971fa22e7e6d7b9237c0b3";
+const NEXT_HEAD: &str = "1111111111111111111111111111111111111111";
 
 const REQUIRED_COMMANDS: [&str; 4] = [
     "cargo run -q -p eatme-cli -- assets validate --json",
@@ -78,6 +79,22 @@ fn github_adapter_does_not_retry_permanent_external_failures() {
     assert!(error.message().contains("bad request"));
 }
 
+#[test]
+fn github_adapter_blocks_head_changes_during_evidence_collection() {
+    let client = FakeGitHubClient::head_changes();
+    let adapter = GitHubReadinessAdapter::with_retry_policy(
+        client,
+        RetryPolicy::new(2, Duration::from_millis(0)),
+    );
+
+    let error = adapter
+        .build_input(readiness_draft())
+        .expect_err("PR head changes during collection must block readiness evidence");
+
+    assert_eq!(error.kind(), &ExternalServiceErrorKind::InvalidResponse);
+    assert!(error.message().contains("head changed"));
+}
+
 struct FakeGitHubClient {
     mode: FakeMode,
     pull_request_calls: Cell<usize>,
@@ -104,12 +121,20 @@ impl FakeGitHubClient {
             pull_request_calls: Cell::new(0),
         }
     }
+
+    fn head_changes() -> Self {
+        Self {
+            mode: FakeMode::HeadChanges,
+            pull_request_calls: Cell::new(0),
+        }
+    }
 }
 
 enum FakeMode {
     Ready,
     FailsOnce,
     PermanentFailure,
+    HeadChanges,
 }
 
 impl GitHubReadinessClient for FakeGitHubClient {
@@ -126,7 +151,10 @@ impl GitHubReadinessClient for FakeGitHubClient {
                 ExternalServiceErrorKind::CommandFailed,
                 "bad request",
             )),
-            FakeMode::Ready | FakeMode::FailsOnce => Ok(github_pull_request()),
+            FakeMode::HeadChanges if calls >= 2 => Ok(github_pull_request_with_head(NEXT_HEAD)),
+            FakeMode::Ready | FakeMode::FailsOnce | FakeMode::HeadChanges => {
+                Ok(github_pull_request())
+            }
         }
     }
 
@@ -170,15 +198,19 @@ fn readiness_draft() -> ReadinessEvidenceDraft {
 }
 
 fn github_pull_request() -> GitHubPullRequest {
+    github_pull_request_with_head(HEAD)
+}
+
+fn github_pull_request_with_head(head: &str) -> GitHubPullRequest {
     GitHubPullRequest {
         head_ref_name: BRANCH.into(),
-        head_ref_oid: HEAD.into(),
+        head_ref_oid: head.into(),
         merge_state_status: "CLEAN".into(),
         mergeable: "MERGEABLE".into(),
         evidence_texts: vec![GitHubEvidenceText {
             location: "PR body".into(),
             body: format!(
-                "{HEAD}\n{}\n{}\n{}\n{}\nGitHub checks\nDiff scope\nDocs impact\nQuality audit\nNo manual merge",
+                "{head}\n{}\n{}\n{}\n{}\nGitHub checks\nDiff scope\nDocs impact\nQuality audit\nNo manual merge",
                 REQUIRED_COMMANDS[0],
                 REQUIRED_COMMANDS[1],
                 REQUIRED_COMMANDS[2],

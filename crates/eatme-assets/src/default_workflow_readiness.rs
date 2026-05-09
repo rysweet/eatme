@@ -23,6 +23,9 @@ pub use model::*;
 mod github;
 pub use github::*;
 
+mod validators;
+use validators::{validate_check_run, validate_recorded_commands, validate_required_commands};
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReadinessArtifact {
     marker: &'static str,
@@ -138,48 +141,7 @@ pub struct EvidenceCommands;
 
 impl EvidenceCommands {
     pub fn validate(input: &ReadinessInput) -> Result<(), ReadinessArtifact> {
-        for evidence in &input.command_evidence {
-            if evidence.used_timeout_wrapper || uses_timeout_wrapper(&evidence.command) {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!("timeout wrapper used for '{}'", evidence.command),
-                    "rerun repository evidence commands directly with no timeout wrapper",
-                ));
-            }
-        }
-
-        for command in REQUIRED_COMMANDS {
-            let Some(evidence) = input
-                .command_evidence
-                .iter()
-                .find(|evidence| evidence.command == command)
-            else {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!("missing required command evidence for '{command}'"),
-                    "run the missing repository-supported QA command for the current head",
-                ));
-            };
-
-            if evidence.head_sha != input.head_ref_oid {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!(
-                        "command '{}' is tied to wrong head '{}'",
-                        evidence.command, evidence.head_sha
-                    ),
-                    "rerun command evidence after verifying the current PR head",
-                ));
-            }
-            if evidence.status != CommandStatus::Passed {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!("command '{}' did not pass", evidence.command),
-                    "fix the command failure or wait for pending evidence before readiness",
-                ));
-            }
-        }
-        Ok(())
+        validate_required_commands(input)
     }
 }
 
@@ -290,34 +252,7 @@ impl GitHubActionsReview {
         }
 
         for check in &input.check_runs {
-            if check.head_sha != input.head_ref_oid {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!(
-                        "check '{}' is tied to wrong head '{}'",
-                        check.name, check.head_sha
-                    ),
-                    "refresh check-run evidence for the current PR head",
-                ));
-            }
-            if check.status != CheckStatus::Completed {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!("pending check '{}'", check.name),
-                    "wait for every current-head check run to complete",
-                ));
-            }
-            if check.conclusion != CheckConclusion::Success {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!(
-                        "check '{}' concluded {}",
-                        check.name,
-                        check_conclusion_label(&check.conclusion)
-                    ),
-                    "fix or rerun unsuccessful current-head checks before readiness",
-                ));
-            }
+            validate_check_run(input, check)?;
         }
         Ok(())
     }
@@ -334,34 +269,18 @@ impl PREvidenceReview {
             ));
         }
 
-        for command in REQUIRED_COMMANDS {
-            if !evidence
-                .recorded_commands
-                .iter()
-                .any(|record| record == command)
-            {
-                return Err(ReadinessArtifact::blocked(
-                    input,
-                    format!("PR evidence is missing command '{command}'"),
-                    "record every required command in the PR evidence",
-                ));
-            }
-        }
+        validate_recorded_commands(input)?;
 
-        if !evidence.records_github_checks {
-            return Err(missing_pr_evidence(input, "GitHub checks"));
-        }
-        if !evidence.records_diff_scope {
-            return Err(missing_pr_evidence(input, "diff scope"));
-        }
-        if !evidence.records_docs_impact {
-            return Err(missing_pr_evidence(input, "docs impact"));
-        }
-        if !evidence.records_quality_audit {
-            return Err(missing_pr_evidence(input, "quality audit"));
-        }
-        if !evidence.records_no_manual_merge {
-            return Err(missing_pr_evidence(input, "no manual merge"));
+        for (recorded, item) in [
+            (evidence.records_github_checks, "GitHub checks"),
+            (evidence.records_diff_scope, "diff scope"),
+            (evidence.records_docs_impact, "docs impact"),
+            (evidence.records_quality_audit, "quality audit"),
+            (evidence.records_no_manual_merge, "no manual merge"),
+        ] {
+            if !recorded {
+                return Err(missing_pr_evidence(input, item));
+            }
         }
 
         if evidence.updated_during_review
@@ -445,14 +364,6 @@ fn missing_pr_evidence(input: &ReadinessInput, item: &str) -> ReadinessArtifact 
     )
 }
 
-fn uses_timeout_wrapper(command: &str) -> bool {
-    command
-        .split_whitespace()
-        .next()
-        .map(|first| first == "timeout" || first.ends_with("/timeout"))
-        .unwrap_or(false)
-}
-
 fn is_focused_readiness_path(path: &str) -> bool {
     matches!(
         path,
@@ -466,18 +377,6 @@ fn is_focused_readiness_path(path: &str) -> bool {
 fn contains_overclaim(claim: &str) -> bool {
     let claim = claim.to_lowercase();
     OVERCLAIMS.iter().any(|overclaim| claim.contains(overclaim))
-}
-
-fn check_conclusion_label(conclusion: &CheckConclusion) -> &'static str {
-    match conclusion {
-        CheckConclusion::Success => "success",
-        CheckConclusion::Failure => "failure",
-        CheckConclusion::Cancelled => "cancelled",
-        CheckConclusion::Skipped => "skipped",
-        CheckConclusion::TimedOut => "timed_out",
-        CheckConclusion::Neutral => "neutral",
-        CheckConclusion::Unknown => "unknown",
-    }
 }
 
 fn display_or_unknown(value: &str) -> &str {
