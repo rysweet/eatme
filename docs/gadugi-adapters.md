@@ -167,11 +167,11 @@ Generated CLI launch runners that export `RUN_ID` declare it under
 
 ## Performance
 
-The adapter generator preallocates collections (`Vec::with_capacity`) for steps,
-assertions, and source paths based on the discovered scenario count. Evidence
-scanning uses `case-insensitive byte-window matching instead of allocating
-lowercased copies, keeping the generator fast even as the scenario inventory
-grows.
+The adapter generator preallocates collections (`Vec::with_capacity`) for source
+paths based on the discovered scenario count and for steps and assertions based
+on each scenario's step count. Evidence scanning uses case-insensitive
+byte-window matching instead of allocating lowercased copies, keeping the
+generator fast even as the scenario inventory grows.
 
 Hand-authored Gadugi regression scenarios may live beside generated adapters when
 they test the eatme CLI or validation contract directly. They still count as
