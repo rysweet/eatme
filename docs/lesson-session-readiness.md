@@ -24,9 +24,13 @@ Project, procedure/edit, Save option/action evidence, visible rendering, grading
 creative assessment, and first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
 defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
-`Desktop next action`, and `Unproven` output, plus additive JSON
-`shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
-`unproven_claims` fields while preserving legacy progress and boundary fields.
+`Desktop next action`, optional `Original Alice action evidence`, and `Unproven`
+output, plus additive JSON `shown_evidence[]`, `not_yet_shown[]`,
+`desktop_next_action`, `original_alice_action_evidence`, and `unproven_claims`
+fields while preserving legacy progress and boundary fields.
+For the artifact shape, filler rejection, and non-claim wording contract for
+those evidence surfaces, see
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Scenario map
 
@@ -216,7 +220,12 @@ normalizes the target evidence:
         }
       ]
     }
-  ]
+  ],
+  "original_alice_action_evidence": {
+    "status": "missing",
+    "summary": "Original Alice action evidence is missing.",
+    "detail": "Original Alice action evidence was not found in the comparison target evidence."
+  }
 }
 ```
 
@@ -293,10 +302,12 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow. The plain output renders `Desktop proof`, `Shown`,
-`Not yet shown`, optional `Desktop next action`, and `Unproven`. JSON adds
-the matching user-facing arrays while still keeping Save Project and Select
-Project proof-artifact categories in legacy `evidence_progress.items[]`.
+student first-lesson flow. JSON adds the matching user-facing arrays and the
+structured `original_alice_action_evidence` object while still keeping Save
+Project and Select Project proof-artifact categories in legacy
+`evidence_progress.items[]`. The plain `Original Alice action evidence` section
+belongs to the `alice run-first-lesson-readiness` sequence renderer and appears
+only when `original_alice_action_evidence.status` is `missing`.
 Declarations come from the modernized target's desktop next-action evidence; if
 that evidence or a category declaration is absent, the category remains visible
 as not yet shown.
@@ -421,6 +432,7 @@ Top-level fields:
 | `shown_evidence` | array | User-facing evidence facts that are shown by accepted evidence. |
 | `not_yet_shown` | array | User-facing missing, invalid, not-observed, or blocked claims. |
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable to the current run. Missing or invalid evidence is represented through not-yet-shown, issues, or legacy fields instead. |
+| `original_alice_action_evidence` | object | Structured original Alice action evidence summary. `status` is `missing` when a target evidence blocker has `code: "missing_real_action_evidence"`; otherwise it is `available`. |
 | `unproven_claims` | array | Canonical non-claims that remain visible in plain output and JSON. |
 | `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
 | `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints using explicit `present`, `missing`, `invalid`, `not_observed`, and `blocked` states. |
@@ -439,6 +451,29 @@ First-lesson boundary reporting adds `evidence_boundaries[]` to this schema.
 Consumers that need the bounded automation scenarios contract should read
 `evidence_boundaries[]`; older consumers can continue to use
 `evidence_progress.items[]` and the project proof-artifact entries.
+
+### Original Alice action evidence API
+
+`original_alice_action_evidence` is the stable summary for original Alice action
+evidence state. It is additive and does not remove target-local diagnostics from
+`target_evidence[]`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `available` or `missing`. |
+| `summary` | string | Fixed user-facing summary: `Original Alice action evidence is missing.` or `Original Alice action evidence is available.` |
+| `detail` | string | Fixed bounded detail for the selected status. |
+
+The readiness builder derives this field after building `target_evidence[]`.
+The only missing-evidence source of truth is a target evidence blocker with
+`code: "missing_real_action_evidence"`. The blocker remains in
+`target_evidence[]`; the new field prevents the state from being hidden inside
+nested diagnostics only. Missing original Alice action evidence is reportable
+structured state. It is not fatal by itself and does not become a claim that full
+UI automation, Save completion, lesson completion, grading, or creative
+assessment succeeded. `available` only means no `missing_real_action_evidence`
+blocker was found; it does not prove full UI automation, Save completion, lesson
+completion, grading, or creative assessment.
 
 ### Evidence progress API
 
@@ -478,7 +513,8 @@ Project proof-artifact item example:
 ```
 
 This means proof collection hit an explicit boundary. It does not mean Alice
-completed a lesson, saved a learner world through full UI automation, or graded
+completed a lesson, fully executed a learner world, saved a learner world through
+full UI automation, deployed sharing, proved platform success, or graded
 creative work.
 
 ### Desktop proof contract
@@ -491,7 +527,7 @@ automation. It reports what happened to the modernized desktop proof attempt:
 | `skipped` | Execution was not requested, or no modernized target evidence exists. This is a deliberate manual smoke skip, not a failed proof. |
 | `unsupported_environment` | Execution was requested, but the modernized target could not launch desktop proof collection, for example because Alice home resolution or required target paths failed. |
 | `launched_but_unverified` | Alice launch evidence exists, but Run-window, desktop execution, screenshot, or pixel-observation proof is missing, blocked, invalid, or not observed. |
-| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, rendering correctness, grading, save behavior, or creative assessment. |
+| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, full world execution, rendering correctness, grading, save behavior, deployed sharing/platform success, or creative assessment. |
 
 This legacy desktop proof contract includes `reason_code`, `detail`,
 `target_role`, and optional `artifact` fields so CI and reports can preserve the
@@ -734,6 +770,7 @@ Each `target_evidence[]` entry describes one comparison target:
 | `required_actions` | array of strings | Action ids discovered from the UI action contract. |
 | `missing_assertions` | array of strings | Required assertions absent from the target evidence. |
 | `missing_required_actions` | array of strings | Required action ids absent from the UI action contract. |
+| `blockers` | array | Target-local structured blockers. A blocker with `code: "missing_real_action_evidence"` is also summarized by top-level `original_alice_action_evidence.status: "missing"`. |
 | `no_go_contracts` | array | Target-local unsupported-action entries. |
 
 Required action ids for the first-lesson flow are:
@@ -837,7 +874,7 @@ This is acceptable first-lesson evidence when the report also includes
 
 ### Student flow: inspect first-lesson scenario evidence
 
-Boundary reporting makes plain output name shown and not-yet-shown scenario
+The first-lesson sequence plain renderer names shown and not-yet-shown scenario
 evidence boundaries:
 
 ```text
@@ -852,6 +889,10 @@ Shown:
 Not yet shown:
 - Save completion is not yet proven.
 - First-lesson completion is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.
@@ -1009,5 +1050,5 @@ summary in the PR description:
 | Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `target_evidence[]`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
 | First-lesson scenario evidence | Reports preserve target-local launch/action diagnostics, project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
-| Boundaries | The change does not claim full UI automation, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless distinct explicit evidence exists. |
+| Boundaries | The change does not claim full UI automation, full world execution, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, deployed sharing/platform success, or deployed-service status unless distinct explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

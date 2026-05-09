@@ -1,10 +1,26 @@
 # Starter project preflight evidence
 
-The starter project preflight scenario documents opened-project/setup evidence
-for the bundled starter project before save, reopen, or export work is reviewed.
+The starter project preflight scenario documents the first real Alice
+launch/opened-project evidence for the bundled starter project before save,
+reopen, or export work is reviewed.
 
 Use this page when you need to run the scenario, edit its non-code wording,
 inspect its evidence contract, or refresh the generated Gadugi adapter.
+
+## Documentation contract
+
+This page is scoped to the starter-project preflight evidence boundary defined
+in [Default-workflow PR Readiness](default-workflow-pr-readiness.md). It may
+describe evidence that the bundled starter project was launched and opened,
+evidence that an editable starter-world change was named, attempted run or
+observation evidence, generated adapter freshness, asset validation, and
+readiness gaps that still require later proof.
+
+Do not use this page to claim broader readiness. In particular, starter-project
+preflight evidence is not pull request readiness, mergeability, production
+suitability, complete lesson execution, user-like Alice UI coverage,
+save/reopen/export completion, grading, creative assessment, visible rendering
+correctness, or complete Alice coverage.
 
 ## What the scenario proves
 
@@ -44,9 +60,8 @@ Real Alice runs are explicit opt-in runs. Non-baseline scenarios require:
 export EATME_REAL_ALICE=1
 ```
 
-For Node-based wrappers or agent tooling only, a larger heap can help with
-wrapper runtime limits. This is optional troubleshooting, not project
-configuration. The Rust CLI does not require this setting:
+For Node-based wrappers or agent tooling only, a larger heap can avoid wrapper
+runtime limits. The Rust CLI does not require this setting:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -91,18 +106,7 @@ screenshots/startup.png
 ```
 
 Use the manifest and artifacts as setup evidence before asking an instructor,
-student, agent, or adapter to reason about save, reopen, or export behavior. The
-next documented handoff is
-[Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
-That handoff consumes preflight evidence as an opened-project reference only; it
-requires separate save-name, save-location, reopen-confirmation, export/share,
-and instructor-review evidence.
-
-When this scenario is part of a recovered PR, use
-[Default-workflow PR Readiness](default-workflow-pr-readiness.md) as the
-repository readiness checklist. That readiness record belongs to the exact
-repository `HEAD`; it is not a substitute for Alice classroom evidence and does
-not expand what this preflight scenario proves.
+student, agent, or adapter to reason about save, reopen, or export behavior.
 
 ## Manifest and artifact contract
 
@@ -191,7 +195,30 @@ assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 Do not hand-edit the generated Gadugi adapter to change mission intent. Edit the
 canonical eatme scenario and regenerate instead.
 
-## Validate the documentation-backed contract
+## Validate the boundary contract
+
+The current starter-project/preflight boundary check is the focused Rust test in:
+
+```text
+crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs
+```
+
+Run the boundary check directly:
+
+```bash
+cargo test -p eatme-assets starter_project_preflight_boundary
+```
+
+The test validates the canonical scenario YAML, generated Gadugi adapter
+wording, this page, and
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md) against the
+same bounded evidence contract.
+
+The documentation check fails only on the narrow readiness overclaim phrases
+listed by the source contract. It does not fail on negative boundary statements
+such as this page's explanation that starter-project preflight evidence is not
+pull request readiness. Failure output names the file, matched phrase, contract
+source, and bounded replacement wording.
 
 Validate the edited scenario:
 

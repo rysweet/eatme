@@ -323,6 +323,41 @@ limiting, preserve the intended PR text unchanged outside the repository and
 record the exact `gh` failure beside it. Do not commit fallback logs or local
 publish-attempt files to the PR branch.
 
+## Starter-project evidence boundary
+
+Starter-project preflight evidence is bounded setup evidence for opening the
+bundled starter project and recording reviewable launch artifacts. It is not PR
+readiness, mergeability, production suitability, complete lesson execution,
+full Alice UI automation, visible rendering correctness, Save/reopen/export
+completion, grading, creative assessment, or complete Alice coverage.
+
+The source contract for this boundary is split across:
+
+- `docs/default-workflow-pr-readiness.md`
+- `docs/starter-project-preflight-evidence.md`
+
+## Executable starter-project boundary check
+
+The current executable starter-project boundary check lives in
+`crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs`. It reads
+this contract table and applies the same overclaim rules to the canonical
+scenario text, generated Gadugi adapter output, and scoped starter-project
+preflight evidence documentation.
+
+| Prohibited phrase | Bounded replacement |
+| --- | --- |
+| `PR ready` | `starter-project preflight evidence recorded` |
+| `merge ready` | `starter-project evidence boundary satisfied` |
+| `production ready` | `bounded preflight evidence available for review` |
+| `ready for merge` | `readiness gaps are documented for later gates` |
+| `readiness guaranteed` | `readiness depends on the separate readiness gates` |
+| `complete PR readiness` | `starter-project preflight evidence only` |
+| `proves visible rendering correctness` | `screenshot or window evidence is observation evidence only` |
+| `proves save/reopen/export` | `save, reopen, and export remain readiness gaps` |
+| `first lesson is complete` | `starter-project preflight evidence only` |
+| `grades learner work` | `records evidence for review; it does not grade` |
+| `assesses creativity` | `names an editable change without assessing creativity` |
+
 ## Related documentation
 
 - [Persona Assets](persona-assets.md)
