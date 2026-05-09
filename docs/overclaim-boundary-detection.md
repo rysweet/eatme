@@ -49,6 +49,10 @@ replacement**. The detector scans document text line by line, normalizing
 whitespace and case, and flags any line that contains a prohibited phrase
 without a preceding negation boundary (such as "not", "does not", "without").
 
+Whitespace normalization collapses any run of whitespace to a single space and
+lowercases before comparison, so `"PR   ready"` matches `"pr ready"`. This
+prevents cosmetic formatting differences from bypassing overclaim detection.
+
 This means documentation that explains what the evidence is *not* (negative
 boundary statements) passes the check. Documentation that claims the evidence
 *is* something overbroad fails.
@@ -142,6 +146,17 @@ pub struct OverclaimRule {
 A single overclaim rule parsed from the contract document. The
 `normalized_phrase` is the whitespace-collapsed, lowercased form used for
 matching.
+
+Constructor:
+
+```rust
+OverclaimRule::new(phrase: &str, bounded_replacement: &str) -> Self
+```
+
+Creates a rule from the raw phrase and replacement strings. The constructor
+automatically derives `normalized_phrase` by collapsing whitespace runs to a
+single space and lowercasing. Tests typically use this constructor rather than
+setting struct fields directly.
 
 #### `ReadinessOverclaim<'a>`
 
