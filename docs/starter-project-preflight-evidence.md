@@ -1,11 +1,13 @@
 # Starter project preflight evidence
 
-The starter project preflight scenario documents the first real Alice
-launch/opened-project evidence for the bundled starter project before save,
-reopen, or export work is reviewed.
+The starter project preflight scenario documents bounded real Alice evidence for
+opening the bundled starter project before save, reopen, or export work is
+trusted. Its repository-owned evidence surface is the existing
+`starter-project-readiness-report.txt` artifact written by the canonical
+`starter-project-open-save-export-preflight` scenario.
 
 Use this page when you need to run the scenario, edit its non-code wording,
-inspect its evidence contract, or refresh the generated Gadugi adapter.
+inspect the readiness-report contract, or refresh the generated Gadugi adapter.
 
 ## Documentation contract
 
@@ -26,7 +28,10 @@ correctness, or complete Alice coverage.
 
 `starter-project-open-save-export-preflight` proves that the eatme harness can
 launch real Alice with the bundled starter project and record inspectable
-evidence for that opened-project state.
+evidence for that opened-project state. Its readiness report ties the evidence to
+the silver thread: starter world/program observable change evidence for the
+minimal open/save/export path. It explicitly records absent evidence states
+instead of implying that unobserved paths passed.
 
 The evidence boundary is intentionally narrow:
 
@@ -37,7 +42,7 @@ The evidence boundary is intentionally narrow:
 | Assertions | Records deterministic harness assertions, including real Alice execution evidence. |
 | Window or screenshot evidence | Shows that a smoke-ready Alice desktop session was observed. |
 | Logs | Preserve Alice launch output for review and troubleshooting. |
-| Inspectable launch-smoke outputs | Give instructor, student, or adapter reviewers setup evidence for later save, reopen, export, or action-contract review. |
+| `starter-project-readiness-report.txt` | Gives instructor, student, or adapter reviewers one bounded handoff for opened-project evidence and explicit save, reopen, export, or readiness gaps. |
 
 This scenario does not write `ui-action-contract.json`; that artifact belongs to
 scenarios that explicitly exercise or specify user-like UI actions, such as
@@ -45,6 +50,62 @@ scenarios that explicitly exercise or specify user-like UI actions, such as
 automation, creative assessment, learner-world grading, or complete Alice
 coverage. It is preflight evidence for opening the starter project, not proof
 that a learner completed save, reopen, or export work.
+
+## Readiness report contract
+
+`starter-project-readiness-report.txt` is the only repository-owned report
+surface for this preflight. It belongs to the canonical scenario asset and is
+mirrored into the generated Gadugi adapter only through normal adapter
+generation.
+
+The canonical scenario writes this artifact with the fields below. This is a
+refinement of the same artifact, not a second reporting lane.
+
+The report is line-oriented `key=value` text so reviewers can read it directly
+or grep for a specific field. Each line must stay scoped to the silver thread:
+the minimal open/save/export readiness path for the bundled starter project.
+
+| Field | Required meaning |
+| --- | --- |
+| `silver_thread` | Names the minimal open/save/export path as the scope of the report. |
+| `open_evidence` | Points to the launch-smoke JSON report, manifest, log, and screenshot or window evidence for the opened bundled starter project. |
+| `starter_world_change_evidence` | States whether a starter world change was observed; when absent, use `not observed` or `missing`. |
+| `starter_program_change_evidence` | States whether a starter program change was observed; when absent, use `not observed` or `missing`. |
+| `save_evidence` | States whether save evidence is present; when absent, use `not observed`, `unavailable`, or `missing`. |
+| `export_evidence` | States whether export evidence is present; when absent, use `not observed`, `unavailable`, or `missing`. |
+| `configuration_state` | Names unavailable prerequisites or optional paths with `not configured` when they were not set for the run. |
+| `claim_boundary` | States the report is not full UI automation, not visible rendering correctness proof, not completed save/export evidence, and not broad Alice coverage. |
+
+Do not add a second report, checklist, or reporting lane for this preflight.
+Extend this artifact when the silver-thread evidence vocabulary needs to change.
+
+When changing this contract, update these files together:
+
+```text
+docs/starter-project-preflight-evidence.md
+assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
+crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs
+assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
+```
+
+The Gadugi adapter remains generated output; do not hand-edit it to change the
+report schema.
+
+## Example readiness report
+
+```text
+silver_thread=minimal open/save/export path for bundled starter project
+open_evidence=observed via launch-smoke JSON report, manifest, log, and screenshot/window evidence
+starter_world_change_evidence=not observed; starter-world-change-note.txt names the expected small editable change for a later user-like pass
+starter_program_change_evidence=not observed; no starter program edit evidence was captured in this preflight
+save_evidence=missing; save still needs user-like Alice evidence before it is trusted
+export_evidence=unavailable; export still needs user-like Alice evidence before it is trusted
+configuration_state=not configured; optional follow-on desktop observation evidence was not supplied
+claim_boundary=not full UI automation, not visible rendering correctness proof, not completed save/export evidence, and not broad Alice coverage
+```
+
+Absent evidence must be explicit. Use `missing`, `unavailable`,
+`not observed`, or `not configured`; do not imply success by omitting a field.
 
 ## Configuration
 

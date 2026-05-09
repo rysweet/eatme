@@ -108,6 +108,35 @@ const REQUIRED_DOCUMENTED_OVERCLAIM_RULES: &[(&str, &str)] = &[
     ),
 ];
 
+const REQUIRED_READINESS_REPORT_FIELDS: &[&str] = &[
+    "silver_thread=minimal open/save/export path",
+    "open_evidence=",
+    "starter_world_change_evidence=",
+    "starter_program_change_evidence=",
+    "save_evidence=",
+    "export_evidence=",
+    "configuration_state=",
+    "claim_boundary=",
+];
+
+const REQUIRED_ABSENT_EVIDENCE_STATES: &[&str] = &[
+    "starter_world_change_evidence=not observed",
+    "starter_program_change_evidence=not observed",
+    "save_evidence=missing",
+    "export_evidence=unavailable",
+    "configuration_state=not configured",
+];
+
+const PROHIBITED_READINESS_REPORT_CLAIMS: &[&str] = &[
+    "lesson",
+    "lesson completion",
+    "grading",
+    "scoring",
+    "rubric",
+    "curriculum",
+    "curriculum validation",
+];
+
 #[test]
 fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
     let root = repository_root();
@@ -131,6 +160,82 @@ fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
         SOURCE_SCENARIO_PATH,
         &text,
         &read_contract_overclaim_rules(&root),
+    );
+}
+
+#[test]
+fn source_readiness_report_contract_names_silver_thread_program_change_evidence() {
+    let command = source_readiness_report_command();
+    let report = starter_project_readiness_report_segment(&command);
+
+    assert_contains_all(
+        "starter-project readiness report",
+        report,
+        REQUIRED_READINESS_REPORT_FIELDS,
+    );
+    assert_contains_all(
+        "starter-project readiness report",
+        report,
+        &[
+            "silver thread",
+            "minimal open/save/export path",
+            "bundled starter project",
+            "starter world",
+            "starter program",
+            "observable change evidence",
+        ],
+    );
+}
+
+#[test]
+fn source_readiness_report_makes_absent_evidence_states_explicit() {
+    let command = source_readiness_report_command();
+    let report = starter_project_readiness_report_segment(&command);
+
+    assert_contains_all(
+        "starter-project readiness report",
+        report,
+        REQUIRED_ABSENT_EVIDENCE_STATES,
+    );
+}
+
+#[test]
+fn source_readiness_report_avoids_lesson_grading_scoring_rubric_curriculum_claims() {
+    let command = source_readiness_report_command();
+    let report = starter_project_readiness_report_segment(&command);
+
+    assert_contains_none(
+        "starter-project readiness report",
+        report,
+        PROHIBITED_READINESS_REPORT_CLAIMS,
+    );
+}
+
+#[test]
+fn source_silver_thread_contract_stays_on_existing_readiness_report_artifact() {
+    let scenario = source_scenario();
+    let report_surfaces = scenario
+        .artifacts
+        .iter()
+        .filter(|(key, value)| {
+            key.contains("readiness_report")
+                || value.ends_with("starter-project-readiness-report.txt")
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        report_surfaces.len(),
+        1,
+        "silver-thread evidence must stay on the existing readiness report artifact"
+    );
+    assert_eq!(
+        scenario
+            .artifacts
+            .get("starter_project_readiness_report")
+            .map(String::as_str),
+        Some(
+            "runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-project-readiness-report.txt"
+        )
     );
 }
 
@@ -276,6 +381,30 @@ fn overclaim_rules_from_contract_ignores_unrelated_markdown_tables() {
     );
 }
 
+#[test]
+fn generated_adapter_readiness_report_preserves_silver_thread_contract() {
+    let root = repository_root();
+    let source_path = scenario_path(&root, "eatme");
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+    let report = starter_project_readiness_report_segment(&generated);
+
+    assert_contains_all(
+        "generated starter-project readiness report",
+        report,
+        REQUIRED_READINESS_REPORT_FIELDS,
+    );
+    assert_contains_all(
+        "generated starter-project readiness report",
+        report,
+        REQUIRED_ABSENT_EVIDENCE_STATES,
+    );
+    assert_contains_none(
+        "generated starter-project readiness report",
+        report,
+        PROHIBITED_READINESS_REPORT_CLAIMS,
+    );
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -293,6 +422,34 @@ fn read_repo_text(root: &Path, repo_relative_path: &str) -> String {
 
 fn read_contract_overclaim_rules(root: &Path) -> Vec<OverclaimRule> {
     overclaim_rules_from_contract(&read_repo_text(root, CONTRACT_DOC_PATH))
+}
+
+fn source_readiness_report_command() -> String {
+    source_scenario()
+        .steps
+        .into_iter()
+        .find(|step| step.id == "record-run-observe-readiness-gaps")
+        .expect("starter project preflight must record readiness report")
+        .command
+}
+
+fn source_scenario() -> EatmeScenarioAsset {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme");
+    let text = fs::read_to_string(path).unwrap();
+    serde_yaml::from_str(&text).unwrap()
+}
+
+fn starter_project_readiness_report_segment(text: &str) -> &str {
+    let report_path = "starter-project-readiness-report.txt";
+    let end = text
+        .find(report_path)
+        .expect("starter-project readiness report must be written");
+    let before_report_path = &text[..end];
+    let start = before_report_path
+        .rfind("printf")
+        .expect("starter-project readiness report must be written by printf");
+    &before_report_path[start..]
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
