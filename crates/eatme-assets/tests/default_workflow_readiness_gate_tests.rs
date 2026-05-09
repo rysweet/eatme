@@ -311,65 +311,85 @@ fn passing_review() -> ReadinessInput {
         local_head_sha: HEAD.into(),
         merge_state_status: "CLEAN".into(),
         mergeable: "MERGEABLE".into(),
-        command_evidence: REQUIRED_COMMANDS
-            .iter()
-            .map(|command| command_passed(command))
-            .collect(),
-        check_runs: vec![
-            check_passed("Build MkDocs site"),
-            check_passed("detect changed files"),
-            check_passed("fmt, clippy, module size"),
-            check_passed("tests"),
-            check_passed("coverage"),
-            check_passed("fmt, clippy, tests, module size, coverage"),
-            check_passed("GitGuardian Security Checks"),
-        ],
+        command_evidence: passing_command_evidence(),
+        check_runs: passing_check_runs(),
         quality_audit_cycles: vec![
             audit_cycle(1, false),
             audit_cycle(2, false),
             audit_cycle(3, true),
         ],
-        changed_files: vec![
-            "Cargo.lock".into(),
-            "crates/eatme-assets/Cargo.toml".into(),
-            "crates/eatme-assets/src/default_workflow_readiness.rs".into(),
-            "crates/eatme-assets/src/default_workflow_readiness/github.rs".into(),
-            "crates/eatme-assets/src/default_workflow_readiness/model.rs".into(),
-            "crates/eatme-assets/src/default_workflow_readiness/validators.rs".into(),
-            "crates/eatme-assets/src/lesson_session_readiness_doc_tests.rs".into(),
-            "crates/eatme-assets/src/lib.rs".into(),
-            "crates/eatme-assets/tests/default_workflow_readiness_external_service_tests.rs".into(),
-            "crates/eatme-assets/tests/default_workflow_readiness_gate_tests.rs".into(),
-            "docs/default-workflow-pr-readiness.md".into(),
-            "docs/lesson-session-readiness.md".into(),
-            "pyproject.toml".into(),
-        ],
-        docs_impact: DocsImpactReview {
-            mkdocs_strict_passed: true,
-            bounded_claims: vec![
-                "lesson-session silver-thread/e2e gap-matrix documentation lane".into(),
-                "asset validation".into(),
-                "generated adapter freshness".into(),
-                "strict docs build".into(),
-            ],
-        },
-        pr_evidence: PREvidenceReview {
-            location: "PR body".into(),
-            trusted_provenance: true,
-            head_sha: HEAD.into(),
-            recorded_commands: REQUIRED_COMMANDS
-                .iter()
-                .map(|command| (*command).into())
-                .collect(),
-            records_github_checks: true,
-            records_diff_scope: true,
-            records_docs_impact: true,
-            records_quality_audit: true,
-            records_no_manual_merge: true,
-            updated_during_review: false,
-            reconfirmed_head_sha: Some(HEAD.into()),
-        },
+        changed_files: focused_changed_files(),
+        docs_impact: passing_docs_impact(),
+        pr_evidence: passing_pr_evidence(),
         manual_merge_attempted: false,
+    }
+}
+
+fn passing_command_evidence() -> Vec<CommandEvidence> {
+    REQUIRED_COMMANDS
+        .iter()
+        .map(|command| command_passed(command))
+        .collect()
+}
+
+fn passing_check_runs() -> Vec<CheckRunEvidence> {
+    vec![
+        check_passed("Build MkDocs site"),
+        check_passed("detect changed files"),
+        check_passed("fmt, clippy, module size"),
+        check_passed("tests"),
+        check_passed("coverage"),
+        check_passed("fmt, clippy, tests, module size, coverage"),
+        check_passed("GitGuardian Security Checks"),
+    ]
+}
+
+fn focused_changed_files() -> Vec<String> {
+    vec![
+        "Cargo.lock".into(),
+        "crates/eatme-assets/Cargo.toml".into(),
+        "crates/eatme-assets/src/default_workflow_readiness.rs".into(),
+        "crates/eatme-assets/src/default_workflow_readiness/github.rs".into(),
+        "crates/eatme-assets/src/default_workflow_readiness/model.rs".into(),
+        "crates/eatme-assets/src/default_workflow_readiness/validators.rs".into(),
+        "crates/eatme-assets/src/lesson_session_readiness_doc_tests.rs".into(),
+        "crates/eatme-assets/src/lib.rs".into(),
+        "crates/eatme-assets/tests/default_workflow_readiness_external_service_tests.rs".into(),
+        "crates/eatme-assets/tests/default_workflow_readiness_gate_tests.rs".into(),
+        "docs/default-workflow-pr-readiness.md".into(),
+        "docs/lesson-session-readiness.md".into(),
+        "pyproject.toml".into(),
+    ]
+}
+
+fn passing_docs_impact() -> DocsImpactReview {
+    DocsImpactReview {
+        mkdocs_strict_passed: true,
+        bounded_claims: vec![
+            "lesson-session silver-thread/e2e gap-matrix documentation lane".into(),
+            "asset validation".into(),
+            "generated adapter freshness".into(),
+            "strict docs build".into(),
+        ],
+    }
+}
+
+fn passing_pr_evidence() -> PREvidenceReview {
+    PREvidenceReview {
+        location: "PR body".into(),
+        trusted_provenance: true,
+        head_sha: HEAD.into(),
+        recorded_commands: REQUIRED_COMMANDS
+            .iter()
+            .map(|command| (*command).into())
+            .collect(),
+        records_github_checks: true,
+        records_diff_scope: true,
+        records_docs_impact: true,
+        records_quality_audit: true,
+        records_no_manual_merge: true,
+        updated_during_review: false,
+        reconfirmed_head_sha: Some(HEAD.into()),
     }
 }
 
