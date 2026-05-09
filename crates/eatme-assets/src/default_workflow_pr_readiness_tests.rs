@@ -1,7 +1,6 @@
 use crate::{generate_gadugi_adapters, validate_assets};
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::PathBuf;
 
 const READINESS_DOC: &str = "docs/default-workflow-pr-readiness.md";
 const FALLBACK_LOG: &str = "default-workflow-attempt.log";
@@ -37,8 +36,7 @@ const PROHIBITED_STALE_EVIDENCE: &[&str] = &[
 
 #[test]
 fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_values() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
+    let evidence = repo_text(READINESS_DOC);
 
     assert_contains_all(
         "exact-head readiness contract",
@@ -63,17 +61,16 @@ fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_
         &evidence,
         PROHIBITED_STALE_EVIDENCE,
     );
+    let sha_literals = committed_sha_literals(&evidence);
     assert!(
-        committed_sha_literals(&evidence).is_empty(),
-        "readiness doc must not check in SHA-shaped readiness evidence: {:?}",
-        committed_sha_literals(&evidence)
+        sha_literals.is_empty(),
+        "readiness doc must not check in SHA-shaped readiness evidence: {sha_literals:?}"
     );
 }
 
 #[test]
 fn review_evidence_contract_is_tied_to_the_same_exact_pr_head() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
+    let evidence = repo_text(READINESS_DOC);
 
     assert_contains_all(
         "exact-head review evidence contract",
@@ -112,8 +109,7 @@ fn local_asset_validation_contract_covers_persona_scenarios_and_generated_adapte
 
 #[test]
 fn readiness_doc_keeps_source_of_truth_and_validation_claims_bounded_to_assets() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
+    let evidence = repo_text(READINESS_DOC);
 
     assert_contains_all("editable source assets", &evidence, REQUIRED_SOURCE_ASSETS);
     assert_contains_all(
@@ -142,8 +138,7 @@ fn readiness_doc_keeps_source_of_truth_and_validation_claims_bounded_to_assets()
 
 #[test]
 fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
-    let root = repository_root();
-    let evidence = read_repo_file(&root, READINESS_DOC);
+    let evidence = repo_text(READINESS_DOC);
 
     assert_contains_all(
         "readiness error handling",
@@ -163,8 +158,7 @@ fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
 
 #[test]
 fn manual_fallback_log_cannot_be_used_as_readiness_or_review_evidence() {
-    let root = repository_root();
-    let fallback_log = read_repo_file(&root, FALLBACK_LOG);
+    let fallback_log = repo_text(FALLBACK_LOG);
 
     assert_contains_all(
         "manual fallback evidence boundary",
@@ -183,31 +177,13 @@ fn manual_fallback_log_cannot_be_used_as_readiness_or_review_evidence() {
 }
 
 fn repository_root() -> PathBuf {
-    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let output = Command::new("git")
-        .args(["rev-parse", "--show-toplevel"])
-        .current_dir(manifest_dir)
-        .output()
-        .unwrap_or_else(|error| panic!("failed to locate repository root with git: {error}"));
-    assert!(
-        output.status.success(),
-        "git rev-parse --show-toplevel failed from {}: {}",
-        manifest_dir.display(),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    PathBuf::from(
-        String::from_utf8(output.stdout)
-            .expect("git repository root must be UTF-8")
-            .trim(),
-    )
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn read_repo_file(root: &Path, relative_path: &str) -> String {
-    fs::read_to_string(root.join(relative_path)).unwrap_or_else(|error| {
-        panic!(
-            "failed to read repository file {}: {error}",
-            root.join(relative_path).display()
-        )
+fn repo_text(relative_path: &str) -> String {
+    let path = repository_root().join(relative_path);
+    fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!("failed to read repository file {}: {error}", path.display())
     })
 }
 
