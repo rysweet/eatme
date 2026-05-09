@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::{assert_contains_all, repository_root, scenario_path};
+use super::{assert_contains_all, repository_root, scenario_path, sharing_readiness_boundary_doc};
 
 const TEACHER_SHARING_READINESS_IMPACT: &str = "Readiness impact says the teacher gets a classroom/review handoff and remix feedback package, not proof that deployed sharing works.";
 
@@ -56,12 +56,11 @@ fn generated_teacher_community_adapter_preserves_readiness_impact_boundary() {
 
 #[test]
 fn sharing_readiness_docs_keep_optional_export_and_handoff_completion_plain() {
-    let root = repository_root();
-    let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
+    let docs = sharing_readiness_boundary_doc();
 
     assert_contains_all(
         "sharing readiness docs optional handoff boundary",
-        &docs,
+        docs,
         &[
             "The Alice world, screenshot, classroom artifact, or exported file if one is already available.",
             "The handoff loop is complete when the next revision is clear.",
@@ -73,8 +72,7 @@ fn sharing_readiness_docs_keep_optional_export_and_handoff_completion_plain() {
 
 #[test]
 fn sharing_readiness_docs_do_not_require_save_or_first_lesson_completion() {
-    let root = repository_root();
-    let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
+    let docs = sharing_readiness_boundary_doc();
     let normalized_docs = docs.to_lowercase();
     let forbidden = [
         "requires save completion",

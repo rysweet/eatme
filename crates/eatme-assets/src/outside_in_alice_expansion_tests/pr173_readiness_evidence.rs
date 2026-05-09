@@ -1,14 +1,10 @@
-use std::fs;
-
-use super::{assert_contains_all, repository_root};
+use super::{assert_contains_all, sharing_readiness_boundary_doc};
 
 const PR173_EVIDENCE_HEADING: &str = "## PR 173 exact-head readiness evidence";
 
 #[test]
 fn pr173_evidence_names_branch_master_sync_and_exact_head_shape() {
-    let root = repository_root();
-    let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
-    let evidence = pr173_evidence_section(&docs);
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
 
     assert_contains_all(
         "PR 173 exact-head readiness evidence",
@@ -21,16 +17,14 @@ fn pr173_evidence_names_branch_master_sync_and_exact_head_shape() {
         ],
     );
     assert!(
-        has_40_hex_token(evidence),
-        "PR 173 readiness evidence must include one full 40-character evaluated HEAD SHA"
+        exact_evaluated_head_sha(evidence).is_some(),
+        "PR 173 readiness evidence must include one full 40-character evaluated HEAD SHA in the exact-head row"
     );
 }
 
 #[test]
 fn pr173_evidence_lists_required_validation_gates_without_manual_fallback() {
-    let root = repository_root();
-    let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
-    let evidence = pr173_evidence_section(&docs);
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
 
     assert_contains_all(
         "PR 173 validation evidence",
@@ -51,9 +45,7 @@ fn pr173_evidence_lists_required_validation_gates_without_manual_fallback() {
 
 #[test]
 fn pr173_evidence_keeps_forbidden_claims_explicitly_unproven() {
-    let root = repository_root();
-    let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
-    let evidence = pr173_evidence_section(&docs);
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
 
     assert_contains_all(
         "PR 173 bounded wording evidence",
@@ -75,14 +67,32 @@ fn pr173_evidence_keeps_forbidden_claims_explicitly_unproven() {
 
 #[test]
 fn exact_head_detector_rejects_placeholders_short_hashes_and_branch_names() {
-    assert!(!has_40_hex_token("exact evaluated HEAD SHA: <pending>"));
-    assert!(!has_40_hex_token("exact evaluated HEAD SHA: 4c8118d"));
-    assert!(!has_40_hex_token(
-        "exact evaluated HEAD SHA: wave6-deployed-sharing-gap-1778302300"
-    ));
-    assert!(has_40_hex_token(
-        "exact evaluated HEAD SHA: 0123456789abcdef0123456789abcdef01234567"
-    ));
+    assert!(exact_evaluated_head_sha("| exact evaluated HEAD SHA | `<pending>` |").is_none());
+    assert!(exact_evaluated_head_sha("| exact evaluated HEAD SHA | `4c8118d` |").is_none());
+    assert!(
+        exact_evaluated_head_sha(
+            "| exact evaluated HEAD SHA | `wave6-deployed-sharing-gap-1778302300` |"
+        )
+        .is_none()
+    );
+    assert_eq!(
+        exact_evaluated_head_sha(
+            "| exact evaluated HEAD SHA | `0123456789abcdef0123456789abcdef01234567` |"
+        ),
+        Some("0123456789abcdef0123456789abcdef01234567")
+    );
+    assert!(
+        exact_evaluated_head_sha(
+            "A different row includes `0123456789abcdef0123456789abcdef01234567`."
+        )
+        .is_none()
+    );
+    assert!(
+        exact_evaluated_head_sha(
+            "| exact evaluated HEAD SHA | `0123456789abcdef0123456789abcdef01234567` and `abcdef0123456789abcdef0123456789abcdef01` |"
+        )
+        .is_none()
+    );
 }
 
 fn pr173_evidence_section(docs: &str) -> &str {
@@ -95,9 +105,15 @@ fn pr173_evidence_section(docs: &str) -> &str {
     &docs[start..after_heading + end]
 }
 
-fn has_40_hex_token(text: &str) -> bool {
-    text.split(|c: char| !c.is_ascii_hexdigit())
-        .any(|token| token.len() == 40 && token.chars().all(|c| c.is_ascii_hexdigit()))
+fn exact_evaluated_head_sha(evidence: &str) -> Option<&str> {
+    let row = evidence
+        .lines()
+        .find(|line| line.contains("| exact evaluated HEAD SHA |"))?;
+    let mut sha_tokens = row
+        .split(|c: char| !c.is_ascii_hexdigit())
+        .filter(|token| token.len() == 40 && token.chars().all(|c| c.is_ascii_hexdigit()));
+    let sha = sha_tokens.next()?;
+    sha_tokens.next().is_none().then_some(sha)
 }
 
 fn assert_no_success_claims(evidence: &str) {

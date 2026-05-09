@@ -258,12 +258,11 @@ fn student_artifact_package_share_evidence_contract_names_review_handoff_boundar
 
 #[test]
 fn student_sharing_readiness_docs_define_instructor_and_student_boundaries() {
-    let root = repository_root();
-    let contract = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
+    let contract = super::sharing_readiness_boundary_doc();
 
     assert_contains_all(
         "sharing readiness boundary docs",
-        &contract,
+        contract,
         &[
             "Student and teacher sharing scenarios define a review handoff, not a deployed sharing feature",
             "Student | The student can hand off a packet",

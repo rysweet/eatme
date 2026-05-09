@@ -82,6 +82,10 @@ fn read_eatme_scenario(path: &Path) -> EatmeScenarioAsset {
     serde_yaml::from_str(&content).unwrap()
 }
 
+fn sharing_readiness_boundary_doc() -> &'static str {
+    include_str!("../../../docs/sharing-readiness-boundary.md")
+}
+
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize_whitespace(text);
     let missing = needles
@@ -116,5 +120,12 @@ fn forbidden_internal_shorthand() -> Vec<String> {
 }
 
 fn normalize_whitespace(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut normalized = String::with_capacity(text.len());
+    for word in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        normalized.push_str(word);
+    }
+    normalized
 }

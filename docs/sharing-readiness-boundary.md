@@ -141,7 +141,7 @@ PR 173 readiness was evaluated on branch
 
 | Evidence item | Result |
 | --- | --- |
-| exact evaluated HEAD SHA | `4c8118d40924b9e10ae7ff9edab078c69ce26680` |
+| exact evaluated HEAD SHA | `7757f298bbdf220b37882c912abb05cae2277bd8` |
 | master sync status | `origin/master` is an ancestor of the exact evaluated HEAD SHA; no rebase was required for this check. |
 | validation commands | `NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`; `TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh` |
 | readiness result | The listed documentation, asset, generated-adapter, and quality gates completed for this readiness boundary. |
