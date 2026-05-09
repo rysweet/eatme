@@ -30,6 +30,7 @@ Eatme has three layers:
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -104,6 +105,9 @@ Audit instructor/student lesson-session readiness:
 
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
+
+Record exact-head pull request readiness:
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md).
 
 Build the docs site:
 
