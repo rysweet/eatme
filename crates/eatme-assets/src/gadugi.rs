@@ -202,7 +202,8 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
         description: format!(
-            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme commands and checks manifest-level evidence only.{}",
+            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; {}.{}",
+            generated_evidence_scope(scenario),
             generated_boundary_note(scenario)
         ),
         version: "1.0.0".into(),
@@ -250,6 +251,14 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     };
 
     render_yaml(adapter)
+}
+
+fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
+    if scenario.id == "starter-project-open-save-export-preflight" {
+        return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
+    }
+
+    "gadugi invokes eatme commands and checks manifest-level evidence only"
 }
 
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {

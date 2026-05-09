@@ -12,10 +12,10 @@ purpose: >-
   Provide one plain automation scenario for instructors and students to use as
   a starter-project preflight: launch real Alice, open the bundled starter
   project, name one small editable starter-world change, attempt to run or
-  observe the opened world, and record the save/reopen/readiness gaps before
+  observe the opened world, and record the save/reopen/export/readiness gaps before
   anyone treats the starter project as classroom-ready. The scenario evidence
   is limited to the opened starter project, the editable starter-world change
-  note, run report, log, window or screenshot evidence, and readiness-gap notes
+  note, eatme launch-smoke JSON report, log, window or screenshot evidence, and readiness-gap notes
   that reviewers can cite without treating it as full save/reopen/export
   coverage.
 launcher:
@@ -54,7 +54,7 @@ smoke_ready:
     - starter_project_launch_command
     - editable_starter_world_change_note
     - run_or_observe_attempt_note
-    - save_reopen_readiness_gap_note
+    - save_reopen_export_readiness_gap_note
 acceptance_criteria:
   - given: Alice launch smoke dependencies are available
     when: the starter-project-open-save-export-preflight scenario is launched through eatme
@@ -117,10 +117,10 @@ steps:
     command: >-
       bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}";
       mkdir -p "$run_dir";
-      printf "%s\n" "run_or_observe_attempt=Use the Alice run report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt";
+      printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt";
       printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt"'
     evidence:
-      - run/observe gap note ties the attempted run or observation to the Alice run report, log, and screenshot/window evidence
+      - run/observe gap note ties the attempted run or observation to the eatme launch-smoke JSON report, log, and screenshot/window evidence
       - save/reopen/export/readiness gaps remain explicit and unclaimed
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#open-save-export
