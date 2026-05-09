@@ -1,342 +1,206 @@
 # Default-workflow PR readiness
 
-Default-workflow PR readiness is the exact-head gate used when a pull request
-needs a clear final readiness decision. It is also the recovery path when an
-outer wrapper fails without a useful structured result.
+## PR #175 current-head evidence artifact
 
-This page describes the intended behavior for the PR readiness recovery feature:
-incorporate current `master`, validate the candidate head locally, push the
-candidate, verify the exact pull request head, keep readiness wording bounded,
-validate docs/assets/generated adapters/tests, and return a structured result
-that always explains whether files changed.
+This is the recovery handoff artifact for PR #175 only. It records
+command-backed observations from the checked-out repository HEAD and read-only
+GitHub PR metadata observed during this recovery step.
 
-## Contents
+Use this page as the self-contained evidence contract for continuing PR #175
+recovery after the prior rate-limited session. Do not treat it as merge
+approval, CI approval, coverage proof, or validation completion.
 
-- [Readiness contract](#readiness-contract)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Readiness wording policy](#readiness-wording-policy)
-- [Validation gates](#validation-gates)
-- [GitHub metadata fields](#github-metadata-fields)
-- [Structured workflow output](#structured-workflow-output)
-- [Examples](#examples)
-- [Blocker handling](#blocker-handling)
+## Scope
 
-## Readiness contract
-
-A PR is default-workflow ready only when every gate passes for the exact commit
-being reviewed.
-
-| Gate | Required result |
+| Field | Observed value |
 | --- | --- |
-| Branch | The existing recovery branch is used; no replacement branch is created. |
-| Current `master` | The PR branch contains current `origin/master`, preferably by rebase. Merge is used only when rebase is unsafe or conflict-heavy. |
-| Exact head | After push, the local `HEAD` SHA equals the PR `headRefOid`. A mismatch blocks readiness. |
-| GitHub checks | Required checks are green for that same SHA. |
-| Merge state | `mergeStateStatus` is `CLEAN`. |
-| Mergeability | `mergeable` is `MERGEABLE`. |
-| Readiness wording | User-facing wording is plain, bounded, and scoped to evidence packaging/readiness. |
-| Overclaim boundary | The PR does not claim full UI automation, full world execution, visible rendering correctness, grading, creative assessment, Save completion, deployed sharing/platform success, or first-lesson completion. |
-| Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
-| Scope | Fixes are limited to conflicts, failed checks, stale generated adapters, or wording that violates the readiness wording policy. |
-| Structured output | The final workflow output includes `Files modified` with actual paths, or an explicit no-op justification with exact-head readiness evidence. |
+| Evidence timestamp | `2026-05-09T09:40:15Z` |
+| Repository | `rysweet/eatme` |
+| PR | [#175 Document evidence artifact contract](https://github.com/rysweet/eatme/pull/175) |
+| Local branch | `wave6-evidence-artifact-contract-1778302300` |
+| Upstream branch | `origin/wave6-evidence-artifact-contract-1778302300` |
+| Checked-out HEAD | `fb92a08c034f8f43dd8d1b7edc32d084d5596b3d` |
+| Checked-out HEAD short SHA | `fb92a08` |
 
-A previous wrapper failure is not a blocker when direct verification proves the
-same exact head, current master incorporation, green checks, clean mergeability,
-bounded wording, fresh generated adapters, and passing local validation.
+The evidence applies only to the observed repository checkout, local working
+tree state, and GitHub PR metadata recorded on this page. Future PR head
+changes require a new evidence artifact update.
 
-## Configuration
+## Readiness evidence
 
-Run commands from the repository root.
+### Local Git observations
 
-Set the repository's large-heap Node option before invoking workflow wrappers or
-documentation commands that may call Node-based tooling:
+The local repository state was captured with this fixed read-only command set:
 
 ```bash
-export NODE_OPTIONS=--max-old-space-size=32768
+date -u +%Y-%m-%dT%H:%M:%SZ
+git branch --show-current
+git rev-parse HEAD
+git rev-parse --short HEAD
+git rev-parse --abbrev-ref --symbolic-full-name @{u}
+git log -1 --date=iso-strict --format='%H%x09%an%x09%ae%x09%ad%x09%s'
+git status --short
 ```
 
-Keep local preference-file paths out of committed documentation. They are host
-specific and are not part of the repository contract.
-
-The Rust asset validation and Gadugi generator commands do not require Node, but
-the environment variable is safe to keep exported for repository-wide workflow
-commands.
-
-For GitHub checks, use authenticated `gh` access to the repository that owns the
-PR. Do not place tokens, secrets, local credential paths, environment dumps, or
-raw command output in readiness comments.
-
-## Usage
-
-Use this generic procedure for evidence-artifact readiness recovery on any PR
-that needs the same exact-head readiness gate. Replace the placeholders before
-running the commands.
-
-```bash
-PR_NUMBER=<pr-number>
-PR_BRANCH=<existing-pr-branch>
-BASE_BRANCH=master
-```
-
-1. Start on the existing PR branch.
-
-   ```bash
-   git switch "$PR_BRANCH"
-   ```
-
-2. Fetch the current base branch and PR metadata.
-
-   ```bash
-   git fetch origin "$BASE_BRANCH" "$PR_BRANCH" --prune
-   gh pr view "$PR_NUMBER" --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
-   ```
-
-3. Incorporate current `master`.
-
-   ```bash
-   git rebase "origin/$BASE_BRANCH"
-   ```
-
-   If rebase is unsafe or conflict-heavy, stop the rebase and use the minimal
-   merge path instead:
-
-   ```bash
-   git rebase --abort
-   git merge "origin/$BASE_BRANCH"
-   ```
-
-4. Inspect readiness wording and generated adapter freshness when the PR
-   touches scenario assets, generated adapters, readiness docs, or artifact
-   contract code.
-
-5. Run the validation gates in [Validation gates](#validation-gates) on the
-   candidate local `HEAD` after all fixes.
-
-6. Push the candidate head to the existing PR branch.
-
-   ```bash
-   git push origin "$PR_BRANCH"
-   ```
-
-7. Confirm exact-head readiness only after the push: local `HEAD` must equal the
-   PR `headRefOid`, and required GitHub checks must be green for that SHA.
-
-   ```bash
-   git rev-parse HEAD
-   gh pr view "$PR_NUMBER" --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
-   gh pr checks "$PR_NUMBER" --watch --interval 10
-   ```
-
-8. Return the structured workflow output described in
-   [Structured workflow output](#structured-workflow-output).
-
-## Readiness wording policy
-
-Evidence-artifact readiness is intentionally narrow. It may claim that the PR
-packages, validates, or reports bounded evidence artifacts for review. It must
-not turn available artifacts, screenshots, manifests, or declarations into
-broader product-success claims.
-
-Allowed wording:
+Observed result:
 
 ```text
-Evidence artifacts are packaged for readiness review.
-The report records bounded evidence and explicit not-yet-shown claims.
-Save completion requires distinct finish-state evidence.
-Full world execution, deployed sharing, and platform success are not claimed.
+timestamp_utc=2026-05-09T09:40:15Z
+branch=wave6-evidence-artifact-contract-1778302300
+head_sha=fb92a08c034f8f43dd8d1b7edc32d084d5596b3d
+head_short=fb92a08
+upstream=origin/wave6-evidence-artifact-contract-1778302300
+latest_commit=fb92a08c034f8f43dd8d1b7edc32d084d5596b3d	Copilot	223556219+Copilot@users.noreply.github.com	2026-05-09T08:31:54Z	wip: checkpoint after review feedback (steps 10-11)
+status_short_begin
+ M docs/default-workflow-pr-readiness.md
+status_short_end
 ```
 
-Unsupported wording:
+The working tree was dirty for this evidence artifact at capture time. The only
+observed modified path was this page, `docs/default-workflow-pr-readiness.md`.
+No clean-working-tree readiness claim is made.
 
-```text
-The full Alice UI flow is automated.
-The learner completed the first lesson.
-The saved world was graded successfully.
-Rendering correctness is proven.
-Save and deployed sharing completed successfully.
-```
+### GitHub PR #175 observations
 
-This readiness wording policy applies to user-facing scenario text, readiness
-output, PR comments, and recovery summaries. It is not the same as the artifact
-text validator in [Evidence Artifact Contract](evidence-artifact-contract.md),
-which validates supplied artifact fields and status-required evidence text
-rather than arbitrary PR prose. Generated Gadugi adapters consume the canonical
-scenario wording; do not hand-edit generated Gadugi YAML to change mission
-intent.
-
-For artifact field-level rules, see
-[Evidence Artifact Contract](evidence-artifact-contract.md).
-
-## Validation gates
-
-Run the gates from the repository root after master incorporation and after any
-fix. These local gates validate the candidate `HEAD`; exact-head readiness is
-established only after that candidate is pushed, the PR `headRefOid` matches the
-same SHA, and GitHub checks pass for that SHA.
-
-Build the documentation site:
+PR metadata was captured with this read-only command:
 
 ```bash
-NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict
+gh pr view 175 --json number,title,state,url,headRefName,headRefOid,baseRefName,baseRefOid,isDraft,mergeStateStatus,reviewDecision,statusCheckRollup,latestReviews,updatedAt,createdAt
 ```
 
-Validate persona and scenario assets:
+Observed metadata:
 
-```bash
-cargo run -q -p eatme-cli -- assets validate --json
-```
-
-Check generated Gadugi adapter freshness:
-
-```bash
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-```
-
-Run the repository quality gate. In deep worktrees, set `TMPDIR=/tmp` so Unix
-socket paths stay short enough for the test environment:
-
-```bash
-TMPDIR=/tmp ./scripts/quality-gates.sh
-```
-
-The local gate is a candidate result until the branch is pushed. The PR is ready
-only when each command exits successfully for the candidate head, the pushed PR
-head matches that SHA, and required GitHub checks pass for that exact head.
-
-## GitHub metadata fields
-
-The readiness gate consumes these `gh pr view` fields:
-
-| Field | Required value |
+| Field | Observed value |
 | --- | --- |
-| `headRefName` | Existing PR branch name |
-| `headRefOid` | Exact local `HEAD` SHA |
+| `number` | `175` |
+| `title` | `Document evidence artifact contract` |
+| `url` | `https://github.com/rysweet/eatme/pull/175` |
+| `state` | `OPEN` |
+| `isDraft` | `false` |
+| `createdAt` | `2026-05-09T05:02:52Z` |
+| `updatedAt` | `2026-05-09T08:36:48Z` |
+| `headRefName` | `wave6-evidence-artifact-contract-1778302300` |
+| `headRefOid` | `fb92a08c034f8f43dd8d1b7edc32d084d5596b3d` |
+| `baseRefName` | `master` |
+| `baseRefOid` | `17521c40bb72dd22669b596179327fc5cf307305` |
 | `mergeStateStatus` | `CLEAN` |
 | `mergeable` | `MERGEABLE` |
-| `statusCheckRollup` | Required checks green for `headRefOid` |
+| `reviewDecision` | Empty value returned by `gh`; no approval is claimed. |
+| `latestReviews` | Empty list returned by `gh`; no review approval is claimed. |
 
-Fetch the PR head, merge state, mergeability, and check summary:
+Local `HEAD` and PR `headRefOid` were both observed as
+`fb92a08c034f8f43dd8d1b7edc32d084d5596b3d` at the evidence timestamp. This is
+an identity observation only. It is not a merge-readiness claim and it does not
+apply to future PR head changes.
 
-```bash
-gh pr view "$PR_NUMBER" \
-  --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+### GitHub status-check rollup observation
+
+The following table records `statusCheckRollup` entries returned by
+`gh pr view`. It is per-check metadata only, not a blanket CI-success,
+required-check sufficiency, or merge-readiness claim.
+
+| Workflow | Check | Status | Conclusion | Completed |
+| --- | --- | --- | --- | --- |
+| Documentation Site | Build MkDocs site | `COMPLETED` | `SUCCESS` | `2026-05-09T08:37:05Z` |
+| Quality Gates | detect changed files | `COMPLETED` | `SUCCESS` | `2026-05-09T08:36:59Z` |
+| Documentation Site | Deploy to GitHub Pages | `COMPLETED` | `SKIPPED` | `2026-05-09T08:37:05Z` |
+| Quality Gates | fmt, clippy, module size | `COMPLETED` | `SUCCESS` | `2026-05-09T08:37:33Z` |
+| Quality Gates | tests | `COMPLETED` | `SUCCESS` | `2026-05-09T08:39:46Z` |
+| Quality Gates | coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T08:39:45Z` |
+| Quality Gates | fmt, clippy, tests, module size, coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T08:39:53Z` |
+| Quality Gates | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` | `2026-05-09T08:39:54Z` |
+| none returned | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` | `2026-05-09T08:36:50Z` |
+
+The rollup includes skipped checks. Branch-protection requirements were not
+separately queried. This artifact therefore does not claim CI success,
+test-coverage sufficiency, required-check sufficiency, or merge readiness.
+
+### Validation command evidence
+
+| Command or check | Execution status in this recovery step | Evidence claim |
+| --- | --- | --- |
+| `NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict` | Executed with exit status `0` during this implementation pass; started `2026-05-09T09:41:07Z`, completed `2026-05-09T09:41:08Z`; MkDocs cleaned `site` and built documentation in `0.59` seconds. This supersedes the earlier `2026-05-09T09:40:00Z`, `2026-05-09T09:37:32Z`, and pre-finalization `2026-05-09T09:35:19Z` runs. | Local documentation rendering succeeded for this recovery step. This is not a PR readiness, CI success, or test coverage claim. |
+| `cargo test -q -p eatme-assets default_workflow_attempt_contract_tests` | Executed with exit status `0` during this implementation pass; started `2026-05-09T09:41:07Z`, completed `2026-05-09T09:42:42Z`; result: `6 passed; 0 failed; 0 ignored; 0 measured; 67 filtered out`. | Focused readiness/evidence contract tests passed for this checkout. This is not a full local test-suite, CI-success, coverage, or merge-readiness claim. |
+| `cargo run -q -p eatme-cli -- assets validate --json` | Not executed. | No local asset-validation success is claimed. |
+| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Not executed. | No generated-adapter freshness success is claimed. |
+| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Not executed. | No local full quality-gate success is claimed. |
+| `gh pr checks 175 --watch --interval 10` | Not executed. | No live check-watch completion or required-check sufficiency is claimed. |
+
+The `NODE_OPTIONS=--max-old-space-size=32768` setting is the documented
+large-heap configuration used for the MkDocs command in this recovery path.
+The MkDocs and focused contract-test evidence rows record command results from
+this implementation pass so the artifact does not rely on earlier
+pre-finalization builds or prior rate-limited session context.
+
+## Review evidence
+
+### Artifact location review
+
+`docs/default-workflow-pr-readiness.md` is the expected project location for
+this PR readiness artifact because `mkdocs.yml` already includes:
+
+```yaml
+- Default-workflow PR Readiness: default-workflow-pr-readiness.md
 ```
 
-`statusCheckRollup` is green only when every required check for `headRefOid` has
-completed successfully. A required check blocks readiness when it is pending,
-queued, in progress, requested, failing, errored, timed out, skipped when branch
-protection requires it to run, cancelled, missing, or reported for a different
-head.
+No stronger PR-specific evidence artifact convention was observed during this
+step, so this existing MkDocs page remains the artifact location.
 
-If the head changes during review, stop and restart readiness verification for
-the new SHA.
+### Content review
 
-## Structured workflow output
+This page was reviewed and kept as a PR #175 recovery handoff rather than a
+generic default-workflow procedure. The artifact is scoped to PR #175, the
+checked-out branch, and the checked-out HEAD SHA recorded above.
 
-The final workflow result must make the file-change state explicit. This avoids
-the no-op guard failure mode where validation passed but the output omitted both
-modified files and no-op justification.
+The review confirmed that the artifact:
 
-When files changed, include `Files modified` with real repository paths:
+1. Records command names and observed Git/GitHub values directly.
+2. Keeps local validation evidence separate from GitHub metadata.
+3. Records the dirty working tree state instead of converting it into a clean
+   readiness claim.
+4. Records empty `reviewDecision` and empty `latestReviews` values instead of
+   claiming approval.
+5. Records skipped status checks as skipped and avoids blanket CI-success or
+   merge-readiness language.
+6. Includes explicit nonclaims so recovery can continue without prior
+   rate-limited session context.
 
-```text
-Files modified:
-- docs/default-workflow-pr-readiness.md
-- assets/scenarios/eatme/student-artifact-package-share-evidence.yaml
-- assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml
-```
+### Repository observation used to avoid unsupported claims
 
-When no files changed, include an explicit no-op justification and exact-head
-readiness evidence:
+The observed PR metadata reports `mergeStateStatus: CLEAN` and
+`mergeable: MERGEABLE`, but this artifact does not treat those fields as merge
+approval. The observed status-check rollup includes individual `SUCCESS` values,
+but this artifact does not treat those values as blanket CI success, coverage
+proof, or required-check sufficiency. The observed review fields are empty, so
+this artifact does not claim approval.
 
-```text
-No-op justification:
-No source changes were needed because the branch already incorporated current
-master, the local HEAD matched the PR headRefOid after push, readiness wording
-stayed within the bounded policy, generated adapters were fresh, and all
-required validation gates passed at that exact head.
+## Unavailable or not executed checks
 
-Exact-head readiness evidence:
-- Branch: <existing-pr-branch>
-- Local HEAD: <sha>
-- PR headRefOid: <same-sha>
-- mergeStateStatus: CLEAN
-- mergeable: MERGEABLE
-- Required checks: green for <same-sha>
-- Validation: NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict; assets validate --json; assets generate-gadugi --check --json; TMPDIR=/tmp ./scripts/quality-gates.sh
-```
+| Check | Reason/status | Result claim |
+| --- | --- | --- |
+| Local asset validation | `cargo run -q -p eatme-cli -- assets validate --json` was not executed during this recovery step. | No local asset-validation success is claimed. |
+| Generated Gadugi adapter freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` was not executed during this recovery step. | No generated-adapter freshness success is claimed. |
+| Full local quality gate | `TMPDIR=/tmp ./scripts/quality-gates.sh` was not executed during this recovery step. | No local full quality-gate success is claimed. |
+| PR approval review | `gh pr view` returned an empty `reviewDecision` and empty `latestReviews`. | No approval is claimed. |
+| Required-check sufficiency | Branch-protection requirements were not separately queried; only `statusCheckRollup` values were recorded. | No merge-readiness or required-check sufficiency is claimed. |
+| Future PR state | PR metadata was captured at the evidence timestamp only. | No claim is made about later PR heads, reviews, checks, or mergeability. |
 
-The readiness summary should name only gates that actually ran and passed at the
-exact head. Do not include full logs, secrets, credential paths, or environment
-dumps.
+## Nonclaims
 
-## Examples
-
-### PR 175 command values
-
-For PR 175 evidence-artifact readiness recovery, the generic placeholders are:
-
-```bash
-PR_NUMBER=175
-PR_BRANCH=wave6-evidence-artifact-contract-1778302300
-BASE_BRANCH=master
-```
-
-### PR 175 with a documentation-only recovery fix
-
-Use this shape when the recovery changes only readiness documentation:
-
-```text
-Default-workflow readiness recovery for PR 175 completed at exact head <sha>.
-
-Files modified:
-- docs/default-workflow-pr-readiness.md
-
-Verified gates:
-- current master incorporated
-- local HEAD equals PR headRefOid
-- mergeStateStatus=CLEAN and mergeable=MERGEABLE
-- readiness wording remains bounded
-- generated Gadugi adapters are fresh
-- docs, assets, adapter freshness, and repository quality gates pass
-```
-
-### PR 175 with no source changes
-
-Use this shape when the branch is already ready after fetching current master:
-
-```text
-Default-workflow readiness recovery for PR 175 completed at exact head <sha>.
-
-No-op justification:
-No files were changed because the existing branch already satisfied the
-readiness wording policy after current master verification.
-
-Exact-head readiness evidence:
-- Branch: wave6-evidence-artifact-contract-1778302300
-- Local HEAD: <sha>
-- PR headRefOid: <same-sha>
-- Required checks: green for <same-sha>
-- Local validation: docs, assets, generated adapters, and quality gates passed
-```
-
-## Blocker handling
-
-If any gate fails, do not publish readiness. Fix only the minimal issue that
-caused the blocker, run the relevant validation again, push the fix, and repeat
-exact-head verification against the new PR head.
-
-| Blocker | Minimal response |
-| --- | --- |
-| Head mismatch | Stop readiness for the old SHA and verify the requested new head. |
-| Branch mismatch | Switch to the existing PR branch instead of creating a new branch. |
-| Base branch drift | Rebase onto `origin/master`; use a merge only when rebase is unsafe or conflict-heavy. |
-| Failing, pending, cancelled, missing, or wrong-head checks | Fix the failing check, wait for completion, or rerun the missing check before readiness. |
-| Dirty merge state | Resolve only the mergeability issue. |
-| Overclaiming scenario, artifact, or readiness language | Edit the canonical wording and regenerate adapters if affected. |
-| Stale generated adapter | Regenerate adapters from canonical sources. |
-| Asset validation failure | Fix the invalid scenario or persona asset. |
-| Quality gate failure | Fix only the failing gate's root cause. |
-| No files changed and no no-op evidence | Return an explicit no-op justification with exact-head readiness evidence. |
-| Unrelated changes | Remove the unrelated change from the readiness work. |
+- No merge readiness is claimed.
+- No PR approval is claimed.
+- No blanket CI success is claimed.
+- No full local test-suite success is claimed.
+- No test coverage sufficiency is claimed.
+- No local asset-validation success is claimed.
+- No generated-adapter freshness success is claimed.
+- No local full quality-gate success is claimed.
+- No clean-working-tree readiness is claimed.
+- No claim is made that skipped checks are acceptable for merge readiness.
+- No claim is made that branch-protection requirements were satisfied.
+- No claim is made that PR #175 remains unchanged after
+  `2026-05-09T09:40:15Z`.
+- No claim is made that future PR #175 heads equal the checked-out HEAD
+  recorded here.
+- No claim is made that prior rate-limited/default-workflow session context is
+  required to continue recovery.
