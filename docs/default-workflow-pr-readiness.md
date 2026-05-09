@@ -15,6 +15,8 @@ worktree-root no-op guard.
 - [What this workflow proves](#what-this-workflow-proves)
 - [Worktree-root guard contract](#worktree-root-guard-contract)
 - [Recovery usage](#recovery-usage)
+- [Authoritative quality gate](#authoritative-quality-gate)
+- [Documentation strict build](#documentation-strict-build)
 - [Exact-head evidence](#exact-head-evidence)
 - [PR update contract](#pr-update-contract)
 - [API and output boundaries](#api-and-output-boundaries)
@@ -26,7 +28,8 @@ The workflow proves only that the final branch `HEAD` has:
 - been updated from current `master` through a clean merge or rebase;
 - resolved only task-scoped conflicts in readiness docs, scenario assets,
   generated Gadugi adapters, readiness tests, or the no-op guard;
-- run the documented validation commands from the actual Git worktree root; and
+- passed the authoritative repository quality gate from the actual Git worktree
+  root; and
 - preserved bounded real Alice launch-smoke readiness wording.
 
 It keeps the canonical non-claims visible:
@@ -79,6 +82,17 @@ cd "$repo_root"
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
 
+Record the branch, current `HEAD`, and dirty status before changing anything:
+
+```bash
+git branch --show-current
+git rev-parse HEAD
+git status --short
+```
+
+Preserve unrelated dirty files. They are not part of the readiness claim unless
+they directly conflict with task-scoped recovery files.
+
 Use the existing recovery branch:
 
 ```bash
@@ -101,6 +115,50 @@ Resolve conflicts only in task-scoped files:
 Do not refactor unrelated code, rewrite unrelated history, or broaden the
 readiness claim while resolving conflicts.
 
+## Authoritative quality gate
+
+`scripts/quality-gates.sh` is the authoritative local validation entrypoint for
+default-workflow recovery. It owns the combined fmt, clippy, test, module-size,
+and coverage/quality expectations:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+Use `TMPDIR=/tmp` in deep linked worktrees so test sockets and temporary paths do
+not fail because of checkout path length. Do not weaken, bypass, or replace this
+script when producing readiness evidence.
+
+The gate covers:
+
+| Check | Evidence boundary |
+| --- | --- |
+| `cargo fmt --check` | Rust formatting is current. |
+| `cargo clippy --workspace --all-targets --all-features -- -D warnings` | Workspace clippy warnings are repaired instead of suppressed through broad allowances. |
+| `cargo test --workspace --all-features` | Existing Rust tests pass without requiring real Alice UI automation. |
+| Rust module-size check | Source modules under `crates/` stay within the repository line-count contract. |
+| Coverage/quality check | The repository coverage/quality gate passes at the same commit. |
+
+Targeted commands are useful for diagnosis, but they are not a substitute for the
+authoritative gate. Run targeted fmt, clippy, tests, asset validation, or Gadugi
+freshness checks only to locate and repair failures before rerunning the full
+gate.
+
+## Documentation strict build
+
+`mkdocs build --strict` is the authoritative documentation check. It is a
+separate docs-site validation command, not part of `scripts/quality-gates.sh`.
+Run it when readiness documentation changes:
+
+```bash
+mkdocs build --strict
+```
+
+Do not describe a passing `scripts/quality-gates.sh` run as docs-site evidence.
+When both Rust readiness and documentation changed, record both commands against
+the same final commit SHA.
+
 ## Exact-head evidence
 
 Capture the final SHA only after the merge, conflict resolution, generated
@@ -119,23 +177,31 @@ replace the old SHA and old command results with the new exact-head evidence.
 Required validation evidence:
 
 ```bash
-mkdocs build --strict
-cargo run -q -p eatme-cli -- assets validate --json
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-cargo test -p eatme-alice --test first_lesson_readiness_sequence
-cargo test -p eatme-cli --test alice_first_lesson_readiness
-cargo test -p eatme-cli --test alice_first_lesson_readiness_reporting
-```
-
-When targeted validation is clean and practical, run the full quality gate from
-the same Git root:
-
-```bash
+export NODE_OPTIONS=--max-old-space-size=32768
 TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
 
-Document unrelated pre-existing blockers plainly. Do not turn a blocked or
-failed command into readiness evidence.
+If readiness documentation changed, also run the docs strict build from the same
+final `HEAD`:
+
+```bash
+mkdocs build --strict
+```
+
+If canonical scenario assets changed, also verify the source assets and generated
+adapters from the same final `HEAD`:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+Do not hand-edit generated Gadugi assets. Regenerate them through the existing
+generator when canonical scenario assets change, then rerun the authoritative
+quality gate.
+
+Document unrelated pre-existing blockers plainly. Do not turn a blocked, skipped,
+or failed command into readiness evidence.
 
 ## PR update contract
 
@@ -145,8 +211,10 @@ Create a new PR only when no suitable PR exists for that branch.
 The PR body includes:
 
 - final `HEAD` SHA;
-- validation commands that were actually run on that SHA;
-- pass/fail/blocker result for each command;
+- the authoritative quality-gate command that passed on that SHA;
+- docs strict-build result when readiness documentation changed;
+- asset-validation and generated-adapter freshness results when canonical
+  scenario assets changed;
 - bounded real Alice launch-smoke/readiness claim; and
 - explicit non-claims.
 
@@ -154,8 +222,8 @@ Safe bounded claim:
 
 ```text
 This PR preserves bounded real Alice launch-smoke/readiness evidence for the
-final HEAD only. It reports repository/docs/assets/generated-adapter/readiness
-validation and launch-smoke readiness wording only.
+final HEAD only. It reports repository quality-gate, docs strict-build,
+asset/readiness, and launch-smoke wording evidence only.
 ```
 
 Required non-claims:
@@ -177,6 +245,15 @@ proof of a completed lesson, full UI automation, full world execution, visible
 rendering correctness, grading, creative assessment, Save completion, or deployed
 sharing/platform success. Do not include those statements in docs, generated
 adapters, validation summaries, or PR text.
+
+PR #188 uses the same bounded evidence shape. Its final evidence belongs in the
+PR body or review handoff after the final passing gate exists, not as a stale
+point-in-time result in this reference document. The recovery record names the
+exact final commit SHA, the passing `NODE_OPTIONS=--max-old-space-size=32768
+TMPDIR=/tmp ./scripts/quality-gates.sh` result for that commit, and the
+`mkdocs build --strict` result when docs changed. If another commit is added
+after the PR body or review comment is updated, replace the evidence with the new
+commit SHA and rerun results before requesting review.
 
 ## API and output boundaries
 
