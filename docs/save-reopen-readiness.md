@@ -1,86 +1,46 @@
-# [PLANNED - Implementation Pending] Save/reopen readiness
+# Save/reopen readiness
 
-This page describes the intended save/reopen readiness contract for the
-persistence feature that will be built. It is not current proof that the
-runnable first-lesson readiness flow records `project-reopen/` evidence or a
-`reopen-project` UI action.
+Save/reopen readiness is the bounded evidence contract for recording that a
+save hook produced a changed Alice project artifact, a reopen hook used that
+saved artifact, and reopened-state evidence was captured for review. It does
+not treat those artifacts as full UI automation or lesson completion.
 
-Use this page when designing or reviewing the planned persistence lane:
+Use this page to review one question:
 
 > Did the harness save a changed `.a3p`, reopen that saved artifact instead of
 > the bundled starter project, and record reopened-state evidence for review?
 
-The answer is only trusted after the planned integration records that evidence
-in the normal readiness outputs. Until then, the current runnable readiness
-boundary remains save-project evidence plus explicit non-claims.
+The answer is trusted only when the run evidence records the save proof, reopen
+proof, and reopened-state proof described below. A starter-project launch smoke
+or opened-project preflight does not prove save/reopen readiness by itself.
 
 ## Contents
 
-- [Current implemented boundary](#current-implemented-boundary)
-- [Planned evidence boundary](#planned-evidence-boundary)
-- [Select Project proof vs reopen artifact proof](#select-project-proof-vs-reopen-artifact-proof)
-- [Planned integration points](#planned-integration-points)
-- [Planned hook API](#planned-hook-api)
-- [Planned readiness output](#planned-readiness-output)
+- [Evidence boundary](#evidence-boundary)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Evidence directories](#evidence-directories)
+- [Hook API](#hook-api)
+- [Readiness states](#readiness-states)
 - [Review checklist](#review-checklist)
 - [Non-claims](#non-claims)
 
-## Current implemented boundary
+## Evidence boundary
 
-The existing first-lesson readiness flow can collect and validate
-`save-project` proof. It does not yet wire `reopen-project` into the runnable
-readiness sequence.
+Save/reopen readiness is layered on top of the starter-project and first-lesson
+evidence contracts.
 
-| Current surface | Implemented meaning |
-| --- | --- |
-| `alice run-first-lesson-readiness` | Runs the first-lesson readiness comparison and writes the comparison manifest for the selected run. |
-| `ui-action-contract.json` | Includes required user-like actions through `save-project`; it does not include `reopen-project`. |
-| Required action validation | Requires `save-project` proof or a save no-go after run-world proof; it does not require reopen proof. |
-| Readiness progress | Reports missing proof through "Save Project proof artifact" and "Select Project proof artifact"; it does not report a reopened-state proof artifact. |
-| `probe_project_reopen_hook` | Exists as an internal probe/test contract for the future reopen lane, but is not emitted by the normal readiness flow. |
-
-Run commands from the repository root when checking the current implemented
-boundary:
-
-```bash
-cargo run -q -p eatme-cli -- assets validate --json
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-```
-
-When Alice targets are available, the current first-lesson readiness command is:
-
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_BASELINE_HOME=/opt/alice/original-alice
-export ALICE_MODERNIZED_HOME=/opt/alice/rabbithole-alice
-
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-first-lesson-readiness \
-  --run-id local-first-lesson-readiness \
-  --json \
-  --no-memory \
-  --offline-package \
-  --execute
-```
-
-Do not treat that command as save/reopen completion proof until the planned
-`reopen-project` integration points below are implemented.
-
-## Planned evidence boundary
-
-The planned save/reopen lane is layered on top of the starter-project and
-first-lesson evidence contracts.
-
-| Layer | What it should prove | What it must not imply |
+| Layer | What it proves | What it does not imply |
 | --- | --- | --- |
 | Starter-project preflight | The bundled starter project can be opened and inspected with launch evidence. | Save, reopen, export, full UI automation, or lesson completion. |
 | Save artifact proof | A deterministic save affordance produced a non-empty saved `.a3p` and save evidence for the current run. | Full Save completion, grading, creative assessment, or first-lesson completion. |
 | Reopen artifact proof | A deterministic reopen affordance reopened the saved `.a3p`, not the bundled starter project, and produced non-empty reopen evidence. | Visible rendering correctness, broad Alice compatibility, or creative quality. |
 | Reopened-state proof | The reopen affordance produced state evidence and marked state verification as passed for the bounded selector. | Learner-world grading, instructor assessment, or complete lesson success. |
 
-The planned sequence is:
+The readiness sequence is:
 
-1. Open the bundled starter project through the existing Alice launch path.
-2. Reach the first-lesson run proof needed before persistence review.
+1. Open the bundled starter project through the Alice launch path.
+2. Reach the run-world proof needed before persistence review.
 3. Save the edited project through a deterministic save affordance.
 4. Record a non-empty saved `.a3p` and save evidence under `project-save/`.
 5. Reopen that saved artifact in a new or explicitly reset Alice session.
@@ -91,43 +51,86 @@ The planned sequence is:
 Each step depends on the previous step. Reopen proof is blocked until accepted
 save artifact proof exists. Save proof is blocked until run-world proof exists.
 
-## Select Project proof vs reopen artifact proof
+## Usage
 
-Existing readiness language includes "Select Project proof artifact". That is
-not the same boundary as planned reopen proof.
+Run commands from the repository root.
 
-| Evidence name | Boundary |
+Validate the repository assets before trusting readiness evidence:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+```
+
+Check generated Gadugi adapters when scenario assets changed:
+
+```bash
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+Run first-lesson readiness only when Alice targets are available:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_BASELINE_HOME=/opt/alice/original-alice
+export ALICE_MODERNIZED_HOME=/opt/alice/rabbithole-alice
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-first-lesson-readiness \
+  --run-id local-save-reopen-readiness \
+  --json \
+  --no-memory \
+  --offline-package \
+  --execute
+```
+
+Read the resulting manifest and `ui-action-contract.json` as evidence. Treat
+`save-project` and `reopen-project` as ready only when their proof artifacts are
+present, non-empty, and accepted by validation. Treat a missing hook or missing
+precondition as a bounded `blocked` result.
+
+## Configuration
+
+The save/reopen lane uses deterministic Alice-side hooks when they are available
+in the selected Alice checkout.
+
+| Setting | Value |
 | --- | --- |
-| Select Project proof artifact | Shows that a project selection/open path produced evidence for the current Alice readiness flow. It does not prove the source project came from a saved artifact. |
-| Save Project proof artifact | Shows the save affordance produced a non-empty `.a3p` and save evidence for the current run. |
-| Reopen artifact proof | Planned evidence that Alice opened the saved `.a3p` from `project-save/`, not the bundled starter project or another source. |
-| Reopened-state proof | Planned state evidence from the reopened saved project, with bounded verification for the selected learner-world state. |
+| Save hook | `tools/eatme-save-project` |
+| Reopen hook | `tools/eatme-reopen-project` |
+| Selector | `scene.eatmeFirstLessonStep` |
+| Save evidence directory | `project-save/` under the run directory |
+| Reopen evidence directory | `project-reopen/` under the run directory |
+| Hook timeout | 30 seconds |
+| Display | The active Alice display passed as `DISPLAY` |
 
-Reviewers should not collapse these boundaries. A select/open proof can be a
-precondition for readiness, but it does not replace `source_saved_project_artifact`
-or `reopened_state_artifact` evidence.
+The hook paths are relative to the Alice checkout. Do not pass absolute hook
+paths from local machines in documentation, manifests, or comments.
 
-## Planned integration points
+## Evidence directories
 
-The save/reopen feature is ready only after the implementation wires the reopen
-contract into the same surfaces that already enforce save proof.
+A passing bounded save/reopen run records evidence under the selected run
+directory:
 
-| Surface to update | Required planned behavior |
-| --- | --- |
-| First-lesson readiness sequence | Invoke the reopen probe after accepted `save-project` proof. |
-| `ui-action-contract.json` | Add a `reopen-project` required action with ready/no-go evidence. |
-| Required action validation | Require passed reopen proof or an explicit reopen no-go once save proof passes. |
-| Readiness progress | Report missing reopen proof after save proof, without claiming first-lesson completion. |
-| No-go reporting | Explain missing reopen affordance, missing saved artifact, and failed state verification distinctly. |
-| Contract tests | Cover passed reopen evidence, blocked reopen preconditions, unsafe artifact paths, and missing or empty reopened-state artifacts. |
+```text
+runs/first-lessons-real-ui-actions/local-save-reopen-readiness/
+├── procedure-edit/
+│   └── edited-project.a3p
+├── project-save/
+│   ├── saved-project.a3p
+│   └── project-save.json
+├── project-reopen/
+│   ├── reopened-project.a3p
+│   ├── project-reopen.json
+│   └── reopened-state.json
+└── ui-action-contract.json
+```
 
-The existing internal reopen probe contract can be reused, but the feature is
-not complete until normal readiness manifests and validation consume its output.
+`project-save/saved-project.a3p` is the source for reopen proof. A reopen result
+that points back to the bundled starter project is rejected.
 
-## Planned hook API
+## Hook API
 
 The persistence hooks are Alice-side contracts. Eatme invokes them and validates
-their JSON and artifacts. Hook paths are relative to the Alice checkout.
+their JSON and artifacts.
 
 ### Save hook
 
@@ -160,8 +163,8 @@ Validation rules:
 | `schema_version` | Must be `eatme.alice-project-save-result/v1`. |
 | `status` | Must be `saved`. |
 | `save_selector` | Must be `scene.eatmeFirstLessonStep`. |
-| `saved_project_artifact` | Must be a simple relative path under the `project-save/` evidence directory and must point to a non-empty file. |
-| `save_artifact` | Must be a simple relative path under the `project-save/` evidence directory and must point to a non-empty file. |
+| `saved_project_artifact` | Must be a simple relative path under `project-save/` and must point to a non-empty file. |
+| `save_artifact` | Must be a simple relative path under `project-save/` and must point to a non-empty file. |
 
 ### Reopen hook
 
@@ -196,20 +199,20 @@ Validation rules:
 | --- | --- |
 | `schema_version` | Must be `eatme.alice-project-reopen-result/v1`. |
 | `status` | Must be `reopened`. |
-| `source_saved_project_artifact` | Must be a simple relative path under `project-save/` and must point to the saved artifact from the same run. It must not point to the bundled starter project. |
+| `source_saved_project_artifact` | Must be a simple relative path under `project-save/`, must point to the saved artifact from the same run, and must not point to the bundled starter project. |
 | `reopen_selector` | Must be `scene.eatmeFirstLessonStep`. |
-| `reopened_project_artifact` | Must be a simple relative path under the `project-reopen/` evidence directory and must point to a non-empty file. |
-| `reopen_artifact` | Must be a simple relative path under the `project-reopen/` evidence directory and must point to a non-empty file. |
-| `reopened_state_artifact` | Must be a simple relative path under the `project-reopen/` evidence directory and must point to a non-empty file. |
+| `reopened_project_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
+| `reopen_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
+| `reopened_state_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
 | `state_verification` | Must be `passed`. |
 
 Absolute paths, parent traversal, symlink escapes, empty files, malformed JSON,
 wrong schema versions, and artifacts outside the expected run evidence
 directories are not accepted as proof.
 
-## Planned readiness output
+## Readiness states
 
-Save/reopen readiness should use explicit states:
+Save/reopen readiness uses explicit states:
 
 | State | Meaning |
 | --- | --- |
@@ -217,14 +220,7 @@ Save/reopen readiness should use explicit states:
 | `blocked` | A required earlier proof or deterministic Alice affordance is missing. The run is honest but not ready for that boundary. |
 | `failed` | A hook ran or returned data, but the command, JSON, artifact, or validation result did not satisfy the contract. |
 
-The planned UI action contract records persistence facts with stable action ids:
-
-| Action id | Evidence |
-| --- | --- |
-| `save-project` | Save artifact proof or a blocked save precondition. |
-| `reopen-project` | Reopen artifact proof or a blocked reopen precondition. |
-
-Safe user-facing wording after the planned implementation:
+Safe user-facing wording:
 
 ```text
 Save artifact proof is shown for this run.
@@ -235,20 +231,22 @@ First-lesson completion is not proven.
 
 ## Review checklist
 
-Use this checklist when implementing or reviewing the planned lane:
+Use this checklist when reviewing save/reopen readiness:
 
 1. Validate assets with `cargo run -q -p eatme-cli -- assets validate --json`.
 2. Check generated adapters with
-   `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`.
-3. Confirm the normal first-lesson readiness manifest records `save-project`.
-4. Confirm the normal first-lesson readiness manifest records `reopen-project`
-   only after accepted save proof.
-5. Confirm `project-reopen/` contains non-empty reopen evidence and
+   `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` when
+   scenario assets changed.
+3. Confirm `save-project` appears only after accepted run-world proof.
+4. Confirm `reopen-project` appears only after accepted save proof.
+5. Confirm `project-save/` contains a non-empty saved project and save evidence.
+6. Confirm `project-reopen/` contains non-empty reopen evidence and
    `reopened-state.json`.
-6. Confirm `source_saved_project_artifact` starts with `project-save/`.
-7. Confirm the report keeps full UI automation, visible rendering correctness,
-   grading, creative assessment, full Save completion, and first-lesson
-   completion unproven unless exact separate evidence exists.
+7. Confirm `source_saved_project_artifact` starts with `project-save/`.
+8. Confirm the report keeps full UI automation, visible rendering correctness,
+   grading, creative assessment, full Save completion, deployed sharing/platform
+   success, and first-lesson completion unproven unless exact separate evidence
+   exists.
 
 ## Non-claims
 
@@ -260,16 +258,13 @@ This readiness contract does not claim:
 - full UI automation
 - first-lesson completion
 - visible rendering correctness
+- deployed sharing or platform success
 - creative assessment, learner-world grading, or complete Alice coverage
 
-Unsafe wording:
-
-```text
-The lesson is complete.
-Rendering is correct.
-The saved world was graded.
-Alice UI automation is complete.
-```
+Avoid wording that turns artifact evidence into a broader product claim. The
+report should not say that the lesson, rendering, grading, Save workflow, UI
+automation, or platform sharing succeeded unless a separate evidence contract
+proves that exact claim.
 
 Do not fix missing reopen proof by editing generated Gadugi adapters or by
 changing documentation wording. Fix the canonical evidence source, rerun

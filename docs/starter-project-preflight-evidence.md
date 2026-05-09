@@ -3,7 +3,7 @@
 This readiness report captures bounded preflight evidence for opening the
 bundled starter project before save, reopen, or export review. It describes the
 bounded evidence contract for `starter-project-open-save-export-preflight`.
-Starter-project launch readiness is documented here, while the separate planned
+Starter-project launch readiness is documented here, while the separate
 save/reopen artifact and reopened-state contract is documented in
 [Save/reopen Readiness](save-reopen-readiness.md). Workflow completion beyond
 the launch boundary remains explicitly unproven unless that separate evidence
@@ -60,7 +60,7 @@ project can be opened and inspected before further review. It does not prove
 that a changed project can be saved, that the saved file can be reopened, or
 that the reopened state matches the expected learner-world state.
 
-Closing this gap will use a separate persistence evidence lane that exercises the
+Closing this gap uses a separate persistence evidence lane that exercises the
 save path, records the saved artifact, reopens that artifact, and verifies the
 reopened project state. Until that separate evidence exists for a run, this
 report should be read only as starter-project open-readiness evidence.
@@ -83,9 +83,9 @@ Export can be added as a follow-on acceptance path, but it should not be implied
 by save/reopen success. If export is included in the same lane, it needs a
 separate exported artifact, artifact verification, and evidence boundary.
 
-## Acceptance contract for the planned save/reopen lane
+## Acceptance contract for the save/reopen lane
 
-The planned save/reopen lane is ready to trust only when its own evidence proves
+The save/reopen lane is ready to trust only when its own evidence proves
 each persistence step without borrowing claims from this preflight report.
 
 | Save/reopen evidence | Required meaning |
