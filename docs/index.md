@@ -29,6 +29,7 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Preparing save/reopen/export evidence handoff | [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -103,6 +104,10 @@ Audit instructor/student lesson-session readiness:
 
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
+
+Prepare the instructor/student bridge from starter-project preflight to
+shareable evidence:
+[Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
 
 Build the docs site:
 

@@ -91,7 +91,9 @@ screenshots/startup.png
 ```
 
 Use the manifest and artifacts as setup evidence before asking an instructor,
-student, agent, or adapter to reason about save, reopen, or export behavior.
+student, agent, or adapter to reason about save, reopen, or export behavior. The
+next documented handoff is
+[Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
 
 ## Manifest and artifact contract
 

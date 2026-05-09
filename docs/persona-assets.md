@@ -34,6 +34,13 @@ manifest/log/window/screenshot evidence and `ui-action-contract.json`
 expectations; it does not drive an entire lesson through the Alice interface,
 score learner creativity, or grade saved learner worlds.
 
+For the save/reopen/export bridge after starter-project preflight, use
+`assets/scenarios/eatme/instructor-student-save-reopen-export-evidence-handoff.yaml`
+and its generated Gadugi adapter. The scenario keeps the student save location,
+reopen confirmation, export/share artifact, and instructor handoff destination
+discoverable without claiming automated grading, creative assessment,
+learner-world judgment, full Alice coverage, or proof of learning.
+
 For instructor remix work, use
 `assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
 lesson-material/remix evidence contract. It keeps teacher plan, student handout,
@@ -161,7 +168,7 @@ coverage table each have generated Gadugi adapters.
 
 | Coverage area | Scenario IDs |
 | --- | --- |
-| Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight` |
+| Setup | `setup-preflight-ready-to-create`, `starter-project-open-save-export-preflight`, `instructor-student-save-reopen-export-evidence-handoff` |
 | Lessons | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `game-score-timer-win-lose-loop`, `vr-camera-locomotion-journey`, `design-process-story-or-game`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
 | World creation | `hour-of-code-studio-kickoff`, `building-a-scene-first-world`, `design-process-story-or-game`, `vr-camera-locomotion-journey`, `audio-camera-and-export-sharecase`, `arrays-collection-choreography`, `vr-camera-perspective-tour` |
 | Run/debug | `hour-of-code-studio-kickoff`, `code-editor-first-run`, `loops-and-conditionals-mini-challenge`, `vr-camera-locomotion-journey`, `lost-robot-debug-museum`, `arrays-collection-choreography` |
@@ -186,6 +193,7 @@ contracts.
 | --- | --- |
 | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `hour-of-code-studio-kickoff` | Alice.org lesson scenarios that prove the real desktop harness can start Alice before agents judge lesson intent. |
 | `starter-project-open-save-export-preflight` | Starter-project preflight that opens the bundled project before save, reopen, or export coverage is claimed. |
+| `instructor-student-save-reopen-export-evidence-handoff` | Instructor/student handoff that records saved project location, reopen confirmation, export or share artifact, and handoff destination after starter-project preflight evidence exists. |
 | `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state scenarios for visible variables, score/time rules, arrays, item order, and boundary tests. |
 | `mythic-choice-event-tree` | Student interactive narrative scenario for player triggers, state or condition checks, feedback, and alternate path playtests. |
 | `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective scenarios that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |
