@@ -15,6 +15,7 @@ nav:
   - Gadugi Adapters: gadugi-adapters.md
   - Generated Asset Consistency: generated-asset-consistency.md
   - Validation and Quality Gates: validation-quality-gates.md
+  - Default Workflow PR Readiness: default-workflow-pr-readiness.md
   - Outside-in Alice Test Modules: outside-in-alice-test-modules.md
   - Alice Integration: alice-integration.md
   - Lesson Session Readiness: lesson-session-readiness.md

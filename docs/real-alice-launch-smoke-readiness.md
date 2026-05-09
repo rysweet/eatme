@@ -3,17 +3,20 @@
 Real Alice launch-smoke readiness maps existing `real-alice-launch-smoke`
 manifest evidence into the shared readiness report shape. It is a bounded
 reporting path only: it consumes launch-smoke evidence that already exists and
-does not launch Alice, inspect the UI, grade work, assess creativity, or add new
-desktop automation.
+does not launch Alice, inspect the UI, run a full world, grade work, assess
+creativity, complete Save, prove sharing/platform deployment, or add new desktop
+automation.
 
 The report answers one question:
 
 > Did the selected `real-alice-launch-smoke` comparison carry enough existing
 > launch-smoke manifest evidence to report launch-smoke readiness?
 
-It does not answer whether a lesson was completed, whether a project is correct
-or creative, whether rendering is visually correct, whether a learner should be
-graded, or whether the full Alice UI has been automated.
+It does not answer whether a first lesson was completed, whether a full world
+executed, whether a project is correct or creative, whether rendering is visually
+correct, whether a learner should be graded, whether Save completed, whether
+sharing/platform deployment succeeded, or whether the full Alice UI has been
+automated.
 
 ## When to use it
 
@@ -24,7 +27,7 @@ readiness summary for the baseline real Alice launch smoke.
 | --- | --- |
 | Show that real Alice launch-smoke evidence is present and coherent | `alice check-lesson-readiness` on a `real-alice-launch-smoke` comparison manifest |
 | Explain missing, failed, malformed, or manifest-only launch evidence | The same readiness report with `status: "not_ready"` or `status: "blocked"` |
-| Claim a completed Alice lesson, grading result, creative quality, full UI automation, or visible correctness | Do not use launch-smoke readiness for this |
+| Claim a completed Alice lesson, full world execution, grading result, creative quality, Save completion, deployed sharing/platform success, Full Alice UI automation, or visible rendering correctness | Do not use launch-smoke readiness for this |
 
 `real-alice-launch-smoke` is matched by exact scenario id. Other scenario ids
 continue to use their existing readiness behavior.
@@ -120,11 +123,14 @@ Not yet shown:
 - No missing launch-smoke evidence is reported.
 
 Unproven:
-- Lesson completion is not proven.
+- First-lesson completion is not proven.
+- Full world execution is not proven.
 - Grading is not proven.
 - Creative assessment is not proven.
 - Full Alice UI automation is not proven.
-- Visible correctness is not proven.
+- Visible rendering correctness is not proven.
+- Save completion is not proven.
+- Deployed sharing/platform success is not proven.
 ```
 
 A non-ready report keeps failures as missing or blocked evidence instead of
@@ -142,16 +148,21 @@ Not yet shown:
 - Launch-smoke artifact metadata is not yet shown.
 
 Unproven:
-- Lesson completion is not proven.
+- First-lesson completion is not proven.
+- Full world execution is not proven.
 - Grading is not proven.
 - Creative assessment is not proven.
 - Full Alice UI automation is not proven.
-- Visible correctness is not proven.
+- Visible rendering correctness is not proven.
+- Save completion is not proven.
+- Deployed sharing/platform success is not proven.
 ```
 
 The launch-smoke report does not render first-lesson-specific claims such as
 Select Project, procedure/edit, Save completion, desktop next action, grading
 evidence, creative assessment evidence, or first-lesson completion evidence.
+It also does not claim full world execution or deployed sharing/platform
+success.
 
 ## JSON API
 
@@ -194,21 +205,27 @@ Example ready JSON excerpt:
       "summary": "Real Alice launch-smoke manifest evidence is shown.",
       "detail": "Existing launch-smoke manifest evidence matched the real-alice-launch-smoke scenario.",
       "does_not_prove": [
-        "lesson completion",
+        "first-lesson completion",
+        "full world execution",
         "grading",
         "creative assessment",
         "full Alice UI automation",
-        "visible correctness"
+        "visible rendering correctness",
+        "Save completion",
+        "deployed sharing/platform success"
       ]
     }
   ],
   "not_yet_shown": [],
   "unproven_claims": [
-    "Lesson completion is not proven.",
+    "First-lesson completion is not proven.",
+    "Full world execution is not proven.",
     "Grading is not proven.",
     "Creative assessment is not proven.",
     "Full Alice UI automation is not proven.",
-    "Visible correctness is not proven."
+    "Visible rendering correctness is not proven.",
+    "Save completion is not proven.",
+    "Deployed sharing/platform success is not proven."
   ]
 }
 ```
@@ -228,7 +245,8 @@ Example non-ready JSON excerpt:
       "summary": "Real Alice launch-smoke scenario identity is shown.",
       "detail": "The comparison manifest selected real-alice-launch-smoke.",
       "does_not_prove": [
-        "lesson completion",
+        "first-lesson completion",
+        "full world execution",
         "full Alice UI automation"
       ]
     }
@@ -240,20 +258,26 @@ Example non-ready JSON excerpt:
       "summary": "Required launch-smoke manifest evidence is not yet shown.",
       "detail": "No executed launch-smoke manifest was available for the selected target.",
       "does_not_prove": [
-        "lesson completion",
+        "first-lesson completion",
+        "full world execution",
         "grading",
         "creative assessment",
         "full Alice UI automation",
-        "visible correctness"
+        "visible rendering correctness",
+        "Save completion",
+        "deployed sharing/platform success"
       ]
     }
   ],
   "unproven_claims": [
-    "Lesson completion is not proven.",
+    "First-lesson completion is not proven.",
+    "Full world execution is not proven.",
     "Grading is not proven.",
     "Creative assessment is not proven.",
     "Full Alice UI automation is not proven.",
-    "Visible correctness is not proven."
+    "Visible rendering correctness is not proven.",
+    "Save completion is not proven.",
+    "Deployed sharing/platform success is not proven."
   ]
 }
 ```
@@ -302,9 +326,10 @@ Use wording that names the bounded report:
 
 ```text
 Maps existing real-alice-launch-smoke manifest evidence into bounded readiness
-output. The report shows launch-smoke readiness only and keeps lesson completion,
-grading, creative assessment, full UI automation, and visible correctness
-explicitly unproven.
+output. The report shows launch-smoke readiness only and keeps first-lesson
+completion, full world execution, grading, creative assessment, Full Alice UI
+automation, visible rendering correctness, Save completion, and deployed
+sharing/platform success explicitly unproven.
 ```
 
 Avoid wording that promotes launch smoke to lesson success:
@@ -315,4 +340,6 @@ The UI automation passes.
 The project renders correctly.
 The learner work is graded.
 The creative result is validated.
+Save completed.
+Sharing or platform deployment succeeded.
 ```

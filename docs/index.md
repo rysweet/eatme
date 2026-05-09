@@ -24,13 +24,13 @@ Eatme has three layers:
 | Using Gadugi | [Gadugi Adapters](gadugi-adapters.md) |
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
+| Recovering a readiness PR | [Default Workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
-| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -40,9 +40,9 @@ Eatme has three layers:
 ## What eatme proves
 
 Eatme proves that Alice-facing assets and adapter scenarios are coherent before
-they are used by people or agents. For real Alice smoke scenarios, it also proves
-that the desktop application can be packaged, launched, observed, and reported
-through deterministic artifacts.
+they are used by people or agents. For real Alice smoke scenarios, it also
+records bounded evidence that the desktop application was packaged, launched,
+observed, and reported through deterministic artifacts.
 
 A passing launch smoke records:
 
@@ -106,8 +106,8 @@ Audit instructor/student lesson-session readiness:
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
-Record exact-head pull request readiness:
-[Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+Recover a readiness PR with exact-head evidence:
+[Default Workflow PR Readiness](default-workflow-pr-readiness.md).
 
 Build the docs site:
 

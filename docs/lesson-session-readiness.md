@@ -34,7 +34,7 @@ Use these canonical scenarios for instructor/student lesson-session evidence:
 
 | Scenario | Role | Evidence contract |
 | --- | --- | --- |
-| `real-alice-launch-smoke` | Harness and CI/manual preflight | Existing launch-smoke manifest evidence mapped into bounded readiness output. This branch reports launch-smoke readiness only and keeps lesson completion, grading, creative assessment, full UI automation, and visible correctness unproven. |
+| `real-alice-launch-smoke` | Harness and CI/manual preflight | Existing launch-smoke manifest evidence mapped into bounded readiness output. This branch reports launch-smoke readiness only and keeps first-lesson completion, full world execution, grading, creative assessment, Full Alice UI automation, visible rendering correctness, Save completion, and deployed sharing/platform success unproven. |
 | `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress evidence, first-lesson automation scenario evidence boundaries, and plain not-yet-shown states for missing desktop affordances. |
 | `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
 | `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
@@ -334,10 +334,10 @@ Interpret the result as the required evidence check:
 Do not promote repository-only evidence to RabbitHole success. Asset validation,
 adapter freshness, launcher checks, archive recovery, Run-window evidence, and
 desktop execution evidence are useful only when the readiness report can connect
-them to the RabbitHole target in the comparison manifest. Keep full UI
+them to the RabbitHole target in the comparison manifest. Keep Full Alice UI
 automation, grading, creative assessment, visible rendering correctness, Save
-completion, and first-lesson completion explicitly unproven unless exact
-evidence exists.
+completion, full world execution, deployed sharing/platform success, and
+first-lesson completion explicitly unproven unless exact evidence exists.
 
 ### Run the bounded first-lesson readiness sequence
 
@@ -440,7 +440,7 @@ Top-level fields:
 | `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than internal artifact paths. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
 | `issues` | array of strings | Blocking structural problems. |
-| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the canonical six `unproven_claims`. |
+| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the canonical eight `unproven_claims`. |
 
 First-lesson boundary reporting adds `evidence_boundaries[]` to this schema.
 Consumers that need the bounded automation scenarios contract should read
@@ -485,7 +485,7 @@ Project proof-artifact item example:
 ```
 
 This means proof collection hit an explicit boundary. It does not mean Alice
-completed a lesson, saved a learner world through full UI automation, or graded
+completed a lesson, saved a learner world through Full Alice UI automation, or graded
 creative work.
 
 ### Desktop proof contract
@@ -590,7 +590,7 @@ Example `evidence_progress.items[]` entries:
   {
     "evidence": "Save Project proof artifact",
     "state": "present",
-    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f6f7e9c5a...; presence is not proof of full UI automation"
+    "detail": "artifact path project-save/saved-project.a3p, size_bytes=81342, sha256=2d6f6f7e9c5a...; presence is not proof of Full Alice UI automation"
   },
   {
     "evidence": "Select Project proof artifact",
@@ -862,10 +862,12 @@ Not yet shown:
 
 Unproven:
 - Full Alice UI automation is not proven.
+- Full world execution is not proven.
 - Grading is not proven.
 - Creative assessment is not proven.
 - Visible rendering correctness is not proven.
 - Save completion is not proven.
+- Deployed sharing/platform success is not proven.
 - First-lesson completion is not proven.
 ```
 
@@ -894,9 +896,9 @@ two entries from the longer boundary array:
 The Select Project line says only that the Select Project boundary has scenario
 evidence. The Save line says Save completion is not yet proven. If a boundary
 has no evidence, only ambiguous metadata, or no usable relative summary, it
-remains visible as not yet shown. Neither line proves lesson completion, full UI
-automation, rendering correctness, grading, creative assessment, or learner-world
-grading.
+remains visible as not yet shown. Neither line proves lesson completion, Full
+Alice UI automation, full world execution, rendering correctness, grading,
+creative assessment, learner-world grading, or deployed sharing/platform success.
 
 ### Student flow: fix a not-ready report
 
@@ -953,8 +955,8 @@ The instructor outcomes asset produces:
 | `project_discussion_guide` | Student evidence questions and an explicit instructor boundary note. |
 
 The rubric can support instructor judgment. It must not claim automated creative
-assessment, learner-world grading, complete Alice coverage, full UI automation,
-or deployed-service status.
+assessment, learner-world grading, complete Alice coverage, Full Alice UI automation,
+full world execution, or deployed sharing/platform success.
 
 ## Tutorial: add or revise lesson-session evidence
 
@@ -1016,5 +1018,5 @@ summary in the PR description:
 | Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `target_evidence[]`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
 | First-lesson scenario evidence | Reports preserve target-local launch/action diagnostics, project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
-| Boundaries | The change does not claim full UI automation, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless distinct explicit evidence exists. |
+| Boundaries | The change does not claim Full Alice UI automation, full world execution, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed sharing/platform success unless distinct explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

@@ -19,9 +19,10 @@ plain CLI renders the user-facing sections directly.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
-the bounded claim named in the report. It never implies full UI automation,
+the bounded claim named in the report. It never implies Full Alice UI automation,
 grading, creative assessment, visible rendering correctness, Save completion, or
-first-lesson completion unless explicit evidence for that exact claim exists.
+first-lesson completion unless explicit evidence for that exact claim exists. It
+also does not imply full world execution or deployed sharing/platform success.
 
 ## Quick start
 
@@ -115,7 +116,7 @@ this order:
 | `Shown` | One or more bounded evidence facts are present. | Evidence was read and is safe to summarize for the named claim only. |
 | `Not yet shown` | Any required evidence is missing, invalid, not observed, or blocked. | The claim is not yet shown or not yet proven in user-facing wording. |
 | `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
-| `Unproven` | Always. | The six required non-claims that the report must not imply. |
+| `Unproven` | Always. | The eight required non-claims that the report must not imply. |
 
 Example plain report:
 
@@ -147,10 +148,12 @@ Desktop next action:
 
 Unproven:
 - Full Alice UI automation is not proven.
+- Full world execution is not proven.
 - Grading is not proven.
 - Creative assessment is not proven.
 - Visible rendering correctness is not proven.
 - Save completion is not proven.
+- Deployed sharing/platform success is not proven.
 - First-lesson completion is not proven.
 ```
 
@@ -173,7 +176,7 @@ does not make another boundary present.
 
 | Boundary id | Human label | Evidence required to show it | Must not imply |
 | --- | --- | --- | --- |
-| `select_project` | Select Project scenario evidence | Explicit evidence that the Select Project boundary produced a safe, auditable scenario signal. | Full UI automation, project-selection success beyond the named boundary, or first-lesson completion. |
+| `select_project` | Select Project scenario evidence | Explicit evidence that the Select Project boundary produced a safe, auditable scenario signal. | Full Alice UI automation, project-selection success beyond the named boundary, or first-lesson completion. |
 | `procedure_edit` | Procedure/edit scenario evidence | Explicit evidence that a procedure or code edit boundary was completed or observed with a safe summary. | Code correctness, learner understanding, grading, or completed lesson work. |
 | `save_project` | Save option/action scenario evidence | Explicit bounded evidence that a Save affordance, action, declaration, or proof artifact was observed. This is not a completion signal. | Save completion, grading, creative assessment, or first-lesson completion. |
 | `visible_rendering` | Visible rendering scenario evidence | Explicit visible rendering observation from the run boundary. | Visible rendering correctness, animation correctness, creative quality, or complete visual validation. |
@@ -200,20 +203,22 @@ sections may document those stable field names for automation consumers.
 
 ## Canonical unproven claims
 
-`unproven_claims` is the canonical home for the six non-claims that must remain
+`unproven_claims` is the canonical home for the eight non-claims that must remain
 visible in plain output and JSON:
 
 ```text
 Full Alice UI automation is not proven.
+Full world execution is not proven.
 Grading is not proven.
 Creative assessment is not proven.
 Visible rendering correctness is not proven.
 Save completion is not proven.
+Deployed sharing/platform success is not proven.
 First-lesson completion is not proven.
 ```
 
 Legacy `limitations` remains for compatibility. It may be a broader or superset
-list for older consumers, but it must include these six claims exactly enough for
+list for older consumers, but it must include these eight claims exactly enough for
 automation to preserve them. New consumers should read `unproven_claims` first.
 
 Save wording has one extra rule: Save action, Save option, Save shortcut, and
@@ -258,7 +263,7 @@ Top-level fields:
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
-| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the six canonical `unproven_claims`. |
+| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the eight canonical `unproven_claims`. |
 
 ### User-facing evidence item
 
@@ -451,7 +456,7 @@ Use user-facing wording:
 | `First-lesson completion is not yet shown.` | `The lesson is complete.` |
 
 The durable rule is simple: report what the evidence explicitly shows, report
-missing states as not yet shown or not yet proven, and keep the six unproven
+missing states as not yet shown or not yet proven, and keep the eight unproven
 claims visible.
 
 ## Implementation contract
@@ -468,8 +473,8 @@ The Rust implementation:
    legacy progress/boundary fields.
 4. Preserves legacy JSON fields including `evidence_progress`, `target_evidence`,
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
-5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
-   as compatibility output that includes those six.
+5. Makes `unproven_claims` the canonical eight non-claims and keeps
+   `limitations` as compatibility output that includes those eight.
 6. Renders the plain CLI as readiness heading, `Desktop proof`, `Shown`, `Not
    yet shown`, optional `Desktop next action`, and `Unproven`.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
