@@ -60,12 +60,12 @@ impl ReadinessArtifact {
              - cargo run -q -p eatme-cli -- assets validate --json: passed\n\
              - cargo run -q -p eatme-cli -- assets generate-gadugi --check --json: passed\n\
              - mkdocs build --strict: passed\n\
-              - TMPDIR=/tmp ./scripts/quality-gates.sh: passed\n\n\
-              GitHub evidence:\n\
-              - required checks: {}\n\
-              - optional skipped jobs: {}\n\
-              - mergeStateStatus: {}\n\
-              - mergeable: {}\n\n\
+             - TMPDIR=/tmp ./scripts/quality-gates.sh: passed\n\n\
+             GitHub evidence:\n\
+             - required checks: {}\n\
+             - optional skipped jobs: {}\n\
+             - mergeStateStatus: {}\n\
+             - mergeable: {}\n\n\
              Review evidence:\n\
              - diff scope: focused on the default-workflow PR readiness evidence lane\n\
              - docs impact: strict MkDocs passed; docs claim only bounded readiness evidence\n\
