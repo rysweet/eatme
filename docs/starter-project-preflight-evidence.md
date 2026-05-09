@@ -86,6 +86,7 @@ When changing this contract, update these files together:
 docs/starter-project-preflight-evidence.md
 assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
 crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs
+crates/eatme-assets/src/overclaim_test_helpers.rs
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
 ```
 
