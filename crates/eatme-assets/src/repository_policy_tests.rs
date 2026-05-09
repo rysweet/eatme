@@ -89,7 +89,7 @@ fn is_skipped_path(path: &Path) -> bool {
     path.components().any(|component| {
         matches!(
             component.as_os_str().to_str(),
-            Some(".git" | ".claude" | "site" | "target")
+            Some(".git" | ".claude" | "site" | "target" | "worktrees")
         )
     })
 }
