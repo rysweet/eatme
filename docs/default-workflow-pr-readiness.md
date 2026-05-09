@@ -330,3 +330,4 @@ publish-attempt files to the PR branch.
 - [Gadugi Adapters](gadugi-adapters.md)
 - [Generated Asset Consistency](generated-asset-consistency.md)
 - [Validation and Quality Gates](validation-quality-gates.md)
+- [PR Publish-Failure Recovery](pr-publish-recovery.md)

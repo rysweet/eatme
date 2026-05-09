@@ -31,6 +31,8 @@ Eatme has three layers:
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Preparing save/reopen/export evidence handoff | [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md) |
 | Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Recovering a failed PR publish step | [PR Publish-Failure Recovery](pr-publish-recovery.md) |
+| Reviewing local hook artifact path evidence | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -114,6 +116,12 @@ consumer contract, and a classroom example package.
 
 Record exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+
+Recover a failed publish step without expanding PR scope:
+[PR Publish-Failure Recovery](pr-publish-recovery.md).
+
+Review local hook artifact path evidence:
+[Local Hook Artifacts](local-hook-artifacts.md).
 
 Build the docs site:
 
