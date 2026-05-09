@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: quality-gates
+        name: quality gates
+        entry: env TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh
+        language: system
+        pass_filenames: false
+        always_run: true
