@@ -170,13 +170,13 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     let Ok(text) = fs::read_to_string(&artifact) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence exists but is not readable",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} exists but is not readable"),
         );
     };
     let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence exists but is not valid JSON",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} exists but is not valid JSON"),
         );
     };
     if json
@@ -186,13 +186,13 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence has the wrong schema_version",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} has the wrong schema_version"),
         );
     }
     let Some(status) = json.get("status").and_then(serde_json::Value::as_str) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence is missing status field",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} is missing status field"),
         );
     };
 
@@ -234,7 +234,7 @@ fn missing_first_lesson_next_action() -> DesktopFirstLessonNextActionEvidence {
 
 fn invalid_first_lesson_next_action(
     artifact: Option<PathBuf>,
-    detail: &str,
+    detail: impl Into<String>,
 ) -> DesktopFirstLessonNextActionEvidence {
     first_lesson_next_action_with_empty_proof_artifacts("invalid", artifact, detail)
 }
@@ -242,7 +242,7 @@ fn invalid_first_lesson_next_action(
 fn first_lesson_next_action_with_empty_proof_artifacts(
     status: &str,
     artifact: Option<PathBuf>,
-    detail: &str,
+    detail: impl Into<String>,
 ) -> DesktopFirstLessonNextActionEvidence {
     DesktopFirstLessonNextActionEvidence {
         status: status.into(),
@@ -297,40 +297,46 @@ fn project_proof_artifact(
     }
 
     let artifact_value = declaration.get("artifact").unwrap_or(declaration);
-    let path =
-        string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"));
-    let resolved_path = path.as_deref().and_then(|path| {
-        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, path).ok()
-    });
-    let reported_path = path.as_deref().and_then(|path| {
-        reportable_artifact_path(canonical_evidence_root, path, resolved_path.as_deref())
-    });
+    let Some(path) =
+        string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"))
+    else {
+        return ProjectProofArtifactEvidence::missing(label);
+    };
+    let Ok(resolved_path) =
+        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, &path)
+    else {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    };
+    let Ok(metadata) = fs::metadata(&resolved_path) else {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    };
+    if !metadata.is_file() || fs::File::open(&resolved_path).is_err() {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    }
+    let reported_path =
+        reportable_artifact_path(canonical_evidence_root, &path, Some(&resolved_path));
     let declared_size = artifact_value
         .get("size_bytes")
         .or_else(|| artifact_value.get("sizeBytes"))
         .and_then(serde_json::Value::as_u64);
-    let size_bytes = declared_size.or_else(|| {
-        resolved_path
-            .as_ref()
-            .and_then(|path| fs::metadata(path).ok())
-            .filter(|metadata| metadata.is_file())
-            .map(|metadata| metadata.len())
-    });
+    let size_bytes = declared_size.or(Some(metadata.len()));
     let artifact = ProjectProofArtifactInfo {
         path: reported_path,
         size_bytes,
         sha256: string_field(artifact_value, "sha256"),
     };
 
-    if resolved_path.is_some() || artifact_has_metadata(&artifact) {
-        return ProjectProofArtifactEvidence {
-            status: ProofArtifactState::Present,
-            detail: present_artifact_detail(label, &artifact),
-            artifact: Some(artifact),
-        };
+    ProjectProofArtifactEvidence {
+        status: ProofArtifactState::Present,
+        detail: present_artifact_detail(label, &artifact),
+        artifact: Some(artifact),
     }
-
-    ProjectProofArtifactEvidence::missing(label)
 }
 
 fn reportable_artifact_path(
@@ -354,10 +360,6 @@ fn reportable_artifact_path(
         .map(|path| path.to_string_lossy().replace('\\', "/"))
 }
 
-fn artifact_has_metadata(artifact: &ProjectProofArtifactInfo) -> bool {
-    artifact.path.is_some() || artifact.size_bytes.is_some() || artifact.sha256.is_some()
-}
-
 fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> String {
     let mut parts = Vec::new();
     if let Some(path) = &artifact.path {
@@ -371,10 +373,10 @@ fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> 
     }
 
     if parts.is_empty() {
-        format!("{label} is present as artifact availability only")
+        format!("{label} is present as a readable artifact")
     } else {
         format!(
-            "{label} is present as artifact availability only: {}",
+            "{label} is present as a readable artifact: {}",
             parts.join("; ")
         )
     }

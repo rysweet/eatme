@@ -125,7 +125,7 @@ fn invalid_first_lesson_next_action_artifact_is_reported_explicitly() {
     assert!(!report.passed);
     assert_contains(
         &report.issues,
-        "desktop first-lesson next-action evidence is missing status field",
+        "desktop next-action evidence is missing status field",
     );
     let modernized = report
         .target_evidence
@@ -200,6 +200,53 @@ fn save_and_select_project_proof_artifacts_present_from_next_action_metadata() {
     assert!(
         !report_text.contains("rabbithole-desktop-proof"),
         "project proof metadata must not copy arbitrary metadata values into readiness output: {report_text}"
+    );
+}
+
+#[test]
+fn project_proof_artifacts_require_readable_files_before_reporting_present() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[],
+    });
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"artifact":{"path":"run-window-evidence/missing-save-project-proof.json","size_bytes":24,"sha256":"sha256-save-project-proof"}},"select_project_proof_artifact":{"artifact":{"path":"run-window-evidence/missing-select-project-proof.json","size_bytes":26,"sha256":"sha256-select-project-proof"}},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let next_action = &report_json["target_evidence"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|target| target["role"] == "modernized")
+        .unwrap()["desktop_first_lesson_next_action"];
+
+    assert_eq!(
+        next_action["save_project_proof_artifact"]["status"],
+        "missing"
+    );
+    assert_eq!(
+        next_action["select_project_proof_artifact"]["status"],
+        "missing"
+    );
+    let save_item = progress_item(&report_json, "save_project_proof_artifact");
+    let select_item = progress_item(&report_json, "select_project_proof_artifact");
+    assert_eq!(save_item["state"], "missing");
+    assert_eq!(select_item["state"], "missing");
+    assert_detail_contains(
+        save_item,
+        "Save Project proof artifact is missing; declared artifact could not be read as a file.",
+    );
+    assert_detail_contains(
+        select_item,
+        "Select Project proof artifact is missing; declared artifact could not be read as a file.",
     );
 }
 

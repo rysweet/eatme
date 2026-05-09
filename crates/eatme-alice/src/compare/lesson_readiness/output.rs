@@ -263,7 +263,7 @@ pub(super) fn not_yet_shown(
                 "{} is not yet shown.",
                 user_facing_evidence_label(&item.evidence)
             ),
-            detail: item.detail.clone(),
+            detail: not_yet_shown_detail(&item.evidence, &item.state),
             does_not_prove: Vec::new(),
         });
     }
@@ -335,12 +335,17 @@ fn boundary_readiness_item(
             boundary_does_not_prove(boundary),
         )
     };
+    let detail = if shown {
+        boundary.detail.clone()
+    } else {
+        summary.clone()
+    };
 
     ReadinessEvidenceItem {
         id: boundary.id.clone(),
         state: boundary.status.clone(),
         summary,
-        detail: boundary.detail.clone(),
+        detail,
         does_not_prove,
     }
 }
@@ -407,6 +412,16 @@ fn user_facing_evidence_label(evidence: &str) -> String {
         "screenshot, log, and window artifacts" => "Screenshot, log, and window evidence".into(),
         "automation scenario action evidence" => "Automation scenario action evidence".into(),
         _ => evidence.to_string(),
+    }
+}
+
+fn not_yet_shown_detail(evidence: &str, state: &str) -> String {
+    let label = user_facing_evidence_label(evidence);
+    match state {
+        "blocked" => format!("{label} is blocked until the next evidence is shown."),
+        "invalid" => format!("{label} was shown but cannot be used yet."),
+        "not_observed" => format!("{label} is not yet observed."),
+        _ => format!("{label} is not yet shown."),
     }
 }
 

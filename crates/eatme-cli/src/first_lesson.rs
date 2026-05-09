@@ -80,16 +80,14 @@ fn write_first_lesson_readiness_result(
 }
 
 fn scenario_readiness_status(report: &FirstLessonReadinessSequenceReport) -> &str {
-    if report.passed
-        && !report.evidence_boundaries.is_empty()
-        && report
-            .evidence_boundaries
-            .iter()
-            .all(|boundary| boundary.status == "present")
-    {
-        "ready"
-    } else {
-        "not ready"
+    match report.status.as_str() {
+        "ready" => "ready",
+        "blocked" => "blocked",
+        _ => match report.readiness_status.as_str() {
+            "ready" => "ready",
+            "blocked_until_ui_automation" => "blocked",
+            _ => "not ready",
+        },
     }
 }
 
@@ -159,8 +157,9 @@ fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> O
 mod tests {
     use super::*;
     use eatme_alice::compare::{
-        DesktopProofContract, LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
-        LessonSessionReadinessEnvelope, LessonSessionReadinessReport, ReadinessEvidenceItem,
+        DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgressItem,
+        LessonSessionContractCheck, LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
+        ReadinessEvidenceItem,
     };
     use std::collections::BTreeMap;
 
@@ -198,6 +197,22 @@ mod tests {
         assert!(output.contains("- Save option/action evidence is not yet shown."));
         assert!(output.contains("Unproven:"));
         assert!(!output.contains("next missing real-desktop proof"));
+    }
+
+    #[test]
+    fn plain_output_uses_canonical_blocked_readiness_status() {
+        let mut report = sequence_report(progress_with_blocker(None));
+        report.passed = true;
+        report.status = "blocked".into();
+        report.readiness_status = "blocked_until_ui_automation".into();
+        report.evidence_boundaries = vec![present_boundary("save_project")];
+
+        let mut output = Vec::new();
+        write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains("First-lesson automation scenario readiness: blocked"));
+        assert!(!output.contains("First-lesson automation scenario readiness: ready"));
     }
 
     #[test]
@@ -400,6 +415,20 @@ mod tests {
         .into_iter()
         .map(str::to_string)
         .collect()
+    }
+
+    fn present_boundary(id: &str) -> FirstLessonEvidenceBoundary {
+        FirstLessonEvidenceBoundary {
+            id: id.into(),
+            label: "Save Project scenario evidence".into(),
+            status: "present".into(),
+            source: "test".into(),
+            metadata_state: "present".into(),
+            detail: "Save option/action evidence is present.".into(),
+            claim: "Save option/action evidence was observed.".into(),
+            does_not_prove: Vec::new(),
+            artifact: None,
+        }
     }
 
     fn desktop_proof_contract() -> DesktopProofContract {

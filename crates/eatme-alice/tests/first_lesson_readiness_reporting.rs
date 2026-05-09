@@ -156,11 +156,16 @@ fn assert_summary_contains(item: &serde_json::Value, expected: &str) {
 
 fn assert_not_yet_shown_wording_is_user_facing(item: &serde_json::Value) {
     let summary = item["summary"].as_str().unwrap_or_default();
+    let detail = item["detail"].as_str().unwrap_or_default();
     assert!(
         summary.contains("not yet shown"),
         "not_yet_shown summaries must use plain user-facing wording: {item}"
     );
-    let summary_lower = summary.to_ascii_lowercase();
+    assert!(
+        detail.contains("not yet shown"),
+        "not_yet_shown details must use plain user-facing wording: {item}"
+    );
+    let text = format!("{summary}\n{detail}").to_ascii_lowercase();
     for forbidden in [
         "blocker",
         "blocked",
@@ -173,8 +178,8 @@ fn assert_not_yet_shown_wording_is_user_facing(item: &serde_json::Value) {
         "no_go",
     ] {
         assert!(
-            !summary_lower.contains(forbidden),
-            "not_yet_shown summary leaked internal wording {forbidden:?}: {item}"
+            !text.contains(forbidden),
+            "not_yet_shown item leaked internal wording {forbidden:?}: {item}"
         );
     }
 }
