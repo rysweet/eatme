@@ -37,9 +37,12 @@ score learner creativity, or grade saved learner worlds.
 For the save/reopen/export bridge after starter-project preflight, use
 `assets/scenarios/eatme/instructor-student-save-reopen-export-evidence-handoff.yaml`
 and its generated Gadugi adapter. The scenario keeps the student save location,
-reopen confirmation, export/share artifact, and instructor handoff destination
-discoverable without claiming automated grading, creative assessment,
+reopen confirmation request, export/share artifact reference, and instructor
+handoff destination discoverable without claiming that the scenario itself
+performs save/reopen/export, automated grading, creative assessment,
 learner-world judgment, full Alice coverage, or proof of learning.
+See [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md)
+for the classroom handoff output contract and examples.
 
 For instructor remix work, use
 `assets/scenarios/eatme/instructor-lesson-materials-remix.yaml` as the
@@ -157,6 +160,12 @@ It requires persona and scenario references for:
 | Alice 2 migration users | `alice-2-migration-mentor` | `alice-2-migration-bridge` |
 | Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop`, `instructor-student-save-reopen-export-evidence-handoff`, `student-artifact-package-share-evidence` |
 
+The save/reopen/export scenario appears in export/share, classroom-use, and
+teacher-community sharing coverage because the same evidence package moves
+between a student artifact workflow, an instructor review workflow, and a
+reuse/remix handoff. That coverage does not claim a live sharing platform or
+automated content review.
+
 ## Persona-crew scenario coverage
 
 The following ids are scenario references inside
@@ -193,7 +202,7 @@ contracts.
 | --- | --- |
 | `building-a-scene-first-world`, `code-editor-first-run`, `reusable-methods-and-parameters`, `functions-as-questions-about-the-world`, `loops-and-conditionals-mini-challenge`, `events-collision-proximity-game`, `hour-of-code-studio-kickoff` | Alice.org lesson scenarios that prove the real desktop harness can start Alice before agents judge lesson intent. |
 | `starter-project-open-save-export-preflight` | Starter-project preflight that opens the bundled project before save, reopen, or export coverage is claimed. |
-| `instructor-student-save-reopen-export-evidence-handoff` | Instructor/student handoff that records saved project location, reopen confirmation, export or share artifact, and handoff destination after starter-project preflight evidence exists. |
+| `instructor-student-save-reopen-export-evidence-handoff` | Instructor/student handoff that records evidence fields for saved project location, reopen confirmation, export or share artifact, and handoff destination after starter-project preflight evidence exists. |
 | `game-score-timer-win-lose-loop`, `variables-scorekeeper-timekeeper`, `arrays-collection-choreography` | Student data/state scenarios for visible variables, score/time rules, arrays, item order, and boundary tests. |
 | `mythic-choice-event-tree` | Student interactive narrative scenario for player triggers, state or condition checks, feedback, and alternate path playtests. |
 | `vr-camera-locomotion-journey`, `vr-camera-perspective-tour` | Camera and VR-perspective scenarios that record VR availability and require non-VR fallback evidence when classroom hardware is unavailable. |

@@ -154,8 +154,13 @@ Use the repository quality gate only as an additional repository health check,
 not as Alice UI, grading, creative assessment, or lesson-completion evidence:
 
 ```bash
-TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh
+TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
+
+If a local Node-based wrapper around repository tooling hits a heap limit, prefix
+that wrapper invocation with `NODE_OPTIONS=--max-old-space-size=32768`. Do not
+treat `NODE_OPTIONS` as required project configuration or as part of the PR
+readiness contract.
 
 Block readiness if `git status --short` reports local changes, or if GitHub
 reports a different `headRefOid`, a non-clean merge state, failed checks,
@@ -182,7 +187,9 @@ Unsupported review claims:
 
 ## Handoff note
 
-Use this template after exact-head evidence is refreshed at the final PR head:
+Use this template after exact-head evidence is refreshed at the final PR head.
+Generate the file list with `git diff --name-only <merge-base>...HEAD` and
+paste the command output into the placeholder:
 
 ```text
 PR 174 persona/scenario gap-fill readiness
@@ -208,6 +215,13 @@ Repository-local checks:
 - cargo run -q -p eatme-cli -- assets validate --json
 - cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
+Files modified:
+<paste `git diff --name-only <merge-base>...HEAD` output here>
+
+If implementation review proves no additional files are required, include an
+accepted no-op justification instead of a file list only after the workflow
+accepts the no-op rationale before publishing readiness.
+
 Boundary: this evidence supports editable persona/scenario asset readiness and
 generated adapter freshness for the exact head. It does not claim Alice UI
 automation, grading, creative assessment, save/reopen/export completion,
@@ -231,7 +245,8 @@ Persona/scenario gap-fill readiness refreshed for HEAD `<commit-sha>`.
 Asset-scoped evidence:
 - `cargo run -q -p eatme-cli -- assets validate --json` succeeded.
 - `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` succeeded.
-- Committed changes are limited to canonical persona assets, canonical EatMe scenario assets, and generator-produced Gadugi adapters under `assets/scenarios/gadugi/*.yaml`.
+- Asset changes are limited to canonical persona assets, canonical EatMe scenario assets, and generator-produced Gadugi adapters under `assets/scenarios/gadugi/*.yaml`.
+- Files modified are listed in the final handoff from `git diff --name-only <merge-base>...HEAD` and stay within persona/scenario assets, generated adapters, tests, and directly linked documentation.
 
 Scope note: this evidence covers persona/scenario asset completeness, validation success, and generated-adapter freshness only. It does not claim Alice UI automation, grading correctness, creative assessment quality, completed lessons, or full lesson-flow coverage.
 ```

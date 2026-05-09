@@ -252,6 +252,36 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
     }
 }
 
+#[test]
+fn scenario_wording_requests_handoff_evidence_without_claiming_actions_were_completed() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme");
+    let scenario = read_eatme_scenario(&path);
+    let purpose = normalize_whitespace(&scenario.purpose.to_lowercase());
+
+    assert_contains_all(
+        "save/reopen/export purpose bounded action language",
+        &purpose,
+        &[
+            "asks the student",
+            "record",
+            "observable",
+            "evidence collection and human review",
+        ],
+    );
+    for overclaim in [
+        "the flow confirms",
+        "checks that the saved project reopens",
+        "prepares an exported evidence package",
+        "records how the evidence is handed",
+    ] {
+        assert!(
+            !purpose.contains(overclaim),
+            "scenario purpose must ask for evidence rather than claim completed action: {overclaim:?}"
+        );
+    }
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }

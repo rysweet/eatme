@@ -25,13 +25,13 @@ resource_basis:
       automated grading, creative judgment, or broad Alice coverage.
 purpose: >-
   Help an instructor and student bridge from starter-project preflight evidence
-  to a practical classroom handoff. The flow confirms the starter project opens,
-  names where the student saves it, checks that the saved project reopens,
-  prepares an exported evidence package, and records how the evidence is handed
-  to an instructor or the next workflow. This scenario supports evidence
-  collection and human review; it is not full user interface automation, not
-  automated creative assessment, not learner-world grading, not full Alice
-  coverage, and not proof of student learning.
+  to a practical classroom handoff. The flow asks the student to record the
+  opened starter-project reference, save name and location, observable reopen
+  confirmation, export/share artifact, and handoff destination for an instructor
+  or the next workflow. This scenario supports evidence collection and human
+  review; it is not full user interface automation, not automated creative
+  assessment, not learner-world grading, not full Alice coverage, and not proof
+  of student learning.
 personas:
   instructors: [classroom-orchestrator, assessment-curator]
   students: [reflective-debugger, collaborative-peer-mentor]

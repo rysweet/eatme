@@ -44,8 +44,9 @@ Real Alice runs are explicit opt-in runs. Non-baseline scenarios require:
 export EATME_REAL_ALICE=1
 ```
 
-For Node-based wrappers or agent tooling only, a larger heap can avoid wrapper
-runtime limits. The Rust CLI does not require this setting:
+For Node-based wrappers or agent tooling only, a larger heap can help with
+wrapper runtime limits. This is optional troubleshooting, not project
+configuration. The Rust CLI does not require this setting:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -93,6 +94,9 @@ Use the manifest and artifacts as setup evidence before asking an instructor,
 student, agent, or adapter to reason about save, reopen, or export behavior. The
 next documented handoff is
 [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
+That handoff consumes preflight evidence as an opened-project reference only; it
+requires separate save-name, save-location, reopen-confirmation, export/share,
+and instructor-review evidence.
 
 When this scenario is part of a recovered PR, use
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md) as the

@@ -97,6 +97,13 @@ the generated adapters as consumers of eatme's explicit contracts:
 | `instructor-student-save-reopen-export-evidence-handoff` | Evaluate save/reopen handoff, export package checklist, and instructor review boundary outputs without launching Alice or claiming automated review. |
 | `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
 
+The save/reopen/export handoff adapter uses the same agentic-flow contract as the
+canonical scenario. It evaluates whether the response includes
+`save_reopen_handoff_card`, `export_evidence_package_checklist`, and
+`instructor_review_boundary_note`; it does not launch Alice, inspect private
+Alice internals, perform save/reopen/export, or turn the handoff package into an
+automated grade.
+
 Standard launch-smoke adapters expect command success and a `null`
 `failure_category`. The `first-lessons-real-ui-actions` adapter intentionally
 does not: it preserves `expect.exit_code: 1` and

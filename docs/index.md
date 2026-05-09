@@ -109,6 +109,8 @@ Review the conservative first-lesson evidence boundary contract:
 Prepare the instructor/student bridge from starter-project preflight to
 shareable evidence:
 [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
+That guide documents the expected handoff outputs, configuration fields,
+consumer contract, and a classroom example package.
 
 Record exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).

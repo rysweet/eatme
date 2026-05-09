@@ -162,6 +162,23 @@ fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
 }
 
 #[test]
+fn final_handoff_satisfies_workflow_no_op_guard_with_files_or_accepted_rationale() {
+    let evidence = normalized_readiness_doc();
+
+    assert_normalized_contains_all(
+        "default-workflow no-op guard handoff contract",
+        evidence,
+        &[
+            "Files modified:",
+            "git diff --name-only <merge-base>...HEAD",
+            "If implementation review proves no additional files are required",
+            "include an accepted no-op justification",
+            "workflow accepts the no-op rationale before publishing readiness",
+        ],
+    );
+}
+
+#[test]
 fn manual_fallback_log_is_not_tracked_as_readiness_or_review_evidence() {
     let root = repository_root();
     let output = Command::new("git")
