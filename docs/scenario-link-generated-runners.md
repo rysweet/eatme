@@ -285,7 +285,7 @@ Generated Gadugi runner files expose this stable contract to external runners:
 | `description` | Generated boundary statement that names the source scenario and evidence scope. |
 | `config.timeout` | Scenario-level timeout in milliseconds, derived from canonical timeouts. |
 | `environment.requires` | Required environment variables, such as `ALICE_HOME` and `EATME_REAL_ALICE` for real Alice paths. |
-| `environment.optional` | Optional variables. CLI launch runners expose `RUN_ID` and `EATME_REPO`; instructor-agentic runners expose `EATME_REPO`. |
+| `environment.optional` | Optional variables. Both CLI launch and instructor-agentic runners expose `RUN_ID` and `EATME_REPO`. |
 | `agents` | System or agentic runner definitions used by Gadugi. |
 | `steps[].params.command` | Shell command that changes to `EATME_REPO` when supplied, may set a default `RUN_ID`, and invokes eatme. |
 | `steps[].expect` | Exit-code and output-marker expectations for each generated step. |
@@ -331,7 +331,7 @@ A generated file includes these top-level fields:
 | `description` | States the canonical source and the bounded evidence scope. |
 | `version` | Identifies the generated runner version. |
 | `config` | Sets timeout, retry, and parallel-execution policy from the canonical scenario. |
-| `environment` | Names required and optional runtime variables. Real Alice runners require variables such as `ALICE_HOME` and `EATME_REAL_ALICE`; generated runners use `EATME_REPO` and, for CLI launch paths, `RUN_ID` when supplied. |
+| `environment` | Names required and optional runtime variables. Real Alice runners require variables such as `ALICE_HOME` and `EATME_REAL_ALICE`; all generated runners declare `RUN_ID` and `EATME_REPO` as optional. |
 | `agents` | Defines the system or agentic runner that executes the generated steps. |
 | `steps` | Invokes eatme commands instead of duplicating Alice desktop automation. |
 | `expect` | Checks exit codes and output markers that belong to the bounded scenario contract. |
