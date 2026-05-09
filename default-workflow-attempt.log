@@ -1,50 +1,52 @@
 # PR #175 Evidence Artifact Contract
 
-Generated: 2026-05-09T07:52:54Z
+Generated: 2026-05-09T08:26:15Z
 
-This artifact records exact-current-head evidence and review results for PR #175.
-It is intentionally bounded to observed repository state, command results,
-asset validation, generated adapter checks, quality gate status, and GitHub PR
+This artifact records bounded evidence and review results for PR #175. It is
+intentionally limited to observed repository state, command results, asset
+validation, generated adapter checks, quality gate status, and GitHub PR
 metadata.
 
 ## Scope
 
 - Repository: `rysweet/eatme`
 - Recovery branch/worktree: `wave6-evidence-artifact-contract-1778302300`
-- Local `HEAD`: `c39dd9afaabb8a953d02a46205a2e17d09754cb8`
+- Local `HEAD`: `f6525cc6311043bd38c57fe0e2519a48ebdc612a`
 - PR #175 `headRefOid`: `c39dd9afaabb8a953d02a46205a2e17d09754cb8`
-- Evidence head match: yes; local `HEAD` and PR #175 `headRefOid` are identical.
+- Evidence head match: no; local `HEAD` is one commit ahead of the
+  observed PR #175 `headRefOid`.
 
-All command evidence below is bound to
-`c39dd9afaabb8a953d02a46205a2e17d09754cb8`.
+All command evidence below was collected with local `HEAD` at
+`f6525cc6311043bd38c57fe0e2519a48ebdc612a` and with intentional uncommitted
+evidence artifact and evidence-contract test edits present. This artifact does
+not claim that the committed tree at that SHA alone contains these final edits.
 
 ## Workflow note
 
 The prior artifact content only recorded that `amplihack run` did not provide the
 expected subcommand and that manual recovery continued. This refreshed artifact
-keeps that operational context by documenting the evidence collected manually
-against the exact PR head. It does not treat the unavailable subcommand as a
-readiness signal.
+keeps that operational context by documenting the evidence collected manually.
+It does not treat the unavailable subcommand as a readiness signal.
 
 ## Repository state evidence
 
-Collected against `c39dd9afaabb8a953d02a46205a2e17d09754cb8` while refreshing
-this artifact:
+Collected with local `HEAD` at `f6525cc6311043bd38c57fe0e2519a48ebdc612a`
+while refreshing this artifact and its contract tests:
 
 | Command | Exit code | Observed result |
 | --- | ---: | --- |
 | `git rev-parse --abbrev-ref HEAD` | 0 | `wave6-evidence-artifact-contract-1778302300` |
-| `git rev-parse HEAD` | 0 | `c39dd9afaabb8a953d02a46205a2e17d09754cb8` |
-| `git status --short --branch` | 0 | Branch tracks `origin/wave6-evidence-artifact-contract-1778302300`; dirty paths were `crates/eatme-assets/src/lib.rs`, `default-workflow-attempt.log`, and `crates/eatme-assets/src/default_workflow_attempt_contract_tests.rs`. |
+| `git rev-parse HEAD` | 0 | `f6525cc6311043bd38c57fe0e2519a48ebdc612a` |
+| `git status --short --branch` | 0 | Branch tracks `origin/wave6-evidence-artifact-contract-1778302300`, is ahead by 1 local commit, and has intentional uncommitted evidence artifact and evidence-contract test edits. |
 | `git diff --name-only --diff-filter=U` | 0 | No unmerged files reported. |
 | `rg -n '^(<<<<<<<|=======|>>>>>>>)' --glob '!target/**' --glob '!**/.git/**' .` | 1 (no matches) | No conflict markers reported. |
 
 Additional merge/rebase state checks found no `.git/MERGE_HEAD`,
 `.git/rebase-merge`, or `.git/rebase-apply` state.
 
-Post-update status: the final dirty worktree state is expected to remain limited
-to the intentional evidence artifact and evidence-contract test changes listed
-above. This artifact does not claim a clean worktree readiness state.
+Post-update status: the dirty worktree state is expected and remains limited to
+intentional evidence artifact and evidence-contract test edits. This artifact
+does not claim clean-worktree PR readiness.
 
 ## GitHub PR metadata evidence
 
@@ -77,9 +79,11 @@ Observed status checks:
 | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` |
 | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` |
 
-Impact: GitHub reports the PR as mergeable and clean at the exact head. The
-skipped checks are not converted into evidence for deployment behavior or manual
-Alice launch behavior.
+Impact: GitHub reports PR #175 as mergeable and clean at
+`c39dd9afaabb8a953d02a46205a2e17d09754cb8`. Because local `HEAD` is
+`f6525cc6311043bd38c57fe0e2519a48ebdc612a`, this GitHub metadata does not cover
+the local commit. The skipped checks are not converted into evidence for
+deployment behavior or manual Alice launch behavior.
 
 ## Verification gate evidence
 
@@ -156,15 +160,17 @@ Reviewed for this artifact:
 
 ## Bounded readiness statement
 
-At exact head `c39dd9afaabb8a953d02a46205a2e17d09754cb8`, the evidence supports
-only the following readiness claims:
+At collected local `HEAD` `f6525cc6311043bd38c57fe0e2519a48ebdc612a`, with
+intentional uncommitted evidence artifact and evidence-contract test edits
+present, the evidence supports only the following local validation claims:
 
-- Local `HEAD` matches PR #175 `headRefOid`.
-- GitHub reports PR #175 as `MERGEABLE` with `mergeStateStatus` `CLEAN`.
 - No merge, rebase, unmerged-file, or conflict-marker blocker was observed.
 - Asset validation passed with no reported errors or warnings.
 - Generated Gadugi adapter check passed with no reported changes or errors.
 - `TMPDIR=/tmp ./scripts/quality-gates.sh` completed with exit code 0.
+
+No PR #175 readiness claim is made because local `HEAD` differs from the
+observed PR #175 `headRefOid`.
 
 No broader product, UI, grading, creative quality, rendering, or lesson-completion
 claim is made by this artifact.
@@ -186,13 +192,14 @@ This artifact does not verify or claim:
 
 ## Evidence collection blockers
 
-No evidence collection blocker was observed for the bounded evidence claims above at
-`c39dd9afaabb8a953d02a46205a2e17d09754cb8`.
+Blocker: local `HEAD` is `f6525cc6311043bd38c57fe0e2519a48ebdc612a`, while PR
+#175 `headRefOid` is `c39dd9afaabb8a953d02a46205a2e17d09754cb8`. Impact: the
+local validation evidence cannot be claimed as PR #175 readiness until PR #175
+points to the local head or evidence is regenerated at the PR head.
 
-The worktree was not clean during this refresh because the evidence artifact and
-evidence-contract test changes were present. Impact: this artifact does not claim
-clean-worktree readiness; it only records that no merge, rebase, unmerged-file,
-or conflict-marker blocker was observed.
+The final worktree is expected to contain intentional evidence edits. Impact:
+this artifact does not claim clean-worktree PR readiness; it only records that
+no merge, rebase, unmerged-file, or conflict-marker blocker was observed.
 
 Skipped GitHub checks remain limitations, not readiness evidence. If deployment
 behavior or manual real Alice launch behavior is required for a later readiness

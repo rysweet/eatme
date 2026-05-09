@@ -1,41 +1,76 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 const ARTIFACT_PATH: &str = "default-workflow-attempt.log";
 const LOCAL_HEAD_LABEL: &str = "- Local `HEAD`:";
 const PR_HEAD_LABEL: &str = "- PR #175 `headRefOid`:";
+const PROHIBITED_SUCCESS_CLAIMS: &[&str] = &[
+    "full alice ui flow is automated",
+    "full ui automation coverage is verified",
+    "grading correctness is verified",
+    "creative assessment correctness is verified",
+    "visible rendering correctness is verified",
+    "first-lesson completion is verified",
+    "learner completed the first lesson",
+    "rendering correctness is proven",
+];
 
 #[test]
-fn evidence_artifact_binds_scope_to_the_exact_pr_head() {
+fn evidence_artifact_binds_scope_to_observed_heads() {
     let artifact = read_artifact();
-    let local_head = sha_after_label(&artifact, LOCAL_HEAD_LABEL);
-    let pr_head = sha_after_label(&artifact, PR_HEAD_LABEL);
+    let local_head = sha_after_label(artifact, LOCAL_HEAD_LABEL);
+    let pr_head = sha_after_label(artifact, PR_HEAD_LABEL);
 
-    assert_eq!(
-        local_head, pr_head,
-        "the artifact must not claim readiness when local HEAD differs from PR #175 headRefOid"
-    );
-    assert!(
-        is_full_sha(local_head),
-        "local HEAD must be a full 40-character SHA: {local_head}"
-    );
+    assert_full_sha(local_head, "local HEAD");
+    assert_full_sha(pr_head, "PR #175 headRefOid");
     assert!(
         artifact.contains(&format!(
-            "All command evidence below is bound to\n`{local_head}`."
+            "All command evidence below was collected with local `HEAD` at\n`{local_head}`"
         )),
-        "command evidence must name the exact SHA it was generated against"
+        "command evidence must name the exact SHA it was collected against"
     );
     assert!(
-        artifact.contains(&format!("At exact head `{local_head}`")),
-        "bounded readiness must be tied to the exact reviewed SHA"
+        artifact
+            .contains("intentional uncommitted evidence artifact and evidence-contract test edits"),
+        "artifact must disclose intentional uncommitted evidence edits when command evidence predates the final worktree"
     );
+    assert!(
+        artifact.contains(&format!("At collected local `HEAD` `{local_head}`")),
+        "bounded readiness must be tied to the exact collected SHA"
+    );
+
+    let readiness = section(
+        artifact,
+        "## Bounded readiness statement",
+        "## Limitations and unverified areas",
+    );
+    if local_head == pr_head {
+        assert!(
+            readiness.contains("Local `HEAD` matches PR #175 `headRefOid`"),
+            "matching heads may be used as readiness evidence only when explicitly stated"
+        );
+    } else {
+        assert!(
+            !has_unblocked_head_mismatch(artifact),
+            "a local/PR head mismatch must be explicitly documented in the blocker section"
+        );
+        assert!(
+            readiness.contains("No PR #175 readiness claim is made"),
+            "a local/PR head mismatch must not be converted into PR readiness"
+        );
+        assert!(
+            !readiness.contains("Local `HEAD` matches PR #175"),
+            "readiness must not claim local HEAD matches PR #175 when the artifact records a mismatch"
+        );
+    }
 }
 
 #[test]
 fn repository_state_evidence_records_collection_commands() {
     let artifact = read_artifact();
     let section = section(
-        &artifact,
+        artifact,
         "## Repository state evidence",
         "## GitHub PR metadata evidence",
     );
@@ -60,25 +95,25 @@ fn verification_gate_evidence_records_required_commands_and_results() {
     let artifact = read_artifact();
 
     assert_section_has_command_and_success(
-        &artifact,
+        artifact,
         "### Asset validation",
         "### Generated Gadugi adapter check",
         "cargo run -q -p eatme-cli -- assets validate --json",
     );
     assert_section_has_command_and_success(
-        &artifact,
+        artifact,
         "### Generated Gadugi adapter check",
         "### Repository quality gates",
         "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
     );
     assert_section_has_command_and_success(
-        &artifact,
+        artifact,
         "### Repository quality gates",
         "## Review evidence",
         "TMPDIR=/tmp ./scripts/quality-gates.sh",
     );
     assert_section_has_command_and_success(
-        &artifact,
+        artifact,
         "## GitHub PR metadata evidence",
         "## Verification gate evidence",
         "gh pr view 175 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
@@ -89,12 +124,12 @@ fn verification_gate_evidence_records_required_commands_and_results() {
 fn review_scope_and_limitations_are_explicit_without_overclaiming() {
     let artifact = read_artifact();
     let review = section(
-        &artifact,
+        artifact,
         "## Review evidence",
         "## Bounded readiness statement",
     );
     let limitations = section(
-        &artifact,
+        artifact,
         "## Limitations and unverified areas",
         "## Evidence collection blockers",
     );
@@ -128,12 +163,12 @@ fn review_scope_and_limitations_are_explicit_without_overclaiming() {
         );
     }
 
-    assert_no_prohibited_affirmative_claims(&artifact);
+    assert_no_prohibited_affirmative_claims(artifact);
 }
 
 #[test]
 fn head_mismatch_fixture_requires_an_explicit_blocker() {
-    let fixture = "\
+    let missing_blocker = "\
 # PR #175 Evidence Artifact Contract
 
 ## Scope
@@ -143,12 +178,31 @@ fn head_mismatch_fixture_requires_an_explicit_blocker() {
 
 ## Bounded readiness statement
 
-At exact head `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`, this is ready.
+At collected local `HEAD` `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`, this is ready.
+No blocker was observed.
+";
+    let explicit_blocker = "\
+# PR #175 Evidence Artifact Contract
+
+## Scope
+
+- Local `HEAD`: `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`
+- PR #175 `headRefOid`: `bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`
+
+## Evidence collection blockers
+
+Blocker: local `HEAD` is `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`,
+while PR #175 `headRefOid` is `bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`.
+Impact: the local validation evidence cannot be claimed as PR #175 readiness.
 ";
 
     assert!(
-        head_mismatch_without_blocker(fixture),
+        has_unblocked_head_mismatch(missing_blocker),
         "a local/PR head mismatch must be treated as a blocker instead of readiness evidence"
+    );
+    assert!(
+        !has_unblocked_head_mismatch(explicit_blocker),
+        "an explicitly documented blocker satisfies the mismatch contract"
     );
 }
 
@@ -164,9 +218,15 @@ fn prohibited_success_claim_fixture_is_rejected() {
     );
 }
 
-fn read_artifact() -> String {
-    fs::read_to_string(repository_root().join(ARTIFACT_PATH))
-        .unwrap_or_else(|error| panic!("failed to read {ARTIFACT_PATH}: {error}"))
+fn read_artifact() -> &'static str {
+    static ARTIFACT: OnceLock<String> = OnceLock::new();
+
+    ARTIFACT
+        .get_or_init(|| {
+            fs::read_to_string(repository_root().join(ARTIFACT_PATH))
+                .unwrap_or_else(|error| panic!("failed to read {ARTIFACT_PATH}: {error}"))
+        })
+        .as_str()
 }
 
 fn repository_root() -> PathBuf {
@@ -189,6 +249,13 @@ fn first_backtick_value(value: &str) -> Option<&str> {
 
 fn is_full_sha(value: &str) -> bool {
     value.len() == 40 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn assert_full_sha(value: &str, label: &str) {
+    assert!(
+        is_full_sha(value),
+        "{label} must be a full 40-character SHA: {value}"
+    );
 }
 
 fn section<'a>(artifact: &'a str, start_heading: &str, end_heading: &str) -> &'a str {
@@ -238,23 +305,37 @@ fn prohibited_affirmative_claim_lines(text: &str) -> Vec<&str> {
 
 fn contains_prohibited_success_claim(line: &str) -> bool {
     let lower = line.to_ascii_lowercase();
-    let prohibited = [
-        "full alice ui flow is automated",
-        "full ui automation coverage is verified",
-        "grading correctness is verified",
-        "creative assessment correctness is verified",
-        "visible rendering correctness is verified",
-        "first-lesson completion is verified",
-        "learner completed the first lesson",
-        "rendering correctness is proven",
-    ];
 
-    prohibited.iter().any(|claim| lower.contains(claim))
+    PROHIBITED_SUCCESS_CLAIMS
+        .iter()
+        .any(|claim| lower.contains(claim))
 }
 
-fn head_mismatch_without_blocker(artifact: &str) -> bool {
+fn has_unblocked_head_mismatch(artifact: &str) -> bool {
     let local_head = sha_after_label(artifact, LOCAL_HEAD_LABEL);
     let pr_head = sha_after_label(artifact, PR_HEAD_LABEL);
 
-    local_head != pr_head && !artifact.to_ascii_lowercase().contains("blocker")
+    local_head != pr_head && !has_explicit_head_mismatch_blocker(artifact, local_head, pr_head)
+}
+
+fn has_explicit_head_mismatch_blocker(artifact: &str, local_head: &str, pr_head: &str) -> bool {
+    let Some(blockers) = optional_section_to_end(artifact, "## Evidence collection blockers")
+    else {
+        return false;
+    };
+    let blockers_lower = blockers.to_ascii_lowercase();
+    let normalized_blockers = blockers_lower
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    blockers.contains(&format!("Blocker: local `HEAD` is `{local_head}`"))
+        && blockers.contains(pr_head)
+        && normalized_blockers.contains("pr #175 `headrefoid` is")
+        && normalized_blockers.contains("cannot be claimed as pr #175 readiness")
+}
+
+fn optional_section_to_end<'a>(artifact: &'a str, start_heading: &str) -> Option<&'a str> {
+    let start = artifact.find(start_heading)?;
+    Some(&artifact[start..])
 }
