@@ -76,9 +76,9 @@ The GitHub check rollup for `6f815a58077a622685a10f3ac68d16b36dc5d332` reported:
 | Quality Gates | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` |
 | Security | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` |
 
-Skipped checks are not evidence that the skipped work ran. In particular,
-`manual real Alice launch smoke` being skipped does not provide original Alice
-action evidence.
+Skipped checks are not evidence that the skipped work ran. `Deploy to GitHub
+Pages` being skipped is not deployment evidence, and `manual real Alice launch
+smoke` being skipped does not provide original Alice action evidence.
 
 ## Repository QA
 
@@ -187,8 +187,10 @@ support the same conclusion.
 ## Conclusion
 
 For PR #199 at `6f815a58077a622685a10f3ac68d16b36dc5d332`, GitHub reports a
-clean merge state and successful required automated checks except for skipped
-manual-only jobs. Local repository QA passed at that head.
+clean merge state and successful completed checks, with `Deploy to GitHub Pages`
+and `manual real Alice launch smoke` skipped. Those skipped checks must not be
+treated as deployment evidence or original Alice action evidence. Local
+repository QA passed at that head.
 
 This evidence does not clear missing original Alice action evidence and does not
 rehabilitate the invalid `default-workflow-attempt.log`. The merge-readiness
