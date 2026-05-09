@@ -190,6 +190,59 @@ fn canonical_first_lesson_scenario_prose_uses_plain_reader_language() {
     );
 }
 
+#[test]
+fn default_workflow_readiness_docs_require_current_head_finalization_outputs() {
+    let readiness = read_repo_file("docs/default-workflow-pr-readiness.md");
+
+    for required in [
+        "current head",
+        "current checks",
+        "Files modified",
+        "No-op justification:",
+    ] {
+        assert!(
+            readiness.contains(required),
+            "readiness docs must require `{required}` in the finalization evidence"
+        );
+    }
+
+    for blocked in [
+        "PR #197",
+        "80582c492a0025877d83d44363a8a77d16ca6e01",
+        "gh pr comment",
+    ] {
+        assert!(
+            !readiness.contains(blocked),
+            "durable readiness docs must not include point-in-time recovery instruction `{blocked}`"
+        );
+    }
+}
+
+#[test]
+fn scenario_link_docs_use_checked_evidence_language_instead_of_positive_proof_verbs() {
+    let mut violations = Vec::new();
+
+    for path in [
+        "docs/index.md",
+        "docs/scenario-authoring.md",
+        "docs/scenario-link-generated-runners.md",
+        "docs/default-workflow-pr-readiness.md",
+    ] {
+        let contents = read_repo_file(path);
+        for (line_index, line) in contents.lines().enumerate() {
+            if uses_positive_proof_language(line) {
+                violations.push(format!("{path}:{}: {line}", line_index + 1));
+            }
+        }
+    }
+
+    assert!(
+        violations.is_empty(),
+        "scenario-link docs must describe checked evidence, not unverified proof claims:\n{}",
+        violations.join("\n")
+    );
+}
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -359,4 +412,15 @@ fn blocked_reader_terms() -> &'static [&'static str] {
         "rabbithole",
         "deterministic",
     ]
+}
+
+fn uses_positive_proof_language(line: &str) -> bool {
+    let lower = line.to_lowercase();
+    if lower.contains("does not prove") || lower.contains("unproven") {
+        return false;
+    }
+
+    lower
+        .split(|character: char| !character.is_ascii_alphabetic())
+        .any(|word| matches!(word, "prove" | "proves" | "proved" | "proven"))
 }

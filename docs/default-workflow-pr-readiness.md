@@ -1,14 +1,13 @@
 # Default-workflow PR readiness
 
 Default-workflow PR readiness is the exact-head gate used when a pull request
-needs a clear final readiness decision and the wrapper workflow did not produce
-useful output.
+needs a final readiness decision without a manual merge.
 
-This page specifies the readiness behavior the workflow should enforce: verify
-the exact PR head, inspect GitHub metadata for that same head, preserve the
-bounded starter-project evidence contract, require fresh generated Gadugi
-adapters when scenario assets are involved, and publish a narrowly scoped
-readiness comment only after every gate passes.
+For scenario-link recovery work, the gate establishes only that the current
+branch head is reviewable, generated assets are reproducible, documentation
+builds, and the first-lesson evidence path stays bounded. It does not establish
+full UI automation, rendering correctness, grading, creative assessment, Save
+completion, lesson completion, or broad Alice compatibility.
 
 ## Contents
 
@@ -16,10 +15,11 @@ readiness comment only after every gate passes.
 - [Generic readiness procedure](#generic-readiness-procedure)
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
-- [Starter-project evidence boundary](#starter-project-evidence-boundary)
+- [Scenario-link evidence boundary](#scenario-link-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
-- [PR #164 readiness example](#pr-164-readiness-example)
-- [Readiness comment](#readiness-comment)
+- [Scenario-link recovery procedure](#scenario-link-recovery-procedure)
+- [Review and finalization packet](#review-and-finalization-packet)
+- [Readiness note](#readiness-note)
 - [Blocker handling](#blocker-handling)
 
 ## Readiness contract
@@ -33,14 +33,17 @@ being reviewed.
 | GitHub checks | Required checks are green for that same SHA. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
-| Starter-project wording | The canonical scenario uses plain, bounded, user-facing language. |
-| Overclaim boundary | The scenario does not claim first-lesson completion, grading, creative assessment, full UI automation, visible rendering correctness, full Save completion, or complete Alice coverage. |
-| Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
+| Scenario-link wording | Canonical scenarios use plain, bounded, user-facing prerequisite, evidence, and follow-on language. |
+| Overclaim boundary | Scenario, generated runner, and docs wording do not claim first-lesson completion, grading, creative assessment, full UI automation, visible rendering correctness, full Save completion, or complete Alice coverage. |
+| Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets or generator output are affected. |
+| Documentation | MkDocs builds in strict mode when documentation is changed. |
+| Quality gate | The repository quality gate passes for the current head before finalization. |
 | Scope | No unrelated files or behavior are changed. |
 
-A previous wrapper failure is not a blocker when direct verification proves the
+A previous wrapper failure is not a blocker when direct verification confirms the
 same head, green checks, clean mergeability, bounded wording, and fresh
-generated adapters.
+generated adapters. The workflow records readiness; it does not merge the pull
+request.
 
 ## Generic readiness procedure
 
@@ -49,12 +52,14 @@ Run the gate in this order:
 1. Verify the PR head equals the exact requested SHA.
 2. Verify GitHub checks are green for that same SHA.
 3. Verify `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE`.
-4. Inspect the starter-project preflight scenario wording if the PR touches that
-   evidence contract.
+4. Inspect scenario-link wording if the PR touches canonical scenarios,
+   generated adapters, or docs that describe the first-lesson evidence path.
 5. Run the generated Gadugi adapter freshness check if any canonical scenario
-   asset is affected.
+   asset or generator output is affected.
 6. Validate assets.
-7. Publish the readiness comment only when every required gate passed.
+7. Build docs in strict mode when docs are changed.
+8. Run the repository quality gate.
+9. Prepare the readiness note only when every required gate passed.
 
 ## Configuration
 
@@ -71,9 +76,16 @@ The Rust asset validation and Gadugi generator commands do not require Node, but
 the environment variable is safe to keep exported for repository-wide workflow
 commands.
 
+Deep worktrees can exceed Unix socket path limits during the full repository
+quality gate. Run that gate with a short temporary directory:
+
+```bash
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
 For GitHub checks, use authenticated `gh` access to the repository that owns the
 PR. Do not place tokens, secrets, local credential paths, environment dumps, or
-raw command output in readiness comments.
+raw command output in readiness notes.
 
 ## GitHub metadata fields
 
@@ -89,7 +101,8 @@ The readiness gate consumes these `gh pr view` fields:
 Fetch the PR head, merge state, mergeability, and check summary:
 
 ```bash
-gh pr view 164 \
+PR_NUMBER="${PR_NUMBER:?set PR_NUMBER to the pull request number}"
+gh pr view "$PR_NUMBER" \
   --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
@@ -102,39 +115,47 @@ different head.
 If the head changes during review, stop and restart the readiness verification
 for the newly requested SHA.
 
-## Starter-project evidence boundary
+## Scenario-link evidence boundary
 
-Review the canonical source scenario when starter-project preflight wording is
-part of the PR:
+Review canonical source scenarios when scenario-link, prerequisite, evidence, or
+follow-on wording is part of the PR:
 
 ```text
-assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
+assets/scenarios/eatme/
 ```
 
-The wording must stay plain and bounded. It may say that the scenario records
-real Alice launch/opened-project evidence for the bundled starter project, an
-editable starter-world change note, an attempted run or observation, and
-readiness-gap notes.
+The canonical scenario YAML is the source of truth. Generated Gadugi YAML is a
+consumer of that source and must not add independent behavior. Reader-facing
+scenario links may connect prerequisites, first-lesson evidence, instructor
+handoff, student next action, and follow-on paths only when those links are
+represented by the editable scenario assets or generated docs.
 
-When older wording or generated output uses the phrase "action evidence," read it
-only as bounded launch/opened-project evidence. It does not mean user-like UI
-automation, save/reopen/export completion, learner-world grading, or creative
-assessment.
+Use plain wording for the first-lesson silver thread:
 
-The wording must not say or imply that the scenario proves:
+| Link surface | Acceptable claim |
+| --- | --- |
+| Prerequisites | Required tools, Alice homes, real-Alice gate, and scenario assets are named before execution. |
+| Evidence | The run records only the manifest, log, window, screenshot, action-contract, and readiness fields named by the scenario or report. |
+| Follow-on path | The next step is a bounded action or handoff, not a declaration that the lesson is complete. |
+| Generated runner | Gadugi invokes eatme commands and checks emitted evidence; eatme owns Alice desktop launch behavior. |
+| Documentation | Docs route readers from scenario authoring to generated runners, lesson readiness, and evidence interpretation without broad product claims. |
+
+The wording must not say or imply that the scenario, generated adapter, or docs
+claim:
 
 | Unsupported claim | Required boundary |
 | --- | --- |
-| First-lesson completion | It is starter-project preflight evidence only. |
+| First-lesson completion | It is first-lesson readiness or first-action evidence only. |
 | Grading or learner-world grading | It records evidence for review; it does not grade. |
 | Creative assessment | It may name an editable change; it does not assess creativity. |
-| Full UI automation | It records bounded launch/opened-project evidence and explicit gaps. |
+| Full UI automation | It records bounded launch evidence, action-contract evidence, and explicit gaps. |
 | Visible rendering correctness | Screenshot or window evidence is observation evidence only. |
 | Full Save completion | Save, reopen, and export remain readiness gaps until user-like evidence exists. |
-| Complete Alice coverage | The scenario covers only the stated preflight contract. |
+| Complete Alice coverage | The scenario covers only its stated readiness contract. |
 
-Use the generated adapter only as a consumer of this contract. Do not hand-edit
-generated Gadugi YAML to change mission intent.
+For starter-project preflight wording, keep the same boundary: opened starter
+project, manifest/log/window/screenshot evidence, bounded starter-world notes,
+and readiness-gap artifacts only.
 
 ## Generated Gadugi adapter freshness
 
@@ -154,8 +175,8 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 Commit the canonical scenario change and regenerated adapter change together.
-When no scenario asset or generated adapter target is affected, adapter freshness
-is not part of the readiness decision.
+When no scenario asset or generated adapter target is affected, adapter
+freshness is not part of the readiness decision.
 
 Validate committed scenario and persona assets:
 
@@ -166,65 +187,80 @@ cargo run -q -p eatme-cli -- assets validate --json
 The validation gate passes only when the JSON report has `passed: true` and no
 blocking errors.
 
-## PR #164 readiness example
+## Scenario-link recovery procedure
 
-This subsection is a concrete example for the PR #164 finalization gate. Do not
-reuse its PR number or SHA for future readiness decisions.
+Use this procedure when a pull request touches scenario links, generated runner
+wording, or first-lesson evidence-path documentation. The recovery gate treats
+the existing branch as the review surface. It records readiness for the checked
+head and does not merge the pull request manually.
 
-For PR #164, the exact accepted head is:
-
-```text
-eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba
-```
-
-The GitHub metadata gate passes only when `gh pr view 164 --json
-headRefOid,mergeStateStatus,mergeable,statusCheckRollup` reports:
-
-```json
-{
-  "headRefOid": "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
-  "mergeStateStatus": "CLEAN",
-  "mergeable": "MERGEABLE"
-}
-```
-
-Because PR #164 changes starter-project scenario wording and generated Gadugi
-output, these gates are mandatory for that PR:
+Use this bounded command set for the branch:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 cargo run -q -p eatme-cli -- assets validate --json
+mkdocs build --strict
+TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
 
-The readiness decision for PR #164 is valid only if those commands pass, the
-GitHub checks are green for
-`eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba`, and the scenario wording stays
-within the starter-project evidence boundary above.
+The scenario-link recovery is ready only when:
 
-## Readiness comment
+1. The PR head matches the branch head being reviewed.
+2. Canonical scenario links, prerequisites, learner-facing boundaries, and
+   follow-on paths stay in `assets/scenarios/eatme/`.
+3. Generated Gadugi adapters are reproducible from the generator.
+4. Generated adapter descriptions use bounded evidence-source wording.
+5. Scenario-link silver-thread tests cover reader routing without implying UI
+   rendering, grading, creative assessment, or lesson completion.
+6. Documentation states only executable checked-head evidence boundaries.
 
-Publish readiness only after all required gates pass for the exact head. The
-comment should name the head and avoid broader product-readiness claims.
+If the working tree already contains exactly the required generator, generated
+adapter, test, and documentation changes, keep them and complete the checks. If
+the current branch already satisfies every gate without additional repository
+changes, record a no-op finalization instead of editing unrelated files.
+
+## Review and finalization packet
+
+The finalization packet is the evidence summary used by reviewers. It should be
+short and tied to current-head checks, not to expected future behavior.
+
+Include:
+
+| Field | Content |
+| --- | --- |
+| Branch | The reviewed branch name. |
+| Head | The exact commit SHA checked by GitHub metadata and local commands. |
+| Scope | Scenario-link silver thread, generated Gadugi adapter wording, tests, and docs. |
+| Commands | The repository-native commands that passed for that head. |
+| Boundaries | Explicit non-claims for full UI automation, rendering correctness, grading, creative assessment, Save completion, lesson completion, and broad Alice coverage. |
+| Merge handling | State that the workflow recorded readiness and did not manually merge. |
+| Implementation output | Include `Files modified` when repository files changed, or `No-op justification:` when no further edit is needed. |
+
+A no-op finalization is acceptable only when the branch is already clean or the
+only dirty files are intentionally preserved generated/test/doc changes required
+by the recovery, all required current checks pass for the current head, and no
+additional repository edits would change the readiness result.
+
+## Readiness note
+
+Prepare readiness only after all required gates pass for the exact head. The
+note should name the head and avoid broader product-readiness claims.
 
 Example:
 
 ```text
-Default-workflow readiness recorded for PR #164 at exact head eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba.
+Default-workflow readiness recorded for exact head <head-sha>.
 
-Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/visible rendering correctness/full Save completion, generated Gadugi adapter freshness, and asset validation.
+Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded scenario-link wording, generated Gadugi adapter freshness, asset validation, strict documentation build, and repository quality gate.
 
-The prior non-zero wrapper exit is not treated as a blocker because direct verification passed at this exact head.
-```
+Scope: scenario-link silver-thread asset/docs/generator validation only. This does not claim full UI automation, rendering correctness, grading, creative assessment, Save completion, lesson completion, or broad Alice compatibility.
 
-Post the comment with:
-
-```bash
-gh pr comment 164 --body-file readiness-comment.txt
+Files modified: <changed files, or `No-op justification:` with the checked-head reason>
 ```
 
 ## Blocker handling
 
-If any gate fails, do not publish readiness. Fix only the minimal issue that
+If any gate fails, do not record readiness. Fix only the minimal issue that
 caused the blocker, run the relevant validation again, push the fix, and repeat
 exact-head verification against the new PR head.
 
@@ -236,4 +272,6 @@ exact-head verification against the new PR head.
 | Overclaiming scenario language | Edit the canonical scenario wording and regenerate adapters if affected. |
 | Stale generated adapter | Regenerate adapters from canonical sources. |
 | Asset validation failure | Fix the invalid scenario or persona asset. |
+| Documentation build failure | Fix the broken doc link, heading, nav entry, or markdown issue. |
+| Quality gate failure | Fix the failing repository-native check without broadening readiness claims. |
 | Unrelated changes | Remove the unrelated change from the readiness work. |

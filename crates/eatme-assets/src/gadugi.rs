@@ -3,11 +3,14 @@ use crate::report::GadugiAdapterGenerationReport;
 use crate::schema::{EatmeScenarioAsset, EatmeScenarioStep};
 use crate::validation::validate_id;
 use anyhow::{Context, Result, bail};
+#[path = "gadugi_description.rs"]
+mod gadugi_description;
 #[path = "gadugi_instructor.rs"]
 mod gadugi_instructor;
 #[path = "gadugi_schema.rs"]
 mod gadugi_schema;
 
+use gadugi_description::generated_description;
 use gadugi_instructor::generate_instructor_agentic_adapter;
 use gadugi_schema::*;
 use std::collections::{BTreeMap, HashSet};
@@ -173,39 +176,33 @@ fn generate_gadugi_adapter_yaml_for_scenario(
         return generate_instructor_agentic_adapter(scenario, source_asset, timeout_ms);
     }
 
-    let steps = scenario
-        .steps
-        .iter()
-        .map(|step| {
-            generated_step(
-                scenario,
-                step,
-                &run_id,
-                launch_timeout,
-                expected_scenario_asset_count,
-            )
-        })
-        .collect::<Vec<_>>();
-    let assertions = scenario
-        .steps
-        .iter()
-        .map(|step| {
-            generated_assertion(
-                scenario,
-                step,
-                "eatme-cli-agent",
-                expected_scenario_asset_count,
-            )
-        })
-        .collect::<Vec<_>>();
+    let mut steps = Vec::with_capacity(scenario.steps.len());
+    let mut assertions = Vec::with_capacity(scenario.steps.len());
+    for step in &scenario.steps {
+        let step_name = step_title(&step.id);
+        let exit_code = expected_exit_code(scenario, step);
+        let stdout_contains = expected_stdout(scenario, step, expected_scenario_asset_count);
+
+        assertions.push(generated_assertion(
+            step,
+            "eatme-cli-agent",
+            &step_name,
+            exit_code,
+            &stdout_contains,
+        ));
+        steps.push(generated_step(
+            step,
+            &run_id,
+            launch_timeout,
+            step_name,
+            exit_code,
+            stdout_contains,
+        ));
+    }
 
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
-        description: format!(
-            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; {}.{}",
-            generated_evidence_scope(scenario),
-            generated_boundary_note(scenario)
-        ),
+        description: generated_description(&source_asset, scenario),
         version: "1.0.0".into(),
         config: GeneratedConfig {
             timeout: timeout_ms,
@@ -253,37 +250,6 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     render_yaml(adapter)
 }
 
-fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
-    if scenario.id == "starter-project-open-save-export-preflight" {
-        return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
-    }
-    if scenario.id == "first-lessons-real-ui-actions" {
-        return "gadugi invokes eatme commands and checks first-lesson readiness evidence";
-    }
-
-    "gadugi invokes eatme commands and checks manifest-level evidence only"
-}
-
-fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
-    if scenario.id == "starter-project-open-save-export-preflight" {
-        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
-    }
-
-    let text =
-        format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
-    if text.contains("not full ui automation")
-        && text.contains("not creative assessment")
-        && text.contains("not learner-world grading")
-    {
-        if scenario.id == "first-lessons-real-ui-actions" {
-            return " This adapter keeps honest limits: not full UI automation, not creative assessment, and not learner-world grading.";
-        }
-        " This adapter preserves the source boundary: not full UI automation, not creative assessment, and not learner-world grading."
-    } else {
-        ""
-    }
-}
-
 fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("reading eatme scenario asset {}", path.display()))?;
@@ -301,48 +267,46 @@ fn render_yaml(adapter: GeneratedGadugiAdapter) -> Result<String> {
 }
 
 fn generated_step(
-    scenario: &EatmeScenarioAsset,
     step: &EatmeScenarioStep,
     run_id: &str,
     launch_timeout: u64,
-    expected_scenario_asset_count: usize,
+    step_name: String,
+    exit_code: u64,
+    stdout_contains: Vec<String>,
 ) -> GeneratedStep {
     let command = repository_command(step.command.trim(), run_id);
     GeneratedStep {
-        name: step_title(&step.id),
+        name: step_name,
         agent: "eatme-cli-agent".into(),
         action: "execute_command".into(),
         params: BTreeMap::from([("command".into(), command)]),
         expect: GeneratedExpect {
-            exit_code: Some(expected_exit_code(scenario, step)),
-            stdout_contains: Some(expected_stdout(
-                scenario,
-                step,
-                expected_scenario_asset_count,
-            )),
+            exit_code: Some(exit_code),
+            stdout_contains: Some(stdout_contains),
             output_contains: None,
         },
         timeout: step_timeout_ms(&step.id, launch_timeout),
     }
 }
 
-fn command_success_assertion(step_id: &str, agent: &str) -> GeneratedAssertion {
+fn command_success_assertion(step_id: &str, step_name: &str, agent: &str) -> GeneratedAssertion {
     GeneratedAssertion {
         name: format!("{step_id} succeeds"),
         assertion_type: "command_success".into(),
         agent: agent.into(),
-        params: BTreeMap::from([("step".into(), step_title(step_id))]),
+        params: BTreeMap::from([("step".into(), step_name.into())]),
     }
 }
 
 fn generated_assertion(
-    scenario: &EatmeScenarioAsset,
     step: &EatmeScenarioStep,
     agent: &str,
-    expected_scenario_asset_count: usize,
+    step_name: &str,
+    exit_code: u64,
+    expected_stdout: &[String],
 ) -> GeneratedAssertion {
-    if expected_exit_code(scenario, step) == 0 {
-        return command_success_assertion(&step.id, agent);
+    if exit_code == 0 {
+        return command_success_assertion(&step.id, step_name, agent);
     }
 
     GeneratedAssertion {
@@ -350,11 +314,8 @@ fn generated_assertion(
         assertion_type: "output_contains_all".into(),
         agent: agent.into(),
         params: BTreeMap::from([
-            ("step".into(), step_title(&step.id)),
-            (
-                "required_strings".into(),
-                expected_stdout(scenario, step, expected_scenario_asset_count).join("\n"),
-            ),
+            ("step".into(), step_name.into()),
+            ("required_strings".into(), expected_stdout.join("\n")),
         ]),
     }
 }

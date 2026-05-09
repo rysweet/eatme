@@ -16,6 +16,7 @@ nav:
   - Installation: installation.md
   - CLI Usage: cli-usage.md
   - Generated Scenario Runners: gadugi-adapters.md
+  - Scenario-link Generated Runners: scenario-link-generated-runners.md
   - Generated File Consistency: generated-asset-consistency.md
   - Validation and Quality Gates: validation-quality-gates.md
   - Alice Test Modules: outside-in-alice-test-modules.md

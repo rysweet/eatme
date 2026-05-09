@@ -49,12 +49,12 @@ Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
 and any hand-authored Gadugi regression scenarios.
 
-The current committed inventory has 69 scenario YAML files:
+The current committed inventory has 93 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
-| Canonical eatme scenarios | 34 |
-| Generated Gadugi adapters | 34 |
+| Canonical eatme scenarios | 46 |
+| Generated Gadugi adapters | 46 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
@@ -65,7 +65,7 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 69'
+    - '"scenario_asset_count": 93'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
@@ -78,6 +78,11 @@ removals and renames, remove the obsolete generated adapter file as part of the
 same change. The generator compares and rewrites expected adapter targets; it
 does not prune or report orphaned Gadugi files that no longer have a canonical
 source.
+
+Generated adapter descriptions are generated output too. Change the canonical
+scenario or the generator's description policy, regenerate adapters, and keep the
+committed YAML reproducible from the generator instead of editing description
+strings by hand.
 
 ## Usage
 
@@ -251,14 +256,14 @@ The Rust asset validation and generator commands do not require Node. Keeping
 
 ### Valid generated count
 
-For the current 53-file inventory, validation output
+For the current 93-file inventory, validation output
 includes:
 
 ```json
 {
   "schema_version": "eatme.assets/validation/v1",
   "passed": true,
-  "scenario_asset_count": 53,
+  "scenario_asset_count": 93,
   "errors": []
 }
 ```
@@ -269,7 +274,7 @@ count:
 ```yaml
 stdout_contains:
   - '"passed": true'
-  - '"scenario_asset_count": 53'
+  - '"scenario_asset_count": 93'
 ```
 
 ### Stale adapter check
@@ -391,16 +396,20 @@ a UI action failure category such as:
 }
 ```
 
-When the Alice-side object placement hook proves placement, the category can
+When the Alice-side object placement hook shows placement, the category can
 advance to `ui_action_remaining_steps_unimplemented`; that still is not a full
 UI automation pass.
 
 The generated Gadugi adapter preserves that contract with `expect.exit_code: 1`
-for the launch step and required output markers for:
+for the launch step and required output markers including:
 
 ```text
 real_alice_execution_evidence
+startup_screenshot
 specific_alice_window_detected
+activate_alice_window_ui_action
+save_project_desktop_shortcut_dispatch
+place_object_precondition_no_go_probe
 place_object_ui_action
 edit_procedure_ui_action
 run_world_ui_action

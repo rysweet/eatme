@@ -129,12 +129,7 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
     let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-    let yaml_without_header = generated
-        .lines()
-        .filter(|line| !line.starts_with("# "))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let adapter: Value = serde_yaml::from_str(&yaml_without_header).unwrap();
+    let adapter = generated_adapter_value(&generated);
     let launch_step = adapter["steps"]
         .as_sequence()
         .unwrap()
@@ -167,6 +162,46 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
         launch_assertion["type"].as_str(),
         Some("output_contains_all")
     );
+}
+
+#[test]
+fn generated_real_ui_action_contract_requires_every_bounded_marker() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let launch_step = adapter["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|step| step["name"] == "Launch Real Ui Action Contract")
+        .expect("launch-real-ui-action-contract step is generated");
+    let required_stdout = launch_step["expect"]["stdout_contains"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>();
+
+    for marker in [
+        r#""real_alice_execution_evidence": {"#,
+        r#""startup_screenshot": {"#,
+        r#""specific_alice_window_detected": {"#,
+        r#""activate_alice_window_ui_action": {"#,
+        r#""save_project_desktop_shortcut_dispatch": {"#,
+        r#""place_object_precondition_no_go_probe": {"#,
+        r#""place_object_ui_action": {"#,
+        r#""edit_procedure_ui_action": {"#,
+        r#""run_world_ui_action": {"#,
+        r#""save_project_ui_action": {"#,
+        r#""ui_action_artifact_captured": {"#,
+        r#""ui_action_contract": {"#,
+    ] {
+        assert!(
+            required_stdout.contains(&marker),
+            "first-lesson generated adapter must require marker {marker:?}:\n{generated}"
+        );
+    }
 }
 
 #[test]
@@ -207,7 +242,7 @@ fn generated_first_lesson_adapter_description_uses_reader_language() {
         .expect("generated adapter has a description")
         .to_lowercase();
 
-    for blocked in ["manifest-level evidence only", "source boundary"] {
+    for blocked in ["adapter", "manifest-level evidence only", "source boundary"] {
         assert!(
             !description.contains(blocked),
             "{source} generated description must avoid internal generator wording {blocked:?}:\n{description}"
@@ -268,12 +303,7 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
 }
 
 fn generated_adapter_value(generated: &str) -> Value {
-    let yaml_without_header = generated
-        .lines()
-        .filter(|line| !line.starts_with("# "))
-        .collect::<Vec<_>>()
-        .join("\n");
-    serde_yaml::from_str(&yaml_without_header).unwrap()
+    serde_yaml::from_str(generated).unwrap()
 }
 
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {

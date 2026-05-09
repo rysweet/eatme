@@ -14,6 +14,29 @@ runner files.
 5. Validate assets before committing.
 6. Regenerate or check generated runner files after scenario changes.
 
+## Scenario-link silver thread
+
+Scenario links are the reader path from prerequisites to evidence to the next
+bounded action. Keep that path in canonical eatme scenarios and let generated
+runner files consume it.
+For the generated-runner usage, CLI, configuration, examples, and review
+contract, see
+[Scenario-link Generated Runners](scenario-link-generated-runners.md).
+
+| Link type | Where to write it | Boundary |
+| --- | --- | --- |
+| Prerequisites | `capabilities`, `real_alice.gated_by`, `timeouts`, and step commands | Name required tools and gates before execution; do not imply they are optional when the scenario fails loudly without them. |
+| Learner-facing boundary | `purpose`, `acceptance_criteria`, step `evidence`, and `unsupported_policy` | Say what evidence is recorded and what remains unsupported. |
+| Follow-on path | `agentic_follow_on`, instructor/student handoff scenarios, and docs links | Route the reader to the next bounded action or human review step, not to a completion claim. |
+| Generated runner path | Regenerated files under `assets/scenarios/gadugi/` | Keep generated runner wording reproducible from canonical scenario data. |
+
+For the first-lesson path, link `first-lessons-real-ui-actions` to the
+instructor handoff and outcomes scenarios only as readiness evidence and
+classroom-support preparation. Do not describe the path as full UI automation,
+rendering correctness, grading, creative assessment, Save completion, lesson
+completion, or broad Alice compatibility unless a separate executable evidence
+path shows that exact claim.
+
 ## Asset locations
 
 Editable eatme scenarios:
@@ -74,8 +97,8 @@ title: Building a Scene First World
 kind: alice_lesson_smoke
 owner: eatme
 purpose: >-
-  Prove that the lesson-specific smoke scenario launches through the real Alice
-  desktop harness and records scenario-labeled evidence.
+  Record that the lesson-specific smoke scenario launches through the real Alice
+  desktop harness and emits scenario-labeled evidence.
 launcher:
   command: alice launch-smoke
   scenario: building-a-scene-first-world
@@ -157,7 +180,8 @@ Good scenario evidence is observable:
 - log artifact exists and has a digest
 - learner predicts a visible behavior before running
 - student reflection names expected versus actual behavior
-- instructor rubric checks concept evidence, process, creativity, and reflection
+- human-reviewed instructor rubric fields for concept evidence, process,
+  creativity, and reflection
 
 Avoid brittle evidence:
 
@@ -185,7 +209,7 @@ scenarios, describe the finished evidence boundary exactly:
 | Claim | Acceptable wording |
 | --- | --- |
 | Launch smoke | "records scenario-labeled run summary, log, window, screenshot, and assertion evidence" |
-| Student action path | "records first-action evidence for first object placement, procedure/code edit, run-world, and save-project boundaries when each boundary can be proven" |
+| Student action path | "records first-action evidence for first object placement, procedure/code edit, run-world, and save-project boundaries when each boundary can be checked" |
 | Instructor remix | "produces teacher plan, student handout, exit ticket, review prompts, and remix notes" |
 | Boundary | "not full UI automation, not creative assessment, and not learner-world grading" |
 

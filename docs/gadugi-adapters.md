@@ -23,12 +23,44 @@ assets/scenarios/gadugi/
 | Alice discovery and packaging | Capturing command stdout and stderr |
 | Xvfb/display setup | Inspecting JSON and manifest-level results |
 | Java process lifecycle | Reporting adapter pass/fail |
-| screenshots, logs, manifests | Agentic prompt and rubric execution for instructor flows |
+| screenshots, logs, manifests | Presenting declared prompts and checking rubric fields for instructor flows |
 | canonical scenario intent | Adapter command shape |
 
 Adapters must not duplicate Xvfb setup, Java launch details, screenshot capture,
 log scanning, or process cleanup. They call eatme and evaluate the resulting
 JSON and artifacts.
+
+## Generated description contract
+
+Generated adapter descriptions are part of the scenario-link silver thread. The
+description is generated from the canonical eatme scenario and must stay
+reproducible; do not hand-edit the generated Gadugi YAML to change wording.
+For the full scenario-link generated-runner usage, CLI, configuration, and
+review contract, see
+[Scenario-link Generated Runners](scenario-link-generated-runners.md).
+
+The generator writes descriptions with this shape:
+
+```text
+Gadugi-compatible CLI scenario generated from <source-scenario>. Alice desktop launch behavior remains owned by eatme; <bounded evidence scope>.<boundary note>
+```
+
+Generated Gadugi YAML does not carry a top-level `schema_version`; use
+`metadata.source_eatme_asset`, `metadata.generated_by`, and `metadata.tags` to
+trace a runner back to its canonical eatme scenario and generator.
+
+The evidence scope depends on the canonical scenario:
+
+| Scenario | Generated wording boundary |
+| --- | --- |
+| `first-lessons-real-ui-actions` | Gadugi invokes eatme commands and checks first-lesson readiness evidence. The generated runner keeps honest limits: not full UI automation, not creative assessment, and not learner-world grading. |
+| `starter-project-open-save-export-preflight` | Gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage. |
+| Other launch-smoke scenarios | Gadugi invokes eatme commands and checks manifest-level evidence only. |
+| Other scenarios that declare the full honest boundary | The generated adapter preserves the source boundary without adding UI automation, creative assessment, or grading claims. |
+
+For reader-facing first-lesson docs, prefer "generated runner" when describing
+`first-lessons-real-ui-actions`. Use "adapter" when naming the file type,
+command, or generated asset category.
 
 ## Check freshness
 
@@ -84,7 +116,7 @@ For an instructor agentic flow, the adapter workflow is:
 1. Validate assets.
 2. Present the canonical agentic prompt.
 3. Collect instructor-facing outputs.
-4. Evaluate acceptance probes and rubric fields.
+4. Check declared acceptance probes and rubric fields.
 5. Keep the desktop launch boundary in eatme, not in Gadugi.
 
 For outside-in evidence for instructor and student Alice lesson scenarios, use

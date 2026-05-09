@@ -21,13 +21,14 @@ Eatme has three layers:
 | Running commands | [CLI Usage](cli-usage.md) |
 | Writing scenarios | [Scenario Authoring](scenario-authoring.md) |
 | Running generated scenarios | [Gadugi Adapters](gadugi-adapters.md) |
+| Following scenario links through generated runners | [Scenario-link Generated Runners](scenario-link-generated-runners.md) |
 | Keeping generated files in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Maintaining Alice Rust tests | [Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Choosing real Alice lesson scenarios | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 | Following the first-lesson readiness path | [Lesson Session Readiness](lesson-session-readiness.md) |
-| Reading exactly what first-lesson evidence proves | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
+| Reading exactly what first-lesson evidence shows | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Checking pull request readiness | [Pull Request Readiness](default-workflow-pr-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence](live-studio-workshop-evidence.md) |
@@ -44,11 +45,13 @@ trusted first-lesson evidence:
    [Lesson Session Readiness](lesson-session-readiness.md).
 2. Review editable scenario expectations in
    [Scenario Authoring](scenario-authoring.md).
-3. Choose the scenario and launch evidence in
+3. Follow how canonical scenario links become generated checks in
+   [Scenario-link Generated Runners](scenario-link-generated-runners.md).
+4. Choose the scenario and launch evidence in
    [Alice Lesson Smoke](alice-lesson-smoke.md).
-4. Interpret the validation evidence in
+5. Interpret the validation evidence in
    [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
-5. Use [Instructor Missions](instructor-missions.md) or
+6. Use [Instructor Missions](instructor-missions.md) or
    [Student Missions](student-missions.md) for the classroom handoff.
 
 The concrete classroom handoff scenarios are
@@ -59,15 +62,16 @@ which frames student-visible outcomes without automated grading. The student
 readiness scenario is
 [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml).
 
-This path proves only the evidence named by each report. It does not claim that
-a lesson was completed, that a learner world was graded, or that all Alice UI
-actions were automated unless a specific report shows that exact evidence.
+This path confirms only the evidence named by each report. It does not claim
+that a lesson was completed, that a learner world was graded, or that all Alice
+UI actions were automated unless a specific report shows that exact evidence.
 
-## What eatme proves
+## What eatme verifies
 
-Eatme proves that Alice-facing scenario files and generated runner files agree
-before they are used by reviewers or runners. For real Alice smoke scenarios, it also
-proves that the desktop application can be packaged, launched, observed, and
+When `assets validate` and `assets generate-gadugi --check` pass, eatme verifies
+that Alice-facing scenario files and generated runner files agree before they are
+used by reviewers or runners. For real Alice smoke scenarios, a passing launch
+smoke records that the desktop application was packaged, launched, observed, and
 reported through repeatable evidence.
 
 A passing launch smoke records:
@@ -83,21 +87,21 @@ A passing launch smoke records:
 - run summary checks
 - failure category, or `null` when the smoke passed
 
-## What eatme does not pretend to prove
+## What eatme does not pretend to verify
 
-The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
-evidence for a scenario-labeled Alice run. They do not drive an entire lesson
-through the Alice interface, score learner creativity, inspect private Alice
-details, or grade saved learner worlds.
+The real Alice lesson scenarios are launch-smoke scenarios. They record
+smoke-ready evidence for a scenario-labeled Alice run. They do not drive an
+entire lesson through the Alice interface, score learner creativity, inspect
+private Alice details, or grade saved learner worlds.
 
 Instructor and student mission docs describe the intended classroom path.
-Runtime validation stays explicit about which parts are proven by the CLI and
+Runtime validation stays explicit about which parts are checked by the CLI and
 which parts still need human review.
 
 ## Evidence for Alice lesson scenarios
 
 This evidence connects instructor and student Alice lesson scenarios to a real
-Alice launch path without overstating what the launch smoke proves.
+Alice launch path without overstating what the launch smoke verifies.
 
 | Scenario | Audience | What the reader can trust |
 | --- | --- | --- |
@@ -125,13 +129,16 @@ Check generated runner files:
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
+Follow scenario links through generated runners:
+[Scenario-link Generated Runners](scenario-link-generated-runners.md).
+
 Understand how generated file counts stay aligned with the asset inventory:
 [Generated Asset Consistency](generated-asset-consistency.md).
 
 Follow the instructor/student first-lesson readiness path:
 [Lesson Session Readiness](lesson-session-readiness.md).
 
-Review exactly what first-lesson evidence proves:
+Review exactly what first-lesson evidence shows:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 Check pull request readiness:
