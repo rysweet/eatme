@@ -2,7 +2,7 @@
 
 This readiness report captures bounded preflight evidence for opening the
 bundled starter project before save, reopen, or export review. It describes the
-finished evidence contract for `starter-project-open-save-export-preflight`:
+bounded evidence contract for `starter-project-open-save-export-preflight`:
 starter-project launch readiness is documented, and workflow completion beyond
 that launch boundary remains explicitly unproven.
 
