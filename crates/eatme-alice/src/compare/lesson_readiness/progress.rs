@@ -214,7 +214,7 @@ fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> us
     items.iter().filter(|item| item.state == state).count()
 }
 
-fn progress_item_id(evidence: &str) -> String {
+pub(super) fn progress_item_id(evidence: &str) -> String {
     match evidence {
         "Save Project proof artifact" => "save_project_proof_artifact".into(),
         "Select Project proof artifact" => "select_project_proof_artifact".into(),

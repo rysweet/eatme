@@ -41,15 +41,22 @@ pub fn check_lesson_session_contract(manifest_path: &Path) -> Result<LessonSessi
         .with_context(|| format!("reading comparison manifest {}", manifest_path.display()))?;
     let manifest: serde_json::Value = serde_json::from_str(&text)
         .with_context(|| format!("parsing comparison manifest {}", manifest_path.display()))?;
+    check_lesson_session_contract_in_manifest(manifest_path, &manifest)
+}
+
+pub(super) fn check_lesson_session_contract_in_manifest(
+    manifest_path: &Path,
+    manifest: &serde_json::Value,
+) -> Result<LessonSessionContractCheck> {
+    let manifest_path_display = manifest_path.display().to_string();
     let contract = manifest
         .get("lesson_session_contract")
-        .cloned()
-        .map(serde_json::from_value::<LessonSessionComparisonContract>)
+        .map(LessonSessionComparisonContract::deserialize)
         .transpose()
         .with_context(|| {
             format!(
                 "parsing lesson_session_contract from {}",
-                manifest_path.display()
+                manifest_path_display
             )
         })?;
     let manifest_scenario_id = manifest
@@ -60,7 +67,7 @@ pub fn check_lesson_session_contract(manifest_path: &Path) -> Result<LessonSessi
     let Some(contract) = contract else {
         return Ok(LessonSessionContractCheck {
             schema_version: "eatme.alice-lesson-session-check/v1".into(),
-            manifest_path: manifest_path.display().to_string(),
+            manifest_path: manifest_path_display,
             scenario_id: manifest_scenario_id,
             session_kind: None,
             automation_status: None,
@@ -119,7 +126,7 @@ pub fn check_lesson_session_contract(manifest_path: &Path) -> Result<LessonSessi
 
     Ok(LessonSessionContractCheck {
         schema_version: "eatme.alice-lesson-session-check/v1".into(),
-        manifest_path: manifest_path.display().to_string(),
+        manifest_path: manifest_path_display,
         scenario_id: Some(contract.scenario_id),
         session_kind: Some(contract.session_kind),
         automation_status: Some(contract.automation_status),

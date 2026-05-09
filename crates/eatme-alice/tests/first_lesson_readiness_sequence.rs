@@ -72,21 +72,21 @@ targets:
     );
     assert!(
         report
-            .limitations
+            .unproven_claims
             .iter()
-            .any(|limit| limit == "does not prove full Alice UI automation")
+            .any(|claim| claim == "Full Alice UI automation is not proven.")
     );
     assert!(
         report
-            .limitations
+            .unproven_claims
             .iter()
-            .any(|limit| limit == "does not prove visible rendering correctness")
+            .any(|claim| claim == "Visible rendering correctness is not proven.")
     );
     assert!(
         report
-            .limitations
+            .unproven_claims
             .iter()
-            .any(|limit| limit == "does not prove first-lesson completion")
+            .any(|claim| claim == "First-lesson completion is not proven.")
     );
     assert!(report.issues.iter().any(|issue| issue.contains(
         "missing visible desktop rendering evidence after Run-frame and VM statement execution"

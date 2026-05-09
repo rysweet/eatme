@@ -75,7 +75,7 @@ Alice launch path without overstating what the launch smoke proves.
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
-| `first-lessons-real-ui-actions` | Instructors, students, and reviewers | Preflight launch/action-contract readiness evidence for first-lesson setup, launch support, handoff artifacts, and classroom-support preparation, with `ui-action-contract.json`, `not_ready` for missing or insufficient evidence, and `blocked` for known unsupported desktop actions. |
+| `first-lessons-real-ui-actions` | Instructors, students, and reviewers | First-lesson readiness evidence for original Alice and RabbitHole; the report summarizes shown evidence, optional desktop next-action evidence, not-yet-shown states, and explicit unproven claims. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission
@@ -125,7 +125,6 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package

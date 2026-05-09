@@ -22,6 +22,7 @@ pub struct DesktopFirstLessonNextActionEvidence {
     pub candidate_actions: Vec<String>,
     pub blocker: Option<serde_json::Value>,
     pub requires_next_evidence: Vec<String>,
+    pub does_not_claim: Vec<String>,
     pub save_project_proof_artifact: ProjectProofArtifactEvidence,
     pub select_project_proof_artifact: ProjectProofArtifactEvidence,
     pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
@@ -202,6 +203,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         candidate_actions: string_array(&json, "candidate_actions"),
         blocker: json.get("blocker").cloned(),
         requires_next_evidence: requires_next_evidence(&json),
+        does_not_claim: does_not_claim(&json),
         save_project_proof_artifact: project_proof_artifact(
             &json,
             &root,
@@ -249,6 +251,7 @@ fn first_lesson_next_action_with_empty_proof_artifacts(
         candidate_actions: Vec::new(),
         blocker: None,
         requires_next_evidence: Vec::new(),
+        does_not_claim: Vec::new(),
         save_project_proof_artifact: ProjectProofArtifactEvidence::missing(
             SAVE_PROJECT_PROOF_LABEL,
         ),
@@ -382,7 +385,7 @@ fn first_lesson_next_action_detail(json: &serde_json::Value) -> String {
         .and_then(|blocker| blocker.get("reason"))
         .and_then(serde_json::Value::as_str)
         .or_else(|| json.get("reason").and_then(serde_json::Value::as_str))
-        .unwrap_or("desktop first-lesson next-action evidence was read")
+        .unwrap_or("Desktop next-action evidence was read.")
         .to_string()
 }
 
@@ -407,8 +410,39 @@ fn string_field(json: &serde_json::Value, key: &str) -> Option<String> {
 }
 
 fn requires_next_evidence(json: &serde_json::Value) -> Vec<String> {
-    let mut items = string_array(json, "requiresNextEvidence");
-    for item in string_array(json, "requires_next_evidence") {
+    let mut items = string_array(json, "requiresNextEvidence")
+        .into_iter()
+        .map(user_facing_next_evidence)
+        .collect::<Vec<_>>();
+    for item in string_array(json, "requires_next_evidence")
+        .into_iter()
+        .map(user_facing_next_evidence)
+    {
+        if !items.contains(&item) {
+            items.push(item);
+        }
+    }
+    items
+}
+
+fn user_facing_next_evidence(value: String) -> String {
+    let lower = value.to_ascii_lowercase();
+    if lower.contains("desktop save menu readiness or invocation artifact") {
+        return "desktop Save menu readiness or invocation artifact".into();
+    }
+    if lower.contains("code editor/procedure action readiness or invocation artifact") {
+        return "code editor/procedure action readiness or invocation artifact".into();
+    }
+    if lower.contains("save completion evidence") {
+        return "Collect explicit Save finish-state evidence before reporting Save completion."
+            .into();
+    }
+    value
+}
+
+fn does_not_claim(json: &serde_json::Value) -> Vec<String> {
+    let mut items = string_array(json, "doesNotClaim");
+    for item in string_array(json, "does_not_claim") {
         if !items.contains(&item) {
             items.push(item);
         }
