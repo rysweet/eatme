@@ -21,8 +21,10 @@ nav:
   - Validation and Quality Gates: validation-quality-gates.md
   - Alice Test Modules: outside-in-alice-test-modules.md
   - Alice Integration: alice-integration.md
+  - Evidence Artifact Contract: evidence-artifact-contract.md
   - Starter Project Preflight Evidence: starter-project-preflight-evidence.md
   - Pull Request Readiness: default-workflow-pr-readiness.md
+  - "PR #199 Recovery Workflow": pr-199-recovery-workflow.md
   - Live Studio Workshop Evidence: live-studio-workshop-evidence.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md

@@ -451,7 +451,24 @@ fn uses_positive_proof_language(line: &str) -> bool {
         return false;
     }
 
-    lower
+    // Strip backtick-wrapped code spans before scanning — prohibited-phrase
+    // table entries list what NOT to say, so the proof verb inside the backtick
+    // span is the phrase being banned, not a positive claim.
+    let stripped = strip_code_spans(&lower);
+    stripped
         .split(|character: char| !character.is_ascii_alphabetic())
         .any(|word| matches!(word, "prove" | "proves" | "proved" | "proven"))
+}
+
+fn strip_code_spans(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut inside_code = false;
+    for ch in text.chars() {
+        if ch == '`' {
+            inside_code = !inside_code;
+        } else if !inside_code {
+            result.push(ch);
+        }
+    }
+    result
 }

@@ -9,6 +9,10 @@ mod assessment_boundary_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
 #[cfg(test)]
+mod default_workflow_attempt_contract_tests;
+#[cfg(test)]
+mod default_workflow_pr_readiness_contract_tests;
+#[cfg(test)]
 mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
