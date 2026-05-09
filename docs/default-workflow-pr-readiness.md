@@ -10,6 +10,10 @@ bounded starter-project evidence contract, require fresh generated Gadugi
 adapters when scenario assets are involved, and publish a narrowly scoped
 readiness comment only after every gate passes.
 
+Repository-local command results are evidence for this workflow, not a complete
+PR readiness decision by themselves. Full default-workflow readiness also
+requires exact-head GitHub checks, merge state, mergeability, and scope gates.
+
 ## Contents
 
 - [Readiness contract](#readiness-contract)
@@ -42,6 +46,11 @@ being reviewed.
 A previous wrapper failure is not a blocker when direct verification proves the
 same head, green checks, clean mergeability, bounded wording, and fresh
 generated adapters.
+
+If only local executable gates were run, describe the result as
+repository-local exact-head evidence. Do not make a final PR-readiness or
+mergeability claim until the GitHub and mergeability gates above also pass for
+the same commit.
 
 ## Generic readiness procedure
 

@@ -9,7 +9,8 @@ it does not generate new proof.
 The Rust API and JSON output preserve legacy fields such as
 `evidence_progress`, `evidence_boundaries`, `issues`, and `limitations` for
 existing consumers while adding the user-facing report shape described here. The
-plain CLI renders the user-facing sections directly.
+`alice run-first-lesson-readiness` command renders those user-facing sections
+directly when it is run without `--json`.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
@@ -23,7 +24,8 @@ Check an existing first-lesson comparison manifest:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-readiness \
-  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json \
+  --json
 ```
 
 Run the bounded first-lesson comparison and readiness sequence:
@@ -49,9 +51,10 @@ runs/comparisons/first-lessons-real-ui-actions/<run-id>/comparison-manifest.json
 
 and immediately applies the same readiness report to that manifest.
 
-Use `--json` when a consumer needs the structured API instead of the plain human
-report. The same commands remain the entry points for plain and structured
-readiness reporting.
+Use `alice check-lesson-readiness --json` for the structured readiness API. Use
+`alice run-first-lesson-readiness` without `--json` when a reviewer needs the
+plain human report; add `--json` to that sequence command when a consumer needs
+the structured wrapper around the same readiness result.
 
 ## What the report decides
 
@@ -97,10 +100,12 @@ The formal executable validation surface is the readiness report itself.
 `contract_evidence[]` represents required contract evidence; missing, invalid,
 unsafe, not-observed, blocked-without-structure, or stale required entries remain
 visible and produce structured `diagnostics[]`.
-`alice check-lesson-readiness` and `alice run-first-lesson-readiness` should
-print a safe report and exit non-zero when required contract evidence fails. A
-report may still exit zero with `status: "blocked"` only when the blocker is
-explicit, structured, and attached to the bounded claim that is not yet shown.
+`alice check-lesson-readiness` emits the structured JSON report.
+`alice run-first-lesson-readiness` emits either the structured wrapper with
+`--json` or the plain human report without it. Both commands exit non-zero when
+required contract evidence fails. A report may still exit zero with
+`status: "blocked"` only when the blocker is explicit, structured, and attached
+to the bounded claim that is not yet shown.
 
 Generated Gadugi adapters remain generated artifacts. Change scenario intent in
 the editable YAML under `assets/scenarios/eatme/`, then regenerate adapters
@@ -108,9 +113,9 @@ rather than hand-editing generated files.
 
 ## Plain report contract
 
-Plain output is for reviewers, instructors, and PR readers. It renders the
-readiness heading, one `Desktop proof` line, and then the user-facing sections in
-this order:
+Plain output from `alice run-first-lesson-readiness` without `--json` is for
+reviewers, instructors, and PR readers. It renders the readiness heading, one
+`Desktop proof` line, and then the user-facing sections in this order:
 
 | Section | When it appears | Meaning |
 | --- | --- | --- |
@@ -186,8 +191,8 @@ does not make another boundary present.
 
 ### User-facing state wording
 
-Structured JSON keeps machine states, but plain output maps them to user-facing
-language:
+Structured JSON keeps machine states, but the plain sequence output maps them
+to user-facing language:
 
 | JSON state | Plain wording | Meaning |
 | --- | --- | --- |
@@ -204,7 +209,7 @@ sections may document those stable field names for automation consumers.
 ## Canonical unproven claims
 
 `unproven_claims` is the canonical home for the six non-claims that must remain
-visible in plain output and JSON:
+visible in JSON and in the plain sequence report:
 
 ```text
 Full Alice UI automation is not proven.
@@ -467,7 +472,7 @@ The Rust implementation:
    `desktop_next_action`, `unproven_claims`, and boundary-facing evidence items.
 2. Maps existing progress and boundary states to user-facing `shown`, `not yet
    shown`, and `not yet proven` wording without exposing internal artifact paths
-   in plain output.
+   in the plain sequence output.
 3. Emits top-level `desktop_next_action` only for valid, safe, current RabbitHole
    evidence; otherwise it leaves the condition in `not_yet_shown`, `issues`, or
    legacy progress/boundary fields.
@@ -475,7 +480,8 @@ The Rust implementation:
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
 5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
    as compatibility output that includes those six.
-6. Renders the plain CLI as readiness heading, `Desktop proof`, `Shown`, `Not
-   yet shown`, optional `Desktop next action`, and `Unproven`.
+6. Renders `alice run-first-lesson-readiness` without `--json` as readiness
+   heading, `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next
+   action`, and `Unproven`.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.

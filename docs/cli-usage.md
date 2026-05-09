@@ -9,7 +9,9 @@ cargo run -q -p eatme-cli -- <command>
 Commands that accept `--json` print JSON when the flag is present. Without
 `--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
 `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
-`Unproven`.
+`Unproven`. The `alice check-lesson-session` and
+`alice check-lesson-readiness` commands are structured check surfaces; use their
+JSON fields instead of treating them as the plain human report.
 
 ## Command overview
 
@@ -23,15 +25,15 @@ Commands that accept `--json` print JSON when the flag is present. Without
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
-| `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
+| `alice check-lesson-readiness` | Emit structured first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
 ## Readiness command exit status
 
 Readiness commands are intended to be executable contract checks, not report-only
-commands. The formal contract implementation must print a safe plain or JSON
-report when it can construct one, then use the process exit status for
-automation:
+commands. The formal contract implementation must print a safe structured report
+for check commands, a safe structured or plain report for the sequence command,
+and then use the process exit status for automation:
 
 | Command | Success exit | Failure exit |
 | --- | --- | --- |
@@ -262,7 +264,7 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 ```
 
 This consumes the embedded target launch manifests and first-lesson readiness
-progress evidence. The report adds user-facing
+progress evidence. The JSON report adds user-facing
 `shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`, and
 `unproven_claims`, while preserving legacy `evidence_boundaries[]` and
 `evidence_progress.items[]` states for automation consumers. It reports original
@@ -282,11 +284,12 @@ legacy `lesson_session_readiness` student envelope. The normalized `status` is
 valid; that means the report found coherent evidence plus an explicit blocker,
 not that full Alice UI automation is complete.
 Valid RabbitHole desktop next-action evidence that applies to the current run
-emits top-level `desktop_next_action` in JSON and a
-`Desktop next action` section after `Not yet shown` in plain output. Missing,
-invalid, unsafe, stale, or non-applicable desktop next-action evidence omits that
-top-level summary and remains represented through `Not yet shown`, `issues`, or
-legacy progress and boundary fields. Display-safe wording uses
+emits top-level `desktop_next_action` in JSON. When the same readiness result is
+rendered by `alice run-first-lesson-readiness` without `--json`, it also appears
+as a `Desktop next action` section after `Not yet shown`. Missing, invalid,
+unsafe, stale, or non-applicable desktop next-action evidence omits that
+top-level summary and remains represented through `not_yet_shown[]`, `issues`,
+or legacy progress and boundary fields. Display-safe wording uses
 `desktop next-action evidence` instead of exposing the internal artifact path.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
@@ -312,8 +315,8 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run. The boundary renderer keeps
-plain output scenario-focused:
+manual smoke skip from a failed desktop proof run. When `--json` is omitted, the
+boundary renderer keeps plain output scenario-focused:
 
 ```text
 First-lesson automation scenario readiness: not ready

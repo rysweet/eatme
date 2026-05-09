@@ -12,6 +12,7 @@ use super::{
 };
 use anyhow::{Context, Result};
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
@@ -271,10 +272,7 @@ fn inspect_target_evidence(
                 .iter()
                 .map(|value| (*value).into())
                 .collect(),
-            missing_required_actions: REQUIRED_UI_ACTION_IDS
-                .iter()
-                .map(|value| (*value).into())
-                .collect(),
+            missing_required_actions: required_ui_action_ids(),
             blockers: required_action_evidence_blockers(role, &[]),
             no_go_contracts: Vec::new(),
         };
@@ -349,10 +347,7 @@ fn inspect_target_evidence(
         .and_then(serde_json::Value::as_str)
         .map(str::to_string);
     let mut required_actions = Vec::new();
-    let mut missing_required_actions = REQUIRED_UI_ACTION_IDS
-        .iter()
-        .map(|value| (*value).to_string())
-        .collect::<Vec<_>>();
+    let mut missing_required_actions = Vec::new();
     let mut ui_action_contract_readable = false;
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
@@ -368,9 +363,13 @@ fn inspect_target_evidence(
                         inspect_ui_action_contract(role, &contract, issues);
                         no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
+                        let required_action_ids = required_actions
+                            .iter()
+                            .map(String::as_str)
+                            .collect::<HashSet<_>>();
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
                             .iter()
-                            .filter(|id| !required_actions.iter().any(|action| action == **id))
+                            .filter(|id| !required_action_ids.contains(**id))
                             .map(|value| (*value).to_string())
                             .collect();
                         for action in &missing_required_actions {
@@ -416,6 +415,10 @@ fn inspect_target_evidence(
         ));
     }
 
+    if !ui_action_contract_readable {
+        missing_required_actions = required_ui_action_ids();
+    }
+
     let blockers = required_action_evidence_blockers(role, &action_assertions);
     LessonTargetEvidence {
         role: role.into(),
@@ -435,6 +438,13 @@ fn inspect_target_evidence(
         blockers,
         no_go_contracts,
     }
+}
+
+fn required_ui_action_ids() -> Vec<String> {
+    REQUIRED_UI_ACTION_IDS
+        .iter()
+        .map(|value| (*value).into())
+        .collect()
 }
 
 fn required_action_evidence_blockers(

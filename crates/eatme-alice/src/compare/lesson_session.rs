@@ -158,14 +158,10 @@ pub(super) fn lesson_session_contract(
                 "instructor prepares the Alice classroom task".into(),
                 "student opens, changes, runs, saves, and reflects on an Alice project".into(),
             ],
-            required_session_steps: vec![
-                FIRST_LESSON_REQUIRED_STEPS[0].into(),
-                FIRST_LESSON_REQUIRED_STEPS[1].into(),
-                FIRST_LESSON_REQUIRED_STEPS[2].into(),
-                FIRST_LESSON_REQUIRED_STEPS[3].into(),
-                FIRST_LESSON_REQUIRED_STEPS[4].into(),
-                FIRST_LESSON_REQUIRED_STEPS[5].into(),
-            ],
+            required_session_steps: FIRST_LESSON_REQUIRED_STEPS
+                .iter()
+                .map(|step| (*step).into())
+                .collect(),
             executable_evidence: vec![
                 "comparison manifest records both target runs under the same scenario id".into(),
                 "target launch manifests record dependency, package, display, window, screenshot, log, and assertion evidence".into(),
