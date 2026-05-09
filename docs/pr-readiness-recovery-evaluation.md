@@ -406,10 +406,10 @@ All report output is sanitized before rendering:
 
 - **Control characters** are normalized to spaces; consecutive whitespace is
   collapsed
-- **Secret markers** are redacted to `[REDACTED]`: GitHub PATs (`ghp_`,
-  `github_pat_`), OpenAI keys (`sk-`), Slack tokens (`xoxb-`, `xoxp-`), AWS
-  access keys (`AKIA...`), and query-string credentials (`token=`, `api_key=`,
-  `apikey=`, `secret=`)
+- **Secret markers** are redacted to `[REDACTED]`: GitHub tokens (`ghp_`,
+  `gho_`, `ghu_`, `ghs_`, `ghr_`, `github_pat_`), OpenAI keys (`sk-`), Slack
+  tokens (`xoxb-`, `xoxp-`), AWS access keys (`AKIA...`), and query-string
+  credentials (`token=`, `api_key=`, `apikey=`, `secret=`)
 - **Long strings** are truncated at 512 characters with `...` appended
 
 Input safety is checked before evaluation:
