@@ -34,6 +34,7 @@ pub enum ProofArtifactState {
     Present,
     Missing,
     Blocked,
+    Invalid,
 }
 
 impl ProofArtifactState {
@@ -42,6 +43,7 @@ impl ProofArtifactState {
             Self::Present => "present",
             Self::Missing => "missing",
             Self::Blocked => "blocked",
+            Self::Invalid => "invalid",
         }
     }
 }
@@ -88,8 +90,20 @@ impl ProjectProofArtifactEvidence {
         }
     }
 
+    fn invalid(detail: impl Into<String>) -> Self {
+        Self {
+            status: ProofArtifactState::Invalid,
+            detail: detail.into(),
+            artifact: None,
+        }
+    }
+
     pub(crate) fn state(&self) -> &'static str {
         self.status.as_str()
+    }
+
+    pub(crate) fn issue_when_invalid(&self) -> Option<String> {
+        (self.status == ProofArtifactState::Invalid).then(|| self.detail.clone())
     }
 }
 
@@ -148,6 +162,16 @@ impl DesktopFirstLessonNextActionEvidence {
             .iter()
             .filter_map(FirstLessonEvidenceBoundary::issue_when_invalid)
             .collect()
+    }
+
+    pub(crate) fn proof_artifact_issues(&self) -> Vec<String> {
+        [
+            &self.save_project_proof_artifact,
+            &self.select_project_proof_artifact,
+        ]
+        .into_iter()
+        .filter_map(ProjectProofArtifactEvidence::issue_when_invalid)
+        .collect()
     }
 }
 
@@ -287,25 +311,36 @@ fn project_proof_artifact(
         return ProjectProofArtifactEvidence::missing(label);
     };
 
-    let blocker = declaration.get("blocker").cloned();
-    if declaration
+    let declared_status = declaration
         .get("status")
         .and_then(serde_json::Value::as_str)
-        == Some("blocked")
-        || blocker.is_some()
-    {
-        return ProjectProofArtifactEvidence {
-            status: ProofArtifactState::Blocked,
-            detail: blocker::project_proof_artifact_blocker_detail(label, blocker.as_ref())
-                .unwrap_or_else(|| format!("{label} is blocked")),
-            artifact: None,
-        };
+        .map(str::trim);
+    if declaration.get("status").is_some() && declared_status.is_none() {
+        return ProjectProofArtifactEvidence::invalid(format!(
+            "{label} status must be a non-empty string"
+        ));
     }
-    if declaration
-        .get("status")
-        .and_then(serde_json::Value::as_str)
-        == Some("missing")
-    {
+
+    let blocker = declaration.get("blocker").cloned();
+    match declared_status {
+        Some("blocked") => return blocked_project_proof_artifact(label, blocker.as_ref()),
+        Some("missing") => {}
+        Some("present") | None => {}
+        Some("") => {
+            return ProjectProofArtifactEvidence::invalid(format!(
+                "{label} status must be a non-empty string"
+            ));
+        }
+        Some(status) => {
+            return ProjectProofArtifactEvidence::invalid(format!(
+                "{label} status {status:?} is unsupported; expected present, missing, or blocked"
+            ));
+        }
+    }
+    if blocker.is_some() {
+        return blocked_project_proof_artifact(label, blocker.as_ref());
+    }
+    if declared_status == Some("missing") {
         return ProjectProofArtifactEvidence::declared_missing(label, declaration);
     }
 
@@ -349,6 +384,18 @@ fn project_proof_artifact(
         status: ProofArtifactState::Present,
         detail: present_artifact_detail(label, &artifact),
         artifact: Some(artifact),
+    }
+}
+
+fn blocked_project_proof_artifact(
+    label: &str,
+    blocker: Option<&serde_json::Value>,
+) -> ProjectProofArtifactEvidence {
+    ProjectProofArtifactEvidence {
+        status: ProofArtifactState::Blocked,
+        detail: blocker::project_proof_artifact_blocker_detail(label, blocker)
+            .unwrap_or_else(|| format!("{label} is blocked")),
+        artifact: None,
     }
 }
 

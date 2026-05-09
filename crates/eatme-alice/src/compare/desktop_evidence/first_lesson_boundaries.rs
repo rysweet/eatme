@@ -326,8 +326,8 @@ fn boundary_contract_issue(spec: &BoundarySpec, value: &serde_json::Value) -> Op
 
     match limitation_array(value, "does_not_prove", "doesNotProve", status == "present") {
         Ok(claims) => {
-            for claim in claims {
-                if let Err(reason) = validate_limitation_text("does_not_prove", &claim) {
+            for (field, claim) in claims {
+                if let Err(reason) = validate_limitation_text(&field, &claim) {
                     return Some(reason);
                 }
             }

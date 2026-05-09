@@ -24,33 +24,40 @@ pub(crate) fn next_action_contract_issue(json: &serde_json::Value) -> Option<Str
     (!issues.is_empty()).then(|| issues.join("; "))
 }
 
-pub(crate) fn limitation_array(
+pub(crate) fn limitation_array<'a>(
     json: &serde_json::Value,
-    snake_key: &str,
-    camel_key: &str,
+    snake_key: &'a str,
+    camel_key: &'a str,
     required: bool,
-) -> Result<Vec<String>, String> {
-    let snake = json.get(snake_key);
-    let camel = json.get(camel_key);
-    let Some(value) = snake.or(camel) else {
+) -> Result<Vec<(&'a str, String)>, String> {
+    if json.get(snake_key).is_none() && json.get(camel_key).is_none() {
         return if required {
             Err(format!("{snake_key} must be a non-empty array of strings"))
         } else {
             Ok(Vec::new())
         };
-    };
-    let Some(array) = value.as_array() else {
-        return Err(format!("{snake_key} must be a non-empty array of strings"));
-    };
-    let items = array
-        .iter()
-        .map(|item| item.as_str().map(str::trim).filter(|item| !item.is_empty()))
-        .collect::<Option<Vec<_>>>()
-        .ok_or_else(|| format!("{snake_key} must contain only non-empty strings"))?;
-    if items.is_empty() {
-        return Err(format!("{snake_key} must be a non-empty array of strings"));
     }
-    Ok(items.into_iter().map(str::to_string).collect())
+
+    let mut merged = Vec::new();
+    for key in [snake_key, camel_key] {
+        let Some(value) = json.get(key) else {
+            continue;
+        };
+        let Some(array) = value.as_array() else {
+            return Err(format!("{key} must be a non-empty array of strings"));
+        };
+        let items = array
+            .iter()
+            .map(|item| item.as_str().map(str::trim).filter(|item| !item.is_empty()))
+            .collect::<Option<Vec<_>>>()
+            .ok_or_else(|| format!("{key} must contain only non-empty strings"))?;
+        if items.is_empty() {
+            return Err(format!("{key} must be a non-empty array of strings"));
+        }
+        merged.extend(items.into_iter().map(|item| (key, item.to_string())));
+    }
+
+    Ok(merged)
 }
 
 fn validate_evidence_text(

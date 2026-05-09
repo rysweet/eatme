@@ -127,6 +127,86 @@ fn wrong_or_empty_boundary_collections_fail_validation() {
 }
 
 #[test]
+fn invalid_camel_does_not_prove_alias_fails_even_when_snake_alias_is_valid() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "source":"desktop_run_render_target_attachment",
+  "candidate_actions":["desktop_save_menu_action"],
+  "requiresNextEvidence":["desktop Save menu readiness or invocation artifact"],
+  "evidence_boundaries":[
+    {
+      "id":"save_project",
+      "status":"present",
+      "source":"rabbithole",
+      "metadata_state":"observed",
+      "detail":"Save action evidence is present for this scenario boundary.",
+      "claim":"Save action evidence is present for this scenario boundary.",
+      "does_not_prove":["Save completion","grading","first-lesson completion"],
+      "doesNotProve":["TODO placeholder limitation"]
+    }
+  ],
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let save = evidence_boundary(&report_json, "save_project");
+
+    assert!(
+        !report.passed,
+        "invalid camel limitation alias must block readiness: {report_json}"
+    );
+    assert_eq!(save["status"], "invalid", "{save}");
+    assert_report_issue_contains(&report, "doesNotProve");
+    assert_report_issue_contains(&report, "filler");
+}
+
+#[test]
+fn invalid_snake_does_not_prove_alias_fails_even_when_camel_alias_is_valid() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "source":"desktop_run_render_target_attachment",
+  "candidate_actions":["desktop_save_menu_action"],
+  "requiresNextEvidence":["desktop Save menu readiness or invocation artifact"],
+  "evidence_boundaries":[
+    {
+      "id":"save_project",
+      "status":"present",
+      "source":"rabbithole",
+      "metadata_state":"observed",
+      "detail":"Save action evidence is present for this scenario boundary.",
+      "claim":"Save action evidence is present for this scenario boundary.",
+      "does_not_prove":["TODO placeholder limitation"],
+      "doesNotProve":["Save completion","grading","first-lesson completion"]
+    }
+  ],
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let save = evidence_boundary(&report_json, "save_project");
+
+    assert!(
+        !report.passed,
+        "invalid snake limitation alias must block readiness: {report_json}"
+    );
+    assert_eq!(save["status"], "invalid", "{save}");
+    assert_report_issue_contains(&report, "does_not_prove");
+    assert_report_issue_contains(&report, "filler");
+}
+
+#[test]
 fn malformed_boundary_section_fails_validation() {
     let manifest_path = write_manifest(ready_desktop_fixture());
     overwrite_modernized_first_lesson_next_action(
