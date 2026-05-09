@@ -29,6 +29,7 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Reviewing classroom sharing readiness | [Sharing Readiness Boundary](sharing-readiness-boundary.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -109,6 +110,9 @@ Audit instructor/student lesson-session readiness:
 
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
+
+Record exact-head pull request readiness:
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md).
 
 Build the docs site:
 
