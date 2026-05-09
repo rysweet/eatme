@@ -218,7 +218,7 @@ selected scenario's instructor/student boundary explicit:
 - lesson-labeled launch smoke records the same startup evidence under the chosen
   scenario id;
 - `first-lessons-real-ui-actions` records the required instructor/student
-  session steps, the current `ui-action-contract.json` evidence, and the
+  session steps, selected `ui-action-contract.json` evidence, and the
   `action_contract_blocked_until_ui_automation` boundary until deterministic
   Alice desktop actions are implemented.
 
@@ -364,8 +364,8 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 ```
 
 The automation scenario writes launch, log, window, screenshot, action-contract,
-and first-lesson readiness progress evidence. Current readiness keeps Save
-Project and Select Project proof-artifact states in `evidence_progress.items[]`.
+and first-lesson readiness progress evidence. Readiness keeps Save Project and
+Select Project proof-artifact states in `evidence_progress.items[]`.
 The report additionally summarizes Select Project, procedure/edit, Save
 option/action evidence, visible rendering, grading, creative assessment, and
 first-lesson completion independently as shown or not yet shown while preserving
