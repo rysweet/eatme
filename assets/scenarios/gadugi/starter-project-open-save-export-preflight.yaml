@@ -57,7 +57,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
-      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "starter_world_change=Add or rename one visible object in the bundled starter world during the next user-like Alice pass." "why=This keeps the starter-world build/change checkpoint editable and reviewable without grading the student project." "claim_boundary=This note is not creative assessment, not learner-world grading, and not proof of a completed save." > "$run_dir/starter-world-change-note.txt"; printf "%s\n" "wrote=$run_dir/starter-world-change-note.txt"'
+      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "starter_world_change=In the next user-like Alice pass, add or rename one visible object in the bundled starter world and record what changed." "why=This keeps the starter-world build/change checkpoint editable and reviewable without grading the student project." "claim_boundary=This note is not creative assessment, not learner-world grading, and not proof of a completed save." > "$run_dir/starter-world-change-note.txt"; printf "%s\n" "wrote=$run_dir/starter-world-change-note.txt"'
   expect:
     exit_code: 0
     stdout_contains: []
@@ -87,7 +87,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-starter-project-open-save-export-preflight}"
-      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the launch-smoke manifest, log, and screenshot/window evidence as the bounded observation attempt for this automation scenario." "save_reopen_export_gaps=Still needs user-like evidence for save, reopen, export, and classroom readiness before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt"'
+      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the Alice run report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt"'
   expect:
     exit_code: 0
     stdout_contains: []
