@@ -1,0 +1,148 @@
+schema_version: eatme.scenario/v1
+id: instructor-student-save-reopen-export-evidence-handoff
+title: Instructor Student Save Reopen Export Evidence Handoff
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Starter project open/save/export preflight
+    url: assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
+    use: >-
+      Use opened starter-project evidence as the setup input for the handoff.
+      The preflight proves the starter project opens with manifest, log, window,
+      screenshot, and inspectable action evidence; it does not prove that save,
+      reopen, export, or sharing work has been reviewed.
+  - name: Student artifact package share evidence
+    url: assets/scenarios/eatme/student-artifact-package-share-evidence.yaml
+    use: >-
+      Use share-packet boundaries for artifact references, student explanation,
+      attribution or classroom context, and human review after the saved project
+      has been reopened and export evidence has been prepared.
+  - name: Alice.org Alice 3 resource categories
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use lessons, exercises, how-tos, projects, and classroom resources as
+      context for practical classroom artifact handling without claiming
+      automated grading, creative judgment, or broad Alice coverage.
+purpose: >-
+  Help an instructor and student bridge from starter-project preflight evidence
+  to a practical classroom handoff. The flow confirms the starter project opens,
+  names where the student saves it, checks that the saved project reopens,
+  prepares an exported evidence package, and records how the evidence is handed
+  to an instructor or the next workflow. This scenario supports evidence
+  collection and human review; it is not full user interface automation, not
+  automated creative assessment, not learner-world grading, not full Alice
+  coverage, and not proof of student learning.
+personas:
+  instructors: [classroom-orchestrator, assessment-curator]
+  students: [reflective-debugger, collaborative-peer-mentor]
+agentic_flow:
+  focus: instructor-student-save-reopen-export-evidence-handoff
+  instructor_goal: >-
+    Prepare a plain instructor/student handoff that starts from opened
+    starter-project evidence, asks the student to save with a clear name and
+    location, checks that the saved work reopens, prepares export/share evidence,
+    and passes the evidence to a human reviewer or next workflow without
+    claiming automated grading or proof of learning.
+  prompt_source: assets/scenarios/eatme/instructor-student-save-reopen-export-evidence-handoff.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - save_reopen_handoff_card
+    - export_evidence_package_checklist
+    - instructor_review_boundary_note
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent guiding a practical Alice starter-project
+  handoff after preflight evidence exists. Produce a save/reopen handoff card,
+  export evidence package checklist, and instructor review boundary note grounded
+  in the listed resources and this scenario. Ask the student to confirm the
+  starter project opens, save the work with a clear name and location, reopen the
+  saved work, prepare an export/share evidence package, and hand off the evidence
+  to the instructor or next workflow. Require artifact references and observable
+  checks, not hidden implementation details. State explicitly that this supports
+  evidence collection and human review only: it is not full user interface
+  automation, not automated creative assessment, not learner-world grading, not
+  full Alice coverage, and not proof of student learning.
+acceptance_criteria:
+  - given: >-
+      starter-project preflight evidence shows the Alice starter project opened
+    when: >-
+      the handoff card is prepared
+    then: >-
+      the card asks the student to record the opened project reference and the
+      save name and location before export or sharing
+  - given: >-
+      a student has saved the starter project with a clear name and location
+    when: >-
+      the reopen check is performed
+    then: >-
+      the checklist asks for observable confirmation that the saved project
+      reopened before the evidence package is handed off
+  - given: >-
+      an export or share package is prepared for instructor review
+    when: >-
+      the instructor boundary note is written
+    then: >-
+      the note names the saved project reference, reopened confirmation, export
+      evidence, handoff destination, and what still requires human review
+  - given: >-
+      a reviewer asks whether the evidence proves student achievement
+    when: >-
+      the unsupported policy is applied
+    then: >-
+      the response redirects to operational evidence quality and human review
+      without claiming automated grading, creative assessment, or learner-world
+      judgment
+acceptance_probes:
+  - Handoff card asks the student to confirm the starter project opens and record the opened project reference.
+  - Handoff card records a clear save name and location before export or sharing.
+  - Reopen check asks for observable confirmation that the saved project reopened.
+  - Export evidence package checklist names the saved project reference, reopened confirmation, export or share artifact, and handoff destination.
+  - Instructor review boundary note separates operational evidence quality from student achievement and names what still needs human review.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not full Alice coverage, and not proof of student learning.
+rubric:
+  - criterion: Save and reopen evidence
+    evidence:
+      - Handoff card names the saved project file or location in words a student and instructor can both find.
+      - Reopen evidence is observable, such as a reopened window, screenshot reference, or short confirmation note.
+  - criterion: Export package readiness
+    evidence:
+      - Checklist links the export or share artifact to the saved project reference and reopened confirmation.
+      - Handoff destination is named as an instructor, LMS folder, shared drive, or next workflow without requiring a private path.
+  - criterion: Human review boundary
+    evidence:
+      - Boundary note treats the package as operational evidence for review, not a grade or proof of learning.
+      - Any feedback starts from visible artifact evidence and student explanation rather than hidden implementation details.
+avoid:
+  - Exact user interface coordinates, brittle selectors, private file paths, or hidden log-only evidence.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, full Alice coverage, certified work, mastery, or proof of student learning.
+  - Treating starter-project preflight evidence as save, reopen, export, or sharing evidence.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes instructor-student-save-reopen-export-evidence-handoff
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-save-reopen-export-evidence-handoff.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  save_reopen_handoff_card: agentic://instructor/save-reopen-handoff-card
+  export_evidence_package_checklist: agentic://student/export-evidence-package-checklist
+  instructor_review_boundary_note: agentic://instructor/review-boundary-note
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the persona crew asset, or the
+  cited starter-project and share-evidence resources, fail visibly and report the
+  missing evidence. Do not replace instructor judgment with preflight, save,
+  reopen, or export artifacts. Do not claim full user interface automation,
+  automated creative assessment, learner-world grading, full Alice coverage,
+  certified work, mastery, or proof of student learning.

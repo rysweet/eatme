@@ -111,7 +111,7 @@ constituency_coverage:
     label: Teacher-community sharing
     editable_by: non-coder asset editors
     persona_ids: [teacher-community-curator]
-    scenario_ids: [teacher-community-sharing-loop, student-artifact-package-share-evidence]
+    scenario_ids: [teacher-community-sharing-loop, instructor-student-save-reopen-export-evidence-handoff, student-artifact-package-share-evidence]
     evidence:
       - Sharing loop includes remix notes, attribution, classroom constraints, classroom handoff note, and feedback prompts.
       - Student artifact package sharing includes artifact references, student explanation, attribution or classroom context, and human review boundaries.
@@ -1503,6 +1503,35 @@ core_scenarios_from_existing_alice_resources:
       - Feedback starts from observable artifact behavior and student explanation.
     avoid:
       - Hidden code inspection, automatic creative scoring, learner-world grading, or claims of complete Alice coverage.
+  - id: instructor-student-save-reopen-export-evidence-handoff
+    origin: existing-alice-resource
+    coverage: [classroom-use, export-share]
+    user_story: As a classroom-orchestrator, I want a save, reopen, export, and evidence handoff after starter-project preflight, so that student work can be preserved and prepared for human review.
+    personas:
+      instructors: [classroom-orchestrator, assessment-curator]
+      students: [reflective-debugger, collaborative-peer-mentor]
+    educational_intent:
+      concepts: [evidence handoff, artifact preservation, operational review boundary]
+      habits: [documentation, reflection, responsible sharing]
+    constraints:
+      - Starter-project preflight evidence confirms an opened project but does not prove save, reopen, export, or sharing evidence.
+      - Handoff guidance must use clear names and destinations without exposing private file paths or claiming automated review.
+    observable_behaviors:
+      instructor:
+        - Provides a handoff card that names save location, reopen check, export evidence, and review destination.
+        - Separates operational evidence quality from student achievement or creative judgment.
+      student:
+        - Records the saved project reference, confirms it reopens, and names the exported evidence package.
+        - Hands off evidence with enough context for an instructor or next workflow to review it.
+      system_or_artifact:
+        - Handoff package includes saved project reference, reopened confirmation, export artifact, destination, and human review note.
+    agentic_test_prompt: >-
+      Create a practical Alice starter-project handoff after preflight evidence. Include opened project reference, save name and location, reopened confirmation, export or share artifact, handoff destination, and a boundary note that leaves review to a human.
+    acceptance_probes:
+      - Handoff evidence names opened project, save location, reopened confirmation, export artifact, and handoff destination.
+      - Review note treats the package as operational evidence for human review, not automated grading or proof of learning.
+    avoid:
+      - Hidden file paths, exact UI coordinates, automatic creative scoring, learner-world grading, mastery claims, or treating preflight as export/share evidence.
   - id: hour-of-code-studio-kickoff
     origin: existing-alice-resource
     coverage: [setup, lessons, world-creation, run-debug, classroom-use]
