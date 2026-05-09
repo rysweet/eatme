@@ -83,6 +83,13 @@ impl ComparisonManifestErrorKind {
             Self::Malformed => "comparison manifest must be valid JSON",
         }
     }
+
+    fn diagnostic_message(self) -> &'static str {
+        match self {
+            Self::Unreadable => "comparison manifest is unreadable",
+            Self::Malformed => "comparison manifest is malformed JSON",
+        }
+    }
 }
 
 fn handle_manifest_error(
@@ -94,16 +101,15 @@ fn handle_manifest_error(
     let Some(kind) = comparison_manifest_error_kind(&error).filter(|_| json) else {
         return Err(error);
     };
-    print_json_result(&invalid_comparison_manifest_report(manifest, &error, kind))?;
+    print_json_result(&invalid_comparison_manifest_report(manifest, kind))?;
     bail!(failure_message);
 }
 
 fn invalid_comparison_manifest_report(
     manifest: &Path,
-    error: &Error,
     kind: ComparisonManifestErrorKind,
 ) -> InvalidComparisonManifestReport {
-    let issue = error.to_string();
+    let issue = kind.diagnostic_message().to_string();
     InvalidComparisonManifestReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1",
         manifest_path: manifest.display().to_string(),

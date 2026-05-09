@@ -90,6 +90,12 @@ fn check_lesson_readiness_cli_json_reports_malformed_manifest_diagnostic() {
     let diagnostic = diagnostic_with_code(&report, "malformed_comparison_manifest");
     assert_eq!(diagnostic["severity"], "error");
     assert_eq!(diagnostic["field"], "manifest");
+    assert_eq!(
+        diagnostic["message"],
+        "comparison manifest is malformed JSON"
+    );
+    assert_eq!(report["issues"][0], "comparison manifest is malformed JSON");
+    assert_json_diagnostics_and_issues_omit_manifest_path(&report, &manifest_path);
 }
 
 #[test]
@@ -240,6 +246,9 @@ fn assert_unreadable_manifest_json_diagnostic(scratch_name: &str, command_name: 
     let diagnostic = diagnostic_with_code(&report, "unreadable_comparison_manifest");
     assert_eq!(diagnostic["severity"], "error");
     assert_eq!(diagnostic["field"], "manifest");
+    assert_eq!(diagnostic["message"], "comparison manifest is unreadable");
+    assert_eq!(report["issues"][0], "comparison manifest is unreadable");
+    assert_json_diagnostics_and_issues_omit_manifest_path(&report, &manifest_path);
     assert_contract_evidence_state(&report, "comparison_manifest", "missing");
 }
 
@@ -264,6 +273,37 @@ fn assert_contract_evidence_state(report: &serde_json::Value, id: &str, expected
         "unexpected contract evidence state for {id}: {evidence}"
     );
     assert_eq!(evidence["required"], true, "{evidence}");
+}
+
+fn assert_json_diagnostics_and_issues_omit_manifest_path(
+    report: &serde_json::Value,
+    manifest_path: &Path,
+) {
+    let manifest_path = manifest_path.display().to_string();
+    for diagnostic in report["diagnostics"]
+        .as_array()
+        .unwrap_or_else(|| panic!("expected top-level diagnostics[]: {report}"))
+    {
+        let message = diagnostic["message"]
+            .as_str()
+            .unwrap_or_else(|| panic!("expected diagnostic message string: {diagnostic}"));
+        assert!(
+            !message.contains(&manifest_path),
+            "diagnostic message must not include absolute manifest path: {message}"
+        );
+    }
+    for issue in report["issues"]
+        .as_array()
+        .unwrap_or_else(|| panic!("expected top-level issues[]: {report}"))
+    {
+        let issue = issue
+            .as_str()
+            .unwrap_or_else(|| panic!("expected issue string: {issue}"));
+        assert!(
+            !issue.contains(&manifest_path),
+            "issue must not include absolute manifest path: {issue}"
+        );
+    }
 }
 
 fn scratch_root(name: &str) -> PathBuf {
