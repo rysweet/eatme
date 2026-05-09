@@ -178,6 +178,39 @@ fn forbidden_internal_shorthand() -> Vec<String> {
     ]
 }
 
+fn section<'a>(docs: &'a str, heading: &str) -> &'a str {
+    let start = docs
+        .find(heading)
+        .unwrap_or_else(|| panic!("document must include `{heading}`"));
+    let after_heading = start + heading.len();
+    let rest = &docs[after_heading..];
+    let end = match rest.find("\n## ") {
+        Some(next_heading) => next_heading,
+        None => rest.len(),
+    };
+    &docs[start..after_heading + end]
+}
+
+fn full_sha_mentions(text: &str) -> Vec<&str> {
+    text.split(|c: char| !c.is_ascii_hexdigit())
+        .filter(|token| token.len() == 40)
+        .collect()
+}
+
+fn assert_no_success_claims(label: &str, text: &str) {
+    let normalized = text.to_lowercase();
+    let present = SHARING_SUCCESS_CLAIM_PATTERNS
+        .iter()
+        .filter(|phrase| normalized.contains(**phrase))
+        .copied()
+        .collect::<Vec<_>>();
+
+    assert!(
+        present.is_empty(),
+        "{label} must stay bounded to executed recovery evidence, found success claims: {present:?}"
+    );
+}
+
 fn normalize_whitespace(text: &str) -> String {
     let mut normalized = String::with_capacity(text.len());
     for word in text.split_whitespace() {

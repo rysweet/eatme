@@ -1,6 +1,7 @@
 use super::{
-    PR173_RECOVERY_VALIDATION_COMMANDS, SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all,
-    default_workflow_pr_readiness_doc, sharing_readiness_boundary_doc,
+    PR173_RECOVERY_VALIDATION_COMMANDS, assert_contains_all, assert_contains_all_across,
+    assert_no_success_claims, default_workflow_pr_readiness_doc, section,
+    sharing_readiness_boundary_doc,
 };
 
 const EVIDENCE_TEMPLATE_HEADING: &str = "## Evidence record template";
@@ -119,9 +120,9 @@ fn pr173_sharing_workflow_contract_links_default_readiness_to_boundary_evidence(
         );
     }
 
-    assert_contains_all(
+    assert_contains_all_across(
         "PR #173 sharing workflow integration contract",
-        &format!("{profile}\n{boundary}"),
+        &[profile, boundary],
         &[
             "PR `#173`",
             "wave6-deployed-sharing-gap-1778302300",
@@ -139,32 +140,5 @@ fn pr173_sharing_workflow_contract_links_default_readiness_to_boundary_evidence(
             "Save completion",
             "lesson completion",
         ],
-    );
-}
-
-fn section<'a>(docs: &'a str, heading: &str) -> &'a str {
-    let start = docs
-        .find(heading)
-        .unwrap_or_else(|| panic!("document must include `{heading}`"));
-    let after_heading = start + heading.len();
-    let rest = &docs[after_heading..];
-    let end = match rest.find("\n## ") {
-        Some(next_heading) => next_heading,
-        None => rest.len(),
-    };
-    &docs[start..after_heading + end]
-}
-
-fn assert_no_success_claims(label: &str, text: &str) {
-    let normalized = text.to_lowercase();
-    let present = SHARING_SUCCESS_CLAIM_PATTERNS
-        .iter()
-        .filter(|phrase| normalized.contains(**phrase))
-        .copied()
-        .collect::<Vec<_>>();
-
-    assert!(
-        present.is_empty(),
-        "{label} must stay bounded to executed recovery evidence, found success claims: {present:?}"
     );
 }

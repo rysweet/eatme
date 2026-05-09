@@ -1,13 +1,13 @@
 use super::{
-    PR173_RECOVERY_VALIDATION_COMMANDS, SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all,
-    sharing_readiness_boundary_doc,
+    PR173_RECOVERY_VALIDATION_COMMANDS, assert_contains_all, assert_no_success_claims,
+    full_sha_mentions, section, sharing_readiness_boundary_doc,
 };
 
 const RECOVERY_ARTIFACT_HEADING: &str = "## Recovery evidence artifacts";
 
 #[test]
 fn sharing_recovery_docs_describe_artifact_contract_not_committed_point_in_time_state() {
-    let evidence = recovery_artifact_section(sharing_readiness_boundary_doc());
+    let evidence = section(sharing_readiness_boundary_doc(), RECOVERY_ARTIFACT_HEADING);
 
     assert_contains_all(
         "sharing recovery evidence artifact contract",
@@ -20,16 +20,17 @@ fn sharing_recovery_docs_describe_artifact_contract_not_committed_point_in_time_
             "validation outcomes",
         ],
     );
+    let sha_mentions = full_sha_mentions(evidence);
     assert!(
-        full_sha_mentions(evidence).is_empty(),
-        "permanent sharing readiness docs must not pin point-in-time SHAs: {:?}",
-        full_sha_mentions(evidence)
+        sha_mentions.is_empty(),
+        "permanent sharing readiness docs must not pin point-in-time SHAs; found {} 40-hex mention(s)",
+        sha_mentions.len()
     );
 }
 
 #[test]
 fn sharing_recovery_docs_keep_pr173_as_reusable_profile_example() {
-    let evidence = recovery_artifact_section(sharing_readiness_boundary_doc());
+    let evidence = section(sharing_readiness_boundary_doc(), RECOVERY_ARTIFACT_HEADING);
 
     assert_contains_all(
         "PR 173 sharing recovery profile",
@@ -45,7 +46,7 @@ fn sharing_recovery_docs_keep_pr173_as_reusable_profile_example() {
 
 #[test]
 fn sharing_recovery_docs_require_current_head_validation_before_readiness_claims() {
-    let evidence = recovery_artifact_section(sharing_readiness_boundary_doc());
+    let evidence = section(sharing_readiness_boundary_doc(), RECOVERY_ARTIFACT_HEADING);
     let missing = PR173_RECOVERY_VALIDATION_COMMANDS
         .iter()
         .filter(|command| !evidence.contains(**command))
@@ -74,7 +75,7 @@ fn sharing_recovery_docs_require_current_head_validation_before_readiness_claims
 
 #[test]
 fn sharing_recovery_docs_separate_local_and_pr_head_claims_without_stale_fixture_rows() {
-    let evidence = recovery_artifact_section(sharing_readiness_boundary_doc());
+    let evidence = section(sharing_readiness_boundary_doc(), RECOVERY_ARTIFACT_HEADING);
 
     assert_contains_all(
         "local and PR head separation",
@@ -107,7 +108,7 @@ fn sharing_recovery_docs_separate_local_and_pr_head_claims_without_stale_fixture
 
 #[test]
 fn sharing_recovery_evidence_keeps_forbidden_claims_explicitly_unproven() {
-    let evidence = recovery_artifact_section(sharing_readiness_boundary_doc());
+    let evidence = section(sharing_readiness_boundary_doc(), RECOVERY_ARTIFACT_HEADING);
 
     assert_contains_all(
         "sharing recovery bounded wording evidence",
@@ -124,38 +125,5 @@ fn sharing_recovery_evidence_keeps_forbidden_claims_explicitly_unproven() {
             "lesson completion",
         ],
     );
-    assert_no_success_claims(evidence);
-}
-
-fn recovery_artifact_section(docs: &str) -> &str {
-    let start = docs.find(RECOVERY_ARTIFACT_HEADING).unwrap_or_else(|| {
-        panic!("docs/sharing-readiness-boundary.md must include `{RECOVERY_ARTIFACT_HEADING}`")
-    });
-    let after_heading = start + RECOVERY_ARTIFACT_HEADING.len();
-    let rest = &docs[after_heading..];
-    let end = match rest.find("\n## ") {
-        Some(next_heading) => next_heading,
-        None => rest.len(),
-    };
-    &docs[start..after_heading + end]
-}
-
-fn full_sha_mentions(text: &str) -> Vec<&str> {
-    text.split(|c: char| !c.is_ascii_hexdigit())
-        .filter(|token| token.len() == 40 && token.chars().all(|c| c.is_ascii_hexdigit()))
-        .collect()
-}
-
-fn assert_no_success_claims(evidence: &str) {
-    let normalized = evidence.to_lowercase();
-    let present = SHARING_SUCCESS_CLAIM_PATTERNS
-        .iter()
-        .filter(|phrase| normalized.contains(**phrase))
-        .copied()
-        .collect::<Vec<_>>();
-
-    assert!(
-        present.is_empty(),
-        "sharing recovery evidence must stay bounded to readiness evidence, found success claims: {present:?}"
-    );
+    assert_no_success_claims("sharing recovery evidence", evidence);
 }
