@@ -8,14 +8,14 @@ and run-summary path used by the baseline launch smoke, then records that id in
 the run summary.
 
 Use this page after [Alice Integration](alice-integration.md) to choose a
-scenario and understand what its launch evidence can prove. For the student
+scenario and understand what its launch evidence checks. For the student
 first-lesson path, continue to
 [Lesson Session Readiness](lesson-session-readiness.md) and
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 ## Committed desktop scenario roster
 
-| Scenario | Role | What it proves |
+| Scenario | Role | What it checks |
 | --- | --- | --- |
 | `building-a-scene-first-world` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
 | `code-editor-first-run` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
@@ -35,7 +35,7 @@ first-lesson path, continue to
 | `modified-class-portability` | Class portability evidence | Validate the export/import evidence requirements and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
-desktop QA journeys, and editable student creative scenarios. They prove that the
+desktop QA journeys, and editable student creative scenarios. They check that the
 desktop harness can reach a smoke-ready Alice session for resource-grounded paths
 before instructor/student review is trusted. The UI action and class
 portability scenarios intentionally add explicit evidence requirements around
@@ -44,7 +44,7 @@ user actions.
 
 Additional desktop scenarios cover these setup and classroom support paths:
 
-| Scenario | Role | What it proves |
+| Scenario | Role | What it checks |
 | --- | --- | --- |
 | `setup-support-lab-readiness` | IT/setup support smoke | Gate install, Java, graphics, storage, account, and fallback readiness on real launch evidence. |
 | `alice-2-migration-bridge` | Alice 2 migration smoke | Gate Alice 2 to Alice 3 lesson mapping on real launch evidence and visible student outcomes. |
@@ -67,7 +67,7 @@ smoke readiness from repeatable harness evidence:
   `africa.a3p`, giving the next open/save/export pass a real opened-project
   baseline.
 - Alice log and window-list files are captured as artifacts when available.
-- A non-empty startup screenshot or captured window list proves visual startup
+- A non-empty startup screenshot or captured window list records visual startup
   evidence for desktop scenarios. Screenshots are represented by the top-level
   `screenshot` artifact when available.
 - The run artifacts are stored under a scenario-specific run directory.
@@ -78,7 +78,7 @@ kickoff, learner-visible first-scene, first-animation, evidence, and reflection
 expectations live in editable YAML as follow-on evidence requirements; runtime
 smoke still stops at repeatable launch-ready evidence.
 
-The baseline `real-alice-launch-smoke` scenario proves only the scenario-labeled
+The baseline `real-alice-launch-smoke` scenario checks only the scenario-labeled
 launch path and captured run summary, log, window, and screenshot evidence. It
 is not full UI automation, not creative assessment, and not learner-world
 grading.
@@ -123,7 +123,7 @@ evidence-based instead of silently skipping unavailable hardware.
 
 The expanded instructor/student scenarios use the same rule. Real Alice
 execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
-run summary proves the selected scenario reached a smoke-ready desktop session;
+run summary records that the selected scenario reached a smoke-ready desktop session;
 it does not replace the scenario-specific readiness checklist, migration map,
 comfort notes, import review, fallback artifact, or student reflection required
 by the YAML.
@@ -142,15 +142,15 @@ and explicit instructor/student deliverables.
 
 | Need | Scenario | What to collect |
 | --- | --- | --- |
-| Prove the harness can launch real Alice for a named scenario | [`real-alice-launch-smoke`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/real-alice-launch-smoke.yaml) or any `alice_lesson_smoke` id | Run summary, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has bounded action evidence | [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Launch summary, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing modernized Alice evidence stays visible as `missing`. |
-| Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
-| Prepare the classroom handoff from evidence to student work | [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Handoff card, readiness note, and student action prompt that state what launch/action evidence proves and what still needs classroom observation. |
+| Check that the harness can launch real Alice for a named scenario | [`real-alice-launch-smoke`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/real-alice-launch-smoke.yaml) or any `alice_lesson_smoke` id | Run summary, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
+| Check that the student first-lesson scenario has bounded action evidence | [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Launch summary, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing modernized Alice evidence stays visible as `missing`. |
+| Check that instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
+| Prepare the classroom handoff from evidence to student work | [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Handoff card, readiness note, and student action prompt that state what launch/action evidence supports and what still needs classroom observation. |
 | Discuss student outcomes without automated grading claims | [`instructor-student-outcomes-rubric`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml) | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide. |
 
 The evidence levels are intentionally separate:
 
-1. Launch evidence proves Alice started for the selected scenario id.
+1. Launch evidence records Alice startup for the selected scenario id.
 2. First-action evidence records the first UI actions that must be performed
    repeatably.
 3. Project proof-artifact evidence records Save Project and Select Project
@@ -497,7 +497,7 @@ assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
 Scenario authors can refine the instructor-facing readiness language by editing
 exactly one existing text field in that YAML asset. Prefer `purpose` for the
 small wording update because it is the summary that explains what the scenario
-proves before a reviewer inspects acceptance criteria, steps, or artifacts.
+checks before a reviewer inspects acceptance criteria, steps, or artifacts.
 
 The finished wording describes preflight launch/action readiness
 evidence for setup, launch support, handoff artifacts, and classroom-support
@@ -518,7 +518,7 @@ purpose: >-
   real Alice for original and modernized Alice, confirming the Alice window is
   available, and recording first-action evidence for object placement,
   procedure/code editing, running the world, and saving the project when each
-  action can be proven. When an action cannot yet be proven repeatably, the run
+  action can be recorded. When an action cannot yet be recorded repeatably, the run
   fails loudly and reports what is not yet shown instead of claiming success.
   This is preflight launch/action readiness evidence only for setup, launch
   support, handoff artifacts, and classroom support preparation. It is not full
@@ -636,7 +636,7 @@ outside the manifest and captured artifacts.
 
 `startup_screenshot` is an assertion key under `assertions`, not a top-level
 artifact field. The top-level screenshot artifact is named `screenshot`. The
-`real_alice_execution_evidence` assertion is the adapter contract that proves a
+`real_alice_execution_evidence` assertion is the adapter contract that checks a
 real Alice process stayed alive on a responsive virtual display while visual
 evidence and a non-empty launch log were captured.
 
@@ -654,7 +654,7 @@ resource_basis:
   - name: Alice.org Building a Scene lesson family
     url: https://www.alice.org/resources/
 purpose: >-
-  Prove that the lesson-specific smoke scenario launches through the same real
+  Check that the lesson-specific smoke scenario launches through the same real
   Alice desktop harness as the baseline launch smoke.
 launcher:
   command: alice launch-smoke
@@ -892,7 +892,7 @@ cargo test --all-targets --all-features
 
 A desktop scenario is ready to trust when committed scenario assets validate,
 malformed scenario fixtures fail with actionable messages, the fake harness
-proves the scenario id is routed through the existing launch smoke path, and the
+checks the scenario id is routed through the existing launch smoke path, and the
 gated real Alice command produces distinct scenario artifacts when the host
 supports desktop launch. UI action, portability, and VR claims also require
 their declared evidence requirements; a scenario-labeled launch summary alone is

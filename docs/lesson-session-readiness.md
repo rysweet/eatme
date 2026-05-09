@@ -52,7 +52,7 @@ Use these canonical scenarios for instructor/student lesson-session evidence:
 | --- | --- | --- |
 | [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress, first-lesson evidence boundaries, and plain not-yet-shown states for missing desktop actions. |
 | [`instructor-lesson-materials-remix`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-lesson-materials-remix.yaml) | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
-| [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
+| [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence supports and what still requires classroom observation. |
 | [`instructor-student-outcomes-rubric`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml) | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
 
 The `alice check-lesson-readiness` and `alice run-first-lesson-readiness`
@@ -77,7 +77,7 @@ continuing to the next first-lesson action. It reports `ready`, `not_ready`, or
 The required evidence check separates repository-local readiness evidence from
 RabbitHole-produced desktop evidence:
 
-| Evidence group | Accepted source | What it proves |
+| Evidence group | Accepted source | What it checks |
 | --- | --- | --- |
 | Editable scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and unsupported-action policy are part of the validated eatme asset set. |
 | Generated runner evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Fresh generated files match the current editable scenario. RabbitHole-specific wording reaches generated runners only after the editable scenario is updated and generated files are refreshed. |
@@ -117,7 +117,7 @@ the RabbitHole desktop execution check.
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
 | First-action evidence file | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
-| Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove Save completion without distinct explicit Save-completion evidence. |
+| Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact supports artifact availability only; it does not demonstrate Save completion without distinct explicit Save-completion evidence. |
 | Select Project proof artifact | `select_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
 | Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
@@ -142,7 +142,7 @@ save-project
 The readiness check validates bounded evidence only. The Run-window evidence
 records that RabbitHole prepared or opened the desktop Run frame. The desktop
 execution evidence records that desktop execution started and produced runtime
-statement evidence. Neither evidence item proves rendered output correctness,
+statement evidence. Neither evidence item demonstrates rendered output correctness,
 creative quality, learner understanding, saved-world grading, or completed
 lesson execution.
 
@@ -465,7 +465,7 @@ Consumers that need the bounded automation scenarios contract should read
 
 `evidence_progress` is the shared progress object used by JSON output and plain
 CLI output. It reports observed evidence state only; it does not grade the
-lesson, prove UI completion, or collapse blocked evidence into missing evidence.
+lesson, claim UI completion, or collapse blocked evidence into missing evidence.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -792,9 +792,9 @@ Known unsupported action reasons:
 | Reason | Action | Meaning |
 | --- | --- | --- |
 | `deterministic object-placement affordance is unavailable` | `object_placement` | A stable Alice-side way to place a named gallery object and produce durable evidence is unavailable. |
-| `deterministic procedure-edit affordance is unavailable` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and prove the edit is unavailable. |
-| `deterministic world-run affordance is unavailable` | `world_run` | A stable Alice-side way to prove the world ran after student edits is unavailable. |
-| `deterministic project-save affordance is unavailable` | `project_save` | A stable Alice-side way to prove a project save artifact is unavailable. |
+| `deterministic procedure-edit affordance is unavailable` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and record the edit is unavailable. |
+| `deterministic world-run affordance is unavailable` | `world_run` | A stable Alice-side way to record that the world ran after student edits is unavailable. |
+| `deterministic project-save affordance is unavailable` | `project_save` | A stable Alice-side way to record a project save artifact is unavailable. |
 
 Consumers must treat `code: "unsupported_desktop_action"` as a blocked action,
 not as a failed test to hide and not as a pass to override.
@@ -909,7 +909,7 @@ two entries from the longer boundary array:
 The Select Project line says only that the Select Project boundary has scenario
 evidence. The Save line says Save completion is not yet proven. If a boundary
 has no evidence, only ambiguous metadata, or no usable relative summary, it
-remains visible as not yet shown. Neither line proves lesson completion, full UI
+remains visible as not yet shown. Neither line demonstrates lesson completion, full UI
 automation, rendering correctness, grading, creative assessment, or learner-world
 grading.
 
@@ -944,7 +944,7 @@ screenshot, and `ui-action-contract.json` as evidence inputs. It produces:
 
 | Output | Required content |
 | --- | --- |
-| `real_alice_evidence_handoff_card` | What each artifact proves and what it does not prove. |
+| `real_alice_evidence_handoff_card` | What each artifact supports and what it does not support. |
 | `instructor_readiness_note` | Which signals indicate environment readiness and which observations remain classroom work. |
 | `student_action_prompt` | One Alice action, visible result after running, and one next revision for the student to record. |
 

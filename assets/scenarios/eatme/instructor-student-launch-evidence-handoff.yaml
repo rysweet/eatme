@@ -13,7 +13,7 @@ resource_basis:
     url: assets/scenarios/eatme/real-alice-launch-smoke.yaml
     use: >-
       Use run summary, log, window, and screenshot evidence as a classroom
-      readiness input, not as proof of student learning.
+      readiness input, not as evidence of student learning.
   - name: First Lessons Real UI Actions Evidence
     url: assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
     use: >-
@@ -22,7 +22,7 @@ resource_basis:
 purpose: >-
   Help an instructor turn real Alice launch evidence into a student-facing
   classroom handoff. The instructor-facing output names what the run summary,
-  log, window list, screenshot, and first-action evidence can prove; what still
+  log, window list, screenshot, and first-action evidence can support; what still
   needs human observation; and how students should record one Alice action, the
   visible result, and one next revision. This is not full user interface
   automation, not automated creative assessment, not learner-world grading, not
@@ -68,7 +68,7 @@ acceptance_criteria:
     when: >-
       the classroom handoff is prepared
     then: >-
-      the handoff names what each evidence item can prove and what still requires
+      the handoff names what each evidence item can support and what still requires
       human observation
   - given: >-
       Alice launches but repeatable action automation is not implemented
@@ -92,7 +92,7 @@ acceptance_probes:
 rubric:
   - criterion: Evidence boundary
     evidence:
-      - Output says launch evidence supports readiness, not proof of student learning.
+      - Output says launch evidence supports readiness, not evidence of student learning.
       - First-action evidence is described as current boundary evidence, not automated action success.
   - criterion: Classroom handoff clarity
     evidence:
@@ -105,7 +105,7 @@ rubric:
 avoid:
   - Exact user interface coordinates, brittle selectors, private implementation details, or hidden log-only grading.
   - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or deployed service status.
-  - Treating launch evidence as proof of student understanding.
+  - Treating launch evidence as evidence of student understanding.
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json

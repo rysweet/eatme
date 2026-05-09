@@ -131,7 +131,7 @@ fn first_lesson_reader_sections_use_plain_outcome_language() {
             section(
                 &index,
                 "## First-lesson readiness path",
-                "## What eatme proves",
+                "## What eatme verifies",
             ),
         ),
         (
@@ -222,13 +222,7 @@ fn default_workflow_readiness_docs_require_current_head_finalization_outputs() {
 fn scenario_link_docs_use_checked_evidence_language_instead_of_positive_proof_verbs() {
     let mut violations = Vec::new();
 
-    for path in [
-        "docs/index.md",
-        "docs/scenario-authoring.md",
-        "docs/scenario-link-generated-runners.md",
-        "docs/default-workflow-pr-readiness.md",
-    ] {
-        let contents = read_repo_file(path);
+    for (path, contents) in positive_proof_language_targets() {
         for (line_index, line) in contents.lines().enumerate() {
             if uses_positive_proof_language(line) {
                 violations.push(format!("{path}:{}: {line}", line_index + 1));
@@ -241,6 +235,39 @@ fn scenario_link_docs_use_checked_evidence_language_instead_of_positive_proof_ve
         "scenario-link docs must describe checked evidence, not unverified proof claims:\n{}",
         violations.join("\n")
     );
+}
+
+fn positive_proof_language_targets() -> Vec<(String, String)> {
+    let mut targets = vec![
+        ("docs/index.md".to_string(), read_repo_file("docs/index.md")),
+        (
+            "docs/alice-lesson-smoke.md".to_string(),
+            read_repo_file("docs/alice-lesson-smoke.md"),
+        ),
+        (
+            "docs/lesson-session-readiness.md".to_string(),
+            read_repo_file("docs/lesson-session-readiness.md"),
+        ),
+        (
+            "docs/scenario-authoring.md".to_string(),
+            read_repo_file("docs/scenario-authoring.md"),
+        ),
+        (
+            "docs/scenario-link-generated-runners.md".to_string(),
+            read_repo_file("docs/scenario-link-generated-runners.md"),
+        ),
+        (
+            "docs/default-workflow-pr-readiness.md".to_string(),
+            read_repo_file("docs/default-workflow-pr-readiness.md"),
+        ),
+    ];
+
+    for scenario_id in FIRST_LESSON_READER_SCENARIOS {
+        let path = format!("assets/scenarios/eatme/{scenario_id}.yaml");
+        targets.push((path.clone(), read_repo_file(&path)));
+    }
+
+    targets
 }
 
 fn repository_root() -> PathBuf {
@@ -416,7 +443,11 @@ fn blocked_reader_terms() -> &'static [&'static str] {
 
 fn uses_positive_proof_language(line: &str) -> bool {
     let lower = line.to_lowercase();
-    if lower.contains("does not prove") || lower.contains("unproven") {
+    if lower.contains("does not prove")
+        || lower.contains("not proven")
+        || lower.contains("not yet proven")
+        || lower.contains("unproven")
+    {
         return false;
     }
 
