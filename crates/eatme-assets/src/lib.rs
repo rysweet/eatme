@@ -17,6 +17,8 @@ mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 #[cfg(test)]
+mod lesson_session_readiness_doc_tests;
+#[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
 mod neighborhood_data_story_tests;

@@ -51,6 +51,23 @@ targets unless a harness owns that behavior.
 Instructor and teacher mean the same role in this contract unless a scenario
 explicitly distinguishes them.
 
+## Scenario-to-gap matrix
+
+This matrix explains what each scenario is meant to show, what remains
+unproven, and what evidence would be needed before claiming that capability. It
+includes the canonical lesson-session rows above and adjacent
+classroom-readiness scenarios. Each gap is written as the missing proof a
+student or instructor would need to see, not as an internal task.
+
+| Scenario | What the user is trying to do | Remaining gap | Evidence still needed |
+| --- | --- | --- | --- |
+| First lesson real UI actions | Start Alice, see the lesson window, and try the first visible classroom actions with clear stopping points. | The current evidence does not yet show how far a learner can proceed beyond launch and safe action probes without classroom observation. | A learner-facing run that shows the visible action attempted, the result seen on screen, the boundary reached, and the prompt a learner receives next. |
+| Starter project open, save, and export preflight | Open a starter project, name one small change to try, and understand what still needs to be checked before relying on the project in class. | The current evidence does not yet show that a learner can make the named change, return to the project later, or produce an export without help. | A reproducible learner journey showing the opened project, the named change to try, the later change, return, or export attempt, and the exact result shown to the learner. |
+| Instructor lesson materials remix | Prepare a teacher plan, student handout, and exit ticket from Alice lesson resources. | The current evidence does not yet show that the packet works for a real class period with students using the handout. | Instructor-facing classroom notes showing which prompts students used, what confused them, and what the instructor changed before reuse. |
+| Instructor-to-student launch handoff | Turn launch and window evidence into a plain student prompt for recording one Alice action, visible result, and next revision. | The current evidence does not yet show that students can use the handoff to separate setup readiness from their own project behavior. | Student-visible handoff samples and instructor notes showing what students recorded, where they needed help, and which evidence stayed environment-only. |
+| Student outcomes discussion rubric | Discuss student Alice projects using visible behavior, learner explanation, process evidence, and one next revision. | The current evidence does not yet show that the rubric supports consistent human discussion across different student projects. | Instructor-visible rubric use notes showing examples of visible behavior, student explanation, process evidence, and revision feedback across varied projects. |
+| Classroom gallery walk and rubric | Help students review one another's Alice projects with respectful evidence, questions, and revision ideas. | The current evidence does not yet show that the gallery walk works across a live group of varied projects and peer reviewers. | Classroom-facing gallery notes showing peer observations, creator responses, revision checkpoints, and instructor boundary notes without private student records. |
+
 ## First-lesson next action readiness
 
 eatme checks whether RabbitHole has produced the evidence needed before
