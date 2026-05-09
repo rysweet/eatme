@@ -202,6 +202,50 @@ fn student_artifact_package_share_evidence_contract_names_review_handoff_boundar
 }
 
 #[test]
+fn student_sharing_readiness_docs_define_instructor_and_student_boundaries() {
+    let root = repository_root();
+    let contract = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
+
+    assert_contains_all(
+        "sharing readiness boundary docs",
+        &contract,
+        &[
+            "Student and teacher sharing scenarios define a review handoff, not a deployed sharing feature",
+            "Student | The student can hand off a packet",
+            "Instructor | The instructor can review the packet",
+            "Review boundary | A plain statement that the packet is for instructor or peer review, not proof of deployed sharing",
+            "No deployment or platform configuration is required for sharing readiness",
+            "These commands validate asset shape and adapter freshness. They do not upload, host, publish, moderate, or prove any deployed sharing service.",
+        ],
+    );
+}
+
+#[test]
+fn student_sharing_gadugi_adapter_preserves_review_handoff_boundary() {
+    let root = repository_root();
+    let adapter = fs::read_to_string(scenario_path(
+        &root,
+        "gadugi",
+        "student-artifact-package-share-evidence",
+    ))
+    .unwrap();
+
+    assert_contains_all(
+        "student-artifact-package-share-evidence Gadugi adapter",
+        &adapter,
+        &[
+            "Artifact review packet checklist includes artifact or screenshot reference",
+            "Student evidence handoff prompt asks the student to explain one Alice change",
+            "Instructor review boundary note separates environment evidence from student learning evidence",
+            "classroom review handoff",
+            "not hosted sharing",
+            "not deployed sharing",
+            "not platform success",
+        ],
+    );
+}
+
+#[test]
 fn media_audio_cue_storyboard_covers_media_audio_student_persona() {
     let root = repository_root();
     let path = scenario_path(&root, "eatme", "media-audio-cue-storyboard");
