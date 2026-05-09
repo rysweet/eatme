@@ -84,10 +84,10 @@ RabbitHole-produced desktop evidence:
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. Readiness marks the next first-lesson action `ready` only after
 RabbitHole evidence files show launch, the Run window, desktop execution,
-screenshot artifacts, log artifacts, window artifacts, a readable action
-contract, project proof-artifact states, and explicit boundary states for Select
-Project, procedure/edit, Save, visible rendering, grading, creative assessment,
-and first-lesson completion.
+screenshot artifacts, log artifacts, window artifacts, a readable first-action
+evidence file, project proof-artifact states, and explicit boundary states for
+Select Project, procedure/edit, Save, visible rendering, grading, creative
+assessment, and first-lesson completion.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
@@ -103,23 +103,23 @@ readiness.
 
 The comparison evidence must include both `baseline` and `modernized` targets
 for the same `first-lessons-real-ui-actions` scenario. Both targets must satisfy
-the shared launch and action-contract checks. The modernized target also owns
+the shared launch and action evidence checks. The modernized target also owns
 the RabbitHole desktop execution check.
 
 | Required evidence | Existing artifact or assertion | `not_ready` or `blocked` condition |
 | --- | --- | --- |
-| Target identity | `comparison-manifest.json` with `execute_requested: true`, `scenario_id: "first-lessons-real-ui-actions"`, and both `baseline` and `modernized` target entries | Missing target, wrong scenario id, missing lesson-session contract, or target produced without execution. |
+| Target identity | `comparison-manifest.json` with `execute_requested: true`, `scenario_id: "first-lessons-real-ui-actions"`, and both `baseline` and `modernized` target entries | Missing target, wrong scenario id, missing lesson-session evidence, or target produced without execution. |
 | Real Alice launch evidence | Embedded target launch manifest with the required first-lesson assertions, including `real_alice_execution_evidence`, `specific_alice_window_detected`, `activate_alice_window_ui_action`, `save_project_desktop_shortcut_dispatch`, `place_object_candidate_hook_probe`, and `ui_action_artifact_captured` | Missing launch manifest, wrong launch-manifest scenario id, missing required assertion, or required assertion not passing. |
 | Specific Alice window evidence | `specific_alice_window_detected` and `activate_alice_window_ui_action` assertions | No specific Alice Stage IDE window, or activation evidence is absent. |
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
-| Action contract artifact | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
+| First-action evidence file | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
 | Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove Save completion without distinct explicit Save-completion evidence. |
 | Select Project proof artifact | `select_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
 | Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
 
-Readiness directly resolves and validates the UI action contract path, the
+Readiness directly resolves and validates the first-action evidence file path, the
 modernized visible desktop screenshot, and the desktop next-action evidence
 proof-artifact states. Other launch artifacts such as logs, window lists, and
 startup screenshots are represented through launch-manifest assertions;
@@ -172,7 +172,7 @@ Treat these states as the decision for the next first-lesson action:
 | Readiness result | Meaning | Required response |
 | --- | --- | --- |
 | `status: "not_ready"` | RabbitHole evidence is absent, incomplete, malformed, outside the expected evidence root, or not linked to the first-lesson scenario. | Do not proceed. Produce or repair the RabbitHole evidence artifact, then rerun readiness. |
-| `status: "blocked"` | Required evidence is readable and coherent, the target failure category is a known UI-action blocker, and unsupported actions remain represented by explicit `no_go` entries. | Do not claim full first-lesson automation. Keep the blocker visible until deterministic action evidence replaces the unsupported-action entry. |
+| `status: "blocked"` | Required evidence is readable and coherent, the target failure category is a known UI-action blocker, and unsupported actions remain represented by explicit `no_go` entries. | Do not claim full first-lesson automation. Keep the blocker visible until repeatable action evidence replaces the unsupported-action entry. |
 | `status: "ready"` | Required RabbitHole and repository evidence is present, coherent, and free of known unsupported desktop action blockers. | Treat the report as readiness to proceed to the next bounded first-lesson action only. Do not treat it as lesson completion. |
 
 Local validation, launcher readiness, archive recovery, Run-window evidence, and
@@ -286,7 +286,7 @@ source file under `assets/scenarios/eatme/` and regenerate.
 ### Check a comparison manifest
 
 After a first-lesson comparison run writes a comparison manifest, verify the
-lesson-session contract:
+lesson-session evidence:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-session \
@@ -343,7 +343,7 @@ Interpret the result as the required evidence check:
 | `status: "blocked"` | Required RabbitHole evidence was read, but it includes an explicit reason a bounded claim is not yet shown. |
 
 Do not promote repository-only evidence to RabbitHole success. Asset validation,
-adapter freshness, launcher checks, archive recovery, Run-window evidence, and
+generated-runner freshness, launcher checks, archive recovery, Run-window evidence, and
 desktop execution evidence are useful only when the readiness report can connect
 them to the RabbitHole target in the comparison manifest. Keep full UI
 automation, grading, creative assessment, visible rendering correctness, Save
@@ -411,7 +411,7 @@ evidence exists, the target failure category is a known UI-action blocker, and
 the remaining unsupported actions are represented by explicit blocker entries.
 
 For `first-lessons-real-ui-actions`, that blocked-but-valid state is the
-evidence-ready state when deterministic object placement, procedure editing,
+evidence-ready state when repeatable object placement, procedure editing,
 world running, or project saving affordances are still represented by
 unsupported-action entries. The `ready` state is the no-blocker state: the report
 uses it only when required evidence is present and no unsupported-action blocker
@@ -824,9 +824,10 @@ Real Alice launch/action evidence requires the desktop dependency set documented
 in [Alice Integration](alice-integration.md): Java 21, Maven, Xvfb, `xdpyinfo`,
 `wmctrl`, `xwininfo`, `xdotool`, screenshot tooling, and software OpenGL support.
 
-CI should keep validation, adapter freshness, Rust checks, and docs builds fast.
-Do not add unconditional real desktop execution to required pull-request jobs.
-Real Alice smoke and readiness runs remain explicit local or self-hosted gates.
+CI should keep validation, generated-runner freshness, Rust checks, and docs
+builds fast. Do not add unconditional real desktop execution to required
+pull-request jobs. Real Alice smoke and readiness runs remain explicit local or
+self-hosted gates.
 
 ## Examples
 
@@ -935,7 +936,7 @@ cargo run -q -p eatme-cli -- assets validate \
   --json
 ```
 
-The instructor handoff asset uses the real Alice manifest, log, window list,
+The instructor handoff asset uses the real Alice run summary, log, window list,
 screenshot, and `ui-action-contract.json` as evidence inputs. It produces:
 
 | Output | Required content |
@@ -992,13 +993,13 @@ or deployed-service status.
      --json
    ```
 
-7. Check generated adapter freshness:
+7. Check generated runner freshness:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
    ```
 
-8. If adapters are stale, regenerate them:
+8. If generated runner files are stale, regenerate them:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --json
@@ -1007,7 +1008,7 @@ or deployed-service status.
 9. For student first-lesson changes, run or inspect a readiness report and
    confirm it exposes `status`, `lesson_session_readiness`, and the
    first-lesson scenario evidence boundaries. For instructor-only asset changes,
-   keep the evidence boundary in scenario validation and generated adapters
+   keep the evidence boundary in scenario validation and generated runner files
    unless an executable instructor harness is added.
 10. Run the repository quality gate before handoff:
 

@@ -81,11 +81,15 @@ fn silver_thread_docs_link_to_their_canonical_scenario_assets() {
 
 #[test]
 fn silver_thread_reader_sections_use_plain_outcome_language() {
+    let index = read_repo_file("docs/index.md");
+    let alice_lesson_smoke = read_repo_file("docs/alice-lesson-smoke.md");
+    let lesson_session_readiness = read_repo_file("docs/lesson-session-readiness.md");
+
     let sections = [
         (
             "docs/index.md",
             section(
-                &read_repo_file("docs/index.md"),
+                &index,
                 "## Silver-thread lesson path",
                 "## What eatme proves",
             ),
@@ -93,7 +97,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
         (
             "docs/index.md",
             section(
-                &read_repo_file("docs/index.md"),
+                &index,
                 "## Outside-in evidence for Alice lesson scenarios",
                 "## Main workflows",
             ),
@@ -101,7 +105,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
         (
             "docs/alice-lesson-smoke.md",
             section(
-                &read_repo_file("docs/alice-lesson-smoke.md"),
+                &alice_lesson_smoke,
                 "## Outside-in evidence guide for Alice lesson scenarios",
                 "### Evidence reporting vocabulary",
             ),
@@ -109,7 +113,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
         (
             "docs/lesson-session-readiness.md",
             section(
-                &read_repo_file("docs/lesson-session-readiness.md"),
+                &lesson_session_readiness,
                 "## Scenario map",
                 "## First-lesson next action readiness",
             ),
@@ -118,7 +122,7 @@ fn silver_thread_reader_sections_use_plain_outcome_language() {
 
     let mut violations = Vec::new();
     for (doc_path, section_text) in sections {
-        collect_plain_language_violations(doc_path, &section_text, &mut violations);
+        collect_plain_language_violations(doc_path, section_text, &mut violations);
     }
 
     assert!(
@@ -167,30 +171,34 @@ fn assert_in_order(contents: &str, expected: &[&str]) {
 }
 
 fn has_markdown_link_to_scenario_asset(contents: &str, scenario_id: &str) -> bool {
+    let expected_target = format!("assets/scenarios/eatme/{scenario_id}.yaml");
     markdown_links(contents).any(|(label, target)| {
-        label.trim_matches('`') == scenario_id
-            && target.contains(&format!("assets/scenarios/eatme/{scenario_id}.yaml"))
+        label.trim_matches('`') == scenario_id && target.contains(&expected_target)
     })
 }
 
-fn markdown_links(contents: &str) -> impl Iterator<Item = (String, String)> + '_ {
+fn markdown_links(contents: &str) -> impl Iterator<Item = (&str, &str)> + '_ {
     let mut rest = contents;
     std::iter::from_fn(move || {
-        loop {
-            let open = rest.find('[')?;
+        while let Some(open) = rest.find('[') {
             rest = &rest[open + 1..];
-            let close = rest.find("](")?;
-            let label = rest[..close].to_string();
+            let Some(close) = rest.find("](") else {
+                continue;
+            };
+            let label = &rest[..close];
             rest = &rest[close + 2..];
-            let target_close = rest.find(')')?;
-            let target = rest[..target_close].to_string();
+            let Some(target_close) = rest.find(')') else {
+                continue;
+            };
+            let target = &rest[..target_close];
             rest = &rest[target_close + 1..];
             return Some((label, target));
         }
+        None
     })
 }
 
-fn section(contents: &str, start_marker: &str, end_marker: &str) -> String {
+fn section<'a>(contents: &'a str, start_marker: &str, end_marker: &str) -> &'a str {
     let start = contents
         .find(start_marker)
         .unwrap_or_else(|| panic!("missing section start `{start_marker}`"));
@@ -199,7 +207,7 @@ fn section(contents: &str, start_marker: &str, end_marker: &str) -> String {
         .find(end_marker)
         .map(|offset| after_start + offset)
         .unwrap_or(contents.len());
-    contents[start..end].to_string()
+    &contents[start..end]
 }
 
 fn collect_plain_language_violations(path: &str, text: &str, violations: &mut Vec<String>) {
@@ -211,10 +219,10 @@ fn collect_plain_language_violations(path: &str, text: &str, violations: &mut Ve
     }
 }
 
-fn collect_reader_field_violations(
+fn collect_reader_field_violations<'a>(
     path: &str,
-    value: &Value,
-    field_path: &mut Vec<String>,
+    value: &'a Value,
+    field_path: &mut Vec<&'a str>,
     violations: &mut Vec<String>,
 ) {
     match value {
@@ -223,7 +231,7 @@ fn collect_reader_field_violations(
                 let Some(key) = key.as_str() else {
                     continue;
                 };
-                field_path.push(key.to_string());
+                field_path.push(key);
                 if is_reader_facing_field(key) {
                     collect_value_text_violations(path, child, field_path, violations);
                 } else {
@@ -241,10 +249,10 @@ fn collect_reader_field_violations(
     }
 }
 
-fn collect_value_text_violations(
+fn collect_value_text_violations<'a>(
     path: &str,
-    value: &Value,
-    field_path: &[String],
+    value: &'a Value,
+    field_path: &[&'a str],
     violations: &mut Vec<String>,
 ) {
     match value {

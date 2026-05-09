@@ -164,7 +164,7 @@ Avoid brittle evidence:
 Some editable scenarios and generated files intentionally retain technical names
 such as `kind: alice_real_ui_action_contract`, `ui-action-contract.json`,
 `adapter`, `schema_version`, and `manifest`. Use those names when referring to
-exact fields, files, command output, or compatibility contracts. In reader-facing
+exact fields, files, command output, or compatibility names. In reader-facing
 guides, translate the same boundary to plain wording such as first-lesson
 readiness evidence, first-action evidence, generated runner files, and run
 summary evidence.
@@ -176,7 +176,7 @@ scenarios, describe the finished evidence boundary exactly:
 
 | Claim | Acceptable wording |
 | --- | --- |
-| Launch smoke | "records scenario-labeled launch manifest, log, window, screenshot, and assertion evidence" |
+| Launch smoke | "records scenario-labeled run summary, log, window, screenshot, and assertion evidence" |
 | Student action path | "records first-action evidence for first object placement, procedure/code edit, run-world, and save-project boundaries when each boundary can be proven" |
 | Instructor remix | "produces teacher plan, student handout, exit ticket, review prompts, and remix notes" |
 | Boundary | "not full UI automation, not creative assessment, and not learner-world grading" |

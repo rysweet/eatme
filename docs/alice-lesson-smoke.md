@@ -69,18 +69,19 @@ smoke readiness from repeatable harness evidence:
 - Alice log and window-list files are captured as artifacts when available.
 - A non-empty startup screenshot or captured window list proves visual startup
   evidence for desktop scenarios. Screenshots are represented by the top-level
-  `screenshot` manifest artifact when available.
+  `screenshot` artifact when available.
 - The run artifacts are stored under a scenario-specific run directory.
 
 Most scenarios intentionally stop at launch-ready evidence so lesson smokes remain
 stable in normal developer and CI environments. For the Hour of Code studio
 kickoff, learner-visible first-scene, first-animation, evidence, and reflection
-expectations live in editable YAML as agentic follow-on contracts; runtime smoke
-still stops at deterministic launch-ready evidence.
+expectations live in editable YAML as follow-on evidence requirements; runtime
+smoke still stops at repeatable launch-ready evidence.
 
 The baseline `real-alice-launch-smoke` scenario proves only the scenario-labeled
-launch path and captured manifest/log/window/screenshot evidence. It is not full
-UI automation, not creative assessment, and not learner-world grading.
+launch path and captured run summary, log, window, and screenshot evidence. It
+is not full UI automation, not creative assessment, and not learner-world
+grading.
 
 The `first-lessons-real-ui-actions` scenario is different: it is the executable
 scenario for first-lesson readiness progress and first-lesson evidence
@@ -109,23 +110,23 @@ exact file or JSON field.
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
 required before anyone claims a modified class travels between Alice projects.
-The shared launch-smoke path records the scenario manifest; class export/import
-proof remains an explicit evidence contract for follow-on automation or agentic
-review.
+The shared launch-smoke path records the scenario run summary; class
+export/import proof remains an explicit evidence requirement for follow-on
+automation or agentic review.
 
-The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight contract:
+The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight rule:
 real headset or Alice Player VR execution is optional, but availability must be
 recorded. If real VR is unavailable, evidence must state
-`real_vr_available=false` and include the desktop launch manifest plus
+`real_vr_available=false` and include the desktop launch summary plus
 camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
 outside-in and evidence-based instead of silently skipping unavailable hardware.
 
 The expanded instructor/student outside-in scenarios use the same rule. Real Alice
 execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
-manifest proves the selected scenario reached a smoke-ready desktop session; it does
-not replace the scenario-specific readiness checklist, migration map, comfort
-notes, import review, fallback artifact, or student reflection required by the
-YAML contract.
+run summary proves the selected scenario reached a smoke-ready desktop session;
+it does not replace the scenario-specific readiness checklist, migration map,
+comfort notes, import review, fallback artifact, or student reflection required
+by the YAML.
 
 Instructor lesson-material evidence is handled separately by
 `instructor-lesson-materials-remix`. That classroom asset verifies
@@ -894,5 +895,5 @@ malformed scenario fixtures fail with actionable messages, the fake harness
 proves the scenario id is routed through the existing launch smoke path, and the
 gated real Alice command produces distinct scenario artifacts when the host
 supports desktop launch. UI action, portability, and VR claims also require
-their declared evidence contracts; a scenario-labeled launch manifest alone is
+their declared evidence requirements; a scenario-labeled launch summary alone is
 not enough to claim those user outcomes.

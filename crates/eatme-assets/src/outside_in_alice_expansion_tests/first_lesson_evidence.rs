@@ -23,17 +23,17 @@ fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
     .unwrap();
     let launch_contract =
         fs::read_to_string(scenario_path(&root, "eatme", "real-alice-launch-smoke")).unwrap();
-    let docs = [
+    let mut docs = String::new();
+    for path in [
         root.join("docs/alice-lesson-smoke.md"),
         root.join("docs/student-missions.md"),
         root.join("docs/instructor-missions.md"),
         root.join("docs/persona-assets.md"),
         root.join("docs/index.md"),
-    ]
-    .into_iter()
-    .map(|path| fs::read_to_string(path).unwrap())
-    .collect::<Vec<_>>()
-    .join("\n");
+    ] {
+        docs.push_str(&fs::read_to_string(path).unwrap());
+        docs.push('\n');
+    }
 
     assert_contains_all(
         "first-lessons-real-ui-actions contract",
@@ -43,7 +43,7 @@ fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
             "manifest, Alice log, window list, and startup screenshot evidence",
             "Alice window detection",
             "ui-action-contract.json",
-            "preflight launch/action-contract readiness evidence only",
+            "preflight launch/action readiness evidence only",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",
@@ -82,7 +82,7 @@ fn first_lesson_evidence_contracts_stay_explicit_and_honest() {
             "first-lessons-real-ui-actions",
             "instructor-lesson-materials-remix",
             "real-alice-launch-smoke",
-            "preflight launch/action-contract readiness evidence only",
+            "preflight launch/action readiness evidence only",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",
@@ -120,7 +120,7 @@ fn first_lesson_readiness_purpose_names_preflight_evidence_without_completion_cl
         "first-lessons-real-ui-actions purpose",
         &scenario.purpose,
         &[
-            "preflight launch/action-contract readiness evidence only",
+            "preflight launch/action readiness evidence only",
             "setup, launch support, handoff artifacts, and classroom support preparation",
             "not full UI automation",
             "not creative assessment",

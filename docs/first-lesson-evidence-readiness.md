@@ -115,7 +115,7 @@ names. Human summaries should describe the same feature as first-lesson
 readiness evidence, first-action evidence, desktop proof, and not-yet-shown or
 blocked states.
 
-## Plain report contract
+## Plain report shape
 
 Plain output is for reviewers, instructors, and PR readers. It renders the
 readiness heading, one `Desktop proof` line, and then the user-facing sections in
@@ -380,7 +380,7 @@ new proof-generation timing policy.
 
 No setting enables automated creative grading, quality judgment, or lesson
 completion marking. Creative-assessment gap wording is part of the first-lesson
-readiness report contract.
+readiness report.
 
 ## Tutorials
 
@@ -441,14 +441,14 @@ cargo run -q -p eatme-cli -- assets validate \
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
-If generated adapters are stale, regenerate them from the canonical assets:
+If generated runner files are stale, regenerate them from the canonical assets:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --json
 ```
 
-Do not encode readiness facts only in generated adapters, binary artifacts, or
-one-off run outputs.
+Do not encode readiness facts only in generated runner files, binary artifacts,
+or one-off run outputs.
 
 ## Writing readiness-related docs and PRs
 
@@ -466,7 +466,7 @@ The durable rule is simple: report what the evidence explicitly shows, report
 missing states as not yet shown or not yet proven, and keep the six unproven
 claims visible.
 
-## Implementation contract
+## Implementation rules
 
 The Rust implementation:
 
