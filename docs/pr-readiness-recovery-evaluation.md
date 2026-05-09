@@ -6,9 +6,11 @@ evaluator, and producing a typed `MERGE_READY` or `NOT_MERGE_READY` verdict. It
 enforces exact-SHA binding, input safety, required GitHub checks, quality-audit
 cycles, diff scope focus, and bounded nonclaims.
 
-This system does not validate full Alice UI automation, visible rendering
-correctness, grading, creative assessment, Save completion, first-lesson
-completion, or full Tweedle/player decode. Those remain explicit nonclaims.
+This system does not validate full Alice UI automation, full UI automation, full
+world execution, UI rendering correctness, visible rendering correctness,
+grading, creative assessment, Save completion, deployed sharing/platform
+success, first-lesson completion, full lesson completion, complete Alice
+coverage, or full Tweedle/player decode. Those remain explicit nonclaims.
 
 ## Contents
 
@@ -129,7 +131,7 @@ The input file must conform to `RecoveryReadinessInput` with schema version
 ```json
 {
   "schema_version": "pr-readiness-recovery.v1",
-  "expected_remote_head_sha": "<full-40-char-sha>",
+  "expected_remote_head_sha": "<full-40-char-sha-or-null>",
   "snapshot": { "...PrReadinessSnapshot..." },
   "validation_sha": "<full-40-char-sha>",
   "required_github_checks": ["quality-gates"],
@@ -151,6 +153,11 @@ The input file must conform to `RecoveryReadinessInput` with schema version
 }
 ```
 
+`expected_remote_head_sha` is nullable (`Option<String>`, defaults to `null`
+when omitted). `required_github_checks` defaults to `[]` when omitted. Both
+are structurally optional but the evaluator requires them for PR #204
+evaluation.
+
 ### Baseline constraints
 
 The evaluator enforces these baseline rules for the current PR:
@@ -158,7 +165,8 @@ The evaluator enforces these baseline rules for the current PR:
 - `schema_version` must be exactly `pr-readiness-recovery.v1`
 - `snapshot.pr_number` must be `204`
 - `snapshot.branch` must match the expected PR branch
-- `expected_remote_head_sha` is required and must be a valid 40-character hex SHA
+- `expected_remote_head_sha` must be present and a valid 40-character hex SHA
+  (nullable in the schema but required by the PR #204 evaluator)
 - GitHub PR head, local HEAD, and validation SHA must all equal the expected
   remote head
 
@@ -250,7 +258,10 @@ allowed recovery scope:
 | `crates/eatme-core/src/command.rs` | exact path |
 | `src/eatme_uvx/cli.py` | exact path |
 | `docs/default-workflow-pr-readiness.md` | exact path |
+| `docs/pr-readiness-recovery-evaluation.md` | exact path |
+| `docs/cli-usage.md` | exact path |
 | `docs/index.md` | exact path |
+| `mkdocs.yml` | exact path |
 | `.pre-commit-config.yaml` | exact path |
 | `pyproject.toml` | exact path |
 | `scripts/check-module-size.sh` | exact path |
@@ -258,6 +269,10 @@ allowed recovery scope:
 | `assets/scenarios/gadugi/*.yaml` | Gadugi adapter YAML files |
 
 Files outside this scope produce a blocker.
+
+New documentation pages (such as this reference page) require adding their path
+to the focused recovery scope in `recovery_scope.rs` before they can appear in
+a recovery PR's diff scope without producing a blocker.
 
 ### Docs impact
 
@@ -322,7 +337,7 @@ The evaluator produces a `RecoveryReadinessReport`:
 | --- | --- |
 | `status` | `MERGE_READY` when `blockers` is empty; `NOT_MERGE_READY` otherwise |
 | `branch` | Sanitized branch name |
-| `expected_remote_head_sha` | The SHA that all evidence must target |
+| `expected_remote_head_sha` | The SHA that all evidence must target (nullable in schema; present when merge-ready) |
 | `final_head_sha` | The local HEAD SHA at evaluation time |
 | `validation_status` | Human-readable status string naming the exact HEAD |
 | `change_outcome` | Sanitized echo of the input change outcome |
@@ -385,7 +400,7 @@ string to the report:
 | Required check names | `required_github_checks must name trusted required GitHub checks` |
 | Check head evidence | `GitHub Actions check <name> is for <old>, not exact head <sha>` |
 | Check results | `required GitHub Actions check <name> is not green at <sha>` |
-| Mergeability | `PR #204 is not merge-ready: mergeStateStatus=BLOCKED mergeable=CONFLICTING` |
+| Mergeability | `PR #204 is not merge-ready at <sha>: mergeStateStatus=BLOCKED mergeable=CONFLICTING` |
 | Evidence name | `expected evidence named asset validation, got assets` |
 | Evidence command | `asset validation must use command <expected> at <sha>, got <actual>` |
 | Evidence SHA | `asset validation evidence names <old>, but final validation requires <new>` |
@@ -397,8 +412,8 @@ string to the report:
 | Diff scope path | `focused diff scope excludes unrelated path <path>` |
 | Docs impact | `docs impact requires strict documentation build evidence` |
 | PR description | `pr_description_evidence must name the validation SHA` |
-| Stale evidence | `stale_evidence_handled must be true` |
-| Change outcome | No-op justification empty or FilesModified validation |
+| Stale evidence | `older tested-head evidence must be labeled stale/non-current before reporting <sha> as ready` |
+| Change outcome | `No-op justification is required when no files changed at <sha>` or `Files modified must list at least one path` |
 
 ## Safety and sanitization
 
@@ -548,11 +563,16 @@ The GitHub snapshot fetcher uses:
 The recovery evaluation system does not validate:
 
 - full Alice UI automation
+- full UI automation
 - full world execution
-- UI rendering correctness or visible rendering correctness
-- grading or creative assessment
-- Save completion or first-lesson completion
+- UI rendering correctness
+- visible rendering correctness
+- grading
+- creative assessment
+- Save completion
 - deployed sharing/platform success
+- first-lesson completion
+- full lesson completion
 - complete Alice coverage
 - full Tweedle/player decode
 

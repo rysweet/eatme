@@ -24,10 +24,13 @@ fn is_focused_recovery_path(file: &str) -> bool {
         || file == "crates/eatme-cli/src/main.rs"
         || file == "crates/eatme-core/src/command.rs"
         || file == "pyproject.toml"
+        || file == "mkdocs.yml"
         || file == "scripts/check-module-size.sh"
         || file.starts_with("crates/eatme-cli/src/pr_readiness")
         || file == "src/eatme_uvx/cli.py"
         || file == "docs/default-workflow-pr-readiness.md"
+        || file == "docs/pr-readiness-recovery-evaluation.md"
+        || file == "docs/cli-usage.md"
         || file == "docs/index.md"
         || is_yaml_under(file, "assets/scenarios/eatme/")
         || is_yaml_under(file, "assets/scenarios/gadugi/")
