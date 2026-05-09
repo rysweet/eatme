@@ -1,13 +1,13 @@
 use super::{
-    LessonSessionContractCheck, check_lesson_session_contract,
+    LessonSessionContractCheck,
     desktop_evidence::{
-        DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
-        DesktopRunPixelObservationEvidence, FirstLessonEvidenceBoundary,
-        check_first_lesson_next_action_evidence, check_pixel_boundary_evidence,
-        check_pixel_observation_evidence, check_visible_desktop_evidence, comparison_evidence_root,
-        first_lesson_evidence_boundaries, resolve_artifact_path,
+        FirstLessonEvidenceBoundary, check_first_lesson_next_action_evidence,
+        check_pixel_boundary_evidence, check_pixel_observation_evidence,
+        check_visible_desktop_evidence, comparison_evidence_root, first_lesson_evidence_boundaries,
+        resolve_artifact_path,
     },
     first_lesson::FIRST_LESSON_SCENARIO_ID,
+    lesson_session::check_lesson_session_contract_in_manifest,
     ui_action_contract::{action_ids, inspect_ui_action_contract},
 };
 use anyhow::{Context, Result};
@@ -28,8 +28,14 @@ pub use desktop_proof::DesktopProofContract;
 use desktop_proof::desktop_proof_contract;
 pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
-pub use output::LessonSessionReadinessEnvelope;
-use output::build_readiness_output;
+pub use output::{
+    DesktopNextActionSummary, LessonSessionReadinessEnvelope, LessonTargetEvidence,
+    LessonTargetEvidenceBlocker, ReadinessEvidenceItem,
+};
+use output::{
+    build_readiness_output, desktop_next_action_summary, limitations, not_yet_shown,
+    shown_evidence, unproven_claims,
+};
 use progress::evidence_progress;
 pub use progress::{LessonReadinessEvidenceProgress, LessonReadinessEvidenceProgressItem};
 
@@ -71,6 +77,11 @@ pub struct LessonSessionReadinessReport {
     pub blocked_reason: Option<String>,
     pub human_summary: String,
     pub desktop_proof_contract: DesktopProofContract,
+    pub shown_evidence: Vec<ReadinessEvidenceItem>,
+    pub not_yet_shown: Vec<ReadinessEvidenceItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub desktop_next_action: Option<DesktopNextActionSummary>,
+    pub unproven_claims: Vec<String>,
     pub evidence_progress: LessonReadinessEvidenceProgress,
     pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
     pub required_evidence: Vec<String>,
@@ -84,33 +95,6 @@ pub struct LessonSessionReadinessReport {
     pub limitations: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct LessonTargetEvidence {
-    pub role: String,
-    pub target_id: Option<String>,
-    pub target_status: Option<String>,
-    pub failure_category: Option<String>,
-    pub launch_manifest_present: bool,
-    pub ui_action_contract_path: Option<String>,
-    pub ui_action_contract_readable: bool,
-    pub desktop_run_pixel_boundary: Option<DesktopRunPixelBoundaryEvidence>,
-    pub desktop_run_pixel_observation: Option<DesktopRunPixelObservationEvidence>,
-    pub desktop_first_lesson_next_action: Option<DesktopFirstLessonNextActionEvidence>,
-    pub action_assertions: Vec<LessonActionAssertionEvidence>,
-    pub required_actions: Vec<String>,
-    pub missing_assertions: Vec<String>,
-    pub missing_required_actions: Vec<String>,
-    pub blockers: Vec<LessonTargetEvidenceBlocker>,
-    pub no_go_contracts: Vec<LessonSessionNoGoContract>,
-}
-
-#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
-pub struct LessonTargetEvidenceBlocker {
-    pub code: &'static str,
-    pub action: String,
-    pub reason: String,
-}
-
 pub fn check_lesson_session_readiness(
     manifest_path: &Path,
 ) -> Result<LessonSessionReadinessReport> {
@@ -118,7 +102,7 @@ pub fn check_lesson_session_readiness(
         .with_context(|| format!("reading comparison manifest {}", manifest_path.display()))?;
     let manifest: serde_json::Value = serde_json::from_str(&text)
         .with_context(|| format!("parsing comparison manifest {}", manifest_path.display()))?;
-    let contract_check = check_lesson_session_contract(manifest_path)?;
+    let contract_check = check_lesson_session_contract_in_manifest(manifest_path, &manifest)?;
     let scenario_id = manifest
         .get("scenario_id")
         .and_then(serde_json::Value::as_str)
@@ -176,7 +160,7 @@ pub fn check_lesson_session_readiness(
     .to_string();
     let no_go_contracts = target_evidence
         .iter()
-        .flat_map(|target| target.no_go_contracts.clone())
+        .flat_map(|target| target.no_go_contracts.iter().cloned())
         .collect::<Vec<_>>();
     let readiness_output = build_readiness_output(
         scenario_id.as_deref(),
@@ -193,17 +177,10 @@ pub fn check_lesson_session_readiness(
     let evidence_boundaries = readiness_evidence_boundaries(manifest_path, &target_evidence);
     let desktop_proof_contract =
         desktop_proof_contract(execute_requested, &target_evidence, &issues);
-
-    let limitations = vec![
-        "does not prove full Alice UI automation".into(),
-        "does not automate complete instructor assignment creation".into(),
-        "does not automate complete student lesson consumption".into(),
-        "does not perform creative assessment".into(),
-        "does not grade student worlds".into(),
-        "does not prove visible rendering correctness".into(),
-        "does not prove first-lesson completion".into(),
-        "does not prove broad Alice compatibility beyond the selected scenario".into(),
-    ];
+    let shown_evidence = shown_evidence(&evidence_progress, &evidence_boundaries);
+    let not_yet_shown = not_yet_shown(&evidence_progress, &evidence_boundaries);
+    let desktop_next_action = desktop_next_action_summary(&target_evidence);
+    let unproven_claims = unproven_claims();
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
@@ -214,6 +191,10 @@ pub fn check_lesson_session_readiness(
         blocked_reason: readiness_output.blocked_reason,
         human_summary: readiness_output.human_summary,
         desktop_proof_contract,
+        shown_evidence,
+        not_yet_shown,
+        desktop_next_action,
+        unproven_claims,
         evidence_progress,
         evidence_boundaries,
         required_evidence: readiness_output.required_evidence,
@@ -224,7 +205,7 @@ pub fn check_lesson_session_readiness(
         execute_requested,
         target_evidence,
         issues,
-        limitations,
+        limitations: limitations(),
     })
 }
 

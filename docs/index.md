@@ -25,7 +25,6 @@ Eatme has three layers:
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
-| Keeping local hook artifacts out of commits | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
@@ -75,7 +74,7 @@ Alice launch path without overstating what the launch smoke proves.
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
-| `first-lessons-real-ui-actions` | Instructors, students, and reviewers | Preflight launch/action-contract readiness evidence for first-lesson setup, launch support, handoff artifacts, and classroom-support preparation, with `ui-action-contract.json`, `not_ready` for missing or insufficient evidence, and `blocked` for known unsupported desktop actions. |
+| `first-lessons-real-ui-actions` | Instructors, students, and reviewers | First-lesson readiness evidence for original Alice and RabbitHole; the report summarizes shown evidence, optional desktop next-action evidence, not-yet-shown states, and explicit unproven claims. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission
@@ -105,9 +104,6 @@ Audit instructor/student lesson-session readiness:
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
-Keep local agent hook runtime files out of commits:
-[Local Hook Artifacts](local-hook-artifacts.md).
-
 Build the docs site:
 
 ```bash
@@ -125,7 +121,6 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package

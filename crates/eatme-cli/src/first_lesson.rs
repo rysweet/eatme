@@ -1,8 +1,9 @@
 use anyhow::Result;
 use clap::Args;
+#[cfg(test)]
+use eatme_alice::compare::LessonReadinessEvidenceProgress;
 use eatme_alice::compare::{
-    FirstLessonEvidenceBoundary, FirstLessonReadinessSequenceReport,
-    LessonReadinessEvidenceProgress,
+    DesktopNextActionSummary, FirstLessonReadinessSequenceReport, ReadinessEvidenceItem,
 };
 use std::io::Write;
 use std::path::PathBuf;
@@ -66,72 +67,28 @@ fn write_first_lesson_readiness_result(
         terminal_plain(&report.desktop_proof_contract.reason_code),
         terminal_plain(&report.desktop_proof_contract.detail)
     )?;
-    writeln!(
-        writer,
-        "Evidence progress: {}",
-        terminal_plain(&report.evidence_progress.summary)
-    )?;
-    if let Some(blocker) = next_actionable_blocker_line(&report.evidence_progress) {
-        writeln!(writer, "{}", terminal_plain(&blocker))?;
+    write_readiness_items(&mut writer, "Shown:", &report.shown_evidence)?;
+    write_readiness_items(&mut writer, "Not yet shown:", &report.not_yet_shown)?;
+    if let Some(desktop_next_action) = &report.desktop_next_action {
+        write_desktop_next_action(&mut writer, desktop_next_action)?;
     }
-    if let Some(proof) = &report.evidence_progress.next_missing_real_desktop_proof {
-        writeln!(writer, "{}", terminal_plain(proof))?;
-    }
-    writeln!(
-        writer,
-        "automation scenarios evidence (present/missing/invalid/blocked; present is bounded scenario evidence only):"
-    )?;
-    for boundary in &report.evidence_boundaries {
-        writeln!(
-            writer,
-            "- {}: {} ({})",
-            terminal_plain(&boundary.status),
-            terminal_plain(&boundary.label),
-            terminal_plain(&boundary.detail)
-        )?;
-    }
-    if let Some(blockers) = scenario_blockers(&report.evidence_boundaries) {
-        writeln!(writer, "Blockers:")?;
-        for blocker in blockers {
-            writeln!(writer, "- {}", terminal_plain(&blocker))?;
-        }
-    }
-    if !report.limitations.is_empty() {
-        writeln!(writer, "Limits:")?;
-        for limitation in &report.limitations {
-            writeln!(writer, "- {}", terminal_plain(limitation))?;
-        }
-    }
-    if !report.issues.is_empty() {
-        writeln!(writer, "Still missing or blocked:")?;
-        for issue in &report.issues {
-            writeln!(writer, "- {}", terminal_plain(issue))?;
-        }
+    writeln!(writer, "Unproven:")?;
+    for claim in &report.unproven_claims {
+        writeln!(writer, "- {}", terminal_plain(claim))?;
     }
     Ok(())
 }
 
 fn scenario_readiness_status(report: &FirstLessonReadinessSequenceReport) -> &str {
-    if report.passed
-        && !report.evidence_boundaries.is_empty()
-        && report
-            .evidence_boundaries
-            .iter()
-            .all(|boundary| boundary.status == "present")
-    {
-        "ready"
-    } else {
-        "not ready"
+    match report.status.as_str() {
+        "ready" => "ready",
+        "blocked" => "blocked",
+        _ => match report.readiness_status.as_str() {
+            "ready" => "ready",
+            "blocked_until_ui_automation" => "blocked",
+            _ => "not ready",
+        },
     }
-}
-
-fn scenario_blockers(boundaries: &[FirstLessonEvidenceBoundary]) -> Option<Vec<String>> {
-    let blockers = boundaries
-        .iter()
-        .filter(|boundary| boundary.status != "present")
-        .map(|boundary| boundary.detail.clone())
-        .collect::<Vec<_>>();
-    (!blockers.is_empty()).then_some(blockers)
 }
 
 fn terminal_plain(value: &str) -> String {
@@ -146,6 +103,42 @@ fn terminal_plain(value: &str) -> String {
     text
 }
 
+fn write_readiness_items(
+    mut writer: impl Write,
+    heading: &str,
+    items: &[ReadinessEvidenceItem],
+) -> Result<()> {
+    writeln!(writer, "{heading}")?;
+    if items.is_empty() {
+        writeln!(writer, "- Nothing yet.")?;
+        return Ok(());
+    }
+    for item in items {
+        writeln!(writer, "- {}", terminal_plain(&item.summary))?;
+    }
+    Ok(())
+}
+
+fn write_desktop_next_action(
+    mut writer: impl Write,
+    desktop: &DesktopNextActionSummary,
+) -> Result<()> {
+    writeln!(writer, "Desktop next action:")?;
+    writeln!(writer, "- {}", terminal_plain(&desktop.summary))?;
+    for observation in &desktop.observations {
+        writeln!(writer, "- {}", terminal_plain(observation))?;
+    }
+    for required in &desktop.requires_next_evidence {
+        writeln!(
+            writer,
+            "- Next evidence needed: {}",
+            terminal_plain(required)
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
 fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> Option<String> {
     progress
         .next_actionable_blocker
@@ -164,8 +157,9 @@ fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> O
 mod tests {
     use super::*;
     use eatme_alice::compare::{
-        DesktopProofContract, LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
-        LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
+        DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgressItem,
+        LessonSessionContractCheck, LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
+        ReadinessEvidenceItem,
     };
     use std::collections::BTreeMap;
 
@@ -179,9 +173,12 @@ mod tests {
         write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
 
         let output = String::from_utf8(output).unwrap();
-        assert!(output.contains(
-            "Next blocker: desktop Run pixel observation is blocked: fix next: run Alice with a non-headless graphics environment"
-        ));
+        assert!(output.contains("Shown:"));
+        assert!(output.contains("Not yet shown:"));
+        assert!(output.contains("- Save option/action evidence is not yet shown."));
+        assert!(output.contains("Unproven:"));
+        assert!(!output.contains("Next blocker:"));
+        assert!(!output.contains("Evidence progress:"));
     }
 
     #[test]
@@ -196,9 +193,26 @@ mod tests {
         write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
 
         let output = String::from_utf8(output).unwrap();
-        assert!(output.contains(
-            "next missing real-desktop proof: activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions."
-        ));
+        assert!(output.contains("Not yet shown:"));
+        assert!(output.contains("- Save option/action evidence is not yet shown."));
+        assert!(output.contains("Unproven:"));
+        assert!(!output.contains("next missing real-desktop proof"));
+    }
+
+    #[test]
+    fn plain_output_uses_canonical_blocked_readiness_status() {
+        let mut report = sequence_report(progress_with_blocker(None));
+        report.passed = true;
+        report.status = "blocked".into();
+        report.readiness_status = "blocked_until_ui_automation".into();
+        report.evidence_boundaries = vec![present_boundary("save_project")];
+
+        let mut output = Vec::new();
+        write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains("First-lesson automation scenario readiness: blocked"));
+        assert!(!output.contains("First-lesson automation scenario readiness: ready"));
     }
 
     #[test]
@@ -213,8 +227,7 @@ mod tests {
         write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
 
         let output = String::from_utf8(output).unwrap();
-        assert!(output.contains("blocked Save Project proof artifact"));
-        assert!(output.contains("desktop next-action evidence"));
+        assert!(output.contains("Save option/action evidence is not yet shown."));
         assert!(!output.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
         assert!(!output.contains("Save completion evidence"));
         assert!(!output.contains("Save completed"));
@@ -258,10 +271,9 @@ mod tests {
 
     #[test]
     fn plain_output_escapes_control_characters_from_report_data() {
-        let mut progress =
-            progress_with_blocker(Some("blocked proof artifact\x1b[31m\nInjected line"));
-        progress.items[0].detail = "pixel detail\x1b[0m\nInjected detail".into();
-        let report = sequence_report(progress);
+        let mut report = sequence_report(progress_with_blocker(Some("blocked evidence")));
+        report.not_yet_shown[0].summary =
+            "Save option/action evidence is not yet shown.\x1b[31m\nInjected line".into();
 
         let mut output = Vec::new();
         write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
@@ -329,6 +341,10 @@ mod tests {
             blocked_reason: Some("blocked_until_ui_automation".into()),
             human_summary: "blocked".into(),
             desktop_proof_contract: desktop_proof_contract(),
+            shown_evidence: Vec::new(),
+            not_yet_shown: not_yet_shown_fixture(),
+            desktop_next_action: None,
+            unproven_claims: unproven_claims_fixture(),
             evidence_progress: progress.clone(),
             evidence_boundaries: Vec::new(),
             required_evidence: Vec::new(),
@@ -361,6 +377,10 @@ mod tests {
             blocked_reason: Some("blocked_until_ui_automation".into()),
             human_summary: "blocked".into(),
             desktop_proof_contract: desktop_proof_contract(),
+            shown_evidence: Vec::new(),
+            not_yet_shown: not_yet_shown_fixture(),
+            desktop_next_action: None,
+            unproven_claims: unproven_claims_fixture(),
             evidence_progress: progress,
             evidence_boundaries: Vec::new(),
             required_evidence: Vec::new(),
@@ -370,6 +390,44 @@ mod tests {
             issues: Vec::new(),
             limitations: Vec::new(),
             readiness_report,
+        }
+    }
+
+    fn not_yet_shown_fixture() -> Vec<ReadinessEvidenceItem> {
+        vec![ReadinessEvidenceItem {
+            id: "save_project".into(),
+            state: "missing".into(),
+            summary: "Save option/action evidence is not yet shown.".into(),
+            detail: "Save option/action evidence is not yet shown.".into(),
+            does_not_prove: vec!["Save completion".into()],
+        }]
+    }
+
+    fn unproven_claims_fixture() -> Vec<String> {
+        [
+            "Full Alice UI automation is not proven.",
+            "Grading is not proven.",
+            "Creative assessment is not proven.",
+            "Visible rendering correctness is not proven.",
+            "Save completion is not proven.",
+            "First-lesson completion is not proven.",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect()
+    }
+
+    fn present_boundary(id: &str) -> FirstLessonEvidenceBoundary {
+        FirstLessonEvidenceBoundary {
+            id: id.into(),
+            label: "Save Project scenario evidence".into(),
+            status: "present".into(),
+            source: "test".into(),
+            metadata_state: "present".into(),
+            detail: "Save option/action evidence is present.".into(),
+            claim: "Save option/action evidence was observed.".into(),
+            does_not_prove: Vec::new(),
+            artifact: None,
         }
     }
 

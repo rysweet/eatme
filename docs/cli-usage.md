@@ -7,8 +7,9 @@ cargo run -q -p eatme-cli -- <command>
 ```
 
 Commands that accept `--json` print JSON when the flag is present. Without
-`--json`, `alice run-first-lesson-readiness` prints a plain readiness report for
-humans, including plain blockers for first-lesson automation scenario evidence.
+`--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
+`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
+`Unproven`.
 
 ## Command overview
 
@@ -22,7 +23,7 @@ humans, including plain blockers for first-lesson automation scenario evidence.
 | `alice launch-smoke` | Launch Alice and record deterministic evidence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
-| `alice check-lesson-readiness` | Check first-lesson comparison artifacts, including `ui-action-contract.json` |
+| `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
 ## Validate assets
@@ -124,7 +125,6 @@ cargo run -q -p eatme-cli -- alice launch-smoke \
   --alice-home "${ALICE_HOME}" \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory
 ```
@@ -137,7 +137,6 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario building-a-scene-first-world \
   --run-id local-building-a-scene-first-world \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package
@@ -178,7 +177,6 @@ ALICE_BASELINE_HOME=/path/to/alice-reference \
 ALICE_MODERNIZED_HOME=/path/to/alice-candidate \
 cargo run -q -p eatme-cli -- alice compare-launch-smoke \
   --run-id local-comparison \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package \
@@ -220,7 +218,7 @@ selected scenario's instructor/student boundary explicit:
 - lesson-labeled launch smoke records the same startup evidence under the chosen
   scenario id;
 - `first-lessons-real-ui-actions` records the required instructor/student
-  session steps, the current `ui-action-contract.json` evidence, and the
+  session steps, selected `ui-action-contract.json` evidence, and the
   `action_contract_blocked_until_ui_automation` boundary until deterministic
   Alice desktop actions are implemented.
 
@@ -247,27 +245,32 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 ```
 
 This consumes the embedded target launch manifests and first-lesson readiness
-progress evidence. JSON reports explicit `evidence_boundaries[]` and
-`evidence_progress.items[]` states, including Save Project and Select Project
-proof-artifact entries. It reports original Alice and RabbitHole launch/action
-diagnostics in `target_evidence[]`, then reports one normalized boundary state
-per first-lesson scenario claim for Select Project, procedure/edit, Save, visible
-rendering, grading, creative assessment, and first-lesson completion. Missing,
-malformed, ambiguous, unsafe, manifest-only, incomplete, out-of-order, or
-uncertain evidence remains visible as a blocker. Boundary metadata may show that
-a boundary was declared or observed, but it does not prove bounded Save
-completion, rendering correctness, grading, creative assessment, or first-lesson
-completion unless the matching boundary evidence exists.
+progress evidence. The report adds user-facing
+`shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`, and
+`unproven_claims`, while preserving legacy `evidence_boundaries[]` and
+`evidence_progress.items[]` states for automation consumers. It reports original
+Alice and RabbitHole launch/action diagnostics in `target_evidence[]`, then
+reports one normalized boundary state per first-lesson scenario claim for Select
+Project, procedure/edit, Save option/action evidence, visible rendering, grading,
+creative assessment, and first-lesson completion. Missing, malformed, ambiguous,
+unsafe, manifest-only, incomplete, out-of-order, or uncertain evidence remains
+visible as `Not yet shown`. Boundary metadata may show that a boundary was
+declared or observed, but it does not prove Save completion, rendering
+correctness, grading, creative assessment, or first-lesson completion unless a
+matching explicit completion/correctness evidence item exists.
 
 The report includes `role_readiness` for `instructor` and `student`, plus the
 legacy `lesson_session_readiness` student envelope. The normalized `status` is
 `ready`, `not_ready`, or `blocked`. A blocked report can still be structurally
 valid; that means the report found coherent evidence plus an explicit blocker,
 not that full Alice UI automation is complete.
-When the missing proof is the next-action artifact, JSON
-`evidence_progress.next_missing_real_desktop_proof`, progress details, and plain
-CLI blockers use the display-safe phrase `desktop next-action evidence` instead
-of exposing the internal artifact path.
+Valid RabbitHole desktop next-action evidence that applies to the current run
+emits top-level `desktop_next_action` in JSON and a
+`Desktop next action` section after `Not yet shown` in plain output. Missing,
+invalid, unsafe, stale, or non-applicable desktop next-action evidence omits that
+top-level summary and remains represented through `Not yet shown`, `issues`, or
+legacy progress and boundary fields. Display-safe wording uses
+`desktop next-action evidence` instead of exposing the internal artifact path.
 
 Run the first-lesson comparison and readiness check as one bounded sequence:
 
@@ -279,7 +282,6 @@ ALICE_BASELINE_HOME=/path/to/alice-reference \
 ALICE_MODERNIZED_HOME=/path/to/alice-candidate \
 cargo run -q -p eatme-cli -- alice run-first-lesson-readiness \
   --run-id local-first-lesson-readiness \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package \
@@ -293,23 +295,32 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run. Boundary reporting keeps
-plain-output blockers scenario-focused:
+manual smoke skip from a failed desktop proof run. The boundary renderer keeps
+plain output scenario-focused:
 
 ```text
 First-lesson automation scenario readiness: not ready
+Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof
 
-Evidence present:
-- Alice launch scenario evidence is present.
-- Visible rendering scenario evidence is present.
+Shown:
+- Alice launch scenario evidence is shown.
+- Visible rendering scenario evidence is shown.
 
-Blockers:
-- Select Project scenario evidence is missing.
-- Procedure/edit scenario evidence is missing.
-- Save scenario evidence is missing.
-- Grading scenario evidence is missing.
-- Creative assessment scenario evidence is missing.
-- First-lesson completion scenario evidence is missing.
+Not yet shown:
+- Select Project scenario evidence is not yet shown.
+- Procedure/edit scenario evidence is not yet shown.
+- Save option/action evidence is not yet shown.
+- Grading is not yet shown.
+- Creative assessment is not yet shown.
+- First-lesson completion is not yet shown.
+
+Unproven:
+- Full Alice UI automation is not proven.
+- Grading is not proven.
+- Creative assessment is not proven.
+- Visible rendering correctness is not proven.
+- Save completion is not proven.
+- First-lesson completion is not proven.
 ```
 
 With `--execute`, non-baseline Alice scenarios still require
@@ -332,7 +343,6 @@ cargo run -q -p eatme-cli -- alice launch-smoke \
   --alice-home "${ALICE_HOME}" \
   --run-id local-real-alice-launch-smoke \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory
 ```
@@ -349,21 +359,21 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --scenario first-lessons-real-ui-actions \
   --run-id local-first-lessons-real-ui-actions \
   --runs-dir runs \
-  --timeout 900 \
   --json \
   --no-memory \
   --offline-package
 ```
 
 The automation scenario writes launch, log, window, screenshot, action-contract,
-and first-lesson readiness progress evidence. Readiness reports Save Project
-and Select Project proof-artifact states from desktop next-action evidence
-through `evidence_progress.items[]`, and
-reports Select Project, procedure/edit, Save, visible rendering, grading,
-creative assessment, and first-lesson completion independently as `present`,
-`missing`, `invalid`, `not_observed`, or `blocked`. The report treats each result as
-boundary-specific evidence only, not full UI coverage, rendering correctness,
-grading, creative assessment, or completed lesson proof.
+and first-lesson readiness progress evidence. Readiness keeps Save Project and
+Select Project proof-artifact states in `evidence_progress.items[]`.
+The report additionally summarizes Select Project, procedure/edit, Save
+option/action evidence, visible rendering, grading, creative assessment, and
+first-lesson completion independently as shown or not yet shown while preserving
+the legacy `present`, `missing`, `invalid`, `not_observed`, or `blocked` machine
+states. The report treats each result as boundary-specific evidence only, not
+full UI coverage, rendering correctness, grading, creative assessment, Save
+completion, or completed lesson proof.
 
 Use the instructor remix scenario through asset validation and generated adapters,
 not through `alice launch-smoke`, because it is an instructor agentic-flow

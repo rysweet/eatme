@@ -22,6 +22,7 @@ pub struct DesktopFirstLessonNextActionEvidence {
     pub candidate_actions: Vec<String>,
     pub blocker: Option<serde_json::Value>,
     pub requires_next_evidence: Vec<String>,
+    pub does_not_claim: Vec<String>,
     pub save_project_proof_artifact: ProjectProofArtifactEvidence,
     pub select_project_proof_artifact: ProjectProofArtifactEvidence,
     pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
@@ -202,6 +203,7 @@ pub(crate) fn check_first_lesson_next_action_evidence(
         candidate_actions: string_array(&json, "candidate_actions"),
         blocker: json.get("blocker").cloned(),
         requires_next_evidence: requires_next_evidence(&json),
+        does_not_claim: does_not_claim(&json),
         save_project_proof_artifact: project_proof_artifact(
             &json,
             &root,
@@ -249,6 +251,7 @@ fn first_lesson_next_action_with_empty_proof_artifacts(
         candidate_actions: Vec::new(),
         blocker: None,
         requires_next_evidence: Vec::new(),
+        does_not_claim: Vec::new(),
         save_project_proof_artifact: ProjectProofArtifactEvidence::missing(
             SAVE_PROJECT_PROOF_LABEL,
         ),
@@ -294,40 +297,46 @@ fn project_proof_artifact(
     }
 
     let artifact_value = declaration.get("artifact").unwrap_or(declaration);
-    let path =
-        string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"));
-    let resolved_path = path.as_deref().and_then(|path| {
-        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, path).ok()
-    });
-    let reported_path = path.as_deref().and_then(|path| {
-        reportable_artifact_path(canonical_evidence_root, path, resolved_path.as_deref())
-    });
+    let Some(path) =
+        string_field(artifact_value, "path").or_else(|| string_field(artifact_value, "file"))
+    else {
+        return ProjectProofArtifactEvidence::missing(label);
+    };
+    let Ok(resolved_path) =
+        resolve_run_dir_artifact_path_under_root(canonical_evidence_root, run_dir, &path)
+    else {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    };
+    let Ok(metadata) = fs::metadata(&resolved_path) else {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    };
+    if !metadata.is_file() || fs::File::open(&resolved_path).is_err() {
+        return ProjectProofArtifactEvidence::missing_with_detail(format!(
+            "{label} is missing; declared artifact could not be read as a file."
+        ));
+    }
+    let reported_path =
+        reportable_artifact_path(canonical_evidence_root, &path, Some(&resolved_path));
     let declared_size = artifact_value
         .get("size_bytes")
         .or_else(|| artifact_value.get("sizeBytes"))
         .and_then(serde_json::Value::as_u64);
-    let size_bytes = declared_size.or_else(|| {
-        resolved_path
-            .as_ref()
-            .and_then(|path| fs::metadata(path).ok())
-            .filter(|metadata| metadata.is_file())
-            .map(|metadata| metadata.len())
-    });
+    let size_bytes = declared_size.or(Some(metadata.len()));
     let artifact = ProjectProofArtifactInfo {
         path: reported_path,
         size_bytes,
         sha256: string_field(artifact_value, "sha256"),
     };
 
-    if resolved_path.is_some() || artifact_has_metadata(&artifact) {
-        return ProjectProofArtifactEvidence {
-            status: ProofArtifactState::Present,
-            detail: present_artifact_detail(label, &artifact),
-            artifact: Some(artifact),
-        };
+    ProjectProofArtifactEvidence {
+        status: ProofArtifactState::Present,
+        detail: present_artifact_detail(label, &artifact),
+        artifact: Some(artifact),
     }
-
-    ProjectProofArtifactEvidence::missing(label)
 }
 
 fn reportable_artifact_path(
@@ -351,10 +360,6 @@ fn reportable_artifact_path(
         .map(|path| path.to_string_lossy().replace('\\', "/"))
 }
 
-fn artifact_has_metadata(artifact: &ProjectProofArtifactInfo) -> bool {
-    artifact.path.is_some() || artifact.size_bytes.is_some() || artifact.sha256.is_some()
-}
-
 fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> String {
     let mut parts = Vec::new();
     if let Some(path) = &artifact.path {
@@ -368,10 +373,10 @@ fn present_artifact_detail(label: &str, artifact: &ProjectProofArtifactInfo) -> 
     }
 
     if parts.is_empty() {
-        format!("{label} is present as artifact availability only")
+        format!("{label} is present as a readable artifact")
     } else {
         format!(
-            "{label} is present as artifact availability only: {}",
+            "{label} is present as a readable artifact: {}",
             parts.join("; ")
         )
     }
@@ -382,8 +387,8 @@ fn first_lesson_next_action_detail(json: &serde_json::Value) -> String {
         .and_then(|blocker| blocker.get("reason"))
         .and_then(serde_json::Value::as_str)
         .or_else(|| json.get("reason").and_then(serde_json::Value::as_str))
-        .map(str::to_string)
-        .unwrap_or_else(|| format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} was read"))
+        .unwrap_or("Desktop next-action evidence was read.")
+        .to_string()
 }
 
 fn string_array(json: &serde_json::Value, key: &str) -> Vec<String> {
@@ -407,8 +412,39 @@ fn string_field(json: &serde_json::Value, key: &str) -> Option<String> {
 }
 
 fn requires_next_evidence(json: &serde_json::Value) -> Vec<String> {
-    let mut items = string_array(json, "requiresNextEvidence");
-    for item in string_array(json, "requires_next_evidence") {
+    let mut items = string_array(json, "requiresNextEvidence")
+        .into_iter()
+        .map(user_facing_next_evidence)
+        .collect::<Vec<_>>();
+    for item in string_array(json, "requires_next_evidence")
+        .into_iter()
+        .map(user_facing_next_evidence)
+    {
+        if !items.contains(&item) {
+            items.push(item);
+        }
+    }
+    items
+}
+
+fn user_facing_next_evidence(value: String) -> String {
+    let lower = value.to_ascii_lowercase();
+    if lower.contains("desktop save menu readiness or invocation artifact") {
+        return "desktop Save menu readiness or invocation artifact".into();
+    }
+    if lower.contains("code editor/procedure action readiness or invocation artifact") {
+        return "code editor/procedure action readiness or invocation artifact".into();
+    }
+    if lower.contains("save completion evidence") {
+        return "Collect explicit Save finish-state evidence before reporting Save completion."
+            .into();
+    }
+    value
+}
+
+fn does_not_claim(json: &serde_json::Value) -> Vec<String> {
+    let mut items = string_array(json, "doesNotClaim");
+    for item in string_array(json, "does_not_claim") {
         if !items.contains(&item) {
             items.push(item);
         }

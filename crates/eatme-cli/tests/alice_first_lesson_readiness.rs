@@ -132,20 +132,16 @@ targets:
     assert!(stdout.contains(
         "Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof"
     ));
-    assert!(stdout.contains("Evidence progress:"));
-    assert!(stdout.contains("required evidence items are present"));
-    assert!(stdout.contains(
-        "automation scenarios evidence (present/missing/invalid/blocked; present is bounded scenario evidence only):"
-    ));
-    assert!(stdout.contains("missing: Select Project scenario evidence"));
-    assert!(stdout.contains("missing: Procedure/edit scenario evidence"));
-    assert!(stdout.contains("missing: Save scenario evidence"));
-    assert!(stdout.contains("missing: Visible rendering scenario evidence"));
-    assert!(stdout.contains("Limits:"));
-    assert!(stdout.contains("does not prove full Alice UI automation"));
-    assert!(stdout.contains("does not prove visible rendering correctness"));
-    assert!(stdout.contains("does not prove first-lesson completion"));
-    assert!(stdout.contains("Still missing or blocked:"));
+    assert!(stdout.contains("Shown:"));
+    assert!(stdout.contains("Not yet shown:"));
+    assert!(stdout.contains("- Select Project is not yet shown."));
+    assert!(stdout.contains("- Procedure/edit is not yet shown."));
+    assert!(stdout.contains("- Save option/action evidence is not yet shown."));
+    assert!(stdout.contains("- Visible rendering is not yet shown."));
+    assert!(stdout.contains("Unproven:"));
+    assert!(stdout.contains("- Full Alice UI automation is not proven."));
+    assert!(stdout.contains("- Visible rendering correctness is not proven."));
+    assert!(stdout.contains("- First-lesson completion is not proven."));
     assert_plain_output_avoids_project_proof_success_claims(&stdout);
 }
 
@@ -187,15 +183,16 @@ targets:
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("First-lesson automation scenario readiness: not ready"));
-    assert!(stdout.contains("Blockers:"));
-    assert!(stdout.contains("Select Project scenario evidence is missing."));
-    assert!(stdout.contains("Procedure/edit scenario evidence is missing."));
-    assert!(stdout.contains("Save boundary evidence is missing."));
-    assert!(stdout.contains("Visible rendering scenario evidence is missing."));
-    assert!(stdout.contains("Grading scenario evidence is missing."));
-    assert!(stdout.contains("Creative assessment scenario evidence is missing."));
-    assert!(stdout.contains("First-lesson completion scenario evidence is missing."));
-    assert!(stdout.contains("automation scenarios"));
+    assert!(stdout.contains("Shown:"));
+    assert!(stdout.contains("Not yet shown:"));
+    assert!(stdout.contains("- Select Project is not yet shown."));
+    assert!(stdout.contains("- Procedure/edit is not yet shown."));
+    assert!(stdout.contains("- Save option/action evidence is not yet shown."));
+    assert!(stdout.contains("- Visible rendering is not yet shown."));
+    assert!(stdout.contains("- Grading is not yet shown."));
+    assert!(stdout.contains("- Creative assessment is not yet shown."));
+    assert!(stdout.contains("- First-lesson completion is not yet shown."));
+    assert!(stdout.contains("Unproven:"));
     assert_plain_output_avoids_boundary_jargon(&stdout);
     assert_plain_output_avoids_project_proof_success_claims(&stdout);
 }
