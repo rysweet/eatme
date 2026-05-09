@@ -63,9 +63,17 @@ class UvxCargoTargetDirTests(unittest.TestCase):
 
     def test_uvx_cache_target_dir_is_used_when_no_target_env_is_set(self) -> None:
         with tempfile.TemporaryDirectory() as cache_home:
-            env = self.run_main_with_env({"XDG_CACHE_HOME": cache_home})
+            with mock.patch.object(cli.Path, "home", side_effect=AssertionError):
+                env = self.run_main_with_env({"XDG_CACHE_HOME": cache_home})
 
         self.assertEqual(env["CARGO_TARGET_DIR"], f"{cache_home}/eatme-uvx/target")
+
+    def test_empty_xdg_cache_home_uses_home_cache_target_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as home_dir:
+            with mock.patch.object(cli.Path, "home", return_value=Path(home_dir)):
+                env = self.run_main_with_env({"XDG_CACHE_HOME": ""})
+
+        self.assertEqual(env["CARGO_TARGET_DIR"], f"{home_dir}/.cache/eatme-uvx/target")
 
 
 class QualityGateTargetDirTests(unittest.TestCase):

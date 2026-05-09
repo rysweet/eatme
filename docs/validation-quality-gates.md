@@ -118,7 +118,7 @@ For `uvx`, the target-dir selection is:
 1. `EATME_CARGO_TARGET_DIR`
 2. `CARGO_TARGET_DIR`
 3. `$XDG_CACHE_HOME/eatme-uvx/target`, or `~/.cache/eatme-uvx/target` when
-   `XDG_CACHE_HOME` is not set
+   `XDG_CACHE_HOME` is not set or is empty
 
 CI remains portable. The GitHub Actions quality-gates workflow uses GitHub's
 cache action and the runner-local `target/` directory; it does not require
