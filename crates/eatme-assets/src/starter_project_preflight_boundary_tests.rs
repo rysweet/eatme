@@ -419,6 +419,60 @@ fn assert_readiness_report_contract(label: &str, report: &str) {
     assert_contains_none(label, report, PROHIBITED_READINESS_REPORT_CLAIMS);
 }
 
+#[test]
+fn evidence_doc_lists_overclaim_helpers_in_contract_update_block() {
+    let root = repository_root();
+    let text = read_repo_text(&root, EVIDENCE_DOC_PATH);
+    let update_block: String = text
+        .lines()
+        .skip_while(|line| !line.contains("update these files together"))
+        .take_while(|line| !line.starts_with("The Gadugi"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        update_block.contains("overclaim_test_helpers.rs"),
+        "{EVIDENCE_DOC_PATH} 'update these files together' block must include \
+         overclaim_test_helpers.rs since it is part of the boundary contract system"
+    );
+}
+
+#[test]
+fn source_scenario_shell_commands_use_fail_fast_mode() {
+    let scenario = source_scenario();
+    for step in scenario
+        .steps
+        .iter()
+        .filter(|s| s.command.contains("bash -lc"))
+    {
+        assert!(
+            step.command.contains("set -e"),
+            "shell step '{}' must use 'set -e' for fail-fast error handling",
+            step.id
+        );
+    }
+}
+
+#[test]
+fn overclaim_detection_is_case_and_whitespace_insensitive() {
+    let rules = vec![OverclaimRule::new(
+        "PR ready",
+        "starter-project preflight evidence recorded",
+    )];
+    let cases = &[
+        "This is PR READY now",
+        "This is pr   ready now",
+        "This is  PR\tready  now",
+    ];
+    for text in cases {
+        let violations = doc_overclaims_in("test.md", text, &rules);
+        assert_eq!(
+            violations.len(),
+            1,
+            "overclaim detection must catch '{text}' case-and-whitespace-insensitively"
+        );
+    }
+}
+
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize(text);
     let missing: Vec<_> = needles

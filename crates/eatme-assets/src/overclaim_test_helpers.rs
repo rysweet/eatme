@@ -181,3 +181,28 @@ fn is_markdown_table_separator(line: &str) -> bool {
 fn normalize(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_collapses_consecutive_whitespace_to_single_space() {
+        assert_eq!(normalize("hello   world"), "hello world");
+        assert_eq!(
+            normalize("  leading  and trailing  "),
+            "leading and trailing"
+        );
+        assert_eq!(normalize("tab\there"), "tab here");
+        assert_eq!(normalize("single"), "single");
+        assert_eq!(normalize(""), "");
+    }
+
+    #[test]
+    fn overclaim_rule_new_stores_normalized_lowercase_phrase() {
+        let rule = OverclaimRule::new("PR   Ready", "bounded wording");
+        assert_eq!(rule.phrase, "PR   Ready");
+        assert_eq!(rule.normalized_phrase, "pr ready");
+        assert_eq!(rule.bounded_replacement, "bounded wording");
+    }
+}
