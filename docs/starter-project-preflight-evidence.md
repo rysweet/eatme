@@ -58,12 +58,13 @@ The remaining save/reopen gap is an unproven workflow boundary, not a failed
 implementation. The available preflight evidence shows that the bundled starter
 project can be opened and inspected before further review. It does not prove
 that a changed project can be saved, that the saved file can be reopened, or
-that the reopened state matches the expected learner-world state.
+that reopened-state verification evidence exists.
 
 Closing this gap uses a separate persistence evidence lane that exercises the
-save path, records the saved artifact, reopens that artifact, and verifies the
-reopened project state. Until that separate evidence exists for a run, this
-report should be read only as starter-project open-readiness evidence.
+save path, records the saved artifact, reopens that artifact, and records
+hook-declared reopened-state verification evidence. Until that separate evidence
+exists for a run, this report should be read only as starter-project
+open-readiness evidence.
 
 The deterministic save/reopen boundary is:
 
@@ -71,7 +72,7 @@ The deterministic save/reopen boundary is:
 2. make or identify a deterministic, reviewer-visible save-worthy project state;
 3. save the project and record the saved artifact path, size, and run metadata;
 4. reopen that saved artifact in a new or explicitly reset Alice session;
-5. verify the reopened project state against the expected learner-world state;
+5. record hook-declared reopened-state verification and non-empty state evidence;
 6. report the save/reopen evidence in its own manifest or report, separate from
    this preflight evidence.
 
@@ -93,7 +94,7 @@ each persistence step without borrowing claims from this preflight report.
 | Save action evidence | Shows the workflow invoked Alice's save path after opening the starter project. |
 | Saved artifact evidence | Identifies the saved `.a3p` artifact and records that it exists, is non-empty, and belongs to the current run. |
 | Reopen action evidence | Shows Alice reopened the saved artifact, not the original bundled starter project. |
-| Reopened-state verification | Confirms the reopened project matches the deterministic expected learner-world state. |
+| Reopened-state verification | Records `state_verification: passed` from the reopen hook and preserves non-empty reopened-state evidence for review. |
 | Separate manifest or report | Keeps persistence evidence distinct from starter-project launch preflight evidence. |
 | Optional export evidence | If export is part of the scenario, identifies and verifies the exported artifact separately from save/reopen. |
 
@@ -124,7 +125,7 @@ or first-lesson completion evidence.
 Evidence beyond preflight belongs in a separate save/reopen review that proves
 the persistence workflow beyond this launch boundary. That evidence should show
 the save action, identify the saved project artifact, reopen that artifact,
-verify the reopened state, and state its own evidence boundary without relying
-on this preflight report as proof of workflow completion. If export is included
-in the same lane, it should add its own exported artifact verification instead
-of treating save/reopen success as export proof.
+record reopened-state verification evidence, and state its own evidence boundary
+without relying on this preflight report as proof of workflow completion. If
+export is included in the same lane, it should add its own exported artifact
+verification instead of treating save/reopen success as export proof.

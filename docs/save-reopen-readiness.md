@@ -20,6 +20,7 @@ or opened-project preflight does not prove save/reopen readiness by itself.
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Evidence directories](#evidence-directories)
+- [Integration boundary](#integration-boundary)
 - [Hook API](#hook-api)
 - [Readiness states](#readiness-states)
 - [Review checklist](#review-checklist)
@@ -82,11 +83,12 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-first-lesson-readiness
   --execute
 ```
 
-Read the resulting manifest, `ui-action-contract.json`, and any `project-save/`
-or `project-reopen/` evidence as review inputs. Treat `save-project` and
-`reopen-project` as ready only when their proof artifacts are present,
-non-empty, and accepted by validation. Treat a missing hook or missing
-precondition as a bounded `blocked` result.
+Read the resulting manifest and `ui-action-contract.json` as prerequisite and
+save-action review inputs. Read `project-reopen/` only when the run or a
+dedicated persistence report explicitly produced reopen evidence. Treat
+`save-project` and `reopen-project` as ready only when their own proof artifacts
+are present, non-empty, and accepted by validation. Treat a missing hook,
+missing report surface, or missing precondition as a bounded `blocked` result.
 
 ## Configuration
 
@@ -108,7 +110,7 @@ paths from local machines in documentation, manifests, or comments.
 
 ## Evidence directories
 
-A passing bounded save/reopen run records evidence under the selected run
+A complete save/reopen evidence bundle uses this layout under the selected run
 directory:
 
 ```text
@@ -126,7 +128,29 @@ runs/first-lessons-real-ui-actions/local-save-reopen-readiness/
 ```
 
 `project-save/saved-project.a3p` is the source for reopen proof. A reopen result
-that points back to the bundled starter project is rejected.
+that points back to the bundled starter project, a different saved artifact, or
+an artifact outside the run evidence directories is rejected.
+
+## Integration boundary
+
+`ui-action-contract.json` is the action-readiness report for the first-lesson
+flow. It can include action probes through `save-project`, including blocked or
+passed save proof. Do not infer reopen proof from `ui-action-contract.json`
+unless that file explicitly contains a dedicated `reopen-project` probe.
+
+`project-reopen/` is the separate persistence evidence lane for the full
+save/reopen feature. A reviewer should accept reopen readiness only from an
+explicit `reopen-project` probe or report that:
+
+1. depends on accepted `save-project` proof from the same run;
+2. passes the saved `.a3p` as `--saved-project`;
+3. records non-empty `reopened-project.a3p`, `project-reopen.json`, and
+   `reopened-state.json` artifacts under `project-reopen/`;
+4. reports `source_saved_project_artifact` as the same canonical artifact that
+   `save-project` produced under `project-save/`.
+
+This keeps the feature boundary clear: save proof may appear in the UI action
+contract, while reopen proof requires its own explicit persistence evidence.
 
 ## Hook API
 
@@ -200,12 +224,12 @@ Validation rules:
 | --- | --- |
 | `schema_version` | Must be `eatme.alice-project-reopen-result/v1`. |
 | `status` | Must be `reopened`. |
-| `source_saved_project_artifact` | Must be a simple relative path under `project-save/`, must point to the saved artifact from the same run, and must not point to the bundled starter project. |
+| `source_saved_project_artifact` | Must be a simple relative path starting with `project-save/`, must resolve under the run's `project-save/` evidence directory to the same saved artifact from the same run, and must not point to the bundled starter project. |
 | `reopen_selector` | Must be `scene.eatmeFirstLessonStep`. |
 | `reopened_project_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
 | `reopen_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
 | `reopened_state_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
-| `state_verification` | Must be `passed`. |
+| `state_verification` | Must be `passed` as reported by the reopen hook for the bounded selector. |
 
 Absolute paths, parent traversal, symlink escapes, empty files, malformed JSON,
 wrong schema versions, and artifacts outside the expected run evidence
@@ -239,12 +263,16 @@ Use this checklist when reviewing save/reopen readiness:
    `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` when
    scenario assets changed.
 3. Confirm `save-project` appears only after accepted run-world proof.
-4. Confirm any `reopen-project` probe or evidence appears only after accepted
-   save proof.
+4. Confirm any `reopen-project` probe or evidence appears only in an explicit
+   persistence report after accepted save proof; do not infer reopen proof from
+   `ui-action-contract.json` unless it contains a dedicated reopen probe.
 5. Confirm `project-save/` contains a non-empty saved project and save evidence.
 6. Confirm `project-reopen/` contains non-empty reopen evidence and
    `reopened-state.json`.
-7. Confirm `source_saved_project_artifact` starts with `project-save/`.
+7. Confirm `source_saved_project_artifact` resolves to the same canonical
+   artifact as `project-save/saved-project.a3p` from the same run and does not
+   escape the run evidence directories through absolute paths, parent
+   traversal, or symlinks.
 8. Confirm the report keeps full UI automation, visible rendering correctness,
    grading, creative assessment, full Save completion, deployed sharing/platform
    success, and first-lesson completion unproven unless exact separate evidence
