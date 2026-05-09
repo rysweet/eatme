@@ -206,6 +206,10 @@ fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvi
             "blocked {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
             artifact.detail
         ),
+        "invalid" => format!(
+            "invalid {label} in {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL}: {}",
+            artifact.detail
+        ),
         _ => artifact.detail.clone(),
     }
 }

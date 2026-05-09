@@ -24,10 +24,13 @@ Project, procedure/edit, Save option/action evidence, visible rendering, grading
 creative assessment, and first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
 defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
-`Desktop next action`, and `Unproven` output, plus additive JSON
-`shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`,
-`original_alice_action_evidence`, and `unproven_claims` fields while preserving
-legacy progress and boundary fields.
+`Desktop next action`, optional `Original Alice action evidence`, and `Unproven`
+output, plus additive JSON `shown_evidence[]`, `not_yet_shown[]`,
+`desktop_next_action`, `original_alice_action_evidence`, and `unproven_claims`
+fields while preserving legacy progress and boundary fields.
+For the artifact shape, filler rejection, and non-claim wording contract for
+those evidence surfaces, see
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Scenario map
 
@@ -510,7 +513,8 @@ Project proof-artifact item example:
 ```
 
 This means proof collection hit an explicit boundary. It does not mean Alice
-completed a lesson, saved a learner world through full UI automation, or graded
+completed a lesson, fully executed a learner world, saved a learner world through
+full UI automation, deployed sharing, proved platform success, or graded
 creative work.
 
 ### Desktop proof contract
@@ -523,7 +527,7 @@ automation. It reports what happened to the modernized desktop proof attempt:
 | `skipped` | Execution was not requested, or no modernized target evidence exists. This is a deliberate manual smoke skip, not a failed proof. |
 | `unsupported_environment` | Execution was requested, but the modernized target could not launch desktop proof collection, for example because Alice home resolution or required target paths failed. |
 | `launched_but_unverified` | Alice launch evidence exists, but Run-window, desktop execution, screenshot, or pixel-observation proof is missing, blocked, invalid, or not observed. |
-| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, rendering correctness, grading, save behavior, or creative assessment. |
+| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, full world execution, rendering correctness, grading, save behavior, deployed sharing/platform success, or creative assessment. |
 
 This legacy desktop proof contract includes `reason_code`, `detail`,
 `target_role`, and optional `artifact` fields so CI and reports can preserve the
@@ -1046,5 +1050,5 @@ summary in the PR description:
 | Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `target_evidence[]`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
 | First-lesson scenario evidence | Reports preserve target-local launch/action diagnostics, project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
-| Boundaries | The change does not claim full UI automation, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless distinct explicit evidence exists. |
+| Boundaries | The change does not claim full UI automation, full world execution, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, deployed sharing/platform success, or deployed-service status unless distinct explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

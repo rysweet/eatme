@@ -390,6 +390,7 @@ fn inspect_target_evidence(
                                 check_first_lesson_next_action_evidence(&evidence_root, &resolved);
                             issues.extend(first_lesson_next_action.issue_when_invalid());
                             issues.extend(first_lesson_next_action.boundary_issues());
+                            issues.extend(first_lesson_next_action.proof_artifact_issues());
                             desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
                                 check_visible_desktop_evidence(&evidence_root, &resolved)

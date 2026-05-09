@@ -13,9 +13,12 @@ plain CLI renders the user-facing sections directly.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
-the bounded claim named in the report. It never implies full UI automation,
-grading, creative assessment, visible rendering correctness, Save completion, or
-first-lesson completion unless explicit evidence for that exact claim exists.
+the bounded claim named in the report. It never implies full UI automation, full
+world execution, grading, creative assessment, visible rendering correctness,
+Save completion, deployed sharing/platform success, or first-lesson completion
+unless explicit evidence for that exact claim exists.
+The artifact shape and wording rules for preserving this boundary are documented
+in [Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Quick start
 
@@ -191,12 +194,14 @@ does not make another boundary present.
 | `visible_rendering` | Visible rendering scenario evidence | Explicit visible rendering observation from the run boundary. | Visible rendering correctness, animation correctness, creative quality, or complete visual validation. |
 | `grading` | Grading scenario evidence | Explicit grading evidence from a scenario that owns grading. | Any automatic grade when no grading evidence exists. |
 | `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. When evidence is missing, limited, or unavailable, the report can surface available evidence and suggest bounded next steps for the learner's creative work in this scenario. | Creativity grading, quality judgment, learner-world grading, instructor judgment, or marked lesson completion. |
-| `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, or substep evidence alone. |
+| `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, substep evidence, full world execution, deployed sharing, or platform success alone. |
 
 ### User-facing state wording
 
 Structured JSON keeps machine states, but plain output maps them to user-facing
-language:
+language. These are readiness output states; artifact input status values are
+defined separately in the
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 | JSON state | Plain wording | Meaning |
 | --- | --- | --- |
@@ -205,6 +210,11 @@ language:
 | `invalid` | `not yet shown` | The evidence exists but cannot be trusted or safely summarized. |
 | `not_observed` | `not yet shown` | A producer ran, but the expected observation was not made. |
 | `blocked` | `not yet shown` or `not yet proven` with the supplied reason | RabbitHole or original Alice supplied an explicit reason the claim cannot yet be shown. |
+
+Legacy boundary artifact inputs may use `declared` or `observed` to describe
+metadata availability. Those values are not readiness output states; they
+normalize to output `missing` unless distinct boundary evidence is present, with
+the metadata state preserved for diagnostics.
 
 Primary human output avoids internal terms such as `no_go`,
 `ui-action-contract`, `desktop-run-pixel`, and raw artifact paths. JSON reference
@@ -227,6 +237,10 @@ First-lesson completion is not proven.
 Legacy `limitations` remains for compatibility. It may be a broader or superset
 list for older consumers, but it must include these six claims exactly enough for
 automation to preserve them. New consumers should read `unproven_claims` first.
+The canonical non-claims are produced by readiness output even when a
+next-action artifact omits its optional `does_not_claim`/`doesNotClaim` input.
+If that input is present, it is validated and merged into the desktop
+next-action non-claims instead of replacing the canonical list.
 
 Save wording has one extra rule: Save action, Save option, Save shortcut, and
 Save proof-artifact availability may be shown, but Save completion remains
@@ -390,12 +404,12 @@ appropriate for the failure mode.
 | --- | --- | --- |
 | `status` | string | RabbitHole next-action state, such as `present` or `blocked`. |
 | `summary` | string | Safe user-facing summary. |
-| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole. |
-| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next. |
+| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole; empty when the optional artifact input is absent. |
+| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next; empty when the optional artifact input is absent. |
 | `observations` | array of strings | Plain observations from the next-action evidence. |
-| `does_not_prove` | array of strings | Non-claims preserved for the desktop next-action section. |
+| `does_not_prove` | array of strings | Canonical non-claims plus any validated optional `does_not_claim`/`doesNotClaim` input values preserved for the desktop next-action section. |
 
-Example:
+Example excerpt:
 
 ```json
 {
@@ -482,12 +496,10 @@ Save option evidence is shown as an observed option/action only.
 Save completion is not yet proven.
 ```
 
-Unsafe wording:
+Unsafe wording categories:
 
-```text
-The project was saved successfully.
-The first lesson was completed.
-```
+- saved-project success
+- first-lesson completion
 
 ### Review a creative-assessment gap safely
 
@@ -499,11 +511,9 @@ reviewer needs.
 
 Do not translate a creative-assessment gap into:
 
-```text
-The learner's world was graded.
-The creative work is good or bad.
-The first lesson is complete.
-```
+- learner-world grading
+- creative-quality judgment
+- first-lesson completion
 
 ### Keep evidence assets editable
 
