@@ -68,7 +68,11 @@ steps:
     - '"specific_alice_window_detected": {'
     - '"activate_alice_window_ui_action": {'
     - '"save_project_desktop_shortcut_dispatch": {'
+    - '"run_world_desktop_shortcut_dispatch": {'
+    - '"run_world_desktop_window_observed": {'
     - '"place_object_precondition_no_go_probe": {'
+    - '"edit_procedure_precondition_no_go_probe": {'
+    - '"run_world_precondition_no_go_probe": {'
     - '"place_object_ui_action": {'
     - '"edit_procedure_ui_action": {'
     - '"run_world_ui_action": {'
@@ -99,7 +103,11 @@ assertions:
       "specific_alice_window_detected": {
       "activate_alice_window_ui_action": {
       "save_project_desktop_shortcut_dispatch": {
+      "run_world_desktop_shortcut_dispatch": {
+      "run_world_desktop_window_observed": {
       "place_object_precondition_no_go_probe": {
+      "edit_procedure_precondition_no_go_probe": {
+      "run_world_precondition_no_go_probe": {
       "place_object_ui_action": {
       "edit_procedure_ui_action": {
       "run_world_ui_action": {

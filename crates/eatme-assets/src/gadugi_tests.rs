@@ -232,9 +232,10 @@ fn generated_runners_declare_run_id_optional_when_commands_export_it() {
 }
 
 #[test]
-fn generated_real_ui_action_contract_requires_every_bounded_marker() {
+fn generated_real_ui_action_contract_requires_every_source_manifest_assertion_marker() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
+    let scenario = read_eatme_scenario(&source_path).unwrap();
     let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
     let adapter = generated_adapter_value(&generated);
     let launch_step = adapter["steps"]
@@ -248,24 +249,33 @@ fn generated_real_ui_action_contract_requires_every_bounded_marker() {
         .unwrap()
         .iter()
         .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let source_markers = scenario
+        .steps
+        .iter()
+        .flat_map(manifest_assertion_markers)
         .collect::<Vec<_>>();
+
+    assert!(
+        !source_markers.is_empty(),
+        "first-lesson source must declare manifest assertion markers"
+    );
+    for marker in source_markers {
+        let required = format!(r#""{marker}": {{"#);
+        assert!(
+            required_stdout.contains(&required),
+            "first-lesson generated adapter must require source-declared marker {marker:?}:\n{generated}"
+        );
+    }
 
     for marker in [
         r#""real_alice_execution_evidence": {"#,
         r#""startup_screenshot": {"#,
-        r#""specific_alice_window_detected": {"#,
-        r#""activate_alice_window_ui_action": {"#,
-        r#""save_project_desktop_shortcut_dispatch": {"#,
-        r#""place_object_precondition_no_go_probe": {"#,
-        r#""place_object_ui_action": {"#,
-        r#""edit_procedure_ui_action": {"#,
-        r#""run_world_ui_action": {"#,
-        r#""save_project_ui_action": {"#,
-        r#""ui_action_artifact_captured": {"#,
         r#""ui_action_contract": {"#,
     ] {
         assert!(
-            required_stdout.contains(&marker),
+            required_stdout.contains(marker),
             "first-lesson generated adapter must require marker {marker:?}:\n{generated}"
         );
     }

@@ -7,11 +7,14 @@ use anyhow::{Context, Result, bail};
 mod gadugi_description;
 #[path = "gadugi_instructor.rs"]
 mod gadugi_instructor;
+#[path = "gadugi_markers.rs"]
+mod gadugi_markers;
 #[path = "gadugi_schema.rs"]
 mod gadugi_schema;
 
 use gadugi_description::generated_description;
 use gadugi_instructor::generate_instructor_agentic_adapter;
+use gadugi_markers::manifest_assertion_markers;
 use gadugi_schema::*;
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
@@ -414,7 +417,7 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
 }
 
 fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioStep) -> Vec<String> {
-    let mut expected = Vec::with_capacity(16);
+    let mut expected = Vec::with_capacity(20);
     expected.push(format!("\"scenario_id\": \"{}\"", scenario.id));
     if scenario.kind == "alice_real_ui_action_contract" {
         expected.push("\"failure_category\":".into());
@@ -429,19 +432,10 @@ fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioSte
         expected.push("\"startup_screenshot\": {".into());
     }
 
-    for assertion in [
-        "specific_alice_window_detected",
-        "activate_alice_window_ui_action",
-        "save_project_desktop_shortcut_dispatch",
-        "place_object_precondition_no_go_probe",
-        "place_object_ui_action",
-        "edit_procedure_ui_action",
-        "run_world_ui_action",
-        "save_project_ui_action",
-        "ui_action_artifact_captured",
-    ] {
-        if evidence_contains(&step.evidence, assertion) {
-            expected.push(format!("\"{assertion}\": {{"));
+    for assertion in manifest_assertion_markers(step) {
+        let expected_marker = format!("\"{assertion}\": {{");
+        if !expected.contains(&expected_marker) {
+            expected.push(expected_marker);
         }
     }
     if evidence_contains(&step.evidence, "ui-action-contract.json") {
