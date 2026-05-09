@@ -33,9 +33,9 @@ fn readiness_report_separates_user_facing_shown_missing_and_unproven_claims() {
   "candidate_actions":["save-project"],
   "requiresNextEvidence":["Collect explicit Save completion evidence before reporting Save completion."],
   "evidence_boundaries":[
-    {"id":"select_project","status":"present","source":"rabbithole","detail":"Select Project scenario evidence is present."},
-    {"id":"save_project","status":"present","source":"rabbithole","detail":"Save option/action scenario evidence is present."},
-    {"id":"visible_rendering","status":"present","source":"rabbithole","detail":"Visible rendering scenario evidence is present."},
+    {"id":"select_project","status":"present","source":"rabbithole","metadata_state":"observed","detail":"Select Project scenario evidence is present.","claim":"The Select Project boundary has auditable scenario evidence.","does_not_prove":["full Alice UI automation","first-lesson completion"]},
+    {"id":"save_project","status":"present","source":"rabbithole","metadata_state":"observed","detail":"Save option/action scenario evidence is present.","claim":"Save action evidence is present for this scenario boundary.","does_not_prove":["Save completion","grading","creative assessment","first-lesson completion"]},
+    {"id":"visible_rendering","status":"present","source":"rabbithole","metadata_state":"observed","detail":"Visible rendering scenario evidence is present.","claim":"Visible rendering was observed for this scenario boundary.","does_not_prove":["visible rendering correctness","creative assessment","first-lesson completion"]},
     {"id":"grading","status":"missing","source":"rabbithole","detail":"Grading scenario evidence is missing."},
     {"id":"creative_assessment","status":"missing","source":"rabbithole","detail":"Creative assessment scenario evidence is missing."},
     {"id":"first_lesson_completion","status":"missing","source":"rabbithole","detail":"First-lesson completion scenario evidence is missing."}

@@ -2,6 +2,9 @@ use serde::Serialize;
 use std::fs;
 use std::path::Path;
 
+use super::evidence_text_contract::{
+    limitation_array, validate_claim_text, validate_limitation_text,
+};
 use super::first_lesson_next_action::ProjectProofArtifactInfo;
 use super::resolve_run_dir_artifact_path_under_root;
 
@@ -143,6 +146,10 @@ fn normalize_boundary(
     canonical_evidence_root: &Path,
     run_dir: &Path,
 ) -> FirstLessonEvidenceBoundary {
+    if let Some(reason) = boundary_contract_issue(spec, value) {
+        return invalid_boundary(spec, &reason);
+    }
+
     let source = string_field(value, "source").unwrap_or_else(|| DEFAULT_BOUNDARY_SOURCE.into());
     let declared_status = string_field(value, "status");
     let metadata_state =
@@ -260,6 +267,75 @@ fn invalid_boundary(spec: &BoundarySpec, reason: &str) -> FirstLessonEvidenceBou
     }
 }
 
+fn boundary_contract_issue(spec: &BoundarySpec, value: &serde_json::Value) -> Option<String> {
+    if !value.is_object() {
+        return Some("boundary entry must be a JSON object".into());
+    }
+
+    let Some(status) = string_field(value, "status") else {
+        return Some("status must be a non-empty string".into());
+    };
+
+    if value.get("source").is_some() && string_field(value, "source").is_none() {
+        return Some("source must be a non-empty string".into());
+    }
+    if value.get("metadata_state").is_some() && string_field(value, "metadata_state").is_none() {
+        return Some("metadata_state must be a non-empty string".into());
+    }
+    if value.get("metadataState").is_some() && string_field(value, "metadataState").is_none() {
+        return Some("metadataState must be a non-empty string".into());
+    }
+
+    if status == "present" {
+        for field in ["source", "detail", "claim"] {
+            if string_field(value, field).is_none() {
+                return Some(format!("{field} must be a non-empty string"));
+            }
+        }
+        if string_field(value, "metadata_state")
+            .or_else(|| string_field(value, "metadataState"))
+            .is_none()
+        {
+            return Some("metadata_state must be a non-empty string".into());
+        }
+    }
+
+    for (field, required) in [
+        ("detail", status == "present"),
+        ("claim", status == "present"),
+    ] {
+        if let Some(text) = string_field(value, field) {
+            if let Err(reason) = validate_claim_text(field, &text) {
+                return Some(reason);
+            }
+            if status == "present" && field == "detail" && !scenario_detail_is_allowed(spec, &text)
+            {
+                return Some(format!(
+                    "{field} must use scenario-focused boundary wording"
+                ));
+            }
+            if field == "claim" && claim_is_unsafe(spec, &text) {
+                return Some(format!("{field} contains unsupported claim wording"));
+            }
+        } else if value.get(field).is_some() || required {
+            return Some(format!("{field} must be a non-empty string"));
+        }
+    }
+
+    match limitation_array(value, "does_not_prove", "doesNotProve", status == "present") {
+        Ok(claims) => {
+            for claim in claims {
+                if let Err(reason) = validate_limitation_text("does_not_prove", &claim) {
+                    return Some(reason);
+                }
+            }
+        }
+        Err(reason) => return Some(reason),
+    }
+
+    None
+}
+
 fn missing_claim(spec: &BoundarySpec) -> String {
     format!(
         "{} is not proven; automation scenarios must collect explicit evidence before this can be reported as present.",
@@ -296,23 +372,27 @@ fn boundary_artifact(
 }
 
 fn scenario_focused_detail(spec: &BoundarySpec, value: &serde_json::Value) -> Option<String> {
-    string_field(value, "detail").filter(|detail| {
-        let save_boundary_wording = is_save_boundary_wording(spec, detail);
-        (detail.contains("scenario")
-            || detail.contains("automation scenarios")
-            || save_boundary_wording)
-            && (!contains_implementation_jargon(detail) || save_boundary_wording)
-            && !detail.to_ascii_lowercase().contains(" is proven")
-            && !unsafe_boundary_wording(spec, detail)
-    })
+    string_field(value, "detail").filter(|detail| scenario_detail_is_allowed(spec, detail))
 }
 
 fn scenario_focused_claim(spec: &BoundarySpec, value: &serde_json::Value) -> Option<String> {
-    string_field(value, "claim").filter(|claim| {
-        !contains_implementation_jargon(claim)
-            && !claim.to_ascii_lowercase().contains(" is proven")
-            && !unsafe_boundary_wording(spec, claim)
-    })
+    string_field(value, "claim").filter(|claim| !claim_is_unsafe(spec, claim))
+}
+
+fn scenario_detail_is_allowed(spec: &BoundarySpec, detail: &str) -> bool {
+    let save_boundary_wording = is_save_boundary_wording(spec, detail);
+    (detail.contains("scenario")
+        || detail.contains("automation scenarios")
+        || save_boundary_wording)
+        && (!contains_implementation_jargon(detail) || save_boundary_wording)
+        && !detail.to_ascii_lowercase().contains(" is proven")
+        && !unsafe_boundary_wording(spec, detail)
+}
+
+fn claim_is_unsafe(spec: &BoundarySpec, claim: &str) -> bool {
+    contains_implementation_jargon(claim)
+        || claim.to_ascii_lowercase().contains(" is proven")
+        || unsafe_boundary_wording(spec, claim)
 }
 
 fn unsafe_boundary_wording(spec: &BoundarySpec, value: &str) -> bool {

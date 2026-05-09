@@ -4,6 +4,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 
 mod blocker;
+mod evidence_text_contract;
 mod first_lesson_boundaries;
 mod first_lesson_next_action;
 

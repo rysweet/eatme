@@ -2,6 +2,7 @@ use serde::{Serialize, Serializer};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use super::evidence_text_contract::next_action_contract_issue;
 use super::first_lesson_boundaries::{
     FirstLessonEvidenceBoundary, first_lesson_evidence_boundaries, missing_boundaries,
 };
@@ -195,6 +196,18 @@ pub(crate) fn check_first_lesson_next_action_evidence(
             format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} is missing status field"),
         );
     };
+    if status.trim().is_empty() {
+        return invalid_first_lesson_next_action(
+            Some(artifact),
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} status must not be empty"),
+        );
+    }
+    if let Some(reason) = next_action_contract_issue(&json) {
+        return invalid_first_lesson_next_action(
+            Some(artifact),
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} is invalid: {reason}"),
+        );
+    }
 
     DesktopFirstLessonNextActionEvidence {
         status: status.into(),
