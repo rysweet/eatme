@@ -30,7 +30,7 @@ target is checked for:
 | Embedded `launch_manifest` present | The target ran through the full launch pipeline |
 | Target status and failure category | The launch completed without a fatal failure category |
 | Required assertions pass | `display_responsive`, `process_started`, `startup_screenshot`, `no_fatal_logs`, `real_alice_execution_evidence` |
-| Artifacts recorded | Manifest, screenshot, and log paths are present and non-empty |
+| Artifacts recorded | Window-list, screenshot, and log artifact metadata paths are present and non-empty |
 
 When all five items are present for both targets, the report status is `ready`.
 Any missing, failed, malformed, or incomplete item sets the status to
@@ -104,11 +104,11 @@ Add `--json` to any readiness command. The output includes:
   "human_summary": "real-alice-launch-smoke launch-smoke readiness is ready from existing target launch-smoke manifest evidence only.",
   "issues": [],
   "required_evidence": [
-    "baseline and modernized target entries",
-    "baseline and modernized embedded launch manifests",
-    "target status and failure-category metadata",
-    "required launch-smoke assertions",
-    "launch-smoke artifacts"
+    "comparison manifest with baseline and modernized targets for real-alice-launch-smoke",
+    "embedded launch-smoke manifest for each target",
+    "each target status is passed with no launch failure category",
+    "required launch-smoke assertions passed for each target",
+    "launch-smoke artifact metadata for window list, screenshot, and log"
   ],
   "evidence_progress": {
     "total_required": 5,
@@ -130,6 +130,14 @@ Add `--json` to any readiness command. The output includes:
     "Deployed sharing/platform success is not proven."
   ],
   "limitations": [
+    "First-lesson completion is not proven.",
+    "Full world execution is not proven.",
+    "Grading is not proven.",
+    "Creative assessment is not proven.",
+    "Full Alice UI automation is not proven.",
+    "Visible rendering correctness is not proven.",
+    "Save completion is not proven.",
+    "Deployed sharing/platform success is not proven.",
     "bounded to existing launch-smoke manifest metadata",
     "does not add lesson-action detection",
     "does not grade student worlds",
@@ -149,11 +157,11 @@ real-alice-launch-smoke launch-smoke readiness is ready from existing target
 launch-smoke manifest evidence only.
 
 Required evidence:
-  ✓ baseline and modernized target entries
-  ✓ baseline and modernized embedded launch manifests
-  ✓ target status and failure-category metadata
-  ✓ required launch-smoke assertions
-  ✓ launch-smoke artifacts
+  ✓ comparison manifest with baseline and modernized targets for real-alice-launch-smoke
+  ✓ embedded launch-smoke manifest for each target
+  ✓ each target status is passed with no launch failure category
+  ✓ required launch-smoke assertions passed for each target
+  ✓ launch-smoke artifact metadata for window list, screenshot, and log
 
 Unproven:
   First-lesson completion is not proven.
@@ -218,18 +226,35 @@ assert_eq!(report.scenario_id.as_deref(), Some("real-alice-launch-smoke"));
 
 ### Report struct fields
 
+The full `LessonSessionReadinessReport` struct serializes these fields:
+
 | Field | Type | Description |
 | --- | --- | --- |
-| `passed` | `bool` | `true` when all required evidence is present |
-| `status` | `String` | `"ready"` or `"not_ready"` |
-| `readiness_status` | `String` | `"ready"` or `"incomplete"` |
+| `schema_version` | `String` | Always `"eatme.alice-lesson-session-readiness/v1"` |
+| `manifest_path` | `String` | Display path of the input comparison manifest |
 | `scenario_id` | `Option<String>` | Always `Some("real-alice-launch-smoke")` for this path |
+| `passed` | `bool` | `true` when all required evidence is present |
+| `status` | `String` | `"ready"` or `"not_ready"` (normalized) |
+| `readiness_status` | `String` | `"ready"` or `"incomplete"` (raw) |
+| `blocked_reason` | `Option<String>` | Always `None` for launch-smoke path |
 | `human_summary` | `String` | One-sentence summary for display |
-| `issues` | `Vec<String>` | Empty when ready; describes each gap otherwise |
-| `required_evidence` | `Vec<String>` | The 5 required evidence labels |
+| `desktop_proof_contract` | `DesktopProofContract` | Structured proof status (`verified`, `unsupported_environment`, or `launched_but_unverified`) |
+| `shown_evidence` | `Vec<ReadinessEvidenceItem>` | Evidence items with `present` state |
+| `not_yet_shown` | `Vec<ReadinessEvidenceItem>` | Evidence items not yet present |
+| `desktop_next_action` | `Option<DesktopNextActionSummary>` | Always `None` for launch-smoke path |
+| `original_alice_action_evidence` | `OriginalAliceActionEvidenceReport` | Original Alice action evidence availability |
+| `unproven_claims` | `Vec<String>` | 8 claims explicitly not made by this report |
 | `evidence_progress` | `LessonReadinessEvidenceProgress` | Item-level progress tracking |
-| `unproven_claims` | `Vec<String>` | Claims explicitly not made by this report |
-| `limitations` | `Vec<String>` | Operational limitations of the mapping |
+| `evidence_boundaries` | `Vec<FirstLessonEvidenceBoundary>` | Always empty for launch-smoke path |
+| `required_evidence` | `Vec<String>` | The 5 required evidence labels |
+| `no_go_contracts` | `Vec<LessonSessionNoGoContract>` | Always empty for launch-smoke path |
+| `lesson_session_readiness` | `LessonSessionReadinessEnvelope` | Session-level readiness envelope |
+| `role_readiness` | `Vec<LessonSessionReadinessEnvelope>` | Per-role (baseline, modernized) readiness |
+| `contract_check` | `LessonSessionContractCheck` | Contract validation metadata |
+| `execute_requested` | `Option<bool>` | Whether `--execute` was used in comparison |
+| `target_evidence` | `Vec<LessonTargetEvidence>` | Per-target evidence detail |
+| `issues` | `Vec<String>` | Empty when ready; describes each gap otherwise |
+| `limitations` | `Vec<String>` | 8 unproven claim sentences + 6 operational limitations |
 
 ### Evidence progress struct
 
@@ -242,7 +267,8 @@ assert_eq!(report.scenario_id.as_deref(), Some("real-alice-launch-smoke"));
 | `not_observed` | `usize` | Items not yet checked |
 | `blocked` | `usize` | Items blocked by prerequisite failure |
 | `summary` | `String` | Human-readable progress sentence |
-| `next_actionable_blocker` | `Option<String>` | First issue to resolve, if any |
+| `next_actionable_blocker` | `Option<String>` | First issue to resolve, if any (omitted from JSON when `None`) |
+| `next_missing_real_desktop_proof` | `Option<String>` | Next missing desktop proof item (omitted from JSON when `None`; always `None` for launch-smoke) |
 | `items` | `Vec<LessonReadinessEvidenceProgressItem>` | Per-item detail |
 
 ### Required assertions
@@ -309,14 +335,49 @@ The canonical scenario asset is
 schema_version: eatme.scenario/v1
 id: real-alice-launch-smoke
 title: Real Alice launch smoke
-
+resource_basis:
+  - name: Alice 3 setup/download guidance
+    url: https://www.alice.org/get-alice/alice-3/
+  - name: Alice 3 source
+    url: https://github.com/TheAliceProject/alice3
+purpose: >-
+  Record bounded readiness that the scenario-labeled launch path packaged and
+  launched the real Alice desktop application under Xvfb, then captured
+  manifest/log/window/screenshot evidence before any agentic classroom behavior
+  is trusted. The baseline launch smoke is manifest-level evidence only; it is
+  not full UI automation, not creative assessment, and not learner-world grading.
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
   - id: check-dependencies
     command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
   - id: discover-alice
-    command: cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json
+    command: >-
+      cargo run -q -p eatme-cli -- alice discover
+      --alice-home ${ALICE_HOME} --json
+    evidence:
+      - stdout JSON has alice_ide_jar_exists=true
+      - stdout JSON has target_lib_exists=true
+      - stdout JSON has starter_project_exists=true
   - id: launch-smoke
     command: >-
       cargo run -q -p eatme-cli -- alice launch-smoke
@@ -324,11 +385,25 @@ steps:
       --runs-dir runs --timeout 900 --json
       --no-memory --offline-package
       --scenario real-alice-launch-smoke
-
+    evidence:
+      - manifest scenario_id equals real-alice-launch-smoke
+      - manifest failure_category is null
+      - manifest assertions all pass
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - window-list evidence exists when the window manager can report it
+      - screenshot exists and is non-empty
+      - log exists and is non-empty
+      - manifest/log/window/screenshot evidence is not full UI automation, not creative assessment, and not learner-world grading
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
 artifacts:
   manifest: runs/real-alice-launch-smoke/${RUN_ID}/manifest.json
   screenshot: runs/real-alice-launch-smoke/${RUN_ID}/screenshots/startup.png
   log: runs/real-alice-launch-smoke/${RUN_ID}/alice.log
+unsupported_policy: >-
+  If host graphics, DISPLAY, Java 21, or Maven prerequisites are missing, fail
+  loudly with a missing_dependency category. Do not silently skip.
 ```
 
 The scenario is validated by `cargo run -q -p eatme-cli -- assets validate --json`
