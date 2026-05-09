@@ -30,6 +30,7 @@ Eatme has three layers:
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Reviewing planned PR #199 recovery readiness | [PR #199 Recovery Readiness](pr199-recovery-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -107,6 +108,9 @@ Review the conservative first-lesson evidence boundary contract:
 
 Record exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+
+Review the planned scoped PR #199 recovery readiness contract:
+[PR #199 Recovery Readiness](pr199-recovery-readiness.md).
 
 Build the docs site:
 
