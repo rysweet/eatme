@@ -1,9 +1,9 @@
 use std::fs;
 
 use super::{
-    EXPECTED_SCENARIO_ASSET_COUNT, SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all,
-    assert_contains_all_across, read_eatme_scenario, repository_root, scenario_path,
-    sharing_readiness_boundary_doc,
+    EXPECTED_SCENARIO_ASSET_COUNT, assert_contains_all, assert_contains_all_across,
+    assert_no_success_claims, collect_positive_overclaims, read_eatme_scenario, repository_root,
+    scenario_path, sharing_readiness_boundary_doc,
 };
 
 #[test]
@@ -71,17 +71,7 @@ fn qa_scenario_does_not_contain_any_overclaim_patterns() {
     let root = repository_root();
     let path = scenario_path(&root, "eatme", "sharing-readiness-boundary-qa");
     let content = fs::read_to_string(&path).unwrap();
-    let normalized = content.to_lowercase();
-
-    let present: Vec<&&str> = SHARING_SUCCESS_CLAIM_PATTERNS
-        .iter()
-        .filter(|phrase| normalized.contains(**phrase))
-        .collect();
-
-    assert!(
-        present.is_empty(),
-        "sharing-readiness-boundary-qa must not contain overclaim patterns: {present:?}"
-    );
+    assert_no_success_claims("sharing-readiness-boundary-qa", &content);
 }
 
 #[test]
@@ -162,31 +152,24 @@ fn qa_scenario_acceptance_probes_reject_overclaim_patterns() {
 #[test]
 fn overclaim_guard_covers_qa_scenario_surface() {
     let root = repository_root();
-    let qa_path = scenario_path(&root, "eatme", "sharing-readiness-boundary-qa");
-    let qa_content = fs::read_to_string(&qa_path).unwrap();
-    let qa_gadugi_path = scenario_path(&root, "gadugi", "sharing-readiness-boundary-qa");
-    let qa_gadugi = fs::read_to_string(&qa_gadugi_path).unwrap();
-
-    let surfaces = [
-        (
-            "assets/scenarios/eatme/sharing-readiness-boundary-qa.yaml",
-            qa_content.as_str(),
-        ),
-        (
-            "assets/scenarios/gadugi/sharing-readiness-boundary-qa.yaml",
-            qa_gadugi.as_str(),
-        ),
-    ];
+    let qa_content =
+        fs::read_to_string(scenario_path(&root, "eatme", "sharing-readiness-boundary-qa"))
+            .unwrap();
+    let qa_gadugi =
+        fs::read_to_string(scenario_path(&root, "gadugi", "sharing-readiness-boundary-qa"))
+            .unwrap();
 
     let mut failures = Vec::new();
-    for (label, text) in surfaces {
-        let normalized = text.to_lowercase();
-        for pattern in SHARING_SUCCESS_CLAIM_PATTERNS {
-            if normalized.contains(pattern) {
-                failures.push(format!("{label} contains `{pattern}`"));
-            }
-        }
-    }
+    collect_positive_overclaims(
+        &mut failures,
+        "assets/scenarios/eatme/sharing-readiness-boundary-qa.yaml",
+        &qa_content,
+    );
+    collect_positive_overclaims(
+        &mut failures,
+        "assets/scenarios/gadugi/sharing-readiness-boundary-qa.yaml",
+        &qa_gadugi,
+    );
 
     assert!(
         failures.is_empty(),

@@ -1,5 +1,5 @@
 use super::{
-    SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all, assert_contains_all_across,
+    assert_contains_all, assert_contains_all_across, collect_positive_overclaims,
     sharing_readiness_boundary_doc,
 };
 
@@ -157,11 +157,4 @@ fn sharing_readiness_docs_do_not_require_save_or_first_lesson_completion() {
     );
 }
 
-fn collect_positive_overclaims(failures: &mut Vec<String>, label: &str, text: &str) {
-    let normalized = text.to_lowercase();
-    for pattern in SHARING_SUCCESS_CLAIM_PATTERNS {
-        if normalized.contains(pattern) {
-            failures.push(format!("{label} contains `{pattern}`"));
-        }
-    }
-}
+

@@ -221,6 +221,15 @@ fn assert_no_success_claims(label: &str, text: &str) {
     );
 }
 
+fn collect_positive_overclaims(failures: &mut Vec<String>, label: &str, text: &str) {
+    let normalized = text.to_lowercase();
+    for pattern in SHARING_SUCCESS_CLAIM_PATTERNS {
+        if normalized.contains(pattern) {
+            failures.push(format!("{label} contains `{pattern}`"));
+        }
+    }
+}
+
 fn normalize_whitespace(text: &str) -> String {
     let mut normalized = String::with_capacity(text.len());
     normalize_whitespace_into(text, &mut normalized);
