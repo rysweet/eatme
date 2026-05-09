@@ -184,6 +184,54 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
 }
 
 #[test]
+fn generated_launch_commands_quote_environment_argument_expansions() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let launch_command = step_commands(&adapter)
+        .into_iter()
+        .find(|command| command.contains("alice launch-smoke"))
+        .expect("real UI action generated runner includes a launch-smoke command");
+
+    for required in [r#"--alice-home "${ALICE_HOME}""#, r#"--run-id "${RUN_ID}""#] {
+        assert!(
+            launch_command.contains(required),
+            "generated launch command must quote shell-expanded argument {required:?}:\n{launch_command}"
+        );
+    }
+    for blocked in ["--alice-home ${ALICE_HOME}", "--run-id ${RUN_ID}"] {
+        assert!(
+            !launch_command.contains(blocked),
+            "generated launch command must not leave {blocked:?} unquoted:\n{launch_command}"
+        );
+    }
+}
+
+#[test]
+fn generated_runners_declare_run_id_optional_when_commands_export_it() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+
+    for source in [
+        "assets/scenarios/eatme/first-lessons-real-ui-actions.yaml",
+        "assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml",
+    ] {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let adapter = generated_adapter_value(&generated);
+        let commands = step_commands(&adapter);
+        let exports_run_id = commands
+            .iter()
+            .any(|command| command.contains("export RUN_ID="));
+        let optional = optional_environment(&adapter);
+
+        assert!(
+            !exports_run_id || optional.contains(&"RUN_ID"),
+            "{source} generated runner exports RUN_ID but does not declare it under environment.optional:\n{generated}"
+        );
+    }
+}
+
+#[test]
 fn generated_real_ui_action_contract_requires_every_bounded_marker() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
@@ -324,6 +372,24 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
 
 fn generated_adapter_value(generated: &str) -> Value {
     serde_yaml::from_str(generated).unwrap()
+}
+
+fn step_commands(adapter: &Value) -> Vec<&str> {
+    adapter["steps"]
+        .as_sequence()
+        .expect("adapter has steps")
+        .iter()
+        .filter_map(|step| step["params"]["command"].as_str())
+        .collect()
+}
+
+fn optional_environment(adapter: &Value) -> Vec<&str> {
+    adapter["environment"]["optional"]
+        .as_sequence()
+        .expect("adapter has environment.optional")
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect()
 }
 
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {

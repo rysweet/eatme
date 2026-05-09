@@ -56,7 +56,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-real-alice-launch-smoke}"
-      cargo run -q -p eatme-cli -- alice discover --alice-home ${ALICE_HOME} --json
+      cargo run -q -p eatme-cli -- alice discover --alice-home "${ALICE_HOME}" --json
   expect:
     exit_code: 0
     stdout_contains:
@@ -69,7 +69,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-real-alice-launch-smoke}"
-      cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario real-alice-launch-smoke
+      cargo run -q -p eatme-cli -- alice launch-smoke --alice-home "${ALICE_HOME}" --run-id "${RUN_ID}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario real-alice-launch-smoke
   expect:
     exit_code: 0
     stdout_contains:

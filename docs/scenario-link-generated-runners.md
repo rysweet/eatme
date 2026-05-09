@@ -10,9 +10,11 @@ the next classroom action.
 ## Contents
 
 - [What the feature provides](#what-the-feature-provides)
+- [Scenario-link model](#scenario-link-model)
 - [Quick start](#quick-start)
 - [Usage](#usage)
 - [CLI reference](#cli-reference)
+- [Data contract reference](#data-contract-reference)
 - [Generated YAML contract](#generated-yaml-contract)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -45,6 +47,38 @@ The generated runner preserves the canonical scenario's link path:
 Eatme owns Alice desktop launch behavior, dependency checks, virtual display
 setup, Java process lifecycle, screenshots, logs, manifests, and validation
 reports. Gadugi runners invoke eatme commands and inspect their output.
+
+## Scenario-link model
+
+A scenario link is the traceable path from a canonical scenario to a generated
+runner and then to the next human review or bounded generated-runner step. It is
+not a new runtime layer. The editable scenario supplies intent and boundaries;
+the generated runner supplies reproducible execution steps; documentation
+explains how to interpret the evidence without adding claims.
+
+Use these surfaces together:
+
+| Surface | Location | Reader contract |
+| --- | --- | --- |
+| Canonical scenario | `assets/scenarios/eatme/<scenario-id>.yaml` | The editable source for prerequisites, audience, evidence, artifacts, unsupported behavior, and follow-on path. |
+| Generated runner | `assets/scenarios/gadugi/<scenario-id>.yaml` | Deterministic output that calls eatme commands and checks emitted markers. |
+| Evidence artifacts | `runs/<scenario-id>/<RUN_ID>/` | Manifest, log, window list, screenshot, and scenario-specific artifacts produced by the eatme command. |
+| Documentation | `docs/` | Human-readable guidance for authoring, running, reviewing, and interpreting the evidence. |
+
+The first-lesson path uses this chain:
+
+```text
+first-lessons-real-ui-actions
+  -> generated Gadugi runner
+  -> launch-smoke evidence and ui-action-contract.json
+  -> lesson readiness interpretation
+  -> instructor-student-launch-evidence-handoff
+```
+
+The chain keeps the same boundary at every step: setup, launch, handoff, and
+classroom-support readiness evidence only. It does not become full UI
+automation, visible rendering correctness, grading, creative assessment,
+complete lesson execution, or broad Alice compatibility.
 
 ## Quick start
 
@@ -117,8 +151,33 @@ Scenario-link generated runners may claim only what their commands check.
 | "records first-lesson readiness evidence" | "completes the first lesson" |
 | "checks manifest-level launch evidence" | "claims visible rendering correctness" |
 | "keeps unsupported UI action boundaries explicit" | "fully automates the Alice UI" |
-| "routes to instructor handoff or human review" | "grades learner worlds" |
+| "routes to instructor handoff, human review, or a bounded generated-runner step" | "grades learner worlds" |
 | "names creative work for review" | "performs creative assessment" |
+
+### Connect first-lesson evidence to the classroom handoff
+
+Use `first-lessons-real-ui-actions` for the executable first-lesson readiness
+evidence and `instructor-student-launch-evidence-handoff` for the editable
+instructor/student follow-on prompt.
+
+The executable scenario produces evidence such as:
+
+- the selected scenario id in the run summary
+- launch manifest, log, window list, and startup screenshot references
+- Alice window detection and safe activation probes
+- save and Run shortcut dispatch probes when their preconditions are met
+- `ui-action-contract.json` with explicit action expectations and blockers
+
+The instructor handoff scenario turns those evidence inputs into classroom
+materials:
+
+- `real_alice_evidence_handoff_card`
+- `instructor_readiness_note`
+- `student_action_prompt`
+
+The handoff scenario stays at the agentic acceptance boundary. It can ask a
+student to record one Alice action, the visible result, and one revision. It
+does not certify that eatme automated the action or graded the result.
 
 ## CLI reference
 
@@ -179,6 +238,73 @@ cargo run -q -p eatme-cli -- assets generate-gadugi \
   --check \
   --json
 ```
+
+## Data contract reference
+
+### Generator-rendered canonical fields
+
+Scenario-link generated runners render these canonical eatme scenario fields into
+Gadugi YAML:
+
+| Field | Purpose |
+| --- | --- |
+| `id` | Stable scenario id. The filename, generated runner name, metadata tags, command arguments, and default run id are derived from it. |
+| `title` | Human-readable scenario name used in generated runner names. |
+| `kind` | Selects the runner shape and metadata test type, such as `alice_real_ui_action_contract`, `alice_lesson_smoke`, or `instructor_agentic_flow`. |
+| `purpose` and `unsupported_policy` | Feed generated boundary wording when the scenario declares the source limits that the generator recognizes. |
+| `real_alice.gated_by` | Adds required real-Alice environment gates such as `EATME_REAL_ALICE`. |
+| `steps[].command` | Provides the eatme command the generated runner executes. |
+| `steps[].evidence` | Supplies launch-output markers that the generated runner checks for bounded evidence scenarios. |
+| `agentic_flow.focus` and `agentic_flow.expected_outputs` | Feed instructor-agentic tags and expected output markers. |
+| `agentic_test_prompt` and `acceptance_probes` | Feed instructor-agentic runner prompts and probe text. |
+| `timeouts` | Supplies scenario, launch, and agentic timeout values used by generated runners. |
+
+### Validated canonical fields
+
+These canonical fields are part of the editable source contract and validation
+surface. They are not necessarily copied into generated Gadugi YAML:
+
+| Field | Purpose |
+| --- | --- |
+| `schema_version` | Identifies the editable scenario schema. Scenario-link runners consume `eatme.scenario/v1`. |
+| `resource_basis` | Names external or local resources the scenario is grounded in. |
+| `capabilities.required` and `capabilities.optional` | Lists host tools and optional probes needed before execution. |
+| `smoke_ready.evidence` | Names the evidence markers the scenario expects from a launch or readiness path. |
+| `acceptance_criteria` | Defines observable Given/When/Then checks and explicit unsupported-action outcomes. |
+| `agentic_follow_on` | Routes follow-on instructor/student work without converting it into launch evidence. |
+| `artifacts` | Names manifest, screenshot, log, window-list, and scenario-specific artifact paths. |
+| `unsupported_policy` | Preserves fail-loud behavior and the exact claims the scenario does not make. |
+
+### Generated runner fields
+
+Generated Gadugi runner files expose this stable contract to external runners:
+
+| Field | Purpose |
+| --- | --- |
+| `name` | Human-readable generated runner name. |
+| `description` | Generated boundary statement that names the source scenario and evidence scope. |
+| `config.timeout` | Scenario-level timeout in milliseconds, derived from canonical timeouts. |
+| `environment.requires` | Required environment variables, such as `ALICE_HOME` and `EATME_REAL_ALICE` for real Alice paths. |
+| `environment.optional` | Optional variables. CLI launch runners expose `RUN_ID` and `EATME_REPO`; instructor-agentic runners expose `EATME_REPO`. |
+| `agents` | System or agentic runner definitions used by Gadugi. |
+| `steps[].params.command` | Shell command that changes to `EATME_REPO` when supplied, may set a default `RUN_ID`, and invokes eatme. |
+| `steps[].expect` | Exit-code and output-marker expectations for each generated step. |
+| `assertions` | Named pass/fail checks that bind to generated steps. |
+| `metadata.source_eatme_asset` | Relative path back to the canonical eatme scenario. |
+| `metadata.generated_by` | Generator identity. |
+| `metadata.tags` | Searchable scenario and feature tags, including the source scenario id. |
+| `metadata.test_type` | Runner category, such as `ui-action-contract` or `instructor-agentic-flow`. |
+
+Generated runners are a compatibility API for Gadugi consumers. Change the
+canonical scenario or generator policy when this contract needs new wording,
+commands, or checks.
+
+### Generator contract follow-ups
+
+Generator implementation follow-ups must keep this contract honest: generated
+shell commands should quote `${ALICE_HOME}` and `${RUN_ID}` consistently, and
+instructor-agentic generated runners should either declare `RUN_ID` optional
+where they export it or avoid exporting it.
 
 ## Generated YAML contract
 
@@ -300,6 +426,32 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 Both commands must pass before a scenario-link change is ready for review.
+
+### Produce an instructor handoff from first-lesson evidence
+
+After a first-lesson run produces manifest, log, window-list, screenshot, and
+`ui-action-contract.json` evidence, use the instructor handoff scenario as the
+next classroom-support step:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate \
+  --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml \
+  --json
+```
+
+The generated Gadugi runner for the handoff validates editable assets and then
+asks the instructor acceptance agent for:
+
+```text
+real_alice_evidence_handoff_card
+instructor_readiness_note
+student_action_prompt
+```
+
+Use those outputs to separate environment readiness from student project
+behavior. Keep launch evidence, action-contract blockers, and classroom
+observation in separate sections so students are not shown a false completion
+claim.
 
 ## Authoring tutorial
 

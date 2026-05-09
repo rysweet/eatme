@@ -57,7 +57,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-hour-of-code-studio-kickoff}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario hour-of-code-studio-kickoff
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home "${ALICE_HOME}" --run-id "${RUN_ID}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario hour-of-code-studio-kickoff
   expect:
     exit_code: 0
     stdout_contains:

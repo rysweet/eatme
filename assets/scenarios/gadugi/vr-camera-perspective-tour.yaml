@@ -57,7 +57,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-perspective-tour}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-perspective-tour
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home "${ALICE_HOME}" --run-id "${RUN_ID}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-perspective-tour
   expect:
     exit_code: 0
     stdout_contains:

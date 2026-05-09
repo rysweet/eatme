@@ -332,7 +332,17 @@ fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
 }
 
 fn repository_command(command: &str, run_id: &str) -> String {
+    let command = quote_shell_expanded_launch_arguments(command);
     format!("cd \"${{EATME_REPO:-.}}\"\nexport RUN_ID=\"${{RUN_ID:-{run_id}}}\"\n{command}")
+}
+
+fn quote_shell_expanded_launch_arguments(command: &str) -> String {
+    command
+        .replace(
+            "--alice-home ${ALICE_HOME}",
+            "--alice-home \"${ALICE_HOME}\"",
+        )
+        .replace("--run-id ${RUN_ID}", "--run-id \"${RUN_ID}\"")
 }
 
 fn step_title(id: &str) -> String {

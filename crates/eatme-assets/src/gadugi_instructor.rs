@@ -35,7 +35,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         },
         environment: GeneratedEnvironment {
             requires: Vec::new(),
-            optional: vec!["EATME_REPO".into()],
+            optional: vec!["RUN_ID".into(), "EATME_REPO".into()],
         },
         agents: vec![
             GeneratedAgent {
