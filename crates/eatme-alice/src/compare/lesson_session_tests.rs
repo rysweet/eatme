@@ -217,11 +217,13 @@ fn lesson_session_readiness_reports_creative_assessment_gap_plainly() {
         .unwrap_or_else(|| panic!("missing creative_assessment boundary: {report_json}"));
     let boundary_text = serde_json::to_string(creative_boundary).unwrap();
 
-    assert!(boundary_text.contains("surface evidence"));
+    assert!(boundary_text.contains("surface available evidence"));
     assert!(boundary_text.contains("suggest next steps"));
-    assert!(boundary_text.contains("does not grade creativity"));
-    assert!(boundary_text.contains("does not judge quality"));
-    assert!(boundary_text.contains("does not mark the lesson complete"));
+    assert!(boundary_text.contains("learner's creative work in this scenario"));
+    assert!(
+        boundary_text
+            .contains("does not grade creativity, judge quality, or mark the lesson complete")
+    );
 }
 
 #[test]

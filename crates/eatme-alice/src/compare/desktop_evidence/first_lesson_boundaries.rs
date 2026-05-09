@@ -6,8 +6,8 @@ use super::first_lesson_next_action::ProjectProofArtifactInfo;
 use super::resolve_run_dir_artifact_path_under_root;
 
 const DEFAULT_BOUNDARY_SOURCE: &str = "automation_scenario";
-const CREATIVE_ASSESSMENT_BOUNDARY_LIMIT: &str = "The report can surface evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, does not judge quality, and does not mark the lesson complete.";
-const MISSING_CREATIVE_ASSESSMENT_BOUNDARY_DETAIL: &str = "Creative assessment scenario evidence is missing. The report can surface evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, does not judge quality, and does not mark the lesson complete.";
+const CREATIVE_ASSESSMENT_BOUNDARY_LIMIT: &str = "The report can surface available evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, judge quality, or mark the lesson complete.";
+const MISSING_CREATIVE_ASSESSMENT_BOUNDARY_DETAIL: &str = "Creative assessment scenario evidence is missing. The report can surface available evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, judge quality, or mark the lesson complete.";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct FirstLessonEvidenceBoundary {
