@@ -389,7 +389,8 @@ fn missing_pr_evidence(input: &ReadinessInput, item: &str) -> ReadinessArtifact 
 fn is_focused_readiness_path(path: &str) -> bool {
     matches!(
         path,
-        "Cargo.lock"
+        ".pre-commit-config.yaml"
+            | "Cargo.lock"
             | "crates/eatme-assets/Cargo.toml"
             | "docs/default-workflow-pr-readiness.md"
             | "docs/lesson-session-readiness.md"

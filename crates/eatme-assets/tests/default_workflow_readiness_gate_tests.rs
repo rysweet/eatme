@@ -308,6 +308,39 @@ fn merge_ready_gate_emits_success_only_when_every_gate_passes() {
 }
 
 #[test]
+fn merge_ready_gate_blocks_when_merge_state_is_not_clean() {
+    let dirty_merge = ReadinessInput {
+        merge_state_status: "BLOCKED".into(),
+        ..passing_review()
+    };
+    let artifact = MergeReadyGate::evaluate(dirty_merge);
+    assert_eq!(artifact.marker(), "NOT_MERGE_READY");
+    assert!(artifact.blocker().contains("mergeStateStatus"));
+}
+
+#[test]
+fn merge_ready_gate_blocks_when_not_mergeable() {
+    let not_mergeable = ReadinessInput {
+        mergeable: "CONFLICTING".into(),
+        ..passing_review()
+    };
+    let artifact = MergeReadyGate::evaluate(not_mergeable);
+    assert_eq!(artifact.marker(), "NOT_MERGE_READY");
+    assert!(artifact.blocker().contains("mergeable"));
+}
+
+#[test]
+fn merge_ready_gate_blocks_when_manual_merge_attempted() {
+    let manual_merge = ReadinessInput {
+        manual_merge_attempted: true,
+        ..passing_review()
+    };
+    let artifact = MergeReadyGate::evaluate(manual_merge);
+    assert_eq!(artifact.marker(), "NOT_MERGE_READY");
+    assert!(artifact.blocker().contains("manual merge"));
+}
+
+#[test]
 fn merge_ready_gate_emits_not_ready_with_specific_blocker_for_any_missing_gate() {
     let not_ready = MergeReadyGate::evaluate(ReadinessInput {
         pr_evidence: PREvidenceReview {
@@ -371,6 +404,7 @@ fn passing_check_runs() -> Vec<CheckRunEvidence> {
 
 fn focused_changed_files() -> Vec<String> {
     vec![
+        ".pre-commit-config.yaml".into(),
         "Cargo.lock".into(),
         "crates/eatme-assets/Cargo.toml".into(),
         "crates/eatme-assets/src/default_workflow_readiness.rs".into(),

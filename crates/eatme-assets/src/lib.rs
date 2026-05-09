@@ -8,11 +8,11 @@ mod accessibility_rescue_camera_captions_tests;
 mod assessment_boundary_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
-pub mod default_workflow_readiness;
 #[cfg(test)]
 mod default_workflow_attempt_contract_tests;
 #[cfg(test)]
 mod default_workflow_pr_readiness_contract_tests;
+pub mod default_workflow_readiness;
 #[cfg(test)]
 mod design_process_story_or_game_tests;
 mod discovery;
