@@ -1,33 +1,25 @@
 const PR188_READINESS_DOC: &str = include_str!("../../../docs/pr-188-recovery-readiness.md");
 const DEFAULT_WORKFLOW_DOC: &str = include_str!("../../../docs/default-workflow-pr-readiness.md");
 const MKDOCS_YML: &str = include_str!("../../../mkdocs.yml");
+const PR188_BRANCH: &str = "wave6-real-alice-smoke-report-1778302300";
+const CURRENT_HEAD_COMMANDS: &[&str] = &[
+    "NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh",
+    "cargo run -q -p eatme-cli -- assets validate --json",
+    "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+];
 
 #[test]
 fn recovery_workflow_envelope_is_branch_bound_current_head_and_non_merge() {
-    assert_contains(
+    assert_contains_all(
+        "PR #188 readiness workflow envelope",
         PR188_READINESS_DOC,
-        "Default Workflow PR Readiness",
-        "PR #188 readiness must remain a specialization of the default workflow.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "wave6-real-alice-smoke-report-1778302300",
-        "PR #188 readiness must name the recovery branch.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "current branch `HEAD`",
-        "Evidence must be tied to the current branch HEAD.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "Do not accept a no-op when untracked files, staged files, unstaged files",
-        "No-op acceptance must reject dirty root state.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "No manual PR merge was performed.",
-        "Review/finalization evidence must keep merge completion out of the recovery handoff.",
+        &[
+            "Default Workflow PR Readiness",
+            PR188_BRANCH,
+            "current branch `HEAD`",
+            "Do not accept a no-op when untracked files, staged files, unstaged files",
+            "No manual PR merge was performed.",
+        ],
     );
     assert_eq!(
         MKDOCS_YML.matches("PR #188 Recovery Readiness").count(),
@@ -38,92 +30,78 @@ fn recovery_workflow_envelope_is_branch_bound_current_head_and_non_merge() {
 
 #[test]
 fn launch_smoke_scope_defines_silver_thread_and_lists_canonical_non_claims() {
-    assert_contains(
+    assert_contains_all(
+        "launch-smoke scope",
         PR188_READINESS_DOC,
-        "silver-thread/e2e launch-smoke means the narrow end-to-end path",
-        "The launch-smoke boundary must be defined before evidence is accepted.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "It does not mean complete UI-driven lesson execution.",
-        "The scope must not be described as full lesson execution.",
+        &[
+            "silver-thread/e2e launch-smoke means the narrow end-to-end path",
+            "It does not mean complete UI-driven lesson execution.",
+        ],
     );
 
-    for non_claim in canonical_default_workflow_non_claims() {
-        assert_contains(
-            PR188_READINESS_DOC,
-            non_claim,
-            "PR #188 recovery must preserve the default-workflow non-claim boundary.",
-        );
-    }
+    let non_claims = canonical_default_workflow_non_claims();
+    assert_contains_all(
+        "PR #188 default-workflow non-claim boundary",
+        PR188_READINESS_DOC,
+        &non_claims,
+    );
 
-    for forbidden_claim in [
-        "full UI automation is proven",
-        "visible rendering correctness is proven",
-        "grading is proven",
-        "Save completion is proven",
-        "lesson completion is proven",
-        "complete end-to-end lesson execution is proven",
-    ] {
-        assert!(
-            !PR188_READINESS_DOC.contains(forbidden_claim),
-            "PR #188 readiness must not overclaim: {forbidden_claim}"
-        );
-    }
+    assert_contains_none(
+        "PR #188 readiness",
+        PR188_READINESS_DOC,
+        &[
+            "full UI automation is proven",
+            "visible rendering correctness is proven",
+            "grading is proven",
+            "Save completion is proven",
+            "lesson completion is proven",
+            "complete end-to-end lesson execution is proven",
+        ],
+    );
 }
 
 #[test]
 fn readiness_checks_are_current_head_executable_commands_without_timeout_wrappers() {
-    let usage = section(PR188_READINESS_DOC, "## Usage", "## No-op acceptance");
-    let no_op = section(
+    let evidence_sections = [
+        (
+            "usage",
+            section(PR188_READINESS_DOC, "## Usage", "## No-op acceptance"),
+        ),
+        (
+            "no-op acceptance",
+            section(
+                PR188_READINESS_DOC,
+                "## No-op acceptance",
+                "## Review and finalization evidence",
+            ),
+        ),
+        (
+            "recovery command sequence",
+            section(PR188_READINESS_DOC, "## Recovery command sequence", ""),
+        ),
+    ];
+
+    for (label, text) in evidence_sections {
+        assert_contains_all(label, text, CURRENT_HEAD_COMMANDS);
+    }
+
+    assert_contains_none(
+        "readiness commands",
         PR188_READINESS_DOC,
-        "## No-op acceptance",
-        "## Review and finalization evidence",
+        &["timeout ", "gtimeout ", "coreutils timeout"],
     );
-    let recovery_sequence = section(PR188_READINESS_DOC, "## Recovery command sequence", "");
-
-    for section in [usage, no_op, recovery_sequence] {
-        assert_contains(
-            section,
-            "NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh",
-            "The quality gate evidence must use the saved Node heap preference and /tmp in one executable command.",
-        );
-        assert_contains(
-            section,
-            "cargo run -q -p eatme-cli -- assets validate --json",
-            "Canonical asset validation must be executable current-HEAD evidence.",
-        );
-        assert_contains(
-            section,
-            "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
-            "Generated Gadugi freshness must be executable current-HEAD evidence.",
-        );
-    }
-
-    for forbidden in ["timeout ", "gtimeout ", "coreutils timeout"] {
-        assert!(
-            !PR188_READINESS_DOC.contains(forbidden),
-            "Readiness commands must not use timeout wrappers: {forbidden}"
-        );
-    }
 }
 
 #[test]
 fn fallback_repair_and_docs_finalization_are_bounded_to_failing_surfaces() {
-    assert_contains(
+    assert_contains_all(
+        "bounded repair and docs finalization",
         PR188_READINESS_DOC,
-        "repair only the directly failing PR #188 readiness surface",
-        "Failure handling must stay surgical.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "mkdocs build --strict (include only when documentation changed)",
-        "Finalization evidence must include docs strict build only when docs changed.",
-    );
-    assert_contains(
-        PR188_READINESS_DOC,
-        "replace the no-op sentence with a bounded change summary",
-        "Repair finalization must not reuse the no-op justification.",
+        &[
+            "repair only the directly failing PR #188 readiness surface",
+            "mkdocs build --strict (include only when documentation changed)",
+            "replace the no-op sentence with a bounded change summary",
+        ],
     );
 }
 
@@ -157,9 +135,26 @@ fn section<'a>(document: &'a str, heading: &str, next_heading: &str) -> &'a str 
     &tail[..end]
 }
 
-fn assert_contains(haystack: &str, needle: &str, context: &str) {
+fn assert_contains_all(label: &str, haystack: &str, needles: &[&str]) {
+    let missing = needles
+        .iter()
+        .filter(|needle| !haystack.contains(*needle))
+        .copied()
+        .collect::<Vec<_>>();
     assert!(
-        haystack.contains(needle),
-        "{context}\nmissing required text: {needle}"
+        missing.is_empty(),
+        "{label} is missing required text: {missing:?}"
+    );
+}
+
+fn assert_contains_none(label: &str, haystack: &str, needles: &[&str]) {
+    let present = needles
+        .iter()
+        .filter(|needle| haystack.contains(*needle))
+        .copied()
+        .collect::<Vec<_>>();
+    assert!(
+        present.is_empty(),
+        "{label} contains forbidden text: {present:?}"
     );
 }
