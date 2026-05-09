@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: quality-gates
+        name: quality gates
+        entry: env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE TMPDIR=/tmp ./scripts/quality-gates.sh
+        language: system
+        pass_filenames: false

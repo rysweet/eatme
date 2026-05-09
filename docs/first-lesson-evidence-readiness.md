@@ -65,12 +65,48 @@ The report answers one bounded question:
 
 It does not answer whether a learner completed the lesson, whether an Alice
 world is creatively successful, whether a saved project should receive a grade,
-whether rendering is correct, or whether the entire Alice UI flow is automated.
+whether rendering is correct, whether the full world executed, whether deployed
+sharing/platform work succeeded, or whether the entire Alice UI flow is
+automated.
 
 When creative-assessment evidence is missing, limited, or unavailable, the
 report can surface available evidence and suggest bounded next steps for the
 learner's creative work in this scenario. It does not grade creativity, judge
 quality, or mark the lesson complete.
+
+### Silver-thread run/observe gap
+
+This readiness documentation defines the Silver-thread run/observe gap for the
+automation scenario. The feature treats setup evidence, Run dispatch evidence,
+and observe-step evidence as bounded scenario evidence only. When the automation
+scenario reaches the observe step without recording a user-facing Run-window
+state, the report says the gap is still open and keeps completion-related claims
+out of the result. See
+[Run/Observe Readiness Evidence](run-observe-readiness.md) for the full
+run/observe usage, JSON, adapter, validation, and no-op guard contract.
+
+Scenario evidence shown:
+
+- Setup evidence, Run dispatch evidence, and observe-step evidence can be read
+  as bounded automation scenario evidence for the selected scenario and run.
+- The scenario evidence can show that the automation scenario reached the
+  observe step without treating it as lesson completion.
+
+What remains not yet shown:
+
+- User-facing Run-window state tied to the automation scenario observe step.
+- Scenario evidence that distinguishes a dispatched Run action from completed
+  lesson behavior.
+- Automation scenario evidence for any grading or creative assessment result.
+
+Next automation scenario evidence needed:
+
+- Capture the user-facing Run-window state after the automation scenario reaches
+  the observe step.
+- Link that observation to the selected scenario and run, without treating it as
+  full world execution, visible rendering correctness, grading, creative
+  assessment, Save completion, deployed sharing/platform success, or
+  first-lesson completion.
 
 | Result | Meaning | What to do |
 | --- | --- | --- |
@@ -113,7 +149,7 @@ reviewers, instructors, and PR readers. It renders the readiness heading, one
 | `Not yet shown` | Any required evidence is missing, invalid, not observed, or blocked. | The claim is not yet shown or not yet proven in user-facing wording. |
 | `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
 | `Original Alice action evidence` | `original_alice_action_evidence.status` is `missing`. | Explicitly reports `Original Alice action evidence is missing.` It is reportable state, not a completion claim. |
-| `Unproven` | Always. | The six required non-claims that the report must not imply. |
+| `Unproven` | Always. | The eight required non-claims that the report must not imply. |
 
 Example plain report:
 
@@ -148,10 +184,12 @@ Original Alice action evidence:
 
 Unproven:
 - Full Alice UI automation is not proven.
+- Full world execution is not proven.
 - Grading is not proven.
 - Creative assessment is not proven.
 - Visible rendering correctness is not proven.
 - Save completion is not proven.
+- Deployed sharing/platform success is not proven.
 - First-lesson completion is not proven.
 ```
 
@@ -222,20 +260,22 @@ sections may document those stable field names for automation consumers.
 
 ## Canonical unproven claims
 
-`unproven_claims` is the canonical home for the six non-claims that must remain
+`unproven_claims` is the canonical home for the eight non-claims that must remain
 visible in plain output and JSON:
 
 ```text
 Full Alice UI automation is not proven.
+Full world execution is not proven.
 Grading is not proven.
 Creative assessment is not proven.
 Visible rendering correctness is not proven.
 Save completion is not proven.
+Deployed sharing/platform success is not proven.
 First-lesson completion is not proven.
 ```
 
 Legacy `limitations` remains for compatibility. It may be a broader or superset
-list for older consumers, but it must include these six claims exactly enough for
+list for older consumers, but it must include these eight claims exactly enough for
 automation to preserve them. New consumers should read `unproven_claims` first.
 The canonical non-claims are produced by readiness output even when a
 next-action artifact omits its optional `does_not_claim`/`doesNotClaim` input.
@@ -288,7 +328,7 @@ Top-level fields:
 | `contract_check` | object | Result from `alice check-lesson-session`. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
-| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the six canonical `unproven_claims`. |
+| `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the eight canonical `unproven_claims`. |
 
 ### `original_alice_action_evidence`
 
@@ -427,7 +467,9 @@ Example excerpt:
     ],
     "does_not_prove": [
       "full Alice UI automation",
+      "full world execution",
       "Save completion",
+      "deployed sharing/platform success",
       "first-lesson completion"
     ]
   }
@@ -468,13 +510,14 @@ Do not add workflow timeout settings for first-lesson readiness reporting. The
 report consumes existing evidence for the selected run; it does not introduce
 new proof-generation timing policy.
 
-No setting enables automated creative grading, quality judgment, or lesson
-completion marking. Creative-assessment gap wording is part of the first-lesson
-readiness report contract.
+No setting enables automated creative grading, quality judgment, full world
+execution proof, deployed sharing/platform success, or lesson completion
+marking. Creative-assessment gap wording is part of the first-lesson readiness
+report contract.
 
 ## Tutorials
 
-### Review RabbitHole first-lesson readiness after implementation
+### Review RabbitHole first-lesson readiness
 
 1. Run `alice check-lesson-readiness` against the current comparison manifest.
 2. Read `Shown` first. Treat each line as a bounded evidence fact only.
@@ -546,10 +589,12 @@ Use user-facing wording:
 | `Desktop next-action evidence is not yet shown.` | Internal next-action artifact paths. |
 | `Save option evidence is shown as an observed option/action only.` | `Save completed.` |
 | `Visible rendering evidence is shown, but correctness is not proven.` | `Rendering is correct.` |
+| `Full world execution is not proven.` | `The world fully ran.` |
+| `Deployed sharing/platform success is not proven.` | `The project was shared successfully.` |
 | `First-lesson completion is not yet shown.` | `The lesson is complete.` |
 
 The durable rule is simple: report what the evidence explicitly shows, report
-missing states as not yet shown or not yet proven, and keep the six unproven
+missing states as not yet shown or not yet proven, and keep the eight unproven
 claims visible.
 
 ## Implementation contract
@@ -567,8 +612,8 @@ The Rust implementation:
    legacy progress/boundary fields.
 4. Preserves legacy JSON fields including `evidence_progress`, `target_evidence`,
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
-5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
-   as compatibility output that includes those six.
+5. Makes `unproven_claims` the canonical eight non-claims and keeps `limitations`
+   as compatibility output that includes those eight.
 6. Renders `alice run-first-lesson-readiness` plain output as readiness heading,
    `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`,
    optional `Original Alice action evidence`, and `Unproven`. The original Alice

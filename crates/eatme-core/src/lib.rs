@@ -1,4 +1,5 @@
 pub mod command;
+pub mod default_workflow_pr_readiness;
 pub mod fs_hash;
 pub mod manifest;
 pub mod pr199_recovery;

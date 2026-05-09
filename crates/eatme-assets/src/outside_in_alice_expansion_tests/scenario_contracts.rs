@@ -173,7 +173,7 @@ fn starter_project_preflight_contract_records_edit_run_observe_and_readiness_gap
             "save_reopen_export_readiness_gap_note",
             "starter-world-change-note.txt",
             "run-observe-readiness-gaps.txt",
-            "not visible rendering correctness proof",
+            "not visible rendering correctness evidence",
             "not first-lesson completion",
             "not grading",
             "not full Save completion",

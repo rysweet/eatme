@@ -28,7 +28,7 @@ used by the baseline launch smoke, then records that id in the run manifest.
 | `modified-class-portability` | Class portability contract | Validate the export/import evidence contract and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
-desktop QA journeys, and editable student creative scenarios. They prove that the
+desktop QA journeys, and editable student creative scenarios. They show that the
 desktop harness can reach a smoke-ready Alice session for resource-grounded paths
 before agentic instructor/student evaluation is trusted. The UI action and class
 portability scenarios intentionally add evidence contracts around the launch smoke
@@ -59,7 +59,7 @@ readiness from deterministic harness evidence:
   `africa.a3p`, giving the next open/save/export pass a real opened-project
   baseline.
 - Alice log and window-list files are captured as artifacts when available.
-- A non-empty startup screenshot or captured window list proves visual startup
+- A non-empty startup screenshot or captured window list records visual startup
   evidence for desktop scenarios. Screenshots are represented by the top-level
   `screenshot` manifest artifact when available.
 - The run artifacts are stored under a scenario-specific run directory.
@@ -70,7 +70,7 @@ kickoff, learner-visible first-scene, first-animation, evidence, and reflection
 expectations live in editable YAML as agentic follow-on contracts; runtime smoke
 still stops at deterministic launch-ready evidence.
 
-The baseline `real-alice-launch-smoke` scenario proves only the scenario-labeled
+The baseline `real-alice-launch-smoke` scenario records only the scenario-labeled
 launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
 
@@ -86,17 +86,17 @@ first-lesson completion independently. Missing declarations remain visible as
 without the expected observation is `not_observed`; explicit RabbitHole blockers
 are `blocked`.
 
-Present boundary evidence is boundary-specific only. It does not prove full
-Alice UI automation, visible rendering correctness, bounded Save completion,
-grading, creative assessment, learner-world grading, or first-lesson completion
-unless the matching evidence boundary is present.
+Present boundary evidence is boundary-specific only. It does not show full Alice
+UI automation, visible rendering correctness, Save completion, grading, creative
+assessment, learner-world grading, or first-lesson completion unless the
+matching evidence boundary is present.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
 required before anyone claims a modified class travels between Alice projects.
 The shared launch-smoke path records the scenario manifest; class export/import
-proof remains an explicit evidence contract for follow-on automation or agentic
-review.
+behavior remains an explicit evidence contract for follow-on automation or
+agentic review.
 
 The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight contract:
 real headset or Alice Player VR execution is optional, but availability must be
@@ -105,12 +105,12 @@ recorded. If real VR is unavailable, evidence must state
 camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
 outside-in and evidence-based instead of silently skipping unavailable hardware.
 
-The expanded instructor/student outside-in scenarios use the same rule. Real Alice
-execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
-manifest proves the selected scenario reached a smoke-ready desktop session; it does
-not replace the scenario-specific readiness checklist, migration map, comfort
-notes, import review, fallback artifact, or student reflection required by the
-YAML contract.
+The expanded instructor/student outside-in scenarios use the same rule. Real
+Alice execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A
+passing manifest shows the selected scenario reached a smoke-ready desktop
+session; it does not replace the scenario-specific readiness checklist, migration
+map, comfort notes, import review, fallback artifact, or student reflection
+required by the YAML contract.
 
 Instructor lesson-material evidence is handled separately by
 `instructor-lesson-materials-remix`. That agentic-flow asset verifies
@@ -126,13 +126,13 @@ and explicit instructor/student deliverables.
 
 | Need | Scenario | What to collect |
 | --- | --- | --- |
-| Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
-| Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
+| Show the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
+| Show the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
+| Show instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
 
 The evidence levels are intentionally separate:
 
-1. Launch evidence proves Alice started for the selected scenario id.
+1. Launch evidence shows Alice started for the selected scenario id.
 2. Action-contract evidence records the first UI actions that future automation
    must perform deterministically.
 3. Project proof-artifact evidence records Save Project and Select Project
@@ -151,8 +151,8 @@ each boundary:
 
 | State | Meaning | Boundary |
 | --- | --- | --- |
-| `present` | Explicit evidence exists for the named boundary and is safe to summarize. | Supports only that boundary's claim; it does not prove lesson completion. |
-| `missing` | Evidence is absent, incomplete, or only declares metadata without proof for the required claim. | The report stays not ready until the evidence is produced or repaired. |
+| `present` | Explicit evidence exists for the named boundary and is safe to summarize. | Supports only that boundary's claim; it does not show lesson completion. |
+| `missing` | Evidence is absent, incomplete, or only declares metadata without evidence for the required claim. | The report stays not ready until the evidence is produced or repaired. |
 | `invalid` | Evidence is malformed, unsafe, contradictory, outside the evidence root, or ambiguous. | The report stays not ready and surfaces the issue. |
 | `not_observed` | A producer ran but did not observe the expected boundary result. | The report stays not ready for that boundary. |
 | `blocked` | RabbitHole supplied a blocker, or a known unsupported desktop affordance prevents evidence collection. | The blocker remains visible; do not turn it into a pass or a generic missing state. |
@@ -479,7 +479,7 @@ assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
 Scenario authors can refine the instructor-facing readiness language by editing
 exactly one existing text field in that YAML asset. Prefer `purpose` for the
 small wording update because it is the summary that explains what the scenario
-proves before a reviewer inspects acceptance criteria, steps, or artifacts.
+shows before a reviewer inspects acceptance criteria, steps, or artifacts.
 
 The finished wording describes preflight launch/action-contract readiness
 evidence for setup, launch support, handoff artifacts, and classroom-support
@@ -623,8 +623,8 @@ outside the manifest and captured artifacts.
 
 `startup_screenshot` is an assertion key under `assertions`, not a top-level
 artifact field. The top-level screenshot artifact is named `screenshot`. The
-`real_alice_execution_evidence` assertion is the adapter contract that proves a
-real Alice process stayed alive on a responsive virtual display while visual
+`real_alice_execution_evidence` assertion is the adapter contract that records a
+real Alice process staying alive on a responsive virtual display while visual
 evidence and a non-empty launch log were captured.
 
 ## Scenario YAML reference
@@ -641,7 +641,7 @@ resource_basis:
   - name: Alice.org Building a Scene lesson family
     url: https://www.alice.org/resources/
 purpose: >-
-  Prove that the lesson-specific smoke scenario launches through the same real
+  Show that the lesson-specific smoke scenario launches through the same real
   Alice desktop harness as the baseline launch smoke.
 launcher:
   command: alice launch-smoke
@@ -879,7 +879,7 @@ cargo test --all-targets --all-features
 
 A desktop scenario is ready to trust when committed scenario assets validate,
 malformed scenario fixtures fail with actionable messages, the fake harness
-proves the scenario id is routed through the existing launch smoke path, and the
+verifies the scenario id is routed through the existing launch smoke path, and the
 gated real Alice command produces distinct scenario artifacts when the host
 supports desktop launch. UI action, portability, and VR claims also require
 their declared evidence contracts; a scenario-labeled launch manifest alone is

@@ -32,7 +32,7 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 Use these checks for documentation-only changes when the docs mention assets,
-scenario ids, or adapter workflow. They prove the documented command examples
+scenario ids, or adapter workflow. They verify the documented command examples
 still map to committed assets.
 
 The generated adapter count contract is documented in
@@ -102,3 +102,21 @@ from `master` pushes or manual dispatch, never from pull requests.
 | Alice harness | Rust quality gates; real Alice smoke where environment permits |
 | CLI command surface | Rust quality gates; update CLI usage docs; docs build |
 | Lesson-session readiness docs | `mkdocs build --strict`; asset validation and Gadugi freshness checks when scenario ids or adapter behavior are mentioned |
+
+## TDD no-op guard
+
+The TDD no-op guard checks the active git-linked worktree before declaring that a
+recovery run made no intentional changes:
+
+```bash
+git rev-parse --show-toplevel
+git status --short
+git diff --stat
+```
+
+Run the guard from the PR branch worktree. If `git rev-parse --show-toplevel`
+fails, the guard fails closed; it must not inspect an unrelated non-git
+directory or report a clean no-op from the wrong path.
+
+For run/observe readiness wording and the related adapter contract, see
+[Run/Observe Readiness Evidence](run-observe-readiness.md).

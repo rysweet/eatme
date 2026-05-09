@@ -3,22 +3,11 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 const ARTIFACT_PATH: &str = "docs/default-workflow-pr-readiness.md";
-const REQUIRED_VALIDATED_EVIDENCE_HEAD_COMMANDS: &[&str] = &[
+const REQUIRED_VALIDATION_COMMANDS: &[&str] = &[
     "cargo run -q -p eatme-cli -- assets validate --json",
     "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
     "mkdocs build --strict",
     "TMPDIR=/tmp ./scripts/quality-gates.sh",
-];
-const REQUIRED_PUBLICATION_RECORD_FIELDS: &[&str] = &[
-    "Publication head SHA",
-    "GitHub check rollup for that exact SHA",
-    "Merge state",
-    "Review state",
-    "Owner-free decision",
-    "Scope decision",
-    "Validation decision",
-    "Finalization decision",
-    "PR evidence comment",
 ];
 const UNSUPPORTED_SUCCESS_CLAIMS: &[&str] = &[
     "full alice ui automation is verified",
@@ -31,193 +20,69 @@ const UNSUPPORTED_SUCCESS_CLAIMS: &[&str] = &[
 ];
 
 #[test]
-fn readiness_artifact_has_readiness_review_and_finalization_sections() {
+fn readiness_artifact_has_required_structural_sections() {
     let artifact = read_artifact();
 
     assert_ordered_sections(
         artifact,
         &[
-            "## Readiness evidence",
-            "## Review evidence",
-            "## Finalization evidence",
-            "## Nonclaims",
+            "## Readiness contract",
+            "## Configuration",
+            "## Exact-head setup",
+            "## GitHub evidence",
+            "## Local QA evidence",
+            "## Decision gate",
+            "## Verdicts",
+            "## Starter-project evidence boundary",
+            "## Executable starter-project boundary check",
         ],
     );
 }
 
 #[test]
-fn validated_evidence_head_records_required_commands_without_timeout_wrappers() {
+fn readiness_contract_includes_required_validation_commands() {
     let artifact = read_artifact();
-    let evidence_head = section(
-        artifact,
-        "### Validated evidence-head executable evidence",
-        "### Historical same-head outside-in testing evidence",
-    );
 
-    assert!(
-        evidence_head.contains("`NODE_OPTIONS=--max-old-space-size=32768`"),
-        "validated evidence-head evidence must record the required Node memory setting"
-    );
-    assert!(
-        evidence_head.contains("no timeout wrapper"),
-        "validated evidence-head evidence must explicitly say timeout wrappers were not used"
-    );
-
-    for command in REQUIRED_VALIDATED_EVIDENCE_HEAD_COMMANDS {
+    for command in REQUIRED_VALIDATION_COMMANDS {
         assert!(
-            evidence_head.contains(command),
-            "validated evidence-head evidence must include executable command: {command}"
+            artifact.contains(command),
+            "readiness artifact must include validation command: {command}"
         );
     }
 
     assert!(
-        !contains_timeout_wrapper(evidence_head),
-        "validated evidence-head evidence must not include timeout wrapper commands"
+        !contains_timeout_wrapper(artifact),
+        "readiness artifact must not include timeout wrapper commands"
     );
 }
 
 #[test]
-fn local_git_evidence_frames_clean_status_as_pre_refinement_capture() {
-    let local_git = section(
+fn starter_project_evidence_boundary_section_exists_with_bounded_language() {
+    let boundary = section(
         read_artifact(),
-        "### Local Git observations",
-        "### GitHub PR #175 observations",
+        "## Starter-project evidence boundary",
+        "## Executable starter-project boundary check",
     );
 
     assert_contains_all_normalized(
-        local_git,
-        &[
-            "before this refinement changed the artifact/test files",
-            "pre-refinement observation for the validated evidence head",
-            "not a claim about the post-edit worktree or the eventual publication head",
-            "This refinement intentionally changes only the readiness artifact and the contract tests that guard it",
-            "docs/default-workflow-pr-readiness.md",
-            "crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs",
-        ],
-        "local git evidence",
-    );
-    assert!(
-        !local_git.contains("The local branch was clean"),
-        "local git evidence must not frame historical clean status as current handoff state"
+        boundary,
+        &["bounded setup evidence", "not PR readiness"],
+        "starter-project evidence boundary",
     );
 }
 
 #[test]
-fn artifact_distinguishes_validated_evidence_head_from_publication_head() {
+fn executable_boundary_check_has_overclaim_table() {
     let artifact = read_artifact();
-    let scope = section(artifact, "## Scope", "## Readiness evidence");
-
-    assert_contains_all_normalized(
-        scope,
-        &[
-            "Validated evidence head",
-            "Artifact publication head",
-            "not embedded in this committed artifact",
-            "committing a documentation refinement changes the PR head",
-            "does not claim that its own eventual publication commit has checked itself",
-        ],
-        "scope evidence",
-    );
-    assert!(
-        !scope.contains("| Checked-out local HEAD |"),
-        "scope must not frame the evidence SHA as the committed artifact publication head"
-    );
-    assert!(
-        !artifact.contains("### Current-head executable evidence"),
-        "artifact must use validated evidence-head wording instead of self-staling current-head wording"
-    );
-}
-
-#[test]
-fn finalization_evidence_records_unmerged_pr_status_and_workflow_boundary() {
-    let finalization = section(read_artifact(), "## Finalization evidence", "## Nonclaims");
-
-    assert_contains_all_normalized(
-        finalization,
-        &[
-            "PR #175 remains unmerged",
-            "No manual merge was performed",
-            "workflow readiness/review/finalization evidence",
-            "Finalization status: `merge-ready-after-publication-head-checks`",
-            "post-push publication head/check rollup recorded outside this file",
-        ],
-        "finalization evidence",
-    );
-    assert!(
-        !finalization.contains("limited-ready"),
-        "finalization evidence must assert the exact finalization status instead of passing on stale limited-ready wording"
-    );
-    assert!(
-        !finalization.contains("checked-out local branch head is the same SHA"),
-        "finalization evidence must not claim the committed artifact publication head is the validated evidence head"
-    );
-}
-
-#[test]
-fn finalization_evidence_defines_external_publication_head_record_contract() {
-    let finalization = section(read_artifact(), "## Finalization evidence", "## Nonclaims");
-
-    assert_contains_all_normalized(
-        finalization,
-        &[
-            "External publication-head evidence record",
-            "must be recorded outside this committed artifact after push",
-            "GitHub check rollup for that exact SHA",
-            "literal no-op justification tied to the publication head, check rollup, and focused artifact-contract scope",
-            "owner-free finalization does not require owner intervention",
-        ],
-        "finalization evidence",
-    );
-
-    assert_publication_record_fields_present(finalization, "finalization evidence");
-}
-
-#[test]
-fn publication_record_contract_requires_head_checks_and_scope_fields() {
-    let complete_fixture = "\
-External publication-head evidence record:
-- Publication head SHA: abc8ceb636f8970027d9ada8e36c9d54928529ae
-- GitHub check rollup for that exact SHA: 7 successful checks, 2 skipped checks, 0 failing checks, 0 pending checks.
-- Merge state: CLEAN / MERGEABLE.
-- Review state: no approval claimed; owner-free finalization.
-- Owner-free decision: no owner intervention required.
-- Scope decision: focused artifact-contract scope only.
-- Validation decision: GitHub rollup is current and sufficient.
-- Finalization decision: merge-ready or literal no-op justification.
-- PR evidence comment: URL for the external publication-head record.
-";
-
-    assert_publication_record_fields_present(
-        complete_fixture,
-        "complete publication record fixture",
-    );
-
-    assert_eq!(
-        missing_required_publication_record_fields("No-op: PR looks good."),
-        REQUIRED_PUBLICATION_RECORD_FIELDS,
-        "no-op justification must be tied to publication head, check rollup, and focused scope"
-    );
-}
-
-#[test]
-fn historical_branch_ref_evidence_is_bounded_to_recorded_execution_context() {
-    let historical = section(
-        read_artifact(),
-        "### Historical same-head outside-in testing evidence",
-        "## Review evidence",
+    let check_section = section(
+        artifact,
+        "## Executable starter-project boundary check",
+        "## Implementation consistency",
     );
 
     assert!(
-        historical.contains("branch ref as resolved at execution time"),
-        "historical uvx evidence must state that the install target was a mutable branch ref"
-    );
-    assert_contains_all_normalized(
-        historical,
-        &[
-            "not an immutable SHA-pinned install reference",
-            "same-head claim depends on the recorded execution context",
-        ],
-        "historical uvx evidence",
+        check_section.contains("| Prohibited phrase | Bounded replacement |"),
+        "executable boundary check must include the overclaim rule table"
     );
 }
 
@@ -316,25 +181,6 @@ fn normalize_whitespace(text: &str) -> String {
     }
 
     normalized
-}
-
-fn missing_required_publication_record_fields(text: &str) -> Vec<&'static str> {
-    let normalized_text = normalize_whitespace(text);
-
-    REQUIRED_PUBLICATION_RECORD_FIELDS
-        .iter()
-        .copied()
-        .filter(|field| !normalized_text.contains(field))
-        .collect()
-}
-
-fn assert_publication_record_fields_present(text: &str, context: &str) {
-    let missing_fields = missing_required_publication_record_fields(text);
-    assert!(
-        missing_fields.is_empty(),
-        "{context} is missing required publication-head fields:\n{}",
-        missing_fields.join("\n")
-    );
 }
 
 fn unsupported_success_claim_lines(text: &str) -> Vec<&str> {

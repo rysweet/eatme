@@ -17,9 +17,13 @@ const REQUIRED_SOURCE_BOUNDARIES: &[&str] = &[
     "opened starter project",
     "small editable starter-world change",
     "attempt to run or observe",
+    "User-facing Run-window state is not yet shown for the automation scenario observe step.",
+    "User-facing observe-state evidence is not yet shown for the selected scenario and run.",
     "save/reopen/export/readiness gaps",
-    "not proof of visible rendering correctness",
+    "not evidence of visible rendering correctness",
     "without claiming full Save completion or full UI automation",
+    "full world execution",
+    "deployed sharing/platform success",
     "without claiming first-lesson completion",
     "not grading",
     "not creative assessment",
@@ -31,12 +35,16 @@ const REQUIRED_ADAPTER_BOUNDARIES: &[&str] = &[
     "opened starter project",
     "manifest/log/window/screenshot evidence",
     "bounded starter-world and readiness-gap artifacts",
+    "User-facing Run-window state is not yet shown for the automation scenario observe step.",
+    "User-facing observe-state evidence is not yet shown for the selected scenario and run.",
     "without claiming save/reopen/export coverage",
     "not full UI automation",
+    "not full world execution",
     "not creative assessment",
     "not learner-world grading",
     "not complete Alice coverage",
-    "not visible rendering correctness proof",
+    "not visible rendering correctness evidence",
+    "not deployed sharing/platform success",
     "not first-lesson completion",
     "not full Save completion",
 ];
@@ -45,8 +53,13 @@ const INTERNAL_OR_OVERBROAD_LANGUAGE: &[&str] = &[
     "action evidence",
     "source boundary",
     "manifest-level evidence only",
+    "as far as this automation scenario can prove",
+    "proof of a completed save",
+    "visible rendering correctness proof",
     "proves visible rendering correctness",
     "proves save/reopen/export",
+    "proves full world execution",
+    "proves deployed sharing/platform success",
     "first lesson is complete",
     "grades learner work",
     "assesses creativity",
@@ -482,12 +495,5 @@ fn assert_rules_match_contract(rules: &[OverclaimRule], expected_rules: &[(&str,
 }
 
 fn normalize(text: &str) -> String {
-    let mut normalized = String::with_capacity(text.len());
-    for part in text.split_whitespace() {
-        if !normalized.is_empty() {
-            normalized.push(' ');
-        }
-        normalized.push_str(part);
-    }
-    normalized
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }

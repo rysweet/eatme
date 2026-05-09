@@ -263,7 +263,7 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
 
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
-        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
+        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only. User-facing Run-window state is not yet shown for the automation scenario observe step. User-facing observe-state evidence is not yet shown for the selected scenario and run. The adapter is not full UI automation, not full world execution, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness evidence, not deployed sharing/platform success, not first-lesson completion, and not full Save completion.";
     }
 
     let text =

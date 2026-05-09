@@ -13,8 +13,12 @@ mod default_workflow_attempt_contract_tests;
 #[cfg(test)]
 mod default_workflow_pr_readiness_contract_tests;
 #[cfg(test)]
+mod default_workflow_pr_readiness_doc_tests;
+#[cfg(test)]
 mod design_process_story_or_game_tests;
 mod discovery;
+#[cfg(test)]
+mod first_lesson_readiness_doc_tests;
 mod gadugi;
 #[cfg(test)]
 mod live_studio_workshop_tests;
@@ -32,6 +36,8 @@ mod setup_preflight_ready_to_create_tests;
 mod starter_project_preflight_boundary_tests;
 #[cfg(test)]
 mod student_reflection_artifact_tests;
+#[cfg(test)]
+mod tdd_noop_guard_tests;
 mod validation;
 
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};

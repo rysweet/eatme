@@ -214,7 +214,7 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
         "not complete Alice coverage",
         "starter-world-change-note.txt",
         "run-observe-readiness-gaps.txt",
-        "not visible rendering correctness proof",
+        "not visible rendering correctness evidence",
         "not first-lesson completion",
         "not full Save completion",
     ] {

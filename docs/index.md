@@ -29,8 +29,9 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
+| Reviewing bounded Run/observe evidence | [Run/Observe Readiness Evidence](run-observe-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
-| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Recovering exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
@@ -38,12 +39,12 @@ Eatme has three layers:
 | Publishing docs | [GitHub Pages](github-pages.md) |
 | Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 
-## What eatme proves
+## What eatme records
 
-Eatme proves that Alice-facing assets and adapter scenarios are coherent before
-they are used by people or agents. For real Alice smoke scenarios, it also proves
-that the desktop application can be packaged, launched, observed, and reported
-through deterministic artifacts.
+Eatme validates that Alice-facing assets and adapter scenarios are coherent
+before they are used by people or agents. For real Alice smoke scenarios, it
+records deterministic evidence that the desktop application can be packaged,
+launched, observed, and reported.
 
 A passing launch smoke records:
 
@@ -58,12 +59,12 @@ A passing launch smoke records:
 - manifest assertions
 - failure category, or `null` when the smoke passed
 
-## What eatme does not pretend to prove
+## What eatme does not claim
 
-The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
-evidence for a scenario-labeled Alice run. They do not drive an entire lesson
-through the Alice interface, score learner creativity, inspect private Alice
-implementation details, or grade saved learner worlds.
+The real Alice lesson scenarios are launch-smoke scenarios. They record
+smoke-ready evidence for a scenario-labeled Alice run. They do not drive an
+entire lesson through the Alice interface, score learner creativity, inspect
+private Alice implementation details, or grade saved learner worlds.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
@@ -72,7 +73,7 @@ and which parts are evidence expectations for human or agent review.
 ## Outside-in evidence for Alice lesson scenarios
 
 This evidence connects instructor and student Alice lesson scenarios to a real
-Alice launch path without overstating what the launch smoke proves.
+Alice launch path without overstating what the launch smoke shows.
 
 | Scenario | Audience | Evidence contract |
 | --- | --- | --- |
@@ -110,7 +111,10 @@ Review the conservative first-lesson evidence boundary contract:
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
 
-Record exact-head pull request readiness:
+Review bounded Run/observe readiness evidence:
+[Run/Observe Readiness Evidence](run-observe-readiness.md).
+
+Recover exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
 
 Recover PR #199 merge-readiness evidence after the manual-fallback violation:

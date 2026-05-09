@@ -83,7 +83,7 @@ The generated adapter is `assets/scenarios/gadugi/workshop-facilitator-live-stud
 Do not hand-edit it for mission intent. Edit the canonical eatme scenario and
 regenerate.
 
-Validation and freshness checks are necessary but not sufficient. They prove the
+Validation and freshness checks are necessary but not sufficient. They verify the
 assets are shaped correctly and generated files are reproducible; reviewers must
 also confirm that the canonical scenario and generated adapter satisfy the
 contract below.
