@@ -70,6 +70,7 @@ const REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS: &[&str] = &[
     "run_world_desktop_toolbar_window_observed",
     "run_world_desktop_execution_observed",
 ];
+const MISSING_REAL_ACTION_EVIDENCE_CODE: &str = "missing_real_action_evidence";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
@@ -454,7 +455,7 @@ fn required_action_evidence_blockers(
                 None => "Required original Alice action evidence is missing from automation scenarios.",
             };
             Some(LessonTargetEvidenceBlocker {
-                code: "missing_real_action_evidence",
+                code: MISSING_REAL_ACTION_EVIDENCE_CODE,
                 action: (*action_id).to_string(),
                 reason: reason.into(),
             })

@@ -113,7 +113,7 @@ pub fn run_first_lesson_readiness_sequence(
         shown_evidence: readiness.shown_evidence.clone(),
         not_yet_shown: readiness.not_yet_shown.clone(),
         desktop_next_action: readiness.desktop_next_action.clone(),
-        original_alice_action_evidence: readiness.original_alice_action_evidence.clone(),
+        original_alice_action_evidence: readiness.original_alice_action_evidence,
         unproven_claims: readiness.unproven_claims.clone(),
         evidence_progress: readiness.evidence_progress.clone(),
         evidence_boundaries: readiness.evidence_boundaries.clone(),
@@ -147,7 +147,6 @@ mod tests {
     use crate::compare::{
         DesktopProofContract, LessonReadinessEvidenceProgress, LessonSessionContractCheck,
         LessonSessionReadinessEnvelope, OriginalAliceActionEvidenceReport,
-        OriginalAliceActionEvidenceStatus,
     };
 
     #[test]
@@ -168,7 +167,7 @@ mod tests {
             shown_evidence: readiness_report.shown_evidence.clone(),
             not_yet_shown: readiness_report.not_yet_shown.clone(),
             desktop_next_action: readiness_report.desktop_next_action.clone(),
-            original_alice_action_evidence: readiness_report.original_alice_action_evidence.clone(),
+            original_alice_action_evidence: readiness_report.original_alice_action_evidence,
             unproven_claims: readiness_report.unproven_claims.clone(),
             evidence_progress: readiness_report.evidence_progress.clone(),
             evidence_boundaries: readiness_report.evidence_boundaries.clone(),
@@ -224,12 +223,7 @@ mod tests {
             shown_evidence: Vec::new(),
             not_yet_shown: Vec::new(),
             desktop_next_action: None,
-            original_alice_action_evidence: OriginalAliceActionEvidenceReport {
-                status: OriginalAliceActionEvidenceStatus::Missing,
-                summary: "Original Alice action evidence is missing.".into(),
-                detail: "Original Alice action evidence was not found in the comparison target evidence."
-                    .into(),
-            },
+            original_alice_action_evidence: OriginalAliceActionEvidenceReport::missing(),
             unproven_claims: Vec::new(),
             evidence_progress: LessonReadinessEvidenceProgress {
                 total_required: 0,

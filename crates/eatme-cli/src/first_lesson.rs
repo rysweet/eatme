@@ -6,6 +6,7 @@ use eatme_alice::compare::{
     DesktopNextActionSummary, FirstLessonReadinessSequenceReport,
     OriginalAliceActionEvidenceReport, OriginalAliceActionEvidenceStatus, ReadinessEvidenceItem,
 };
+use std::borrow::Cow;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -93,7 +94,11 @@ fn scenario_readiness_status(report: &FirstLessonReadinessSequenceReport) -> &st
     }
 }
 
-fn terminal_plain(value: &str) -> String {
+fn terminal_plain(value: &str) -> Cow<'_, str> {
+    if value.chars().all(|ch| !ch.is_control()) {
+        return Cow::Borrowed(value);
+    }
+
     let mut text = String::with_capacity(value.len());
     for ch in value.chars() {
         if ch.is_control() {
@@ -102,7 +107,7 @@ fn terminal_plain(value: &str) -> String {
             text.push(ch);
         }
     }
-    text
+    Cow::Owned(text)
 }
 
 fn write_readiness_items(
@@ -149,8 +154,8 @@ fn write_original_alice_action_evidence(
     }
 
     writeln!(writer, "Original Alice action evidence:")?;
-    writeln!(writer, "- {}", terminal_plain(&evidence.summary))?;
-    writeln!(writer, "- {}", terminal_plain(&evidence.detail))?;
+    writeln!(writer, "- {}", terminal_plain(evidence.summary))?;
+    writeln!(writer, "- {}", terminal_plain(evidence.detail))?;
     Ok(())
 }
 

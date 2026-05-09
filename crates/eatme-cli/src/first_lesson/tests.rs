@@ -1,13 +1,14 @@
 use super::*;
 use eatme_alice::compare::{
-    DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgressItem,
-    LessonSessionContractCheck, LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
-    OriginalAliceActionEvidenceReport, OriginalAliceActionEvidenceStatus, ReadinessEvidenceItem,
+    DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgress,
+    LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
+    LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
+    OriginalAliceActionEvidenceReport, ReadinessEvidenceItem,
 };
 use std::collections::BTreeMap;
 
 #[test]
-fn plain_output_includes_next_actionable_blocker_line() {
+fn plain_output_omits_legacy_next_actionable_blocker_line() {
     let report = sequence_report(progress_with_blocker(Some(
         "desktop Run pixel observation is blocked: fix next: run Alice with a non-headless graphics environment",
     )));
@@ -138,7 +139,7 @@ fn plain_output_escapes_control_characters_from_report_data() {
 fn plain_output_surfaces_missing_original_alice_action_evidence_without_overclaiming() {
     let mut report = sequence_report(progress_with_blocker(None));
     let missing_evidence = missing_original_alice_action_evidence();
-    report.original_alice_action_evidence = missing_evidence.clone();
+    report.original_alice_action_evidence = missing_evidence;
     report.readiness_report.original_alice_action_evidence = missing_evidence;
 
     let mut output = Vec::new();
@@ -157,7 +158,7 @@ fn plain_output_surfaces_missing_original_alice_action_evidence_without_overclai
 fn plain_output_omits_original_alice_action_evidence_section_when_available() {
     let mut report = sequence_report(progress_with_blocker(None));
     let available_evidence = available_original_alice_action_evidence();
-    report.original_alice_action_evidence = available_evidence.clone();
+    report.original_alice_action_evidence = available_evidence;
     report.readiness_report.original_alice_action_evidence = available_evidence;
 
     let mut output = Vec::new();
@@ -297,22 +298,11 @@ fn unproven_claims_fixture() -> Vec<String> {
 }
 
 fn missing_original_alice_action_evidence() -> OriginalAliceActionEvidenceReport {
-    OriginalAliceActionEvidenceReport {
-        status: OriginalAliceActionEvidenceStatus::Missing,
-        summary: "Original Alice action evidence is missing.".into(),
-        detail: "Original Alice action evidence was not found in the comparison target evidence."
-            .into(),
-    }
+    OriginalAliceActionEvidenceReport::missing()
 }
 
 fn available_original_alice_action_evidence() -> OriginalAliceActionEvidenceReport {
-    OriginalAliceActionEvidenceReport {
-        status: OriginalAliceActionEvidenceStatus::Available,
-        summary: "Original Alice action evidence is available.".into(),
-        detail:
-            "The readiness report did not find a missing original Alice action evidence blocker."
-                .into(),
-    }
+    OriginalAliceActionEvidenceReport::available()
 }
 
 fn assert_plain_output_does_not_overclaim(output: &str) {

@@ -412,7 +412,7 @@ targets:
     let report_json = serde_json::to_value(&report).unwrap();
     assert_eq!(
         report_json["original_alice_action_evidence"]["status"],
-        "available"
+        "missing"
     );
     assert_eq!(
         report_json["original_alice_action_evidence"],
