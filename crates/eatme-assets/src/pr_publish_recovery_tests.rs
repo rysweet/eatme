@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 const RECOVERY_DOC: &str = "docs/pr-publish-recovery.md";
 const LOCAL_HOOK_ARTIFACT_DOC: &str = "docs/local-hook-artifacts.md";
-const REQUIRED_BASELINE: &str = "e14a14283480bf3bd926309b092b6a8d69713d21";
+const REQUIRED_HEAD_EVIDENCE: &str = "captured live `headRefOid`";
 const PR_BRANCH: &str = "wave6-persona-gap-fill-1778302300";
 const ARTIFACT_GLOB: &str = concat!(
     "/home/",
@@ -24,7 +24,7 @@ static NORMALIZED_RECOVERY_DOC_TEXT: OnceLock<String> = OnceLock::new();
 static NORMALIZED_RECOVERY_EVIDENCE_TEXT: OnceLock<String> = OnceLock::new();
 
 #[test]
-fn evidence_collector_contract_requires_exact_baseline_artifacts_and_config_detection() {
+fn evidence_collector_contract_requires_exact_head_artifacts_and_config_detection() {
     assert_normalized_contains_all(
         "Evidence Collector contract",
         normalized_recovery_evidence_text(),
@@ -32,8 +32,8 @@ fn evidence_collector_contract_requires_exact_baseline_artifacts_and_config_dete
             "## Evidence Collector",
             "Gather local git state",
             "fetch PR #174",
-            "verify required head SHA",
-            REQUIRED_BASELINE,
+            "verify captured live `headRefOid`",
+            REQUIRED_HEAD_EVIDENCE,
             ARTIFACT_GLOB,
             LOCAL_HOOK_ARTIFACT_DOC,
             "confirm repo validation surfaces",
@@ -156,7 +156,7 @@ fn readiness_reporter_contract_requires_literal_no_op_recovery_and_strict_blocke
         &[
             "## Readiness Reporter",
             "No-op justification:",
-            REQUIRED_BASELINE,
+            REQUIRED_HEAD_EVIDENCE,
             "Preserved wave7-pr174 artifacts were inspected",
             "Worktree: clean.",
             "Merge-ready blockers/evidence:",
@@ -195,7 +195,7 @@ fn edge_cases_force_blocked_report_or_no_op_not_merge_ready_claims() {
         &[
             "artifact access denied",
             "required artifacts are inaccessible",
-            "PR head moved away from the required baseline",
+            "PR head changed after capture",
             "artifact intent is ambiguous",
             "out-of-scope changes",
             "dirty worktree",

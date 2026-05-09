@@ -17,7 +17,7 @@ The recovery workflow has three valid outcomes:
 | --- | --- |
 | Focused recovery commit | Preserved artifacts prove that an allowed version or package metadata change is missing from the PR branch. |
 | No-op justification | The required PR head is verified, artifacts are accounted for, no allowed metadata change is missing, and the worktree is clean. Any merge-readiness blockers are still reported separately. |
-| Blocked report | Required artifacts are missing, the PR head moved away from the required baseline, recovery intent is ambiguous, validation fails, or a focused recovery commit cannot be made safely. |
+| Blocked report | Required artifacts are missing, the PR head cannot be verified against the captured live `headRefOid`, recovery intent is ambiguous, validation fails, or a focused recovery commit cannot be made safely. |
 
 Do not manually merge the PR. Do not force-push, rebase, reset, or rewrite
 history. Do not add `.pre-commit-config.yaml` for this recovery path.
@@ -27,7 +27,7 @@ history. Do not add `.pre-commit-config.yaml` for this recovery path.
 | Input | Requirement |
 | --- | --- |
 | PR number | `174` |
-| Required recovery baseline | `e14a14283480bf3bd926309b092b6a8d69713d21` |
+| Required recovery head | Capture PR 174's live `headRefOid` with `gh pr view` at recovery start; do not hardcode a commit SHA in this repository-owned contract. |
 | PR branch | `wave6-persona-gap-fill-1778302300` |
 | Preserved artifacts | The PR 174 `wave7-pr174-*` path recorded in [Local Hook Artifacts](local-hook-artifacts.md) by default |
 | Allowed recovery files | `pyproject.toml`, `mkdocs.yml`, and package-facing metadata documentation only when artifacts prove the intent |
@@ -81,8 +81,8 @@ blocked report.
 
 ## Evidence Collector
 
-Gather local git state, fetch PR #174, verify required head SHA
-`e14a14283480bf3bd926309b092b6a8d69713d21`, inspect the preserved artifacts at
+Gather local git state, fetch PR #174, verify captured live `headRefOid`,
+inspect the preserved artifacts at
 the PR 174 path recorded in [Local Hook Artifacts](local-hook-artifacts.md),
 confirm repo validation surfaces, and detect pre-commit config presence. The
 repository-root config probe is:
@@ -156,10 +156,10 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ## Readiness Reporter
 
 Emit a strict no-op, focused recovery, or blocked report for the exact final
-head. A no-op report must include `No-op justification:`, the required baseline,
-the artifact accounting, clean-scope evidence, PR state, check state, and
-`Merge-ready blockers/evidence:`. Green checks alone were not treated as
-merge-ready. Manual merge: not performed.
+head. A no-op report must include `No-op justification:`, the captured live
+`headRefOid`, the artifact accounting, clean-scope evidence, PR state, check
+state, and `Merge-ready blockers/evidence:`. Green checks alone were not treated
+as merge-ready. Manual merge: not performed.
 
 ## Recovery workflow
 
@@ -181,19 +181,16 @@ Do not print remote URLs or credentials in recovery notes.
 ### 2. Fetch and verify the required PR head
 
 ```bash
+required_head="$(gh pr view 174 --json headRefOid --jq .headRefOid)"
 git fetch origin pull/174/head:pr-174-publish-recovery
 git switch pr-174-publish-recovery
 git rev-parse HEAD
+test "$(git rev-parse HEAD)" = "${required_head}"
 ```
 
-The recovered local head must equal:
-
-```text
-e14a14283480bf3bd926309b092b6a8d69713d21
-```
-
-If the live PR head differs from this baseline, stop with a blocked report
-instead of applying recovery changes.
+The recovered local head must equal the captured live `headRefOid`. If the PR
+head changes after capture, refresh the exact-head evidence before applying
+recovery changes or stop with a blocked report.
 
 ### 3. Capture live PR state
 
@@ -318,7 +315,7 @@ Use this literal structure only when no repository changes are required:
 
 ```text
 No-op justification:
-PR 174 remains at head e14a14283480bf3bd926309b092b6a8d69713d21.
+PR 174 remains at captured live head <headRefOid>.
 Preserved wave7-pr174 artifacts were inspected from <artifact-directory> and
 accounted for as: <artifact-summary>.
 No artifact-proven focused metadata change is missing from pyproject.toml,
@@ -326,7 +323,7 @@ mkdocs.yml, or package-facing metadata documentation.
 Worktree: clean.
 PR state: <open-or-draft-state>; base <base>; head branch
 wave6-persona-gap-fill-1778302300; headRefOid
-e14a14283480bf3bd926309b092b6a8d69713d21; merge state <state>;
+<headRefOid>; merge state <state>;
 mergeable <value>; review decision <decision>.
 Checks: <same-head check summary>.
 Merge-ready blockers/evidence: <review state, mergeability, clean scope, pending
@@ -334,13 +331,13 @@ or missing evidence>. Green checks alone were not treated as merge-ready.
 ```
 
 The no-op recovery decision is invalid when artifacts are missing, the head
-differs from the required baseline, the worktree is dirty, or allowed metadata
-intent is ambiguous. Unresolved merge-readiness blockers do not invalidate a
-no-op recovery decision, but they must be reported in the merge-ready
-blockers/evidence line and must not be described as merge-ready.
+differs from the captured live `headRefOid`, the worktree is dirty, or allowed
+metadata intent is ambiguous. Unresolved merge-readiness blockers do not
+invalidate a no-op recovery decision, but they must be reported in the
+merge-ready blockers/evidence line and must not be described as merge-ready.
 
 Blocked edge cases include artifact access denied, required artifacts are
-inaccessible, PR head moved away from the required baseline, artifact intent is
+inaccessible, PR head changed after capture, artifact intent is
 ambiguous, out-of-scope changes, dirty worktree state, pending checks, failed
 checks, GitHub authentication failure, GitHub API errors, GitHub rate limiting,
 network interruption after the single allowed read-only retry, and green checks
@@ -352,7 +349,7 @@ Use this structure after a recovery commit is pushed:
 
 ```text
 Focused recovery completed for PR 174.
-Starting head: e14a14283480bf3bd926309b092b6a8d69713d21.
+Starting head: <captured live headRefOid>.
 Final head: <post-push headRefOid>.
 Preserved wave7-pr174 artifacts inspected: <artifact-summary>.
 Recovered files: <staged-file-list>.
@@ -373,7 +370,7 @@ Blocked:
 <specific blocker>.
 
 Evidence:
-- Required baseline: e14a14283480bf3bd926309b092b6a8d69713d21.
+- Captured live headRefOid: <headRefOid>.
 - Observed PR head: <headRefOid>.
 - Artifact accounting: <available, missing, inaccessible, or ambiguous files>.
 - Worktree scope: <clean or dirty with paths>.
