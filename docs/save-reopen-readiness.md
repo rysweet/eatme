@@ -1,14 +1,16 @@
 # Save/reopen readiness
 
 Save/reopen readiness is the bounded evidence contract for recording that a
-save hook produced a changed Alice project artifact, a reopen hook used that
-saved artifact, and reopened-state evidence was captured for review. It does
-not treat those artifacts as full UI automation or lesson completion.
+save hook produced a saved artifact from the edited project path, a reopen hook
+used that saved artifact, and reopened-state evidence was captured for review.
+It does not treat those artifacts as semantic project-change proof, full UI
+automation, or lesson completion.
 
 Use this page to review one question:
 
-> Did the harness save a changed `.a3p`, reopen that saved artifact instead of
-> the bundled starter project, and record reopened-state evidence for review?
+> Did the harness save an artifact from the edited project path, reopen that
+> saved artifact instead of the bundled starter project, and record
+> reopened-state evidence for review?
 
 The answer is trusted only when the run evidence records the save proof, reopen
 proof, and reopened-state proof described below. A starter-project launch smoke
@@ -24,6 +26,7 @@ or opened-project preflight does not prove save/reopen readiness by itself.
 - [Hook API](#hook-api)
 - [Readiness states](#readiness-states)
 - [Review checklist](#review-checklist)
+- [PR review evidence](#pr-review-evidence)
 - [Non-claims](#non-claims)
 
 ## Evidence boundary
@@ -34,7 +37,7 @@ evidence contracts.
 | Layer | What it proves | What it does not imply |
 | --- | --- | --- |
 | Starter-project preflight | The bundled starter project can be opened and inspected with launch evidence. | Save, reopen, export, full UI automation, or lesson completion. |
-| Save artifact proof | A deterministic save affordance produced a non-empty saved `.a3p` and save evidence for the current run. | Full Save completion, grading, creative assessment, or first-lesson completion. |
+| Save artifact proof | A deterministic save affordance produced a non-empty saved `.a3p` and save evidence for the current run. | Semantic project change, full Save completion, grading, creative assessment, or first-lesson completion. |
 | Reopen artifact proof | A deterministic reopen affordance reopened the saved `.a3p`, not the bundled starter project, and produced non-empty reopen evidence. | Visible rendering correctness, broad Alice compatibility, or creative quality. |
 | Reopened-state proof | The reopen affordance produced state evidence and marked state verification as passed for the bounded selector. | Learner-world grading, instructor assessment, or complete lesson success. |
 
@@ -283,6 +286,63 @@ continuation/review based on available bounded evidence. Do not describe it as
 end-to-end user success. If the same run lacks accepted save proof, any reopen
 claim remains blocked no matter how much starter-project or launch evidence is
 present.
+
+## PR review evidence
+
+Save/reopen PR finalization uses a bounded evidence record. The record is useful
+only when it names the exact code under review, the files changed by the
+finalization, the evidence inspected, the checks actually run, and the explicit
+claims that remain out of scope.
+
+| Field | Required content |
+| --- | --- |
+| PR and branch | Pull request number, branch name, and exact head SHA from GitHub metadata or the fetched PR ref. |
+| Working tree | Clean working tree, or a file list limited to the documentation, asset, or code changes made for the finalization. |
+| Files modified or no-op justification | A real `Files modified` list when files changed; otherwise an explicit `No-op justification` tied to existing committed files and evidence. |
+| Save evidence inspected | `save-project` proof or no-go state, including status, required artifacts, and validation errors. |
+| Reopen evidence inspected | `reopen-project` proof or no-go state, including source saved artifact, reopened artifacts, state verification, and validation errors. |
+| UI action contract boundary | Whether `ui-action-contract.json` includes only save proof or also an explicit `reopen-project` probe. Reopen proof is not inferred from save proof. |
+| Commands run | Only commands actually executed for the finalization, such as docs build, asset validation, Gadugi freshness, or targeted Rust tests. |
+| Limitations | Explicit non-claims for full Alice UI automation, grading, creative assessment, full Save completion, first-lesson completion, export completion, and broad product readiness. |
+
+Use this reusable shape for save/reopen recovery evidence:
+
+```text
+Default-workflow save/reopen recovery evidence for PR #<number>.
+
+Branch: <branch-name>
+HEAD: <exact-head-sha>
+Evidence source: fetched PR head and GitHub PR metadata for the same head.
+
+Files modified:
+- docs/save-reopen-readiness.md - Documents the bounded save/reopen PR review
+  evidence shape and explicit non-claims.
+- docs/default-workflow-pr-readiness.md - Documents the save/reopen recovery output
+  shape after rate-limit or no-op guard failure.
+
+Save evidence: `proves_save()` is accepted only when status is `passed`, both
+required save artifacts are present, and validation errors are empty.
+
+Reopen evidence: `proves_reopen()` is accepted only when status is `passed`, the
+source saved artifact is present, reopened project evidence, reopen evidence,
+and reopened-state evidence are present, and validation errors are empty.
+
+Validation: name only commands actually run for this finalization.
+
+Limitations: This does not claim full Alice UI automation, grading validation,
+creative-assessment validation, full Save completion, first-lesson completion,
+export completion, or broad product readiness.
+```
+
+If the finalization changes no files, replace `Files modified` with:
+
+```text
+No-op justification: Evidence-only recovery for PR #<number>. The exact PR head was
+refreshed, the fetched PR ref matched GitHub `headRefOid`, the committed
+save/reopen docs and tests already described the bounded evidence contract, and
+no stale, missing, or overbroad documentation, asset, generated output, or source
+artifact was found. No files were changed.
+```
 
 ## Non-claims
 

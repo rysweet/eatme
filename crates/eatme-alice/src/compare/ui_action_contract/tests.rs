@@ -37,6 +37,34 @@ fn requires_save_project_no_go_after_run_world_proof() {
 }
 
 #[test]
+fn rejects_save_project_candidate_with_validation_errors_as_unproven() {
+    let mut issues = Vec::new();
+    let mut contract = contract_after_run_without_save_no_go();
+    contract["candidate_affordance_probes"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "id": "alice-side-project-save-command-hook",
+            "action_id": "save-project",
+            "status": "passed",
+            "save_selector": "scene.eatmeFirstLessonStep",
+            "candidate_hook_path": "/alice/tools/eatme-save-project",
+            "saved_project_artifact": {"path": "project-save/saved-project.a3p", "size_bytes": 2},
+            "save_artifact": {"path": "project-save/project-save.json", "size_bytes": 2},
+            "validation_errors": ["save artifact did not validate"]
+        }));
+
+    inspect_ui_action_contract("modernized", &contract, &mut issues);
+
+    assert!(
+        issues
+            .iter()
+            .any(|issue| issue.contains("passed save-project proof or a no-go precondition")),
+        "save-project candidate with validation errors must not satisfy proof: {issues:?}"
+    );
+}
+
+#[test]
 fn accepts_recorded_failed_run_window_observation_after_shortcut_dispatch() {
     let mut issues = Vec::new();
     let mut contract = contract_after_edit_without_run_no_go();

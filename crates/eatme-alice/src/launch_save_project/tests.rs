@@ -109,6 +109,63 @@ fn project_save_hook_passes_only_with_saved_project_and_save_artifact() {
 }
 
 #[test]
+fn proves_save_requires_passed_status_required_artifacts_and_empty_validation_errors() {
+    let probe = save_project_probe_for_proof("passed");
+    assert!(probe.proves_save());
+
+    let mut failed_status = save_project_probe_for_proof("failed");
+    failed_status.saved_project_artifact = Some(artifact("project-save/saved-project.a3p"));
+    failed_status.save_artifact = Some(artifact("project-save/project-save.json"));
+    assert!(!failed_status.proves_save());
+
+    let mut missing_saved_project = save_project_probe_for_proof("passed");
+    missing_saved_project.saved_project_artifact = None;
+    assert!(!missing_saved_project.proves_save());
+
+    let mut missing_save_artifact = save_project_probe_for_proof("passed");
+    missing_save_artifact.save_artifact = None;
+    assert!(!missing_save_artifact.proves_save());
+
+    let mut validation_error = save_project_probe_for_proof("passed");
+    validation_error
+        .validation_errors
+        .push("save artifact did not validate".into());
+    assert!(!validation_error.proves_save());
+}
+
+#[test]
+fn project_save_hook_fails_before_running_when_edited_project_artifact_is_missing() {
+    let root = unique_test_dir("save-hook-missing-edited-project");
+    let alice_home = root.join("alice");
+    let tools = alice_home.join("tools");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&tools).unwrap();
+    fs::write(tools.join("eatme-save-project"), "#!/bin/sh\n").unwrap();
+    let runner = FakeCommandRunner::default();
+
+    let probe = probe_project_save_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &run_world_probe_with_status("passed"),
+        ":99",
+    );
+
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_save());
+    assert!(runner.commands().is_empty());
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|error| error.contains("procedure edit did not leave an edited project")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn project_save_hook_rejects_paths_outside_evidence_dir() {
     let root = unique_test_dir("save-hook-bad-path");
     let alice_home = root.join("alice");
@@ -239,6 +296,33 @@ fn artifact_if_passed(status: &str, path: &str) -> Option<ArtifactInfo> {
         size_bytes: 2,
         sha256: format!("{path}-sha"),
     })
+}
+
+fn save_project_probe_for_proof(status: &str) -> UiActionSaveProjectProbe {
+    UiActionSaveProjectProbe {
+        id: "alice-side-project-save-command-hook".into(),
+        action_id: "save-project".into(),
+        status: status.into(),
+        detail: "save probe detail".into(),
+        save_selector: DEFAULT_SAVE_SELECTOR.into(),
+        candidate_hook_path: "tools/eatme-save-project".into(),
+        command: Some("tools/eatme-save-project --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        saved_project_artifact: Some(artifact("project-save/saved-project.a3p")),
+        save_artifact: Some(artifact("project-save/project-save.json")),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
+fn artifact(path: &str) -> ArtifactInfo {
+    ArtifactInfo {
+        path: path.into(),
+        size_bytes: 2,
+        sha256: format!("{path}-sha"),
+    }
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {

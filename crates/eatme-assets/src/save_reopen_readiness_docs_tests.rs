@@ -89,6 +89,83 @@ fn missing_or_unsupported_readiness_evidence_is_blocked_not_success() {
     );
 }
 
+#[test]
+fn recovery_evidence_requires_files_modified_or_explicit_no_op_with_limitations() {
+    let save_reopen = read_doc("save-reopen-readiness.md");
+    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+    let combined = format!("{save_reopen}\n{default_workflow}");
+
+    assert_contains_all(
+        "save/reopen recovery evidence docs",
+        &combined,
+        &[
+            "Files modified or no-op justification",
+            "Files modified:",
+            "No-op justification:",
+            "Validation: name only commands actually run for this finalization",
+            "Checks run:",
+            "List only commands actually executed for this finalization",
+            "No full Alice UI automation claim",
+            "No grading validation claim",
+            "No creative-assessment validation claim",
+            "No broad product-readiness claim",
+        ],
+    );
+}
+
+#[test]
+fn durable_recovery_docs_keep_pr_172_evidence_out_of_committed_templates() {
+    let save_reopen = read_doc("save-reopen-readiness.md");
+    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+    let combined = format!("{save_reopen}\n{default_workflow}");
+
+    assert_contains_all(
+        "durable recovery template docs",
+        &combined,
+        &[
+            "PR #<number>",
+            "<branch-name>",
+            "<exact-head-sha>",
+            "do not bake point-in-time branch or SHA evidence into this durable document",
+        ],
+    );
+    assert_contains_none(
+        "durable recovery template docs",
+        &combined,
+        &[
+            "PR #172",
+            "pull/172",
+            "46d22db1593e245e5637a09fb2422f7134669a41",
+            "wave6-save-reopen-readiness-1778302300",
+        ],
+    );
+}
+
+#[test]
+fn save_reopen_docs_describe_artifact_evidence_without_semantic_change_overclaim() {
+    let doc = read_doc("save-reopen-readiness.md");
+
+    assert_contains_all(
+        "save/reopen readiness doc",
+        &doc,
+        &[
+            "saved artifact from the edited project path",
+            "It does not treat those artifacts as semantic project-change proof",
+            "Avoid wording that turns artifact evidence into a broader product claim",
+        ],
+    );
+    assert_contains_none(
+        "save/reopen readiness doc",
+        &doc,
+        &[
+            "changed Alice project artifact",
+            "changed `.a3p`",
+            "semantic project change is proven",
+            "broad product readiness is proven",
+        ],
+    );
+}
+
 fn read_doc(name: &str) -> String {
     fs::read_to_string(repository_root().join("docs").join(name)).unwrap()
 }

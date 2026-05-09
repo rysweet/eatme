@@ -19,6 +19,7 @@ readiness comment only after every gate passes.
 - [GitHub metadata fields](#github-metadata-fields)
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
+- [Save/reopen recovery output shape](#savereopen-recovery-output-shape)
 - [PR #164 readiness example](#pr-164-readiness-example)
 - [Readiness comment](#readiness-comment)
 - [Blocker handling](#blocker-handling)
@@ -79,16 +80,17 @@ Run recovery in this order:
 1. Fetch and resolve the PR head:
 
    ```bash
-   git fetch origin pull/172/head:refs/remotes/origin/pr/172 --quiet
-   git rev-parse refs/remotes/origin/pr/172
+   PR_NUMBER=123 # replace with the pull request number under review
+   git fetch origin "pull/${PR_NUMBER}/head:refs/remotes/origin/pr/${PR_NUMBER}" --quiet
+   git rev-parse "refs/remotes/origin/pr/${PR_NUMBER}"
    ```
 
 2. Query GitHub metadata for the same PR:
 
    ```bash
-   gh pr view 172 \
+   gh pr view "$PR_NUMBER" \
      --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup,files,commits
-   gh pr checks 172 --json name,state,bucket,completedAt,link
+   gh pr checks "$PR_NUMBER" --json name,state,bucket,completedAt,link
    ```
 
 3. Compare the fetched ref SHA to `headRefOid`. A mismatch blocks recovery for
@@ -253,6 +255,66 @@ cargo run -q -p eatme-cli -- assets validate --json
 
 The validation gate passes only when the JSON report has `passed: true` and no
 blocking errors.
+
+## Save/reopen recovery output shape
+
+This subsection is the reusable output contract for save/reopen recovery after a
+rate-limit failure, wrapper no-op guard failure, or other workflow failure that
+prevented a useful final evidence summary. It does not create a new PR and does
+not broaden the save/reopen evidence boundary. Put the exact PR number, branch,
+and head SHA in the PR comment or workflow summary produced for that recovery;
+do not bake point-in-time branch or SHA evidence into this durable document.
+
+The recovery output must include this evidence shape:
+
+```text
+Default-workflow recovery recorded for PR #<number> at exact head <exact-head-sha>.
+
+Evidence inspected:
+- GitHub PR metadata for PR #<number> at the same head.
+- Fetched pull/<number>/head, or the local branch when it matches GitHub
+  `headRefOid`.
+- `crates/eatme-alice/src/launch_save_project.rs` save proof conditions.
+- `crates/eatme-alice/src/launch_reopen_project.rs` reopen proof conditions.
+- `crates/eatme-alice/src/compare/ui_action_contract.rs` and
+  `crates/eatme-alice/src/compare/ui_action_contract/save.rs` action-contract
+  wiring for passed proof versus no-go states.
+- `docs/save-reopen-readiness.md` and
+  `docs/starter-project-preflight-evidence.md` bounded evidence wording.
+
+Files modified:
+- docs/save-reopen-readiness.md - Adds the save/reopen PR review evidence shape
+  and finalization wording.
+- docs/default-workflow-pr-readiness.md - Adds the save/reopen recovery example and
+  required output boundary.
+
+Checks run:
+- List only commands actually executed for this finalization.
+
+Limitations:
+- No full Alice UI automation claim.
+- No grading validation claim.
+- No creative-assessment validation claim.
+- No full Save completion claim.
+- No first-lesson completion claim.
+- No export completion claim.
+- No broad product-readiness claim.
+```
+
+When save/reopen finalization changes no files, replace `Files modified` with:
+
+```text
+No-op justification: Evidence-only recovery for existing PR #<number>. The exact
+head <exact-head-sha> was verified against branch <branch-name>, the fetched PR
+ref matched GitHub `headRefOid`, and the committed save/reopen docs, tests, and
+action-contract code already expressed the bounded evidence contract. No files
+were changed because no stale, missing, or overbroad artifact was found.
+```
+
+The strongest accepted conclusion is that the PR has bounded save/reopen
+evidence suitable for continuation or review at the exact verified head. Do not
+rewrite that conclusion as Alice UI automation success, grading success,
+creative-assessment success, or product readiness.
 
 ## PR #164 readiness example
 
