@@ -110,6 +110,42 @@ fn partial_launch_smoke_manifest_never_reports_ready() {
 }
 
 #[test]
+fn non_null_non_string_failure_categories_are_not_ready() {
+    let mut baseline = ready_target("baseline");
+    baseline["failure_category"] = serde_json::json!({"category": "hidden"});
+    let mut modernized = ready_target("modernized");
+    modernized["launch_manifest"]["failure_category"] = serde_json::json!(["hidden"]);
+
+    let manifest_path = write_comparison_manifest(serde_json::json!({
+        "baseline": baseline,
+        "modernized": modernized,
+    }));
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+
+    assert!(
+        !report.passed,
+        "malformed non-null failure categories must not pass: {report_json}"
+    );
+    assert_eq!(report.status, "not_ready", "{report_json}");
+    assert_eq!(report.readiness_status, "incomplete", "{report_json}");
+    assert_contains(
+        &report.issues,
+        "baseline target failure_category must be null",
+    );
+    assert_contains(
+        &report.issues,
+        "modernized launch_manifest failure_category must be null",
+    );
+    assert_role_status(&report_json, "baseline", "not_ready");
+    assert_role_status(&report_json, "modernized", "not_ready");
+    assert_launch_smoke_non_claims(&report_json);
+    assert_no_lesson_or_assessment_claims(&report_json);
+    assert_no_first_lesson_readiness_requirements(&report_json);
+}
+
+#[test]
 fn real_alice_launch_smoke_assets_keep_bounded_non_claim_scope() {
     let root = workspace_root();
     let canonical =

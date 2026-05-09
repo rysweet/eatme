@@ -124,7 +124,7 @@ fn inspect_launch_smoke_target_evidence(
     if target_status.as_deref() != Some("passed") {
         issues.push(format!("{role} target status must be passed"));
     }
-    if failure_category.is_some() {
+    if field_is_non_null(target, "failure_category") {
         issues.push(format!("{role} target failure_category must be null"));
     }
 
@@ -165,11 +165,7 @@ fn inspect_launch_smoke_target_evidence(
             "{role} launch_manifest scenario_id must be {REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID:?}"
         ));
     }
-    if launch_manifest
-        .get("failure_category")
-        .and_then(serde_json::Value::as_str)
-        .is_some()
-    {
+    if field_is_non_null(launch_manifest, "failure_category") {
         issues.push(format!(
             "{role} launch_manifest failure_category must be null"
         ));
@@ -269,7 +265,7 @@ fn launch_smoke_evidence_progress(
         ),
         progress_item(
             &required_evidence[2],
-            launch_smoke_target_status_state(&targets),
+            launch_smoke_target_status_state(&targets, issues),
             "target status and failure-category metadata for both targets",
         ),
         progress_item(
@@ -327,9 +323,19 @@ fn launch_smoke_evidence_progress(
     }
 }
 
-fn launch_smoke_target_status_state(targets: &[Option<&LessonTargetEvidence>; 2]) -> &'static str {
+fn launch_smoke_target_status_state(
+    targets: &[Option<&LessonTargetEvidence>; 2],
+    issues: &[String],
+) -> &'static str {
     if targets.iter().any(|target| target.is_none()) {
         return "missing";
+    }
+    if issues.iter().any(|issue| {
+        issue.contains("target status must be passed")
+            || issue.contains("target failure_category must be null")
+            || issue.contains("launch_manifest failure_category must be null")
+    }) {
+        return "invalid";
     }
     if targets.iter().flatten().all(|target| {
         target.target_status.as_deref() == Some("passed")
@@ -350,6 +356,12 @@ fn launch_smoke_next_blocker(issues: &[String]) -> Option<String> {
     issues
         .first()
         .map(|issue| format!("next launch-smoke readiness evidence gap: {issue}"))
+}
+
+fn field_is_non_null(value: &serde_json::Value, field: &str) -> bool {
+    value
+        .get(field)
+        .is_some_and(|field_value| !field_value.is_null())
 }
 
 fn launch_smoke_desktop_proof_contract(
