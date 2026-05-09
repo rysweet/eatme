@@ -16,8 +16,8 @@ Save shortcut, artifact path, screenshot, or desktop observation can support onl
 the bounded claim named in the report. It never implies full UI automation,
 grading, creative assessment, visible rendering correctness, Save completion, or
 first-lesson completion unless explicit evidence for that exact claim exists.
-The artifact shape and wording rules that enforce this boundary are documented
-in [Evidence Artifact Contract](evidence-artifact-contract.md).
+The planned artifact shape and wording rules for preserving this boundary are
+documented in [Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Quick start
 
@@ -171,7 +171,9 @@ does not make another boundary present.
 ### User-facing state wording
 
 Structured JSON keeps machine states, but plain output maps them to user-facing
-language:
+language. These are readiness output states; artifact input status values are
+defined separately in the
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 | JSON state | Plain wording | Meaning |
 | --- | --- | --- |
@@ -180,6 +182,11 @@ language:
 | `invalid` | `not yet shown` | The evidence exists but cannot be trusted or safely summarized. |
 | `not_observed` | `not yet shown` | A producer ran, but the expected observation was not made. |
 | `blocked` | `not yet shown` or `not yet proven` with the supplied reason | RabbitHole or original Alice supplied an explicit reason the claim cannot yet be shown. |
+
+Legacy boundary artifact inputs may use `declared` or `observed` to describe
+metadata availability. Those values are not readiness output states; they
+normalize to output `missing` unless distinct boundary evidence is present, with
+the metadata state preserved for diagnostics.
 
 Primary human output avoids internal terms such as `no_go`,
 `ui-action-contract`, `desktop-run-pixel`, and raw artifact paths. JSON reference

@@ -1,64 +1,82 @@
-# Evidence Artifact Contract
+# [PLANNED - Implementation Pending] Evidence Artifact Contract
 
-The evidence artifact contract defines the shape and wording accepted by
-first-lesson readiness and silver-thread desktop evidence validation. It keeps
-readiness reports evidence-bound, rejects malformed artifacts, and prevents
-placeholder or unsupported success language from entering plain output, JSON
-reports, or PR handoffs.
+This document defines the intended evidence artifact contract for first-lesson
+readiness and silver-thread desktop evidence validation. The contract is a
+reference for the feature to build: it describes which artifact fields are
+accepted, how artifact states are normalized, and which wording must be rejected
+before readiness reports consume the artifact.
 
-This contract applies to the existing readiness and desktop evidence path. It
-does not add completion detection, grading, creative assessment, generated
-scenario content, or full Alice UI automation.
+The contract is intentionally narrow. It validates evidence artifact inputs and
+feeds failures into readiness reporting. It does not enforce arbitrary PR prose,
+review comments, generated scenario content, Alice UI automation, grading,
+creative assessment, or first-lesson completion.
 
-## Quick start
+## Scope
 
-Validate a comparison manifest before using its first-lesson evidence:
-
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-
-cargo run -q -p eatme-cli -- alice check-lesson-readiness \
-  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json \
-  --json
-```
-
-The command fails closed for malformed readiness evidence. If a desktop
-next-action artifact, evidence boundary, proof-artifact declaration, or evidence
-text field violates this contract, the readiness result is `not_ready` or
-`blocked`, and the problem appears in `issues`, `not_yet_shown`,
-`evidence_progress`, or the affected `evidence_boundaries[]` entry.
-
-Use the result only for the bounded claims named in the report. A passing shape
-check does not prove first-lesson completion, grading, creative assessment, Save
-completion, rendering correctness, or full UI automation.
-
-## Validation scope
-
-The validator reads the same evidence surfaces used by
+The planned validator applies to evidence artifacts that are read by
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) and
-[Lesson Session Readiness](lesson-session-readiness.md):
+[Lesson Session Readiness](lesson-session-readiness.md).
 
-| Surface | Contract enforced |
+| Surface | Planned contract |
 | --- | --- |
-| `desktop-first-lesson-next-action.json` | Schema version, status, candidate actions, required next evidence, non-claims, proof-artifact declarations, evidence boundaries, and safe wording. |
-| `evidence_boundaries[]` | Required boundary ids, supported status values, source, metadata state, detail, claim, non-claims, artifact metadata, and safe wording. |
-| Save Project and Select Project proof artifacts | Declaration shape, safe artifact path, readable artifact metadata, and distinct `present`, `missing`, or `blocked` state. |
-| Readiness report text fields | Rejection of filler wording and unsupported affirmative claims. |
+| `desktop-first-lesson-next-action.json` | Validate schema version, top-level status, candidate actions, required next evidence, non-claims, proof-artifact declarations, evidence boundaries, and artifact text fields. |
+| `evidence_boundaries[]` | Validate boundary ids, input status values, metadata state, source, detail, claim, non-claims, artifact metadata, and artifact text fields. |
+| Save Project and Select Project proof-artifact declarations | Validate declaration shape and normalize each proof artifact to `present`, `missing`, or `blocked`. A `present` proof artifact means readable artifact availability only. |
 
-Validation is limited to readiness and desktop evidence artifacts. Scenario
-authoring, adapter generation, Alice launch, RabbitHole execution, grading, and
-UI automation remain separate systems.
+Readiness output is not re-parsed as a separate text-validation surface. Instead,
+the readiness reporter consumes validated artifact fields and uses conservative
+report wording. If artifact validation fails, the failure is surfaced through
+`not_yet_shown`, `issues`, `evidence_progress`, or the affected
+`evidence_boundaries[]` entry.
 
-## Required artifact shape
+## Status values
 
-Desktop next-action evidence uses the existing artifact path:
+The contract separates accepted artifact input values from readiness output
+states.
+
+| Context | Accepted values | Meaning |
+| --- | --- | --- |
+| Desktop next-action artifact `status` | `present`, `missing`, `blocked`, `invalid` | Top-level artifact state. Unknown or empty values are invalid. |
+| Boundary artifact `status` input | `present`, `missing`, `blocked`, `invalid`, `declared`, `observed` | `present`, `missing`, `blocked`, and `invalid` are evidence states. Legacy `declared` and `observed` are metadata-only inputs and must normalize to output `missing` unless distinct evidence is present. |
+| Boundary `metadata_state` input | `declared`, `observed`, `missing`, `blocked`, `invalid`, or another display-safe non-empty producer state | Metadata availability only. It never upgrades a boundary claim to `present`. |
+| Proof-artifact declaration `status` | `present`, `missing`, `blocked` | Proof artifact availability state. Missing or unreadable artifact paths normalize to `missing`; explicit blockers normalize to `blocked`. |
+| Readiness output item state | `present`, `missing`, `invalid`, `not_observed`, `blocked` | Output state used by `shown_evidence[]`, `not_yet_shown[]`, `evidence_progress.items[]`, and boundary reporting. |
+
+`not_observed` is an output state, not a desktop next-action artifact input
+status. Use it when a producer ran but the expected observation was not made.
+
+## `desktop-first-lesson-next-action.json`
+
+The artifact path remains:
 
 ```text
 run-window-evidence/desktop-first-lesson-next-action.json
 ```
 
 The artifact must be valid JSON, safely rooted under the comparison evidence
-directory, and use this schema version:
+directory, and use:
+
+```json
+{
+  "schema_version": "eatme.alice-desktop-first-lesson-next-action/v1"
+}
+```
+
+Planned field contract:
+
+| Field | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `schema_version` | string | Always | Must be `eatme.alice-desktop-first-lesson-next-action/v1`. |
+| `status` | string | Always | Must be `present`, `missing`, `blocked`, or `invalid`. |
+| `detail` or `reason` | string | Always | Non-empty, display-safe, and evidence-bound. It must not claim completion, grading, creative assessment, Save completion, or full UI automation. |
+| `candidate_actions` | array of strings | Always when `status` is `present` or `blocked` | Non-empty for `present` or `blocked`; every item must be a non-empty action id or action label. |
+| `requires_next_evidence` or `requiresNextEvidence` | array of strings | Always when `status` is `blocked`; required for `present` when remaining evidence is named | Non-empty for `blocked`; each item must name concrete evidence to collect next, not a success claim. |
+| `does_not_claim` or `doesNotClaim` | array of strings | Always | Non-empty. Must include non-claims for first-lesson completion, grading, creative assessment, Save completion, and full Alice UI automation. |
+| `save_project_proof_artifact` | object | Always | Must declare `present`, `missing`, or `blocked`. `present` requires a safe, readable artifact. |
+| `select_project_proof_artifact` | object | Always | Must declare `present`, `missing`, or `blocked`. `present` requires a safe, readable artifact. |
+| `evidence_boundaries` or `evidenceBoundaries` | array | Always | Non-empty and complete for the first-lesson boundary set. Each entry must satisfy the boundary contract below. |
+
+Minimal bounded example:
 
 ```json
 {
@@ -73,6 +91,7 @@ directory, and use this schema version:
     "full Alice UI automation",
     "grading",
     "creative assessment",
+    "Save completion",
     "first-lesson completion"
   ],
   "save_project_proof_artifact": {
@@ -105,43 +124,53 @@ directory, and use this schema version:
 }
 ```
 
-Required collections must be arrays and must not be empty when the artifact uses
-them to support a readiness claim. Required strings must be strings after
-trimming and must not be empty. Unknown or misspelled status values are invalid.
-Missing required evidence-boundary fields are invalid.
+## `evidence_boundaries[]`
 
-### Required evidence boundaries
-
-Readiness validates the complete first-lesson boundary set. Each boundary entry
-must have a stable `id`, supported `status`, display-safe `detail`, bounded
-`claim`, and a non-empty `does_not_prove` list when the boundary can otherwise
-be misread as a capability claim.
+Readiness validates a complete first-lesson boundary set. Each required boundary
+must appear once.
 
 | Boundary id | Required meaning | Required non-claim boundary |
 | --- | --- | --- |
-| `select_project` | Select Project scenario evidence | Does not prove full UI automation or first-lesson completion. |
-| `procedure_edit` | Procedure/edit scenario evidence | Does not prove code correctness, grading, or first-lesson completion. |
-| `save_project` | Save action or proof-artifact availability | Does not prove Save completion, grading, creative assessment, or first-lesson completion. |
-| `visible_rendering` | Visible rendering observation | Does not prove rendering correctness, creative assessment, or first-lesson completion. |
+| `select_project` | Select Project scenario evidence | Does not prove full UI automation, project-selection success beyond the named boundary, or first-lesson completion. |
+| `procedure_edit` | Procedure/edit scenario evidence | Does not prove code correctness, learner understanding, grading, or first-lesson completion. |
+| `save_project` | Save action or proof-artifact availability | Does not prove desktop Save completion, grading, creative assessment, or first-lesson completion. |
+| `visible_rendering` | Visible rendering observation | Does not prove rendering correctness, animation correctness, creative quality, or first-lesson completion. |
 | `grading` | Grading boundary evidence | Does not prove creative assessment or first-lesson completion unless distinct evidence exists. |
 | `creative_assessment` | Creative assessment boundary evidence | Does not replace instructor judgment or prove first-lesson completion. |
 | `first_lesson_completion` | Completion boundary evidence | Does not prove full UI automation or creative quality unless distinct evidence exists. |
 
-Absent, non-array, or partially malformed `evidence_boundaries` input is not
-silently normalized into success. The affected boundary is reported as `missing`
-or `invalid`, and readiness does not promote it to `shown`.
+Planned field contract:
+
+| Field | Type | Required | Contract |
+| --- | --- | --- | --- |
+| `id` | string | Always | Must match one required first-lesson boundary id. |
+| `status` | string | Always | Must be `present`, `missing`, `blocked`, `invalid`, `declared`, or `observed`. Legacy `declared` and `observed` normalize to output `missing`. |
+| `source` | string | Always | Non-empty display-safe source category such as `automation_scenario`. |
+| `metadata_state` or `metadataState` | string | Always | Non-empty metadata availability state. It does not prove the boundary. |
+| `detail` | string | Always | Non-empty, display-safe observation or limitation text. |
+| `claim` | string | Always | Bounded claim only. For non-`present` statuses, it must state that the boundary claim is not proven. |
+| `does_not_prove` or `doesNotProve` | array of strings | Always | Non-empty. Must preserve the non-claims required for that boundary. |
+| `artifact` | object | Required when the boundary relies on an artifact path | Path metadata must resolve under the comparison evidence root. Unsafe, unreadable, empty, or escaping paths make the boundary invalid or missing. |
+
+Status-specific requirements:
+
+| Boundary status input | Required text behavior | Output behavior |
+| --- | --- | --- |
+| `present` | `detail`, `claim`, and `does_not_prove` must describe only the named bounded evidence. | May become output `present` and appear in `shown_evidence[]`. |
+| `missing` | `detail` and `claim` must say the boundary evidence is absent or not proven. | Output `missing`; appears in `not_yet_shown[]` or boundary reporting. |
+| `blocked` | `detail` must carry the explicit blocker or limitation. | Output `blocked`; appears as not yet shown or not yet proven with the supplied reason. |
+| `invalid` | `detail` must identify the invalid boundary class without dumping raw artifact contents. | Output `invalid`; readiness fails closed. |
+| `declared` or `observed` | `detail` may describe metadata only, but must not claim boundary evidence is present. | Output `missing` with `metadata_state` preserved as `declared` or `observed`. |
 
 ## Text contract
 
-Evidence text is treated as untrusted input. The shared
-`desktop_evidence::evidence_text_contract` validation applies to artifact text
-fields such as `detail`, `claim`, `reason`, `summary`, `requires_next_evidence`,
-`does_not_claim`, and boundary `does_not_prove` values.
+The planned shared text contract applies only to artifact input fields consumed by
+this evidence path, including `detail`, `claim`, `reason`, `summary`,
+`requires_next_evidence`, `does_not_claim`, and boundary `does_not_prove` values.
+It is not a general prose linter for PR descriptions or human review comments.
 
-### Rejected filler wording
-
-Readiness evidence must describe a real bounded observation or limitation. It
-rejects placeholder wording such as:
+Artifact text must be non-empty after trimming and must not contain placeholder
+or filler language such as:
 
 ```text
 dummy evidence
@@ -151,16 +180,8 @@ lorem ipsum readiness text
 example invented classroom event
 ```
 
-The validator also rejects unsupported scenario narrative that is not tied to a
-readiness evidence boundary. Use scenario assets for authored classroom intent;
-use evidence artifacts only for observations, blockers, required next evidence,
-and non-claims.
-
-### Rejected unsupported affirmative claims
-
-The validator rejects affirmative claims that the artifact does not explicitly
-support. These phrases are invalid when they appear as success claims without a
-matching capability-specific evidence boundary:
+Artifact text must also reject unsupported affirmative claims unless a distinct
+capability-specific boundary provides evidence for that exact claim:
 
 ```text
 The first lesson is complete.
@@ -169,17 +190,10 @@ Creative assessment passed.
 Full UI automation succeeded.
 The saved world received a grade.
 RabbitHole completed the whole first lesson.
+Save completed successfully.
 ```
 
-The rejection applies to equivalent wording, not only these exact sentences.
-Launch evidence, Save option evidence, screenshot evidence, proof-artifact
-availability, and Run-window evidence cannot be reworded as completion, grading,
-creative assessment, or full UI automation.
-
-### Allowed limitation wording
-
-Restrained negative or limitation wording is valid and should be preferred in
-human reports:
+Allowed limitation wording is explicit and bounded:
 
 ```text
 First-lesson completion is not proven.
@@ -190,121 +204,21 @@ UI automation is not complete.
 Save completion requires distinct finish-state evidence.
 ```
 
-Allowed limitation wording must stay attached to the relevant boundary or
-next-action evidence. Do not hide limitations in comments, generated adapters,
-or PR prose only.
+## Planned implementation components
 
-## API reference
-
-The internal Rust validator is organized under `desktop_evidence`:
+The feature should be implemented under `desktop_evidence` without changing the
+public readiness purpose.
 
 | Component | Responsibility |
 | --- | --- |
-| `desktop_evidence::evidence_text_contract` | Shared artifact text validation for filler rejection, unsupported affirmative claim rejection, and allowed limitation wording. |
-| `desktop_evidence::first_lesson_boundaries` | Boundary shape validation, required boundary ids, status normalization, safe artifact metadata, and boundary text contract checks. |
-| `desktop_evidence::first_lesson_next_action` | Desktop next-action artifact validation, proof-artifact declarations, next-evidence semantics, and text contract checks. |
-| `compare::lesson_readiness` | Consumes validation failures through existing readiness reporting without adding new evidence behavior. |
+| `desktop_evidence::evidence_text_contract` | Planned shared artifact text validation for filler rejection, unsupported affirmative claim rejection, and allowed limitation wording. |
+| `desktop_evidence::first_lesson_boundaries` | Boundary shape validation, required boundary ids, status normalization, safe artifact metadata, and boundary text checks. |
+| `desktop_evidence::first_lesson_next_action` | Desktop next-action artifact validation, proof-artifact declarations, next-evidence semantics, and text checks. |
+| `compare::lesson_readiness` | Consume validation failures through existing readiness reporting without adding new proof behavior. |
 
-Validation failures are surfaced through the existing `ValidationError` and
-readiness issue paths. Error messages identify the field or boundary class, but
-do not dump full artifact text, artifact contents, screenshots, logs, secrets,
-or absolute host paths.
-
-### `desktop-first-lesson-next-action.json`
-
-| Field | Type | Required | Contract |
-| --- | --- | --- | --- |
-| `schema_version` | string | Yes | Must be `eatme.alice-desktop-first-lesson-next-action/v1`. |
-| `status` | string | Yes | Must be a supported readiness state such as `present`, `missing`, `blocked`, or `invalid`. |
-| `detail` or `reason` | string | Yes | Must be display-safe, non-empty, and evidence-bound. |
-| `candidate_actions` | array of strings | Required when next actions are claimed | Must contain non-empty action ids or labels. |
-| `requires_next_evidence` or `requiresNextEvidence` | array of strings | Required when evidence remains outstanding | Must name concrete next evidence, not a success claim. |
-| `does_not_claim` or `doesNotClaim` | array of strings | Yes | Must preserve non-claims for completion, grading, creative assessment, and UI automation. |
-| `save_project_proof_artifact` | object | Yes | Must declare `present`, `missing`, or `blocked`; present artifacts must be safely rooted and readable. |
-| `select_project_proof_artifact` | object | Yes | Must declare `present`, `missing`, or `blocked`; present artifacts must be safely rooted and readable. |
-| `evidence_boundaries` or `evidenceBoundaries` | array | Yes | Must include valid boundary entries for the first-lesson boundary set. |
-
-### `evidence_boundaries[]`
-
-| Field | Type | Required | Contract |
-| --- | --- | --- | --- |
-| `id` | string | Yes | Must match a known first-lesson boundary id. |
-| `status` | string | Yes | Must be supported; unknown or empty status is invalid. |
-| `source` | string | Yes | Short source category such as `automation_scenario`. |
-| `metadata_state` or `metadataState` | string | Yes | Declares metadata availability without upgrading claim support. |
-| `detail` | string | Yes | Display-safe observation or limitation text. |
-| `claim` | string | Yes | Bounded claim only; no unsupported completion or grading claims. |
-| `does_not_prove` or `doesNotProve` | array of strings | Yes | Non-empty for capability-sensitive boundaries. |
-| `artifact` | object | Optional | If present, path metadata must resolve under the comparison evidence root. |
-
-## Configuration
-
-| Setting | Required for | Description |
-| --- | --- | --- |
-| `NODE_OPTIONS=--max-old-space-size=32768` | Agentic and Gadugi-heavy local runs | Saved local preference for Node-backed runner capacity. |
-| `EATME_REAL_ALICE=1` | Real Alice desktop execution | Explicit opt-in gate for desktop runs that produce evidence. |
-| `ALICE_BASELINE_HOME` | First-lesson comparison execution | Original Alice checkout used by the baseline target. |
-| `ALICE_MODERNIZED_HOME` | First-lesson comparison execution | RabbitHole or modernized Alice checkout used by the modernized target. |
-
-The evidence artifact contract has no separate feature flag. It is part of the
-readiness validation path, so CI and local runs receive the same failures.
-
-## Tutorials
-
-### Repair a malformed boundary artifact
-
-1. Run `alice check-lesson-readiness --json` for the comparison manifest.
-2. Find the invalid boundary in `issues`, `not_yet_shown`, or
-   `evidence_boundaries[]`.
-3. Fix the artifact shape: use strings for text fields, arrays for collections,
-   supported status values, and safe evidence-root-relative artifact paths.
-4. Keep the boundary claim narrow. For Save evidence, describe observed Save
-   action or artifact availability, not Save completion.
-5. Re-run readiness and confirm the boundary is shown only for its bounded
-   evidence claim.
-
-Safe repaired Save boundary:
-
-```json
-{
-  "id": "save_project",
-  "status": "present",
-  "source": "automation_scenario",
-  "metadata_state": "observed",
-  "detail": "Save action evidence is present for this scenario boundary.",
-  "claim": "Save action evidence is present for this scenario boundary.",
-  "does_not_prove": [
-    "desktop Save completion",
-    "grading",
-    "creative assessment",
-    "first-lesson completion"
-  ]
-}
-```
-
-### Replace unsupported success wording
-
-When a report says a claim is rejected for overclaiming, rewrite the text as a
-bounded observation plus a limitation:
-
-| Unsafe wording | Safe replacement |
-| --- | --- |
-| `The first lesson is complete.` | `First-lesson completion is not proven by this evidence.` |
-| `The project was graded.` | `Grading is not assessed by this evidence.` |
-| `Creative assessment passed.` | `Creative assessment is not claimed by this evidence.` |
-| `Full UI automation succeeded.` | `UI automation is not complete; this evidence covers only the named boundary.` |
-| `Save completed successfully.` | `Save action evidence is present; Save completion requires distinct finish-state evidence.` |
-
-### Review a PR safely
-
-1. Read `Shown` as bounded evidence only.
-2. Read every `Not yet shown` line before approving a readiness claim.
-3. Check `evidence_boundaries[]` for invalid, missing, or empty boundary fields.
-4. Confirm `does_not_claim` and `does_not_prove` still preserve completion,
-   grading, creative assessment, Save completion, and full UI automation
-   limitations.
-5. Reject PR wording that converts observations into completed lessons, grades,
-   creative assessment, or full UI automation.
+Validation errors should identify the field or boundary class. They must not dump
+full artifact text, raw artifact contents, screenshots, logs, secrets, or
+absolute host paths.
 
 ## Related documentation
 
