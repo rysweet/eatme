@@ -64,6 +64,10 @@ It does not answer whether a learner completed the lesson, whether an Alice
 world is creatively successful, whether a saved project should receive a grade,
 whether rendering is correct, or whether the entire Alice UI flow is automated.
 
+When creative-assessment evidence is missing or limited, the report can surface
+available evidence and suggest next steps. It does not grade creativity, judge
+quality, or mark the lesson complete.
+
 | Result | Meaning | What to do |
 | --- | --- | --- |
 | `ready` | Required bounded evidence is present, valid, and free of known unsupported-action states. | Use only the named shown evidence. Keep the unproven claims attached. |
@@ -122,7 +126,9 @@ Not yet shown:
 - Save completion is not yet proven.
 - Visible rendering correctness is not yet proven.
 - Grading is not yet shown.
-- Creative assessment is not yet shown.
+- Creative assessment is not yet shown. Available evidence does not yet show
+  creative assessment; collect explicit creative-assessment evidence before
+  making that claim.
 - First-lesson completion is not yet shown.
 
 Desktop next action:
@@ -163,7 +169,7 @@ does not make another boundary present.
 | `save_project` | Save option/action scenario evidence | Explicit bounded evidence that a Save affordance, action, declaration, or proof artifact was observed. This is not a completion signal. | Save completion, grading, creative assessment, or first-lesson completion. |
 | `visible_rendering` | Visible rendering scenario evidence | Explicit visible rendering observation from the run boundary. | Visible rendering correctness, animation correctness, creative quality, or complete visual validation. |
 | `grading` | Grading scenario evidence | Explicit grading evidence from a scenario that owns grading. | Any automatic grade when no grading evidence exists. |
-| `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. | Automated creativity judgment, instructor judgment, or learner-world grading. |
+| `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. When evidence is missing or limited, the report can surface available evidence and suggest next evidence to collect. | Creativity grading, quality judgment, learner-world grading, instructor judgment, or marked lesson completion. |
 | `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, or substep evidence alone. |
 
 ### User-facing state wording
@@ -261,12 +267,14 @@ Example:
 
 ```json
 {
-  "id": "save_project",
-  "state": "present",
-  "summary": "Save option/action evidence is shown as observed option/action only.",
-  "detail": "Save option/action scenario evidence is present.",
+  "id": "creative_assessment",
+  "state": "missing",
+  "summary": "Creative assessment is not yet shown.",
+  "detail": "Available evidence does not yet show creative assessment; collect explicit creative-assessment evidence before making that claim.",
   "does_not_prove": [
-    "Save completion",
+    "creative assessment",
+    "creativity grading",
+    "quality judgment",
     "first-lesson completion"
   ]
 }
@@ -349,6 +357,10 @@ Do not add workflow timeout settings for first-lesson readiness reporting. The
 report consumes existing evidence for the selected run; it does not introduce
 new proof-generation timing policy.
 
+No setting enables automated creative grading, quality judgment, or lesson
+completion marking. Creative-assessment gap wording is part of the first-lesson
+readiness report contract.
+
 ## Tutorials
 
 ### Review RabbitHole first-lesson readiness after implementation
@@ -378,6 +390,21 @@ Unsafe wording:
 ```text
 The project was saved successfully.
 The first lesson was completed.
+```
+
+### Review a creative-assessment gap safely
+
+When the `creative_assessment` boundary reports `missing`, `invalid`,
+`not_observed`, or `blocked`, treat the entry as a gap report. Use its `detail`
+text to find available evidence and the next concrete evidence to collect, then
+collect or repair the scenario evidence that a human reviewer needs.
+
+Do not translate a creative-assessment gap into:
+
+```text
+The learner's world was graded.
+The creative work is good or bad.
+The first lesson is complete.
 ```
 
 ### Keep evidence assets editable
