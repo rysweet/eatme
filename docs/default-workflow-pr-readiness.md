@@ -947,7 +947,7 @@ and SHA with the values from the actual PR.
 ```bash
 git fetch origin --prune
 if git ls-remote --exit-code --heads origin \
-  wave7-eatme-nonclaim-audit-1778303500 >/dev/null; then
+  wave7-eatme-nonclaim-audit-1778303500; then
   if git show-ref --verify --quiet \
     refs/heads/wave7-eatme-nonclaim-audit-1778303500; then
     git switch wave7-eatme-nonclaim-audit-1778303500
