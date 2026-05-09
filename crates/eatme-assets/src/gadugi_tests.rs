@@ -125,6 +125,25 @@ fn generator_rejects_scenario_ids_that_escape_gadugi_root() {
 }
 
 #[test]
+fn generator_propagates_unexpected_existing_adapter_read_errors() {
+    let root = scratch_root("generator-propagates-existing-adapter-read-errors");
+    let source_path = root.join("assets/scenarios/eatme/read-error-contract.yaml");
+    let unreadable_target = root.join("assets/scenarios/gadugi/read-error-contract.yaml");
+    write_minimal_eatme_scenario(&source_path, "read-error-contract");
+    fs::create_dir_all(&unreadable_target).unwrap();
+
+    let error = generate_gadugi_adapters(&root, false).unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("reading generated gadugi adapter"),
+        "{error}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
 fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
@@ -288,15 +307,16 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
             "{source} generated adapter must preserve {required:?}:\n{generated}"
         );
     }
+    let normalized_lower = normalized.to_lowercase();
     for blocked in [
-        format!("{}{}", "la", "ne"),
-        format!("{}{}", "lesson-", "path"),
-        "source boundary".into(),
-        "manifest-level evidence only".into(),
-        "action evidence".into(),
+        "lane",
+        "lesson-path",
+        "source boundary",
+        "manifest-level evidence only",
+        "action evidence",
     ] {
         assert!(
-            !normalized.to_lowercase().contains(&blocked),
+            !normalized_lower.contains(blocked),
             "{source} generated adapter must not use internal {blocked:?} shorthand:\n{generated}"
         );
     }

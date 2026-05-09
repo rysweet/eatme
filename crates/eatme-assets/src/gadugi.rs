@@ -15,6 +15,7 @@ use gadugi_instructor::generate_instructor_agentic_adapter;
 use gadugi_schema::*;
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 const GENERATED_BY: &str = "eatme-assets gadugi adapter generator";
@@ -84,9 +85,15 @@ pub fn generate_gadugi_adapters(root: &Path, check: bool) -> Result<GadugiAdapte
                 }
             }
         } else {
-            let changed = fs::read_to_string(&target_path)
-                .map(|existing| existing != yaml)
-                .unwrap_or(true);
+            let changed = match fs::read_to_string(&target_path) {
+                Ok(existing) => existing != yaml,
+                Err(error) if error.kind() == ErrorKind::NotFound => true,
+                Err(error) => {
+                    return Err(error).with_context(|| {
+                        format!("reading generated gadugi adapter {}", target_path.display())
+                    });
+                }
+            };
             if changed {
                 fs::write(&target_path, yaml)
                     .with_context(|| format!("writing {}", target_path.display()))?;
@@ -128,15 +135,11 @@ fn target_gadugi_path(
     Ok(gadugi_root.join(format!("{}.yaml", scenario.id)))
 }
 
-fn discovered_path_set(paths: &[PathBuf]) -> HashSet<&Path> {
-    paths.iter().map(PathBuf::as_path).collect()
-}
-
 fn missing_generated_target_count<'a>(
     scenario_paths: &[PathBuf],
     generated_target_paths: impl IntoIterator<Item = &'a PathBuf>,
 ) -> usize {
-    let discovered_paths = discovered_path_set(scenario_paths);
+    let discovered_paths: HashSet<&Path> = scenario_paths.iter().map(PathBuf::as_path).collect();
     generated_target_paths
         .into_iter()
         .filter(|target_path| !discovered_paths.contains(target_path.as_path()))
@@ -258,8 +261,10 @@ fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {
 }
 
 fn render_yaml(adapter: GeneratedGadugiAdapter) -> Result<String> {
-    let mut yaml = GENERATED_FILE_HEADER.to_string();
-    yaml.push_str(&serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?);
+    let serialized = serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?;
+    let mut yaml = String::with_capacity(GENERATED_FILE_HEADER.len() + serialized.len() + 1);
+    yaml.push_str(GENERATED_FILE_HEADER);
+    yaml.push_str(&serialized);
     if !yaml.ends_with('\n') {
         yaml.push('\n');
     }
@@ -289,15 +294,6 @@ fn generated_step(
     }
 }
 
-fn command_success_assertion(step_id: &str, step_name: &str, agent: &str) -> GeneratedAssertion {
-    GeneratedAssertion {
-        name: format!("{step_id} succeeds"),
-        assertion_type: "command_success".into(),
-        agent: agent.into(),
-        params: BTreeMap::from([("step".into(), step_name.into())]),
-    }
-}
-
 fn generated_assertion(
     step: &EatmeScenarioStep,
     agent: &str,
@@ -306,7 +302,12 @@ fn generated_assertion(
     expected_stdout: &[String],
 ) -> GeneratedAssertion {
     if exit_code == 0 {
-        return command_success_assertion(&step.id, step_name, agent);
+        return GeneratedAssertion {
+            name: format!("{} succeeds", step.id),
+            assertion_type: "command_success".into(),
+            agent: agent.into(),
+            params: BTreeMap::from([("step".into(), step_name.into())]),
+        };
     }
 
     GeneratedAssertion {
@@ -335,17 +336,18 @@ fn repository_command(command: &str, run_id: &str) -> String {
 }
 
 fn step_title(id: &str) -> String {
-    id.split('-')
-        .filter(|part| !part.is_empty())
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
-                None => String::new(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+    let mut title = String::new();
+    for part in id.split('-').filter(|part| !part.is_empty()) {
+        if !title.is_empty() {
+            title.push(' ');
+        }
+        let mut chars = part.chars();
+        if let Some(first) = chars.next() {
+            title.extend(first.to_uppercase());
+            title.push_str(chars.as_str());
+        }
+    }
+    title
 }
 
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
