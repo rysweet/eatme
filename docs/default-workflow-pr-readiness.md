@@ -18,6 +18,8 @@ justification. It does not merge the PR.
 - [GitHub metadata fields](#github-metadata-fields)
 - [Sharing-readiness recovery profile](#sharing-readiness-recovery-profile)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
+- [Three-cycle quality audit](#three-cycle-quality-audit)
+- [Merge-ready decision](#merge-ready-decision)
 - [No-op justification](#no-op-justification)
 - [Readiness comment](#readiness-comment)
 - [Blocker handling](#blocker-handling)
@@ -29,7 +31,7 @@ current branch head being reviewed.
 
 | Gate | Required result |
 | --- | --- |
-| Current checkout | The worktree is on the intended branch and the current `HEAD` is recorded. |
+| Current checkout | The worktree is on the intended branch, the current `HEAD` is recorded, and the final validation worktree is clean. |
 | PR association | GitHub reports that the PR head branch is the same branch being recovered. |
 | GitHub checks | Required checks are green for the PR head SHA. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
@@ -38,12 +40,24 @@ current branch head being reviewed.
 | Gadugi freshness | Generated adapters are fresh when canonical scenario assets are involved. |
 | Documentation build | `mkdocs build --strict` succeeds when documentation changes or readiness docs are part of the PR. |
 | Quality gate | `./scripts/quality-gates.sh` succeeds when full repository readiness is required. |
+| Runnable QA | Current-head command evidence covers the assets, generated adapters, tests, docs, and repository gates that apply to the PR scope. |
+| Quality audit | At least three SEEK / VALIDATE / FIX cycles have been completed, and the final cycle is clean. |
+| PR description | The PR body or readiness comment contains current-head evidence and no stale SHA-bound readiness claims. |
 | Claim boundary | The final statement names only the evidence that was executed for the current head. |
 | Scope | Repository changes are limited to the minimal files needed to satisfy the evidence. |
 
-A wrapper failure, rate-limit exit, or owner exit is not itself a blocker when
-direct current-head verification passes and the final claim stays inside the
-executed evidence boundary.
+A wrapper failure, rate-limit exit, or owner-free exit classified as
+`NO_OP_GUARD` is not itself a blocker when direct current-head verification
+passes and the final claim stays inside the executed evidence boundary. A
+`NO_OP_GUARD` owner-free exit must not be treated as `MERGE_READY` until the
+workflow records direct current-head verification, then emits either a
+workflow-accepted no-op justification or `NOT_MERGE_READY` blockers.
+
+Green checks, including green GitHub Actions, and workflow completion are
+necessary but not sufficient. The final decision also needs runnable QA/scenario
+evidence, documentation impact review, focused diff scope, PR description
+evidence, and three quality-audit SEEK / VALIDATE / FIX cycles with a clean
+final cycle.
 
 ## Evidence record template
 
@@ -55,7 +69,7 @@ review artifact, not a source file that must be committed.
 | `repository` | Repository owner and name, such as `rysweet/eatme`. |
 | `branch` | Local branch under review. |
 | `head_sha` | Current local `HEAD` SHA from `git rev-parse HEAD`. |
-| `worktree_status` | `git status --short --branch` result summarized as clean or dirty. |
+| `worktree_status` | `git status --short --branch` result. Readiness evidence is accepted only from a clean final worktree. |
 | `pr_number` | Pull request number being recovered. |
 | `pr_head_branch` | GitHub PR head branch from `headRefName`. |
 | `pr_head_sha` | GitHub PR head SHA from `headRefOid`. |
@@ -64,11 +78,16 @@ review artifact, not a source file that must be committed.
 | `asset_validation` | Result of `assets validate --json`, when applicable. |
 | `gadugi_freshness` | Result of `assets generate-gadugi --check --json`, when applicable. |
 | `docs_build` | Result of `mkdocs build --strict`, when applicable. |
+| `relevant_tests` | Focused Rust tests or other repository tests that exercise the PR-specific readiness guards, when applicable. |
 | `quality_gate` | Result of `TMPDIR=/tmp ./scripts/quality-gates.sh`, when full readiness is required. |
+| `docs_impact` | Documentation files reviewed, strict build result, and unsupported claims removed or confirmed absent. |
+| `quality_audit_cycles` | Three SEEK / VALIDATE / FIX cycles, including the clean final cycle. |
+| `diff_scope` | Changed files grouped by surface, with unrelated changes called out as blockers. |
+| `pr_description_evidence` | PR body or readiness comment evidence tied to the evaluated head and free of stale readiness claims. |
 | `workflow_readiness_evidence` | Current-head workflow readiness summary tying the executed gates to the evaluated branch and SHA. |
 | `review_evidence` | Review-relevant PR metadata, check rollup, and bounded claim review used to decide whether readiness can be posted. |
 | `finalization_evidence` | Finalization-relevant state showing whether the workflow may record readiness, no-op acceptance, or a blocker without claiming merge completion. |
-| `decision` | `ready`, `blocked`, or `no-op accepted`. |
+| `decision` | `MERGE_READY` or `NOT_MERGE_READY`, with explicit blockers or evidence. A no-op recovery that passes every gate is recorded as `MERGE_READY` with a no-op justification. |
 | `bounded_claim` | Short statement of what the executed evidence proves and what it does not prove. |
 
 ## Generic readiness procedure
@@ -82,6 +101,11 @@ Run the gate from the repository root.
    git --no-pager rev-parse --abbrev-ref HEAD
    git --no-pager rev-parse HEAD
    ```
+
+   The final validation evidence is accepted only when this status is clean.
+   Uncommitted documentation being prepared for the same head may be built or
+   reviewed during recovery, but it is not final readiness evidence until it is
+   committed or explicitly separated from the readiness claim.
 
 2. Query the PR metadata for the PR being recovered:
 
@@ -114,13 +138,33 @@ Run the gate from the repository root.
    TMPDIR=/tmp ./scripts/quality-gates.sh
    ```
 
-7. Inspect the relevant documentation, scenario assets, generated adapters, and
-   guard tests for overbroad claims.
+7. Run focused tests for the PR-specific guard behavior when such tests exist.
+   For the sharing-readiness guard tests, run:
 
-8. If all gates pass and no stale claims are found, record a no-op justification.
-   If a gate fails because a document, scenario, adapter, or guard test is stale,
-   make the smallest targeted change and rerun the affected gates plus the full
-   quality gate.
+   ```bash
+   cargo test -q -p eatme-assets outside_in_alice_expansion_tests
+   ```
+
+8. Inspect the changed-file list and reject unrelated scope expansion:
+
+   ```bash
+   gh pr diff 173 --name-only
+   ```
+
+9. Inspect the relevant documentation, scenario assets, generated adapters, guard
+   tests, and PR description for overbroad or stale claims.
+
+10. Complete three quality-audit cycles. Each cycle records a SEEK target, the
+    VALIDATE command or inspection used, and the FIX result. If no repository
+    change is required, the FIX result states why the current head already
+    satisfies the target.
+
+11. If all gates pass and no stale claims are found, record `MERGE_READY`. When
+    no repository changes are needed, record `MERGE_READY` with a no-op
+    justification instead of inventing a third final state. If a gate fails
+    because a document, scenario, adapter, test, check, worktree state, or PR
+    description is stale, make the smallest targeted change and rerun the
+    affected gates plus the full quality gate.
 
 Do not wrap these commands in shell `timeout` helpers. Long-running commands
 should finish naturally or fail with their own diagnostics.
@@ -191,9 +235,10 @@ Use this profile for PRs that recover classroom sharing readiness, including PR
 The final PR #173 statement may say that current-head evidence supports bounded
 classroom sharing-readiness review artifacts only when the gates above pass. It
 must not claim hosted sharing, deployed sharing, platform success, full UI
-automation, rendering correctness, grading correctness, creative assessment, Save
-completion, lesson completion, production readiness, deployment success, merge
-completion, or manual merge.
+automation, rendering correctness, grading correctness, creative assessment,
+full Tweedle/player decode unless directly proven, Save completion, lesson
+completion, production readiness, deployment success, merge completion, or
+manual merge.
 
 ## Generated Gadugi adapter freshness
 
@@ -217,41 +262,108 @@ When no scenario asset or generated adapter target is affected, adapter freshnes
 still may be run as current-head evidence, but it should not be described as
 proof of behavior outside the generated asset contract.
 
+## Three-cycle quality audit
+
+The readiness workflow uses three explicit SEEK / VALIDATE / FIX cycles before a
+merge-ready decision. The cycles are a review method, not a separate test
+framework, and their output belongs in a PR comment, review note, or workflow
+artifact rather than a committed status file.
+
+Each cycle has this shape:
+
+| Step | Required content |
+| --- | --- |
+| SEEK | The risk or claim being searched for. |
+| VALIDATE | The command, diff review, metadata check, or document inspection used to prove the state for the current head. |
+| FIX | The repository change made, or a no-repository-change justification when the current head already satisfies the target. |
+
+Use these default cycles for sharing-readiness recovery:
+
+| Cycle | SEEK | VALIDATE | FIX when clean |
+| --- | --- | --- | --- |
+| 1. Scope and claim accuracy | Overbroad sharing, deployment, UI, grading, creative-assessment, lesson-completion, or merge-completion claims. | Review `docs/sharing-readiness-boundary.md`, this guide, the PR description, changed scenario assets, generated adapters, and guard tests. | No repository change required when every claim stays within classroom handoff evidence. |
+| 2. Canonical and generated asset consistency | Drift between canonical eatme scenarios and generated Gadugi adapters. | Run `cargo run -q -p eatme-cli -- assets validate --json` and `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`. | No repository change required when assets validate and check mode reports fresh generated adapters. |
+| 3. Gate completeness and final readiness | Missing runnable QA, failing or incomplete Actions, stale PR evidence, docs impact gaps, unfocused diff, dirty worktree, or a final overclaim. | Run applicable focused tests such as `cargo test -q -p eatme-assets outside_in_alice_expansion_tests`, `mkdocs build --strict`, `TMPDIR=/tmp ./scripts/quality-gates.sh`, `gh pr view`, `gh pr diff --name-only`, and local git status checks. | No repository change required only when the final cycle is clean, the worktree is clean, and all evidence points to the same head. |
+
+If a cycle finds a defect, fix only that defect, rerun the affected validation,
+and repeat the cycle. The final readiness decision cannot be `MERGE_READY` until
+the third cycle is clean.
+
+## Merge-ready decision
+
+The final decision is one of two states:
+
+| Decision | Use when |
+| --- | --- |
+| `MERGE_READY` | Local branch, local `HEAD`, PR head SHA, required checks, mergeability, runnable QA, docs impact review, focused diff, PR description evidence, and three quality-audit cycles all pass for the same current head. |
+| `NOT_MERGE_READY` | Any required gate is missing, failing, stale, tied to a different head, or broader than the evidence proves. |
+
+`MERGE_READY` does not mean the workflow merged the PR. It means the evidence is
+complete enough for a separate merge mechanism or maintainer decision.
+
+`NOT_MERGE_READY` must name concrete blockers. Good blockers are specific and
+actionable:
+
+```text
+NOT_MERGE_READY
+
+Blockers:
+- GitHub Actions are still pending for ${PR_HEAD_SHA}.
+- The PR description cites readiness evidence from ${OLD_SHA}, not the current
+  PR head.
+- Cycle 2 found generated Gadugi adapter drift; regenerate adapters from the
+  canonical eatme scenarios and rerun check mode.
+```
+
+Do not downgrade a missing gate into a warning. Green Actions alone are not
+enough, and a skipped manual or deploy-only job is non-evidence rather than
+readiness proof unless branch protection requires that job.
+
 ## No-op justification
 
-A workflow-accepted no-op justification is accepted when current-head evidence,
-review evidence, and finalization evidence prove that no repository changes were
-required.
+A workflow-accepted no-op justification is not a third final decision state. It
+is a `MERGE_READY` decision with a no-op justification, accepted only when
+current-head evidence, review evidence, and finalization evidence prove that no
+repository changes were required. The output must tie current head/checks, PR
+head checks, and the current PR head to merge-ready blockers or evidence; when
+that tie is present and clean, the report uses an explicit workflow-accepted
+No-op justification.
 
 The justification should include:
 
 | Item | Required content |
 | --- | --- |
 | Branch and head | Local branch and `HEAD` SHA. |
-| Worktree state | Clean state, or a narrow explanation of documentation-only changes being finalized. |
+| Worktree state | Clean final worktree state. |
 | PR metadata | PR number, head branch, head SHA, merge state, mergeability, and check summary. |
 | Executed gates | Commands that passed for the evaluated state. |
 | Claim boundary | The exact readiness claim and explicit non-claims. |
 | No-op reason | Why docs, assets, generated adapters, and tests already satisfy the contract. |
+| Audit cycles | The three SEEK / VALIDATE / FIX cycles, including the clean final cycle. |
 
 Example no-op wording:
 
 ```text
-Default-workflow no-op recovery accepted for PR #173 at current branch head
-${HEAD_SHA}. Current-head evidence passed for asset validation, generated Gadugi
-freshness, strict documentation build, quality gates, review evidence, and PR
-metadata review.
+MERGE_READY
+
+Workflow-accepted no-op recovery recorded for PR #173 at current branch head
+${HEAD_SHA}. The local branch matches the PR head, the worktree is clean, and
+current-head evidence passed for asset validation, generated Gadugi freshness,
+focused readiness-guard tests, strict documentation build, quality gates, review
+evidence, and PR metadata review.
 
 No repository changes were required because the committed sharing-readiness docs,
 scenario assets, generated adapters, and guard tests already preserve the
-classroom review handoff boundary. Finalization evidence records that no manual
-merge was performed.
+classroom review handoff boundary. The three SEEK / VALIDATE / FIX cycles found
+no remaining defects in scope, asset consistency, generated adapters, gate
+coverage, docs impact, PR evidence, or final claim boundaries. Finalization
+evidence records that no manual merge was performed.
 
 This records bounded silver-thread/e2e sharing-readiness evidence only. It does
 not claim hosted sharing, deployed sharing, platform success, full UI
 automation, rendering correctness, grading correctness, creative assessment,
-Save completion, lesson completion, production readiness, deployment success, or
-merge completion.
+full Tweedle/player decode unless directly proven, Save completion, lesson
+completion, production readiness, deployment success, or merge completion.
 ```
 
 ## Readiness comment
@@ -267,14 +379,16 @@ cat > readiness-comment.txt <<EOF
 Default-workflow recovery recorded for PR #173 at current branch head ${HEAD_SHA}.
 
 Verified current-head gates: asset validation, generated Gadugi freshness,
-strict documentation build, quality gates, PR metadata review, and bounded
-sharing-readiness claim review.
+focused readiness-guard tests, strict documentation build, quality gates, PR
+metadata review, focused diff review, PR description/current-head evidence
+review, and bounded sharing-readiness claim review.
 
 The recovery supports classroom sharing handoff readiness only. It does not
 claim hosted sharing, deployed sharing, platform success, full UI automation,
 rendering correctness, grading correctness, creative assessment, Save
-completion, lesson completion, production readiness, deployment success, merge
-completion, or manual merge.
+completion, lesson completion, full Tweedle/player decode unless directly
+proven, production readiness, deployment success, merge completion, or manual
+merge.
 EOF
 ```
 

@@ -10,6 +10,86 @@ const READINESS_COMMENT_HEADING: &str = "## Readiness comment";
 const SHARING_PROFILE_HEADING: &str = "## Sharing-readiness recovery profile";
 
 #[test]
+fn owner_free_exit_no_op_guard_requires_direct_current_head_revalidation() {
+    let doc = default_workflow_pr_readiness_doc();
+
+    assert_contains_all(
+        "owner-free NO_OP_GUARD recovery contract",
+        doc,
+        &[
+            "owner-free exit",
+            "`NO_OP_GUARD`",
+            "direct current-head verification",
+            "must not be treated as `MERGE_READY`",
+            "workflow-accepted no-op justification",
+            "`NOT_MERGE_READY`",
+        ],
+    );
+}
+
+#[test]
+fn merge_ready_gate_requires_actions_workflow_completion_and_non_check_evidence() {
+    let contract = section(default_workflow_pr_readiness_doc(), "## Readiness contract");
+    let decision = section(
+        default_workflow_pr_readiness_doc(),
+        "## Merge-ready decision",
+    );
+
+    assert_contains_all_across(
+        "strict merge-ready evidence gate",
+        &[contract, decision],
+        &[
+            "green GitHub Actions",
+            "workflow completion",
+            "necessary but not sufficient",
+            "runnable QA/scenario evidence",
+            "documentation impact review",
+            "three quality-audit SEEK / VALIDATE / FIX cycles",
+            "focused diff scope",
+            "PR description evidence",
+            "clean final cycle",
+        ],
+    );
+}
+
+#[test]
+fn no_op_recovery_output_must_tie_current_head_checks_to_evidence_or_blockers() {
+    let no_op = section(default_workflow_pr_readiness_doc(), NO_OP_HEADING);
+
+    assert_contains_all(
+        "workflow-accepted no-op output contract",
+        no_op,
+        &[
+            "current head/checks",
+            "PR head checks",
+            "merge-ready blockers or evidence",
+            "explicit workflow-accepted No-op justification",
+            "current-head evidence",
+            "current PR head",
+        ],
+    );
+}
+
+#[test]
+fn bounded_readiness_claims_must_not_assert_tweedle_or_player_decode() {
+    let doc = default_workflow_pr_readiness_doc();
+    let comment = section(doc, READINESS_COMMENT_HEADING);
+    let no_op = section(doc, NO_OP_HEADING);
+
+    assert_contains_all_across(
+        "bounded readiness non-claims",
+        &[doc, comment, no_op],
+        &[
+            "full Tweedle/player decode",
+            "unless directly proven",
+            "does not claim",
+        ],
+    );
+    assert_no_success_claims("readiness comment template", comment);
+    assert_no_success_claims("no-op justification template", no_op);
+}
+
+#[test]
 fn current_head_evidence_template_requires_readiness_review_and_finalization_fields() {
     let template = section(
         default_workflow_pr_readiness_doc(),
