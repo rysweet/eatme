@@ -1,53 +1,91 @@
 use super::{
-    PR173_CURRENT_HEAD_SHA, PR173_HISTORICAL_VALIDATION_SHA, PR173_RECOVERY_VALIDATION_COMMANDS,
-    assert_contains_all, sharing_readiness_boundary_doc,
+    PR173_EVALUATED_LOCAL_HEAD_SHA, PR173_EVALUATED_WORKTREE_STATE,
+    PR173_HISTORICAL_VALIDATION_SHA, PR173_PUBLISHED_HEAD_SHA, PR173_RECOVERY_VALIDATION_COMMANDS,
+    SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all, sharing_readiness_boundary_doc,
 };
 
-const PR173_EVIDENCE_HEADING: &str = "## PR 173 exact-head readiness evidence";
+const PR173_EVIDENCE_HEADING: &str = "## PR 173 readiness evidence state separation";
 
 #[test]
-fn pr173_evidence_names_branch_master_sync_and_exact_head_shape() {
+fn pr173_evidence_names_branch_master_sync_and_separated_state_shape() {
     let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
 
     assert_contains_all(
-        "PR 173 exact-head readiness evidence",
+        "PR 173 readiness evidence state separation",
         evidence,
         &[
             "PR 173",
             "wave6-deployed-sharing-gap-1778302300",
             "origin/master",
-            "exact evaluated HEAD SHA",
+            "published PR head SHA",
+            "evaluated local HEAD SHA",
+            "evaluated worktree state",
         ],
     );
     assert!(
-        exact_evaluated_head_sha(evidence).is_some(),
-        "PR 173 readiness evidence must include one full 40-character evaluated HEAD SHA in the exact-head row"
+        single_sha_for_row(evidence, "published PR head SHA").is_some(),
+        "PR 173 readiness evidence must include one full 40-character published PR head SHA"
+    );
+    assert!(
+        single_sha_for_row(evidence, "evaluated local HEAD SHA").is_some(),
+        "PR 173 readiness evidence must include one full 40-character evaluated local HEAD SHA"
     );
 }
 
 #[test]
-fn pr173_evidence_pins_current_claims_to_actual_pr_head_sha() {
+fn pr173_evidence_separates_published_pr_head_from_evaluated_local_state() {
     let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
-    let expected_head_match =
-        format!("Local `HEAD` and PR `#173` head both resolved to `{PR173_CURRENT_HEAD_SHA}`");
+    let expected_pr_head =
+        format!("Fetched PR `#173` head resolved to `{PR173_PUBLISHED_HEAD_SHA}`");
 
     assert_eq!(
-        exact_evaluated_head_sha(evidence),
-        Some(PR173_CURRENT_HEAD_SHA),
-        "PR 173 readiness evidence must pin current-head statements to the evaluated PR head"
+        single_sha_for_row(evidence, "published PR head SHA"),
+        Some(PR173_PUBLISHED_HEAD_SHA),
+        "PR 173 readiness evidence must pin the published PR head to GitHub metadata"
+    );
+    assert_eq!(
+        single_sha_for_row(evidence, "evaluated local HEAD SHA"),
+        Some(PR173_EVALUATED_LOCAL_HEAD_SHA),
+        "PR 173 readiness evidence must name the local checkout evaluated during recovery"
+    );
+    assert_ne!(
+        PR173_PUBLISHED_HEAD_SHA, PR173_EVALUATED_LOCAL_HEAD_SHA,
+        "this recovery evidence must not collapse the published PR head and evaluated local HEAD"
     );
     assert_contains_all(
-        "PR 173 current-head identity",
+        "PR 173 published-head and local-state identity",
         evidence,
         &[
             "`#173`",
             "`wave6-deployed-sharing-gap-1778302300`",
-            &expected_head_match,
+            &expected_pr_head,
+            PR173_EVALUATED_WORKTREE_STATE,
+            "not the evaluated checkout",
         ],
     );
     assert!(
-        !exact_head_row(evidence).contains(PR173_HISTORICAL_VALIDATION_SHA),
-        "the older documented SHA must never appear in the exact-head row"
+        !expect_table_row(evidence, "published PR head SHA")
+            .contains(PR173_HISTORICAL_VALIDATION_SHA),
+        "the older documented SHA must never appear in the published PR head row"
+    );
+    assert!(
+        !expect_table_row(evidence, "evaluated local HEAD SHA")
+            .contains(PR173_HISTORICAL_VALIDATION_SHA),
+        "the older documented SHA must never appear in the evaluated local HEAD row"
+    );
+}
+
+#[test]
+fn pr173_evidence_does_not_label_published_pr_head_as_exact_evaluated_head() {
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
+
+    assert!(
+        table_row(evidence, "exact evaluated HEAD SHA").is_none(),
+        "PR 173 evidence must not include an exact evaluated HEAD row when the evaluated state is a dirty local checkout"
+    );
+    assert!(
+        !expect_table_row(evidence, "PR head verification").contains("exact evaluated HEAD"),
+        "PR head verification is a GitHub metadata check, not proof of the evaluated local state"
     );
 }
 
@@ -101,14 +139,11 @@ fn pr173_historical_validation_sha_is_context_not_current_head_proof() {
             PR173_HISTORICAL_VALIDATION_SHA,
             "historical context only",
             "is not current-head proof",
-            PR173_CURRENT_HEAD_SHA,
+            PR173_PUBLISHED_HEAD_SHA,
         ],
     );
     assert!(
-        historical_sha_sentences(evidence).iter().all(|sentence| {
-            sentence.contains("historical context only")
-                || sentence.contains("not current-head proof")
-        }),
+        historical_sha_mentions_are_context(evidence),
         "every mention of the historical validation SHA must explicitly keep it out of current-head proof"
     );
 }
@@ -137,29 +172,45 @@ fn pr173_evidence_keeps_forbidden_claims_explicitly_unproven() {
 
 #[test]
 fn exact_head_detector_rejects_placeholders_short_hashes_and_branch_names() {
-    assert!(exact_evaluated_head_sha("| exact evaluated HEAD SHA | `<pending>` |").is_none());
-    assert!(exact_evaluated_head_sha("| exact evaluated HEAD SHA | `4c8118d` |").is_none());
     assert!(
-        exact_evaluated_head_sha(
-            "| exact evaluated HEAD SHA | `wave6-deployed-sharing-gap-1778302300` |"
+        single_sha_for_row(
+            "| evaluated local HEAD SHA | `<pending>` |",
+            "evaluated local HEAD SHA"
+        )
+        .is_none()
+    );
+    assert!(
+        single_sha_for_row(
+            "| evaluated local HEAD SHA | `4c8118d` |",
+            "evaluated local HEAD SHA"
+        )
+        .is_none()
+    );
+    assert!(
+        single_sha_for_row(
+            "| evaluated local HEAD SHA | `wave6-deployed-sharing-gap-1778302300` |",
+            "evaluated local HEAD SHA"
         )
         .is_none()
     );
     assert_eq!(
-        exact_evaluated_head_sha(
-            "| exact evaluated HEAD SHA | `0123456789abcdef0123456789abcdef01234567` |"
+        single_sha_for_row(
+            "| evaluated local HEAD SHA | `0123456789abcdef0123456789abcdef01234567` |",
+            "evaluated local HEAD SHA"
         ),
         Some("0123456789abcdef0123456789abcdef01234567")
     );
     assert!(
-        exact_evaluated_head_sha(
-            "A different row includes `0123456789abcdef0123456789abcdef01234567`."
+        single_sha_for_row(
+            "A different row includes `0123456789abcdef0123456789abcdef01234567`.",
+            "evaluated local HEAD SHA"
         )
         .is_none()
     );
     assert!(
-        exact_evaluated_head_sha(
-            "| exact evaluated HEAD SHA | `0123456789abcdef0123456789abcdef01234567` and `abcdef0123456789abcdef0123456789abcdef01` |"
+        single_sha_for_row(
+            "| evaluated local HEAD SHA | `0123456789abcdef0123456789abcdef01234567` and `abcdef0123456789abcdef0123456789abcdef01` |",
+            "evaluated local HEAD SHA"
         )
         .is_none()
     );
@@ -171,12 +222,15 @@ fn pr173_evidence_section(docs: &str) -> &str {
     });
     let after_heading = start + PR173_EVIDENCE_HEADING.len();
     let rest = &docs[after_heading..];
-    let end = rest.find("\n## ").unwrap_or(rest.len());
+    let end = match rest.find("\n## ") {
+        Some(next_heading) => next_heading,
+        None => rest.len(),
+    };
     &docs[start..after_heading + end]
 }
 
-fn exact_evaluated_head_sha(evidence: &str) -> Option<&str> {
-    let row = exact_head_row(evidence);
+fn single_sha_for_row<'a>(evidence: &'a str, row_label: &str) -> Option<&'a str> {
+    let row = table_row(evidence, row_label)?;
     let mut sha_tokens = row
         .split(|c: char| !c.is_ascii_hexdigit())
         .filter(|token| token.len() == 40 && token.chars().all(|c| c.is_ascii_hexdigit()));
@@ -184,11 +238,14 @@ fn exact_evaluated_head_sha(evidence: &str) -> Option<&str> {
     sha_tokens.next().is_none().then_some(sha)
 }
 
-fn exact_head_row(evidence: &str) -> &str {
-    evidence
-        .lines()
-        .find(|line| line.contains("| exact evaluated HEAD SHA |"))
-        .unwrap_or("")
+fn table_row<'a>(evidence: &'a str, row_label: &str) -> Option<&'a str> {
+    let expected_cell = format!("| {row_label} |");
+    evidence.lines().find(|line| line.contains(&expected_cell))
+}
+
+fn expect_table_row<'a>(evidence: &'a str, row_label: &str) -> &'a str {
+    table_row(evidence, row_label)
+        .unwrap_or_else(|| panic!("PR 173 evidence must include a `{row_label}` table row"))
 }
 
 fn validation_status<'a>(evidence: &'a str, command: &str) -> Option<&'a str> {
@@ -199,39 +256,26 @@ fn validation_status<'a>(evidence: &'a str, command: &str) -> Option<&'a str> {
 }
 
 fn markdown_table_status(line: &str) -> Option<&str> {
-    let cells = line
-        .trim()
-        .trim_matches('|')
-        .split('|')
-        .map(str::trim)
-        .collect::<Vec<_>>();
-    (cells.len() == 2).then_some(cells[1])
+    let mut cells = line.trim().trim_matches('|').split('|').map(str::trim);
+    let _command = cells.next()?;
+    let status = cells.next()?;
+    cells.next().is_none().then_some(status)
 }
 
-fn historical_sha_sentences(evidence: &str) -> Vec<&str> {
+fn historical_sha_mentions_are_context(evidence: &str) -> bool {
     evidence
         .split('.')
         .map(str::trim)
         .filter(|sentence| sentence.contains(PR173_HISTORICAL_VALIDATION_SHA))
-        .collect()
+        .all(|sentence| {
+            sentence.contains("historical context only")
+                || sentence.contains("not current-head proof")
+        })
 }
 
 fn assert_no_success_claims(evidence: &str) {
     let normalized = evidence.to_lowercase();
-    let forbidden = [
-        "hosted sharing passed",
-        "hosted sharing works",
-        "deployed sharing passed",
-        "deployed sharing works",
-        "platform success passed",
-        "full ui automation passed",
-        "grading passed",
-        "creative assessment passed",
-        "save completion passed",
-        "visible rendering correctness passed",
-        "first-lesson completion passed",
-    ];
-    let present = forbidden
+    let present = SHARING_SUCCESS_CLAIM_PATTERNS
         .iter()
         .filter(|phrase| normalized.contains(**phrase))
         .copied()

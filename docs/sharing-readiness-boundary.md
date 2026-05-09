@@ -134,28 +134,32 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 These commands validate asset shape and adapter freshness. They do not upload,
 host, publish, moderate, or prove any deployed sharing service.
 
-## PR 173 exact-head readiness evidence
+## PR 173 readiness evidence state separation
 
-PR 173 current-head recovery statements apply only to branch
-`wave6-deployed-sharing-gap-1778302300` at exact evaluated HEAD SHA
-`5565fae102197b162b50eaa23ebad705eb416d0a`.
+PR 173 recovery statements separate the published PR head from the evaluated
+local state. The published PR head identifies GitHub metadata for branch
+`wave6-deployed-sharing-gap-1778302300`; it is not the evaluated checkout for
+this recovery record.
 
 | Evidence item | Recovery record |
 | --- | --- |
 | PR | `#173`, `docs: clarify sharing readiness boundary` |
 | PR head branch | `wave6-deployed-sharing-gap-1778302300` |
-| exact evaluated HEAD SHA | `5565fae102197b162b50eaa23ebad705eb416d0a` |
-| checked-out HEAD match | Local `HEAD` and PR `#173` head both resolved to `5565fae102197b162b50eaa23ebad705eb416d0a` during this recovery step. |
-| master sync status | `origin/master` was an ancestor of the exact evaluated HEAD SHA when checked during recovery. |
+| published PR head SHA | `5565fae102197b162b50eaa23ebad705eb416d0a` |
+| evaluated local HEAD SHA | `a081711d4f6eefe1485516c1bac0f8e877de53dd` |
+| evaluated worktree state | dirty worktree with uncommitted changes |
+| PR head verification | Fetched PR `#173` head resolved to `5565fae102197b162b50eaa23ebad705eb416d0a`; this is a published PR-head metadata check, not the evaluated checkout. |
+| master sync status | `origin/master` was an ancestor of the evaluated local HEAD SHA when checked during recovery. |
 | historical validation SHA | `7757f298bbdf220b37882c912abb05cae2277bd8` is historical context only. Validation completed at that SHA is not current-head proof for `5565fae102197b162b50eaa23ebad705eb416d0a`. |
-| current-head readiness boundary | The current-head record supports only the classroom sharing evidence boundary documented here. It is not production, deployment, merge, grading, Save, or UI-rendering readiness. |
+| current-head readiness boundary | The recovery record supports only the classroom sharing evidence boundary documented here for the evaluated local state. It is not production, deployment, merge, grading, Save, or UI-rendering readiness. |
 
 ### Recovery-step validation status
 
-Only commands rerun for exact HEAD
-`5565fae102197b162b50eaa23ebad705eb416d0a` can be cited as current-head
-validation proof. Historical passing checks remain useful context, but they must
-not be described as proof for the current PR head.
+Only commands rerun for evaluated local HEAD
+`a081711d4f6eefe1485516c1bac0f8e877de53dd` plus the dirty worktree changes can
+be cited as recovery-step validation proof. Historical passing checks remain
+useful context, but they must not be described as proof for the current PR head
+or the evaluated local state.
 
 | Command | Recovery-step status |
 | --- | --- |

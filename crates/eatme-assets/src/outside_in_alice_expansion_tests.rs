@@ -67,7 +67,9 @@ const FIRST_LESSON_REQUIRED_SMOKE_READY_EVIDENCE: &[&str] = &[
     "explicit_failure_when_ui_actions_are_not_automated",
 ];
 
-const PR173_CURRENT_HEAD_SHA: &str = "5565fae102197b162b50eaa23ebad705eb416d0a";
+const PR173_PUBLISHED_HEAD_SHA: &str = "5565fae102197b162b50eaa23ebad705eb416d0a";
+const PR173_EVALUATED_LOCAL_HEAD_SHA: &str = "a081711d4f6eefe1485516c1bac0f8e877de53dd";
+const PR173_EVALUATED_WORKTREE_STATE: &str = "dirty worktree with uncommitted changes";
 const PR173_HISTORICAL_VALIDATION_SHA: &str = "7757f298bbdf220b37882c912abb05cae2277bd8";
 
 const PR173_RECOVERY_VALIDATION_COMMANDS: &[&str] = &[
@@ -77,17 +79,24 @@ const PR173_RECOVERY_VALIDATION_COMMANDS: &[&str] = &[
     "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
 ];
 
-const SHARING_OVERCLAIM_PATTERNS: &[&str] = &[
+const SHARING_SUCCESS_CLAIM_PATTERNS: &[&str] = &[
     "hosted sharing works",
     "hosted sharing passed",
     "deployed sharing works",
     "deployed sharing passed",
+    "platform success passed",
+    "full ui automation passed",
+    "grading passed",
+    "creative assessment passed",
     "save completion works",
     "save completion passed",
     "ui rendering correctness works",
     "ui rendering correctness passed",
+    "visible rendering correctness works",
+    "visible rendering correctness passed",
     "grading correctness works",
     "grading correctness passed",
+    "first-lesson completion passed",
     "production readiness works",
     "production readiness passed",
     "merge readiness works",
@@ -125,6 +134,27 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     assert!(
         missing.is_empty(),
         "{label} is missing required evidence language: {missing:?}"
+    );
+}
+
+fn assert_contains_all_across(label: &str, texts: &[&str], needles: &[&str]) {
+    let normalized_texts = texts
+        .iter()
+        .map(|text| normalize_whitespace(text))
+        .collect::<Vec<_>>();
+    let missing = needles
+        .iter()
+        .filter(|needle| {
+            let normalized_needle = normalize_whitespace(needle);
+            !normalized_texts
+                .iter()
+                .any(|text| text.contains(&normalized_needle))
+        })
+        .copied()
+        .collect::<Vec<_>>();
+    assert!(
+        missing.is_empty(),
+        "{label} is missing required evidence language across traceable surfaces: {missing:?}"
     );
 }
 

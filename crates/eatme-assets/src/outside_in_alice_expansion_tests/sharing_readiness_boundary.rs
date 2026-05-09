@@ -1,25 +1,24 @@
-use std::fs;
-
 use super::{
-    SHARING_OVERCLAIM_PATTERNS, assert_contains_all, repository_root, scenario_path,
+    SHARING_SUCCESS_CLAIM_PATTERNS, assert_contains_all, assert_contains_all_across,
     sharing_readiness_boundary_doc,
 };
 
 const TEACHER_SHARING_READINESS_IMPACT: &str = "Readiness impact says the teacher gets a classroom/review handoff and remix feedback package, not proof of hosted or deployed sharing.";
+const STUDENT_EATME_SCENARIO: &str =
+    include_str!("../../../../assets/scenarios/eatme/student-artifact-package-share-evidence.yaml");
+const TEACHER_EATME_SCENARIO: &str =
+    include_str!("../../../../assets/scenarios/eatme/teacher-community-sharing-loop.yaml");
+const STUDENT_GADUGI_ADAPTER: &str = include_str!(
+    "../../../../assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml"
+);
+const TEACHER_GADUGI_ADAPTER: &str =
+    include_str!("../../../../assets/scenarios/gadugi/teacher-community-sharing-loop.yaml");
 
 #[test]
 fn teacher_community_source_contract_names_readiness_impact_without_deployment_proof() {
-    let root = repository_root();
-    let contract = fs::read_to_string(scenario_path(
-        &root,
-        "eatme",
-        "teacher-community-sharing-loop",
-    ))
-    .unwrap();
-
     assert_contains_all(
         "teacher-community-sharing-loop source boundary",
-        &contract,
+        TEACHER_EATME_SCENARIO,
         &[
             "teacher-community share card",
             "classroom handoff note",
@@ -34,17 +33,9 @@ fn teacher_community_source_contract_names_readiness_impact_without_deployment_p
 
 #[test]
 fn generated_teacher_community_adapter_preserves_readiness_impact_boundary() {
-    let root = repository_root();
-    let adapter = fs::read_to_string(scenario_path(
-        &root,
-        "gadugi",
-        "teacher-community-sharing-loop",
-    ))
-    .unwrap();
-
     assert_contains_all(
         "teacher-community-sharing-loop Gadugi adapter",
-        &adapter,
+        TEACHER_GADUGI_ADAPTER,
         &[
             "Teacher-community share card includes audience",
             "Classroom handoff note tells the next teacher",
@@ -59,36 +50,11 @@ fn generated_teacher_community_adapter_preserves_readiness_impact_boundary() {
 
 #[test]
 fn sharing_recovery_evidence_stays_traceable_to_canonical_scenarios_and_adapters() {
-    let root = repository_root();
-    let student_source = fs::read_to_string(scenario_path(
-        &root,
-        "eatme",
-        "student-artifact-package-share-evidence",
-    ))
-    .unwrap();
-    let teacher_source = fs::read_to_string(scenario_path(
-        &root,
-        "eatme",
-        "teacher-community-sharing-loop",
-    ))
-    .unwrap();
-    let student_adapter = fs::read_to_string(scenario_path(
-        &root,
-        "gadugi",
-        "student-artifact-package-share-evidence",
-    ))
-    .unwrap();
-    let teacher_adapter = fs::read_to_string(scenario_path(
-        &root,
-        "gadugi",
-        "teacher-community-sharing-loop",
-    ))
-    .unwrap();
     let docs = sharing_readiness_boundary_doc();
 
-    assert_contains_all(
+    assert_contains_all_across(
         "student sharing traceability",
-        &format!("{docs}\n{student_source}\n{student_adapter}"),
+        &[docs, STUDENT_EATME_SCENARIO, STUDENT_GADUGI_ADAPTER],
         &[
             "student-artifact-package-share-evidence",
             "artifact review packet checklist",
@@ -97,9 +63,9 @@ fn sharing_recovery_evidence_stays_traceable_to_canonical_scenarios_and_adapters
             "source_eatme_asset: assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
         ],
     );
-    assert_contains_all(
+    assert_contains_all_across(
         "teacher sharing traceability",
-        &format!("{docs}\n{teacher_source}\n{teacher_adapter}"),
+        &[docs, TEACHER_EATME_SCENARIO, TEACHER_GADUGI_ADAPTER],
         &[
             "teacher-community-sharing-loop",
             "teacher-community share card",
@@ -112,54 +78,33 @@ fn sharing_recovery_evidence_stays_traceable_to_canonical_scenarios_and_adapters
 
 #[test]
 fn sharing_evidence_surfaces_do_not_turn_boundary_terms_into_success_claims() {
-    let root = repository_root();
     let surfaces = [
         (
             "docs/sharing-readiness-boundary.md",
-            sharing_readiness_boundary_doc().to_owned(),
+            sharing_readiness_boundary_doc(),
         ),
         (
             "assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
-            fs::read_to_string(scenario_path(
-                &root,
-                "eatme",
-                "student-artifact-package-share-evidence",
-            ))
-            .unwrap(),
+            STUDENT_EATME_SCENARIO,
         ),
         (
             "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",
-            fs::read_to_string(scenario_path(
-                &root,
-                "eatme",
-                "teacher-community-sharing-loop",
-            ))
-            .unwrap(),
+            TEACHER_EATME_SCENARIO,
         ),
         (
             "assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml",
-            fs::read_to_string(scenario_path(
-                &root,
-                "gadugi",
-                "student-artifact-package-share-evidence",
-            ))
-            .unwrap(),
+            STUDENT_GADUGI_ADAPTER,
         ),
         (
             "assets/scenarios/gadugi/teacher-community-sharing-loop.yaml",
-            fs::read_to_string(scenario_path(
-                &root,
-                "gadugi",
-                "teacher-community-sharing-loop",
-            ))
-            .unwrap(),
+            TEACHER_GADUGI_ADAPTER,
         ),
     ];
 
-    let failures = surfaces
-        .iter()
-        .flat_map(|(label, text)| positive_overclaims(label, text))
-        .collect::<Vec<_>>();
+    let mut failures = Vec::new();
+    for (label, text) in surfaces {
+        collect_positive_overclaims(&mut failures, label, text);
+    }
 
     assert!(
         failures.is_empty(),
@@ -212,11 +157,11 @@ fn sharing_readiness_docs_do_not_require_save_or_first_lesson_completion() {
     );
 }
 
-fn positive_overclaims(label: &str, text: &str) -> Vec<String> {
+fn collect_positive_overclaims(failures: &mut Vec<String>, label: &str, text: &str) {
     let normalized = text.to_lowercase();
-    SHARING_OVERCLAIM_PATTERNS
-        .iter()
-        .filter(|pattern| normalized.contains(&pattern.to_lowercase()))
-        .map(|pattern| format!("{label} contains `{pattern}`"))
-        .collect()
+    for pattern in SHARING_SUCCESS_CLAIM_PATTERNS {
+        if normalized.contains(pattern) {
+            failures.push(format!("{label} contains `{pattern}`"));
+        }
+    }
 }
