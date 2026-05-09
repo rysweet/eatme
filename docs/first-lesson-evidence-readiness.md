@@ -65,8 +65,8 @@ world is creatively successful, whether a saved project should receive a grade,
 whether rendering is correct, or whether the entire Alice UI flow is automated.
 
 When creative-assessment evidence is missing or limited, the report can surface
-available evidence and suggest next steps. It does not grade creativity, judge
-quality, or mark the lesson complete.
+available evidence and suggest the next concrete evidence to collect. It does
+not grade creativity, judge quality, or mark the lesson complete.
 
 | Result | Meaning | What to do |
 | --- | --- | --- |
@@ -127,8 +127,8 @@ Not yet shown:
 - Visible rendering correctness is not yet proven.
 - Grading is not yet shown.
 - Creative assessment is not yet shown. Available evidence does not yet show
-  creative assessment; collect explicit creative-assessment evidence before
-  making that claim.
+  creative assessment; the report can suggest the next evidence to collect, but
+  it does not grade creativity, judge quality, or mark the lesson complete.
 - First-lesson completion is not yet shown.
 
 Desktop next action:
@@ -270,7 +270,7 @@ Example:
   "id": "creative_assessment",
   "state": "missing",
   "summary": "Creative assessment is not yet shown.",
-  "detail": "Available evidence does not yet show creative assessment; collect explicit creative-assessment evidence before making that claim.",
+  "detail": "Available evidence does not yet show creative assessment; collect explicit creative-assessment evidence before making that claim. The report does not grade creativity, judge quality, or mark the lesson complete.",
   "does_not_prove": [
     "creative assessment",
     "creativity grading",
