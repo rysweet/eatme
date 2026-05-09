@@ -1,6 +1,7 @@
 use crate::{generate_gadugi_adapters, validate_assets};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 const READINESS_DOC: &str = "docs/default-workflow-pr-readiness.md";
 const FALLBACK_LOG: &str = "default-workflow-attempt.log";
@@ -33,14 +34,19 @@ const PROHIBITED_STALE_EVIDENCE: &[&str] = &[
     "creative assessment passed",
     "lesson completion verified",
 ];
+static REPOSITORY_ROOT: OnceLock<PathBuf> = OnceLock::new();
+static READINESS_DOC_TEXT: OnceLock<String> = OnceLock::new();
+static FALLBACK_LOG_TEXT: OnceLock<String> = OnceLock::new();
+static NORMALIZED_READINESS_DOC_TEXT: OnceLock<String> = OnceLock::new();
+static NORMALIZED_FALLBACK_LOG_TEXT: OnceLock<String> = OnceLock::new();
 
 #[test]
 fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_values() {
-    let evidence = repo_text(READINESS_DOC);
+    let normalized_evidence = normalized_readiness_doc();
 
-    assert_contains_all(
+    assert_normalized_contains_all(
         "exact-head readiness contract",
-        &evidence,
+        normalized_evidence,
         &[
             "# PR 174 persona/scenario gap-fill readiness",
             "Do not treat a checked-in commit SHA as current readiness evidence",
@@ -56,12 +62,12 @@ fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_
             "| GitHub mergeability | `MERGEABLE`. |",
         ],
     );
-    assert_not_contains_any(
+    assert_normalized_not_contains_any(
         "stale exact-head readiness contract",
-        &evidence,
+        normalized_evidence,
         PROHIBITED_STALE_EVIDENCE,
     );
-    let sha_literals = committed_sha_literals(&evidence);
+    let sha_literals = committed_sha_literals(readiness_doc());
     assert!(
         sha_literals.is_empty(),
         "readiness doc must not check in SHA-shaped readiness evidence: {sha_literals:?}"
@@ -70,11 +76,11 @@ fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_
 
 #[test]
 fn review_evidence_contract_is_tied_to_the_same_exact_pr_head() {
-    let evidence = repo_text(READINESS_DOC);
+    let evidence = normalized_readiness_doc();
 
-    assert_contains_all(
+    assert_normalized_contains_all(
         "exact-head review evidence contract",
-        &evidence,
+        evidence,
         &[
             "## Review evidence",
             "gh pr view 174 --json headRefOid,reviewDecision,reviews,comments",
@@ -91,8 +97,8 @@ fn review_evidence_contract_is_tied_to_the_same_exact_pr_head() {
 #[test]
 fn local_asset_validation_contract_covers_persona_scenarios_and_generated_adapters() {
     let root = repository_root();
-    let validation_report = validate_assets(&root).unwrap();
-    let adapter_report = generate_gadugi_adapters(&root, true).unwrap();
+    let validation_report = validate_assets(root).unwrap();
+    let adapter_report = generate_gadugi_adapters(root, true).unwrap();
 
     assert!(validation_report.passed, "{:?}", validation_report.errors);
     assert_eq!(validation_report.instructor_count, 11);
@@ -109,18 +115,18 @@ fn local_asset_validation_contract_covers_persona_scenarios_and_generated_adapte
 
 #[test]
 fn readiness_doc_keeps_source_of_truth_and_validation_claims_bounded_to_assets() {
-    let evidence = repo_text(READINESS_DOC);
+    let evidence = normalized_readiness_doc();
 
-    assert_contains_all("editable source assets", &evidence, REQUIRED_SOURCE_ASSETS);
-    assert_contains_all(
+    assert_normalized_contains_all("editable source assets", evidence, REQUIRED_SOURCE_ASSETS);
+    assert_normalized_contains_all(
         "generated Gadugi review artifacts",
-        &evidence,
+        evidence,
         REQUIRED_GENERATED_ARTIFACTS,
     );
-    assert_contains_all("repository-local checks", &evidence, REQUIRED_LOCAL_CHECKS);
-    assert_contains_all(
+    assert_normalized_contains_all("repository-local checks", evidence, REQUIRED_LOCAL_CHECKS);
+    assert_normalized_contains_all(
         "bounded supported claims",
-        &evidence,
+        evidence,
         &[
             "PR 174 fills persona/scenario gaps in editable assets",
             "Persona IDs used by canonical EatMe scenarios resolve through the persona crew",
@@ -129,20 +135,20 @@ fn readiness_doc_keeps_source_of_truth_and_validation_claims_bounded_to_assets()
             "GitHub metadata names the same exact head and reports the PR mergeable",
         ],
     );
-    assert_contains_all(
+    assert_normalized_contains_all(
         "unsupported review claims",
-        &evidence,
+        evidence,
         UNSUPPORTED_REVIEW_CLAIMS,
     );
 }
 
 #[test]
 fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
-    let evidence = repo_text(READINESS_DOC);
+    let evidence = normalized_readiness_doc();
 
-    assert_contains_all(
+    assert_normalized_contains_all(
         "readiness error handling",
-        &evidence,
+        evidence,
         &[
             "Block readiness if `git status --short` reports local changes",
             "GitHub reports a different `headRefOid`",
@@ -158,26 +164,52 @@ fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
 
 #[test]
 fn manual_fallback_log_cannot_be_used_as_readiness_or_review_evidence() {
-    let fallback_log = repo_text(FALLBACK_LOG);
+    let fallback_log = normalized_fallback_log_text();
 
-    assert_contains_all(
+    assert_normalized_contains_all(
         "manual fallback evidence boundary",
-        &fallback_log,
+        fallback_log,
         &[
             "This file is not PR readiness evidence.",
             "manual fallback log must not be used to claim exact-HEAD readiness",
             "manual fallback log must not be used to claim exact-HEAD review evidence",
         ],
     );
-    assert_not_contains_any(
+    assert_normalized_not_contains_any(
         "manual fallback stale evidence",
-        &fallback_log,
+        fallback_log,
         PROHIBITED_STALE_EVIDENCE,
     );
 }
 
-fn repository_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+fn repository_root() -> &'static Path {
+    REPOSITORY_ROOT
+        .get_or_init(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .as_path()
+}
+
+fn readiness_doc() -> &'static str {
+    READINESS_DOC_TEXT
+        .get_or_init(|| repo_text(READINESS_DOC))
+        .as_str()
+}
+
+fn fallback_log_text() -> &'static str {
+    FALLBACK_LOG_TEXT
+        .get_or_init(|| repo_text(FALLBACK_LOG))
+        .as_str()
+}
+
+fn normalized_readiness_doc() -> &'static str {
+    NORMALIZED_READINESS_DOC_TEXT
+        .get_or_init(|| normalize_whitespace(readiness_doc()))
+        .as_str()
+}
+
+fn normalized_fallback_log_text() -> &'static str {
+    NORMALIZED_FALLBACK_LOG_TEXT
+        .get_or_init(|| normalize_whitespace(fallback_log_text()))
+        .as_str()
 }
 
 fn repo_text(relative_path: &str) -> String {
@@ -187,8 +219,7 @@ fn repo_text(relative_path: &str) -> String {
     })
 }
 
-fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
-    let normalized_text = normalize_whitespace(text);
+fn assert_normalized_contains_all(label: &str, normalized_text: &str, needles: &[&str]) {
     let missing = needles
         .iter()
         .filter(|needle| !normalized_text.contains(&normalize_whitespace(needle)))
@@ -200,8 +231,7 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     );
 }
 
-fn assert_not_contains_any(label: &str, text: &str, needles: &[&str]) {
-    let normalized_text = normalize_whitespace(text);
+fn assert_normalized_not_contains_any(label: &str, normalized_text: &str, needles: &[&str]) {
     let found = needles
         .iter()
         .filter(|needle| normalized_text.contains(&normalize_whitespace(needle)))
@@ -215,13 +245,18 @@ fn assert_not_contains_any(label: &str, text: &str, needles: &[&str]) {
 
 fn committed_sha_literals(text: &str) -> Vec<String> {
     text.split(|character: char| !character.is_ascii_hexdigit())
-        .filter(|token| {
-            token.len() == 40 && token.chars().all(|character| character.is_ascii_hexdigit())
-        })
+        .filter(|token| token.len() == 40)
         .map(str::to_owned)
         .collect()
 }
 
 fn normalize_whitespace(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut normalized = String::with_capacity(text.len());
+    for word in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        normalized.push_str(word);
+    }
+    normalized
 }
