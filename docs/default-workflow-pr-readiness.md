@@ -20,7 +20,6 @@ readiness comment only after every gate passes.
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
 - [Save/reopen recovery output shape](#savereopen-recovery-output-shape)
-- [PR #164 readiness example](#pr-164-readiness-example)
 - [Readiness comment](#readiness-comment)
 - [Blocker handling](#blocker-handling)
 
@@ -129,9 +128,10 @@ When no source or documentation edits are needed, use this output shape:
 ```text
 No-op justification: Evidence-only recovery for existing PR #<number>. The exact
 PR head was refreshed, the fetched PR ref matched GitHub `headRefOid`, metadata
-and checks were reviewed for that same head, and committed docs/tests/contracts
-already express the bounded readiness contract. No files were changed because
-there was no stale or missing artifact to fix.
+and current check status were reviewed for that same head, and committed
+docs/tests/contracts already express the bounded starter/save-reopen readiness
+boundary. No files were changed because there was no stale or missing artifact
+to fix.
 ```
 
 When files change, use this output shape:
@@ -179,7 +179,7 @@ The readiness gate consumes these `gh pr view` fields:
 Fetch the PR head, merge state, mergeability, and check summary:
 
 ```bash
-gh pr view 164 \
+gh pr view "$PR_NUMBER" \
   --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
@@ -306,50 +306,16 @@ When save/reopen finalization changes no files, replace `Files modified` with:
 ```text
 No-op justification: Evidence-only recovery for existing PR #<number>. The exact
 head <exact-head-sha> was verified against branch <branch-name>, the fetched PR
-ref matched GitHub `headRefOid`, and the committed save/reopen docs, tests, and
-action-contract code already expressed the bounded evidence contract. No files
-were changed because no stale, missing, or overbroad artifact was found.
+ref matched GitHub `headRefOid`, current check status was reviewed for that same
+head, and the committed save/reopen docs, tests, and action-contract code already
+expressed the bounded starter/save-reopen readiness boundary. No files were
+changed because no stale, missing, or overbroad artifact was found.
 ```
 
 The strongest accepted conclusion is that the PR has bounded save/reopen
 evidence suitable for continuation or review at the exact verified head. Do not
 rewrite that conclusion as Alice UI automation success, grading success,
 creative-assessment success, or product readiness.
-
-## PR #164 readiness example
-
-This subsection is a concrete example for the PR #164 finalization gate. Do not
-reuse its PR number or SHA for future readiness decisions.
-
-For PR #164, the exact accepted head is:
-
-```text
-eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba
-```
-
-The GitHub metadata gate passes only when `gh pr view 164 --json
-headRefOid,mergeStateStatus,mergeable,statusCheckRollup` reports:
-
-```json
-{
-  "headRefOid": "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
-  "mergeStateStatus": "CLEAN",
-  "mergeable": "MERGEABLE"
-}
-```
-
-Because PR #164 changes starter-project scenario wording and generated Gadugi
-output, these gates are mandatory for that PR:
-
-```bash
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-cargo run -q -p eatme-cli -- assets validate --json
-```
-
-The readiness decision for PR #164 is valid only if those commands pass, the
-GitHub checks are green for
-`eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba`, and the scenario wording stays
-within the starter-project evidence boundary above.
 
 ## Readiness comment
 
@@ -359,7 +325,7 @@ comment should name the head and avoid broader product-readiness claims.
 Example:
 
 ```text
-Default-workflow readiness recorded for PR #164 at exact head eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba.
+Default-workflow readiness recorded for PR #<number> at exact head <exact-head-sha>.
 
 Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/visible rendering correctness/full Save completion, generated Gadugi adapter freshness, and asset validation.
 
@@ -369,7 +335,7 @@ The prior non-zero wrapper exit is not treated as a blocker because direct verif
 Post the comment with:
 
 ```bash
-gh pr comment 164 --body-file readiness-comment.txt
+gh pr comment "$PR_NUMBER" --body-file readiness-comment.txt
 ```
 
 ## Blocker handling

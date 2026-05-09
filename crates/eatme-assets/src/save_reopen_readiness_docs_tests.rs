@@ -114,7 +114,23 @@ fn recovery_evidence_requires_files_modified_or_explicit_no_op_with_limitations(
 }
 
 #[test]
-fn durable_recovery_docs_keep_pr_172_evidence_out_of_committed_templates() {
+fn no_op_recovery_justification_is_tied_to_current_head_checks_and_starter_save_reopen_scope() {
+    let default_workflow = read_doc("default-workflow-pr-readiness.md");
+
+    assert_contains_all(
+        "default-workflow no-op recovery template",
+        &default_workflow,
+        &[
+            "No-op justification:",
+            "exact PR head",
+            "current check status",
+            "starter/save-reopen readiness boundary",
+        ],
+    );
+}
+
+#[test]
+fn durable_recovery_docs_keep_pr_specific_evidence_out_of_committed_templates() {
     let save_reopen = read_doc("save-reopen-readiness.md");
     let default_workflow = read_doc("default-workflow-pr-readiness.md");
     let combined = format!("{save_reopen}\n{default_workflow}");
@@ -137,6 +153,8 @@ fn durable_recovery_docs_keep_pr_172_evidence_out_of_committed_templates() {
             "pull/172",
             "46d22db1593e245e5637a09fb2422f7134669a41",
             "wave6-save-reopen-readiness-1778302300",
+            "PR #164",
+            "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
         ],
     );
 }
