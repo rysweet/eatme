@@ -281,7 +281,9 @@ The documentation check fails only on the narrow readiness overclaim phrases
 listed by the source contract. It does not fail on negative boundary statements
 such as this page's explanation that starter-project preflight evidence is not
 pull request readiness. Failure output names the file, matched phrase, contract
-source, and bounded replacement wording.
+source, and bounded replacement wording. See
+[Overclaim Boundary Detection](overclaim-boundary-detection.md) for the full
+overclaim detection API, rule authoring workflow, and reuse examples.
 
 Validate the edited scenario:
 
