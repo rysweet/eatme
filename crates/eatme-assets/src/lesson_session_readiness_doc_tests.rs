@@ -9,6 +9,9 @@ const MATRIX_HEADING: &str = "## Scenario-to-gap matrix";
 const REQUIRED_HEADER: &str =
     "| Scenario | What the user is trying to do | Remaining gap | Evidence still needed |";
 const REQUIRED_DIVIDER: &str = "| --- | --- | --- | --- |";
+const PR193_FINALIZATION_RECORD_HEADING: &str = "## PR #193 finalization record";
+const PR193_FINALIZATION_TEMPLATE_HEADING: &str = "## PR #193 finalization template";
+const PR193_BRANCH: &str = "feat/issue-176-eatme-wave7-gap-matrix-lane-follow-default-workflo";
 
 const REQUIRED_SCENARIO_IDS: [&str; 6] = [
     "first-lessons-real-ui-actions",
@@ -170,6 +173,100 @@ fn lesson_session_readiness_matrix_avoids_overclaiming_completion_or_assessment(
     );
 }
 
+#[test]
+fn default_workflow_pr193_uses_a_finalization_record_not_a_template() {
+    let doc = default_workflow_readiness_doc();
+
+    assert!(
+        doc.contains(PR193_FINALIZATION_RECORD_HEADING),
+        "PR #193 readiness evidence must be recorded as a finalization record"
+    );
+    assert!(
+        !doc.contains(PR193_FINALIZATION_TEMPLATE_HEADING),
+        "PR #193 readiness evidence must not remain a placeholder template"
+    );
+}
+
+#[test]
+fn default_workflow_pr193_record_contains_concrete_exact_head_evidence() {
+    let section = pr193_finalization_section(default_workflow_readiness_doc());
+
+    assert_all_present(
+        section,
+        &[
+            PR193_BRANCH,
+            "headRefOid",
+            "state: OPEN",
+            "mergeStateStatus: CLEAN",
+            "mergeable: MERGEABLE",
+            "Documentation Site",
+            "Quality Gates",
+            "GitGuardian Security Checks",
+        ],
+        "PR #193 finalization record",
+    );
+    assert!(
+        contains_full_hex_sha(section),
+        "PR #193 finalization record must cite the exact evaluated head SHA"
+    );
+    assert_all_absent(
+        section,
+        &[
+            "<headRefOid",
+            "<YYYY-MM-DDTHH:MM:SSZ>",
+            "<observed result",
+            "placeholder",
+            "template",
+            "after the documentation refinement is pushed",
+        ],
+        "PR #193 finalization record",
+    );
+}
+
+#[test]
+fn default_workflow_pr193_record_lists_executable_command_outcomes() {
+    let section = pr193_finalization_section(default_workflow_readiness_doc());
+
+    assert_command_row_has_concrete_success(
+        section,
+        "cargo run -q -p eatme-cli -- assets validate --json",
+    );
+    assert_command_row_has_concrete_success(
+        section,
+        "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+    );
+    assert_command_row_has_concrete_success(section, "mkdocs build --strict");
+    assert_command_row_has_concrete_success(section, "TMPDIR=/tmp ./scripts/quality-gates.sh");
+}
+
+#[test]
+fn default_workflow_pr193_record_names_no_op_or_change_scope_and_no_manual_merge() {
+    let section = pr193_finalization_section(default_workflow_readiness_doc());
+
+    assert!(
+        contains_any(
+            section,
+            &[
+                "No repository changes were required",
+                "Repository changes were limited to",
+                "no-op finalization",
+            ],
+        ),
+        "PR #193 finalization record must state either the no-op reason or the bounded change scope"
+    );
+    assert!(
+        contains_any(
+            section,
+            &[
+                "without manually merging",
+                "No manual merge was performed",
+                "Do not manually merge",
+            ],
+        ),
+        "PR #193 finalization record must explicitly preserve the no-manual-merge boundary"
+    );
+}
+
 fn readiness_doc() -> &'static str {
     static DOC: OnceLock<String> = OnceLock::new();
 
@@ -181,12 +278,28 @@ fn readiness_doc() -> &'static str {
     })
 }
 
+fn default_workflow_readiness_doc() -> &'static str {
+    static DOC: OnceLock<String> = OnceLock::new();
+
+    DOC.get_or_init(|| {
+        fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../docs/default-workflow-pr-readiness.md"),
+        )
+        .expect("read default-workflow-pr-readiness.md")
+    })
+}
+
 fn matrix_section(doc: &str) -> &str {
     section(doc, MATRIX_HEADING)
 }
 
 fn scenario_map_section(doc: &str) -> &str {
     section(doc, SCENARIO_MAP_HEADING)
+}
+
+fn pr193_finalization_section(doc: &str) -> &str {
+    section(doc, PR193_FINALIZATION_RECORD_HEADING)
 }
 
 fn section<'a>(doc: &'a str, heading: &str) -> &'a str {
@@ -237,11 +350,32 @@ fn assert_all_absent(text: &str, phrases: &[&str], label: &str) {
     }
 }
 
+fn assert_command_row_has_concrete_success(section: &str, command: &str) {
+    let row = section
+        .lines()
+        .find(|line| line.contains(command))
+        .unwrap_or_else(|| panic!("PR #193 finalization record is missing command: {command}"));
+
+    assert!(
+        !row.contains('<') && !row.contains('>'),
+        "command outcome must not be a placeholder: {row}"
+    );
+    assert!(
+        contains_any(row, &["passed", "succeeded", "success", "exit 0"]),
+        "command outcome must record concrete current-head success: {row}"
+    );
+}
+
 fn contains_any(text: &str, phrases: &[&str]) -> bool {
     let normalized_text = normalize(text);
     phrases
         .iter()
         .any(|phrase| normalized_text.contains(&normalize(phrase)))
+}
+
+fn contains_full_hex_sha(text: &str) -> bool {
+    text.split(|character: char| !character.is_ascii_hexdigit())
+        .any(|token| token.len() == 40)
 }
 
 fn normalize(text: &str) -> String {
