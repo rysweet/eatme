@@ -1,10 +1,9 @@
-# [PLANNED - Implementation Pending] Evidence Artifact Contract
+# Evidence Artifact Contract
 
-This document defines the intended evidence artifact contract for first-lesson
-readiness and silver-thread desktop evidence validation. The contract is a
-reference for the feature to build: it describes which artifact fields are
-accepted, how artifact states are normalized, and which wording must be rejected
-before readiness reports consume the artifact.
+This document defines the evidence artifact contract for first-lesson readiness
+and silver-thread desktop evidence validation. The contract describes which
+artifact fields are accepted, how artifact states are normalized, and which
+wording is rejected before readiness reports consume the artifact.
 
 The contract is intentionally narrow. It validates evidence artifact inputs and
 feeds failures into readiness reporting. It does not enforce arbitrary PR prose,
@@ -13,11 +12,11 @@ creative assessment, or first-lesson completion.
 
 ## Scope
 
-The planned validator applies to evidence artifacts that are read by
+The validator applies to evidence artifacts that are read by
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) and
 [Lesson Session Readiness](lesson-session-readiness.md).
 
-| Surface | Planned contract |
+| Surface | Contract |
 | --- | --- |
 | `desktop-first-lesson-next-action.json` | Validate schema version, top-level status, candidate actions, required next evidence, non-claims, proof-artifact declarations, evidence boundaries, and artifact text fields. |
 | `evidence_boundaries[]` | Validate boundary ids, input status values, metadata state, source, detail, claim, non-claims, artifact metadata, and artifact text fields. |
@@ -62,7 +61,7 @@ directory, and use:
 }
 ```
 
-Planned field contract:
+Field contract:
 
 | Field | Type | Required | Contract |
 | --- | --- | --- | --- |
@@ -139,7 +138,7 @@ must appear once.
 | `creative_assessment` | Creative assessment boundary evidence | Does not replace instructor judgment or prove first-lesson completion. |
 | `first_lesson_completion` | Completion boundary evidence | Does not prove full UI automation or creative quality unless distinct evidence exists. |
 
-Planned field contract:
+Field contract:
 
 | Field | Type | Required | Contract |
 | --- | --- | --- | --- |
@@ -164,8 +163,8 @@ Status-specific requirements:
 
 ## Text contract
 
-The planned shared text contract applies only to artifact input fields consumed by
-this evidence path, including `detail`, `claim`, `reason`, `summary`,
+The shared text contract applies only to artifact input fields consumed by this
+evidence path, including `detail`, `claim`, `reason`, `summary`,
 `requires_next_evidence`, `does_not_claim`, and boundary `does_not_prove` values.
 It is not a general prose linter for PR descriptions or human review comments.
 
@@ -204,14 +203,14 @@ UI automation is not complete.
 Save completion requires distinct finish-state evidence.
 ```
 
-## Planned implementation components
+## Implementation components
 
-The feature should be implemented under `desktop_evidence` without changing the
-public readiness purpose.
+The contract is implemented under `desktop_evidence` without changing the public
+readiness purpose.
 
 | Component | Responsibility |
 | --- | --- |
-| `desktop_evidence::evidence_text_contract` | Planned shared artifact text validation for filler rejection, unsupported affirmative claim rejection, and allowed limitation wording. |
+| `desktop_evidence::evidence_text_contract` | Shared artifact text validation for filler rejection, unsupported affirmative claim rejection, and allowed limitation wording. |
 | `desktop_evidence::first_lesson_boundaries` | Boundary shape validation, required boundary ids, status normalization, safe artifact metadata, and boundary text checks. |
 | `desktop_evidence::first_lesson_next_action` | Desktop next-action artifact validation, proof-artifact declarations, next-evidence semantics, and text checks. |
 | `compare::lesson_readiness` | Consume validation failures through existing readiness reporting without adding new proof behavior. |
