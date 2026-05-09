@@ -12,6 +12,8 @@ mod launch_options;
 mod launch_run_window;
 mod launch_run_world;
 mod launch_save_project;
+#[cfg(test)]
+mod launch_save_reopen_contract_tests;
 mod launch_ui_action_contract;
 mod launch_ui_actions;
 mod launch_window_activation;
