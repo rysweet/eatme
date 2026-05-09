@@ -12,11 +12,10 @@ The report answers one question:
 > Did the selected `real-alice-launch-smoke` comparison carry enough existing
 > launch-smoke manifest evidence to report launch-smoke readiness?
 
-It does not answer whether a first lesson was completed, whether a full world
-executed, whether a project is correct or creative, whether rendering is visually
-correct, whether a learner should be graded, whether Save completed, whether
-sharing/platform deployment succeeded, or whether the full Alice UI has been
-automated.
+It does not answer whether first-lesson completion, full world execution,
+project correctness, creative quality, visible rendering correctness, grading,
+Save completion, sharing/platform deployment, or full Alice UI automation has
+been proven.
 
 ## When to use it
 
@@ -332,14 +331,6 @@ automation, visible rendering correctness, Save completion, and deployed
 sharing/platform success explicitly unproven.
 ```
 
-Avoid wording that promotes launch smoke to lesson success:
-
-```text
-Alice first lesson is complete.
-The UI automation passes.
-The project renders correctly.
-The learner work is graded.
-The creative result is validated.
-Save completed.
-Sharing or platform deployment succeeded.
-```
+Avoid wording that promotes launch smoke to lesson, UI, rendering, grading,
+creative-assessment, Save, sharing, platform, or deployment success. Those
+outcomes remain not proven by this report.

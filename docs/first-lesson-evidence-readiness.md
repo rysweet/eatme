@@ -399,12 +399,9 @@ Save option evidence is shown as an observed option/action only.
 Save completion is not yet proven.
 ```
 
-Unsafe wording:
-
-```text
-The project was saved successfully.
-The first lesson was completed.
-```
+Unsafe wording treats a Save affordance or first-lesson boundary as completion.
+Keep those outcomes phrased as not yet proven until distinct completion evidence
+exists.
 
 ### Review a creative-assessment gap safely
 
@@ -414,13 +411,8 @@ text to find available evidence and next steps for the learner's creative work
 in this scenario, then collect or repair the scenario evidence that a human
 reviewer needs.
 
-Do not translate a creative-assessment gap into:
-
-```text
-The learner's world was graded.
-The creative work is good or bad.
-The first lesson is complete.
-```
+Do not translate a creative-assessment gap into grading, creative-quality, or
+first-lesson completion claims.
 
 ### Keep evidence assets editable
 
@@ -449,11 +441,11 @@ Use user-facing wording:
 
 | Say | Avoid |
 | --- | --- |
-| `RabbitHole launch/action evidence is shown.` | `modernized ui-action-contract passed.` |
+| `RabbitHole launch/action evidence is shown.` | Internal contract status shorthand as a user-facing success claim. |
 | `Desktop next-action evidence is not yet shown.` | Internal next-action artifact paths. |
-| `Save option evidence is shown as an observed option/action only.` | `Save completed.` |
-| `Visible rendering evidence is shown, but correctness is not proven.` | `Rendering is correct.` |
-| `First-lesson completion is not yet shown.` | `The lesson is complete.` |
+| `Save option evidence is shown as an observed option/action only.` | Any wording that treats observed Save affordance evidence as Save completion. |
+| `Visible rendering evidence is shown, but correctness is not proven.` | Any wording that treats screenshot or pixel evidence as rendering correctness. |
+| `First-lesson completion is not yet shown.` | Any wording that treats partial evidence as first-lesson completion. |
 
 The durable rule is simple: report what the evidence explicitly shows, report
 missing states as not yet shown or not yet proven, and keep the eight unproven

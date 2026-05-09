@@ -172,17 +172,11 @@ Canonical non-claims:
 - Deployed sharing/platform success is not proven.
 ```
 
-Unsafe PR wording:
-
-```text
-Alice first lesson is complete.
-The UI automation passes end to end.
-The world runs correctly.
-The project renders correctly.
-The work is graded or creatively assessed.
-Save is complete.
-Sharing or platform deployment succeeded.
-```
+Unsafe PR wording is any statement that treats the bounded readiness evidence as
+proof of a completed lesson, full UI automation, full world execution, visible
+rendering correctness, grading, creative assessment, Save completion, or deployed
+sharing/platform success. Do not include those statements in docs, generated
+adapters, validation summaries, or PR text.
 
 ## API and output boundaries
 

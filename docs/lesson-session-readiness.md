@@ -67,7 +67,7 @@ RabbitHole-produced desktop evidence:
 | --- | --- | --- |
 | Canonical scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and unsupported-action policy are part of the validated eatme asset set. |
 | Generated adapter evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Adapter freshness proves the generated Gadugi scenario matches the current canonical scenario. RabbitHole-specific wording reaches adapters only after the canonical scenario is updated and adapters are regenerated. |
-| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, launch assertions, first-lesson readiness progress evidence, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
+| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, launch assertions, first-lesson readiness progress evidence, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence while keeping first-lesson completion not proven. |
 | RabbitHole desktop evidence | Baseline and modernized target evidence in `comparison-manifest.json`, with RabbitHole-specific assertions on the modernized target | RabbitHole produced the required desktop signals for the next first-lesson action boundary. |
 
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
@@ -484,9 +484,9 @@ Project proof-artifact item example:
 }
 ```
 
-This means proof collection hit an explicit boundary. It does not mean Alice
-completed a lesson, saved a learner world through Full Alice UI automation, or graded
-creative work.
+This means proof collection hit an explicit boundary. First-lesson completion,
+Save completion through Full Alice UI automation, and creative-work grading
+remain unproven.
 
 ### Desktop proof contract
 
@@ -509,8 +509,8 @@ exact skip shape. First-lesson unsupported-action blockers use the canonical
 
 Save Project and Select Project are proof-artifact categories. They describe
 whether RabbitHole supplied an auditable artifact declaration for the action
-boundary. They do not say that Alice UI automation succeeded, that a lesson was
-completed, that a saved world was graded, or that creative quality was assessed.
+boundary. They keep Alice UI automation, first-lesson completion, saved-world
+grading, and creative-quality assessment unproven.
 
 The modernized target reads optional declarations from desktop next-action
 evidence. The runner still resolves and validates the underlying artifact under
