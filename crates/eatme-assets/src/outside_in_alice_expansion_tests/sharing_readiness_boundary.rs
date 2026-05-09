@@ -156,5 +156,3 @@ fn sharing_readiness_docs_do_not_require_save_or_first_lesson_completion() {
         "sharing readiness docs must not depend on Save or first-lesson completion claims: {present:?}"
     );
 }
-
-
