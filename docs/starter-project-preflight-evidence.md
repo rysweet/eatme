@@ -2,13 +2,15 @@
 
 This readiness report captures bounded preflight evidence for opening the
 bundled starter project before save, reopen, or export review. It describes the
-bounded evidence contract for `starter-project-open-save-export-preflight` and
-the feature boundary for the persistence work that still needs to be built:
-starter-project launch readiness is documented, and workflow completion beyond
-that launch boundary remains explicitly unproven.
+bounded evidence contract for `starter-project-open-save-export-preflight`.
+Starter-project launch readiness is documented here, while the separate
+save/reopen artifact and reopened-state contract is documented in
+[Save/reopen Readiness](save-reopen-readiness.md). Workflow completion beyond
+the launch boundary remains explicitly unproven unless that separate evidence
+exists.
 
 This report is not implementation proof for Save, reopen, export, first-lesson
-completion, or full UI automation. It is the handoff boundary for a later
+completion, or full UI automation. It is the handoff boundary for a separate
 save/reopen evidence lane.
 
 ## Evidence source and scope
@@ -25,8 +27,8 @@ automation code.
 
 | In scope for this report | Out of scope for this report |
 | --- | --- |
-| Starter-project launch readiness evidence | Save implementation or Save completion evidence |
-| Inspectable preflight outputs from the existing scenario | Reopen implementation or end-to-end reopen verification |
+| Starter-project launch readiness evidence | Save artifact proof or full Save completion evidence |
+| Inspectable preflight outputs from the existing scenario | Reopen artifact proof or reopened-state verification |
 | Boundary wording for later save/reopen/export review | Export implementation or export completion evidence |
 | Documentation-only clarification of the evidence contract | Scenario, adapter, Rust, or UI automation changes |
 
@@ -58,13 +60,12 @@ project can be opened and inspected before further review. It does not prove
 that a changed project can be saved, that the saved file can be reopened, or
 that the reopened state matches the expected learner-world state.
 
-Closing this gap needs a separate persistence feature and evidence lane that
-exercises the save path, records the saved artifact, reopens that artifact, and
-verifies the reopened project state. Until that feature and evidence exist, this
+Closing this gap uses a separate persistence evidence lane that exercises the
+save path, records the saved artifact, reopens that artifact, and verifies the
+reopened project state. Until that separate evidence exists for a run, this
 report should be read only as starter-project open-readiness evidence.
 
-The feature to build is a deterministic save/reopen workflow for the bundled
-starter project. Its implementation-ready boundary is:
+The deterministic save/reopen boundary is:
 
 1. open the bundled starter project;
 2. make or identify a deterministic, reviewer-visible save-worthy project state;
@@ -74,20 +75,20 @@ starter project. Its implementation-ready boundary is:
 6. report the save/reopen evidence in its own manifest or report, separate from
    this preflight evidence.
 
-Only the first item is supported by this preflight report. Items 2 through 6
-need their own scenario evidence and should not inherit completion claims from
-this document.
+Only the first item is supported by this preflight report. Items 2 through 6 are
+owned by [Save/reopen Readiness](save-reopen-readiness.md) and should not inherit
+completion claims from this document.
 
 Export can be added as a follow-on acceptance path, but it should not be implied
-by save/reopen success. If export is included in the future feature, it needs a
+by save/reopen success. If export is included in the same lane, it needs a
 separate exported artifact, artifact verification, and evidence boundary.
 
-## Acceptance contract for the feature to build
+## Acceptance contract for the save/reopen lane
 
-The future save/reopen lane is ready to trust only when its own evidence proves
-each persistence step without borrowing claims from this preflight report.
+The save/reopen lane is ready to trust only when its own evidence proves each
+persistence step without borrowing claims from this preflight report.
 
-| Future evidence | Required meaning |
+| Save/reopen evidence | Required meaning |
 | --- | --- |
 | Save action evidence | Shows the workflow invoked Alice's save path after opening the starter project. |
 | Saved artifact evidence | Identifies the saved `.a3p` artifact and records that it exists, is non-empty, and belongs to the current run. |
@@ -118,12 +119,12 @@ References to existing scenarios are supporting context only. They do not expand
 this report into full UI automation, Save/reopen execution, export verification,
 or first-lesson completion evidence.
 
-## Next evidence needed
+## Evidence beyond preflight
 
-The next evidence should be a separate save/reopen review that proves the
-persistence workflow beyond preflight. That evidence should show the save
-action, identify the saved project artifact, reopen that artifact, verify the
-reopened state, and state its own evidence boundary without relying on this
-preflight report as proof of workflow completion. If export is included in the
-same future lane, it should add its own exported artifact verification instead
+Evidence beyond preflight belongs in a separate save/reopen review that proves
+the persistence workflow beyond this launch boundary. That evidence should show
+the save action, identify the saved project artifact, reopen that artifact,
+verify the reopened state, and state its own evidence boundary without relying
+on this preflight report as proof of workflow completion. If export is included
+in the same lane, it should add its own exported artifact verification instead
 of treating save/reopen success as export proof.
