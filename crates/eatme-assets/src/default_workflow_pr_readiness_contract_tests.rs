@@ -266,17 +266,13 @@ fn repository_root() -> PathBuf {
 }
 
 fn assert_ordered_sections(artifact: &str, headings: &[&str]) {
-    let mut previous_position = 0;
+    let mut search_start = 0;
 
     for heading in headings {
-        let position = artifact
-            .find(heading)
-            .unwrap_or_else(|| panic!("missing required readiness artifact section: {heading}"));
-        assert!(
-            position >= previous_position,
-            "section {heading} must appear after the previous required section"
-        );
-        previous_position = position;
+        let relative_position = artifact[search_start..].find(heading).unwrap_or_else(|| {
+            panic!("missing or out-of-order readiness artifact section: {heading}")
+        });
+        search_start += relative_position + heading.len();
     }
 }
 
@@ -328,7 +324,7 @@ fn missing_required_publication_record_fields(text: &str) -> Vec<&'static str> {
     REQUIRED_PUBLICATION_RECORD_FIELDS
         .iter()
         .copied()
-        .filter(|field| !normalized_text.contains(&normalize_whitespace(field)))
+        .filter(|field| !normalized_text.contains(field))
         .collect()
 }
 
