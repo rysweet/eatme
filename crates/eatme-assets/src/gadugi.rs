@@ -26,7 +26,7 @@ pub fn generate_gadugi_adapters(root: &Path, check: bool) -> Result<GadugiAdapte
     let eatme_root = scenario_root.join("eatme");
     let gadugi_root = scenario_root.join("gadugi");
     let scenario_paths = scenario_asset_paths(&scenario_root)?;
-    let mut sources = Vec::new();
+    let mut sources = Vec::with_capacity(scenario_paths.len());
     for source_path in scenario_paths
         .iter()
         .filter(|path| path.starts_with(&eatme_root))
@@ -139,7 +139,8 @@ fn missing_generated_target_count<'a>(
     scenario_paths: &[PathBuf],
     generated_target_paths: impl IntoIterator<Item = &'a PathBuf>,
 ) -> usize {
-    let discovered_paths: HashSet<&Path> = scenario_paths.iter().map(PathBuf::as_path).collect();
+    let mut discovered_paths = HashSet::with_capacity(scenario_paths.len());
+    discovered_paths.extend(scenario_paths.iter().map(PathBuf::as_path));
     generated_target_paths
         .into_iter()
         .filter(|target_path| !discovered_paths.contains(target_path.as_path()))
@@ -346,7 +347,7 @@ fn quote_shell_expanded_launch_arguments(command: &str) -> String {
 }
 
 fn step_title(id: &str) -> String {
-    let mut title = String::new();
+    let mut title = String::with_capacity(id.len());
     for part in id.split('-').filter(|part| !part.is_empty()) {
         if !title.is_empty() {
             title.push(' ');
@@ -413,8 +414,8 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
 }
 
 fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioStep) -> Vec<String> {
-    let evidence = step.evidence.join("\n").to_lowercase();
-    let mut expected = vec![format!("\"scenario_id\": \"{}\"", scenario.id)];
+    let mut expected = Vec::with_capacity(16);
+    expected.push(format!("\"scenario_id\": \"{}\"", scenario.id));
     if scenario.kind == "alice_real_ui_action_contract" {
         expected.push("\"failure_category\":".into());
     } else {
@@ -422,9 +423,9 @@ fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioSte
     }
     expected.push("\"real_alice_execution_evidence\": {".into());
 
-    if evidence.contains("screenshot or window") {
+    if evidence_contains(&step.evidence, "screenshot or window") {
         expected.push("\"startup_window_or_screenshot\": {".into());
-    } else if evidence.contains("screenshot") {
+    } else if evidence_contains(&step.evidence, "screenshot") {
         expected.push("\"startup_screenshot\": {".into());
     }
 
@@ -439,20 +440,34 @@ fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioSte
         "save_project_ui_action",
         "ui_action_artifact_captured",
     ] {
-        if evidence.contains(assertion) {
+        if evidence_contains(&step.evidence, assertion) {
             expected.push(format!("\"{assertion}\": {{"));
         }
     }
-    if evidence.contains("ui-action-contract.json") {
+    if evidence_contains(&step.evidence, "ui-action-contract.json") {
         expected.push("\"ui_action_contract\": {".into());
     }
-    if evidence.contains("africa.a3p") {
+    if evidence_contains(&step.evidence, "africa.a3p") {
         expected.push("africa.a3p".into());
     }
-    if evidence.contains("assertions all pass") || evidence.contains("passed=true") {
+    if evidence_contains(&step.evidence, "assertions all pass")
+        || evidence_contains(&step.evidence, "passed=true")
+    {
         expected.push("\"passed\": true".into());
     }
     expected
+}
+
+fn evidence_contains(evidence: &[String], needle: &str) -> bool {
+    evidence
+        .iter()
+        .any(|item| contains_ignore_ascii_case(item, needle))
+}
+
+fn contains_ignore_ascii_case(text: &str, phrase: &str) -> bool {
+    text.as_bytes()
+        .windows(phrase.len())
+        .any(|window| window.eq_ignore_ascii_case(phrase.as_bytes()))
 }
 
 fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
