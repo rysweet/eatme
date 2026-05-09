@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 
 mod first_lesson;
 use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
+mod pr_readiness;
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -35,6 +36,10 @@ enum Commands {
     Alice {
         #[command(subcommand)]
         command: AliceCommand,
+    },
+    PrReadiness {
+        #[command(subcommand)]
+        command: pr_readiness::PrReadinessCommand,
     },
 }
 
@@ -295,6 +300,7 @@ fn main() -> Result<()> {
                 }
             }
         },
+        Commands::PrReadiness { command } => pr_readiness::run(command)?,
     }
     Ok(())
 }

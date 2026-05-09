@@ -1,4 +1,7 @@
 pub mod command;
+pub mod default_workflow_pr_readiness;
+#[cfg(test)]
+mod default_workflow_pr_readiness_tests;
 pub mod fs_hash;
 pub mod manifest;
 
