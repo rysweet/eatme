@@ -338,6 +338,10 @@ fn maps_status_context_state_to_completed_successful_check() {
     assert_eq!(check.name, "branch-protection");
     assert_eq!(check.status, "COMPLETED");
     assert_eq!(check.conclusion.as_deref(), Some("SUCCESS"));
+    let skipped = serde_json::json!({"name": "optional docs deploy", "conclusion": "skipped"});
+    let check = check_from_rollup_item(&skipped, HEAD_SHA).unwrap().unwrap();
+    assert_eq!(check.conclusion.as_deref(), Some("SKIPPED"));
+    assert!(!check.required);
 }
 
 fn pr_view_json() -> &'static str {

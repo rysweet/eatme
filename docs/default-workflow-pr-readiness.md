@@ -206,6 +206,11 @@ check is pending, queued, in progress, requested, failing, errored, timed out,
 cancelled, skipped when it is expected to run, missing, or reported for a
 different SHA.
 
+Skipped status-rollup entries from optional conditional jobs are retained in
+collected evidence but do not count as required checks. They also do not satisfy
+the required-check evidence minimum; at least one required exact-head check must
+still complete successfully.
+
 When a workflow run is needed to distinguish stale from exact-head checks, query
 workflow runs by branch and head SHA:
 

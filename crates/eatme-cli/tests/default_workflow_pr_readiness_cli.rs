@@ -326,6 +326,13 @@ fn base_merge_ready_evidence() -> Value {
                 "status": "COMPLETED",
                 "conclusion": "SUCCESS",
                 "required": true
+            },
+            {
+                "name": "manual real Alice launch smoke",
+                "head_sha": HEAD_SHA,
+                "status": "COMPLETED",
+                "conclusion": "SKIPPED",
+                "required": false
             }
         ],
         "commands": [

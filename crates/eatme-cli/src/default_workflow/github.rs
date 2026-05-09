@@ -279,9 +279,15 @@ fn check_from_rollup_item(item: &Value, head_ref_oid: &str) -> Result<Option<Che
         name,
         head_sha,
         status,
+        required: !is_skipped_rollup_check(conclusion.as_deref()),
         conclusion,
-        required: true,
     }))
+}
+
+fn is_skipped_rollup_check(conclusion: Option<&str>) -> bool {
+    conclusion
+        .map(|value| value.eq_ignore_ascii_case("SKIPPED"))
+        .unwrap_or(false)
 }
 
 fn normalize_status(value: &str) -> String {
