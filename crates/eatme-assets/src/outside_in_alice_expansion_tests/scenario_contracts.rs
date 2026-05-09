@@ -161,7 +161,42 @@ fn teacher_community_sharing_loop_contract_names_handoff_and_honest_boundaries()
             "not creative assessment",
             "not learner-world grading",
             "not complete Alice coverage",
+            "not hosted sharing",
+            "not deployed sharing",
+            "not platform success",
             "not a deployed community platform",
+        ],
+    );
+}
+
+#[test]
+fn student_artifact_package_share_evidence_contract_names_review_handoff_boundary() {
+    let root = repository_root();
+    let contract = fs::read_to_string(scenario_path(
+        &root,
+        "eatme",
+        "student-artifact-package-share-evidence",
+    ))
+    .unwrap();
+
+    assert_contains_all(
+        "student-artifact-package-share-evidence contract",
+        &contract,
+        &[
+            "artifact review packet checklist",
+            "student evidence handoff prompt",
+            "instructor review boundary note",
+            "artifact or screenshot reference",
+            "visible run result",
+            "attribution or classroom context",
+            "student-owned next revision",
+            "not full user interface automation",
+            "not automated creative assessment",
+            "not learner-world grading",
+            "not complete Alice coverage",
+            "not hosted sharing",
+            "not deployed sharing",
+            "not platform success",
         ],
     );
 }

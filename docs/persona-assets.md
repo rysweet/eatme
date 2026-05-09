@@ -101,7 +101,7 @@ launch harness.
 | `setup-support-specialist` | Coordinates install, launch, graphics, storage, and fallback readiness. |
 | `workshop-facilitator` | Runs short workshop/studio blocks with checkpoints, helpers, and share-outs. |
 | `alice-2-migration-mentor` | Bridges Alice 2 lesson intent into current Alice 3 workflows. |
-| `teacher-community-curator` | Packages shareable/remixable teacher-community assets with context and attribution. |
+| `teacher-community-curator` | Packages handoff-ready/remixable teacher-community assets with context and attribution. |
 
 ### Student crew
 
@@ -211,8 +211,8 @@ include:
 | `setup-support-lab-readiness` | IT/setup-support scenario for install, Java, graphics, storage, accounts, and fallback readiness. |
 | `alice-2-migration-bridge` | Migration scenario that maps Alice 2 lesson intent into Alice 3 workflows with visible student evidence. |
 | `workshop-facilitator-live-studio` | Workshop facilitation scenario for checkpoint evidence, helper roles, recovery moves, student-owned action notes, and a final share-out. |
-| `student-artifact-package-share-evidence` | Student artifact sharing scenario for artifact references, student explanation, classroom context or attribution, next revision, and human review boundaries. |
-| `teacher-community-sharing-loop` | Teacher-community sharing scenario for share cards, classroom handoff notes, attribution, student evidence, accessibility notes, and remix feedback prompts. |
+| `student-artifact-package-share-evidence` | Student artifact review-handoff scenario for artifact references, student explanation, classroom context or attribution, next revision, and human review boundaries. |
+| `teacher-community-sharing-loop` | Teacher-community handoff scenario for share cards, classroom handoff notes, attribution, student evidence, accessibility notes, and remix feedback prompts. |
 | `curriculum-sequence-remix-pack` | Curriculum design scenario for sequencing committed Alice assets with prerequisites, pacing, swap points, fallback notes, and visible student evidence. |
 
 Launch-smoke standalone scenarios route runtime through

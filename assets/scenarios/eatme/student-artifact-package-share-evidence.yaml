@@ -8,7 +8,8 @@ resource_basis:
     url: https://www.alice.org/resources/alice-3/
     use: >-
       Use lessons, exercises, projects, how-tos, and classroom resources as context
-      for student project artifacts, reflection, and shareable classroom evidence.
+      for student project artifacts, reflection, and review-ready classroom
+      evidence.
   - name: Starter project open/save/export preflight
     url: assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
     use: >-
@@ -18,21 +19,23 @@ resource_basis:
     url: assets/scenarios/eatme/teacher-community-sharing-loop.yaml
     use: >-
       Use teacher-facing share-card boundaries for attribution, classroom context,
-      and feedback prompts without claiming a deployed service.
+      and feedback prompts without claiming hosted sharing, deployed sharing, or
+      platform success.
 purpose: >-
-  Help an instructor and student package one Alice artifact for classroom sharing
+  Help an instructor and student package one Alice artifact for classroom review
   after the student has run it. The output names the artifact file or screenshot,
   the student reflection, attribution/context notes, and what a teacher must still
   review by human judgment. This editable scenario is not full user interface
   automation, not automated creative assessment, not learner-world grading, not
-  complete Alice coverage, and not a deployed service.
+  complete Alice coverage, not hosted sharing, not deployed sharing, and not
+  platform success.
 personas:
   instructors: [teacher-community-curator, assessment-curator, classroom-orchestrator]
   students: [reflective-debugger, collaborative-peer-mentor]
 agentic_flow:
   focus: student-artifact-package-share-evidence
   instructor_goal: >-
-    Prepare a shareable classroom evidence packet for one student Alice artifact
+    Prepare a review-ready classroom evidence packet for one student Alice artifact
     that keeps student explanation, artifact behavior, attribution, and instructor
     review boundaries visible without claiming automated grading or complete Alice
     coverage.
@@ -46,24 +49,24 @@ agentic_flow:
     - rubric
     - avoid
   expected_outputs:
-    - artifact_share_packet_checklist
+    - artifact_review_packet_checklist
     - student_evidence_handoff_prompt
     - instructor_review_boundary_note
 agentic_test_prompt: >-
   Act as an instructor acceptance agent preparing one student Alice artifact for
-  classroom sharing. Produce an artifact share packet checklist, student evidence
+  classroom review handoff. Produce an artifact review packet checklist, student evidence
   handoff prompt, and instructor review boundary note grounded in the listed
   resources and this scenario. Require the packet to include the artifact or
   screenshot reference, what the student changed in Alice, the visible run result,
   attribution or classroom context, and one student-owned next revision. State
   explicitly that this is not full user interface automation, not automated
-  creative assessment, not learner-world grading, not complete Alice coverage, and
-  not a deployed service.
+  creative assessment, not learner-world grading, not complete Alice coverage, not
+  hosted sharing, not deployed sharing, and not platform success.
 acceptance_criteria:
   - given: >-
       a student has an Alice artifact plus a short reflection after running it
     when: >-
-      the share packet checklist is prepared
+      the review packet checklist is prepared
     then: >-
       the checklist names the artifact or screenshot reference, student change,
       visible run result, attribution or classroom context, and one next revision
@@ -75,19 +78,19 @@ acceptance_criteria:
       the note treats that evidence as environment support rather than proof of
       student understanding or completed export coverage
   - given: >-
-      another student or teacher reviews the shared artifact
+      another student or teacher reviews the handoff packet
     when: >-
       the student evidence handoff prompt is used
     then: >-
       the prompt asks for observable artifact behavior and student explanation
       before feedback or revision suggestions
 acceptance_probes:
-  - Artifact share packet checklist includes artifact or screenshot reference, student change, visible run result, attribution or classroom context, and one next revision.
+  - Artifact review packet checklist includes artifact or screenshot reference, student change, visible run result, attribution or classroom context, and one next revision.
   - Student evidence handoff prompt asks the student to explain one Alice change and the visible behavior after running.
   - Instructor review boundary note separates environment evidence from student learning evidence and names what still needs human judgment.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, not hosted sharing, not deployed sharing, and not platform success.
 rubric:
-  - criterion: Share packet completeness
+  - criterion: Review packet completeness
     evidence:
       - Packet names the artifact or screenshot reference, student change, visible run result, attribution or classroom context, and revision target.
       - Packet can be maintained as editable YAML without changing Rust.
@@ -101,7 +104,7 @@ rubric:
       - Instructor judgment remains responsible for creative meaning, classroom fit, and learning interpretation.
 avoid:
   - Exact user interface coordinates, brittle selectors, private implementation details, or hidden code inspection.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or deployed service status.
+  - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, hosted sharing, deployed sharing, or platform success.
   - Treating launch, screenshot, or export-preflight evidence as proof of student understanding.
 steps:
   - id: validate-assets
@@ -117,7 +120,7 @@ steps:
 timeouts:
   agentic_seconds: 900
 artifacts:
-  artifact_share_packet_checklist: agentic://student/artifact-share-packet-checklist
+  artifact_review_packet_checklist: agentic://student/artifact-review-packet-checklist
   student_evidence_handoff_prompt: agentic://student/evidence-handoff-prompt
   instructor_review_boundary_note: agentic://instructor/review-boundary-note
 unsupported_policy: >-
@@ -125,5 +128,5 @@ unsupported_policy: >-
   cited Alice-facing resources, fail visibly and report the missing evidence. Do
   not replace instructor judgment with launch, screenshot, or export-preflight
   artifacts. Do not claim full user interface automation, automated creative
-  assessment, learner-world grading, complete Alice coverage, or a deployed
-  service.
+  assessment, learner-world grading, complete Alice coverage, hosted sharing,
+  deployed sharing, or platform success.

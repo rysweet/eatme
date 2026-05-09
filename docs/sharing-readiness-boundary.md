@@ -3,13 +3,14 @@
 Student and teacher sharing scenarios define a review handoff, not a deployed
 sharing feature. They help a learner or instructor package enough evidence for a
 classroom review, peer conversation, or teacher remix decision without claiming
-that hosted sharing, a live community platform, or platform access controls work.
+that hosted sharing, deployed sharing, platform success, a live community
+platform, or platform access controls work.
 
 ## What the boundary means
 
 | Audience | Ready means | Ready does not mean |
 | --- | --- | --- |
-| Student | The student can hand off a packet that names the Alice artifact, visible behavior, run result, context or attribution, and one next revision. | The artifact was uploaded, hosted, published to a community platform, or proven shareable through a deployed service. |
+| Student | The student can hand off a packet that names the Alice artifact, visible behavior, run result, context or attribution, and one next revision. | The artifact was uploaded, hosted, published to a community platform, or proven available through a deployed service. |
 | Instructor | The instructor can review the packet, connect it to classroom expectations, and decide what feedback or remix step comes next. | The instructor has proof of a live sharing platform, public gallery, account workflow, moderation, permissions, or community deployment. |
 | Teacher-community curator | The curator can package a teacher-facing share card with classroom constraints, student evidence expectations, accessibility notes, attribution, and remix feedback prompts. | The curator has proven that the activity is distributed through a hosted teacher community or ranked by a platform. |
 
@@ -62,8 +63,8 @@ handoff. The handoff includes:
 | Remix feedback prompt | Asks another teacher what they would keep, adapt, simplify, or test next. |
 
 The handoff is editable classroom documentation. It is not a platform publishing
-flow and should not describe public distribution unless separate deployment
-evidence exists.
+flow and should not describe public distribution unless a separate
+platform/deployment feature is explicitly scoped and proven.
 
 ## Configuration
 
@@ -153,4 +154,3 @@ Boundary:
 This is a classroom handoff. It does not claim a hosted community platform,
 public gallery, deployment, permissions model, or moderation workflow.
 ```
-

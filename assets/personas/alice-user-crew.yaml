@@ -188,7 +188,7 @@ personality_assets:
         - Feedback points at visible Alice world behavior, not hidden implementation.
     - id: studio-critique-card
       editable_by: instructor-agent
-      purpose: Convert tutorial completion into shareable studio critique.
+      purpose: Convert tutorial completion into reviewable studio critique.
       prompt_frame: >-
         Ask for one thing the world communicates, one programming choice that made
         it happen, and one revision that would help a peer understand it.
@@ -1476,7 +1476,7 @@ core_scenarios_from_existing_alice_resources:
   - id: student-artifact-package-share-evidence
     origin: existing-alice-resource
     coverage: [classroom-use, export-share]
-    user_story: As a teacher-community-curator, I want a shareable evidence packet for one student Alice artifact, so that another reviewer can see the artifact reference, student explanation, attribution or classroom context, and human review boundary.
+    user_story: As a teacher-community-curator, I want a review-ready evidence packet for one student Alice artifact, so that another reviewer can see the artifact reference, student explanation, attribution or classroom context, and human review boundary.
     personas:
       instructors: [teacher-community-curator, assessment-curator, classroom-orchestrator]
       students: [reflective-debugger, collaborative-peer-mentor]
@@ -1496,13 +1496,13 @@ core_scenarios_from_existing_alice_resources:
       system_or_artifact:
         - Share packet includes artifact or screenshot reference, reflection, attribution or classroom context, and human review note.
     agentic_test_prompt: >-
-      Create a shareable classroom evidence packet for one student Alice artifact. Include artifact or screenshot reference, the student Alice change, visible run result, attribution or classroom context, one student-owned revision, and a human review boundary.
+      Create a review-ready classroom evidence packet for one student Alice artifact. Include artifact or screenshot reference, the student Alice change, visible run result, attribution or classroom context, one student-owned revision, and a human review boundary. State that the packet is not hosted sharing, not deployed sharing, and not platform success.
     acceptance_probes:
       - Packet includes artifact reference, student explanation, visible run result, attribution or classroom context, and next revision.
       - Review note separates environment evidence from student learning evidence.
       - Feedback starts from observable artifact behavior and student explanation.
     avoid:
-      - Hidden code inspection, automatic creative scoring, learner-world grading, or claims of complete Alice coverage.
+      - Hidden code inspection, automatic creative scoring, learner-world grading, complete Alice coverage claims, hosted sharing claims, deployed sharing claims, or platform success claims.
   - id: hour-of-code-studio-kickoff
     origin: existing-alice-resource
     coverage: [setup, lessons, world-creation, run-debug, classroom-use]
@@ -1813,7 +1813,7 @@ creative_new_teaching_learning_scenarios:
   - id: creature-choreography-loop-lab
     origin: creative-new
     coverage: [lessons, world-creation, export-share]
-    user_story: As a playful-tinkerer, I want creatures to perform a dance pattern, so that loops, procedures, and arrays can become embodied and shareable.
+    user_story: As a playful-tinkerer, I want creatures to perform a dance pattern, so that loops, procedures, and arrays can become embodied and explainable.
     personas:
       instructors: [exercise-forger, assessment-curator]
       students: [playful-tinkerer, creative-storyteller, accessibility-advocate]
@@ -1826,7 +1826,7 @@ creative_new_teaching_learning_scenarios:
     observable_behaviors:
       instructor:
         - 'Offers levels: solo loop, group repeated procedure, optional collection-driven choreography.'
-        - Requires a shareable explanation of the pattern.
+        - Requires a reviewable explanation of the pattern.
       student:
         - Creates a repeated movement pattern and modifies it intentionally.
         - Shares the dance and explains the repeated unit.

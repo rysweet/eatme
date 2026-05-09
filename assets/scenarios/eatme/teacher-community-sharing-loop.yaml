@@ -18,8 +18,8 @@ purpose: >-
   student evidence, attribution, classroom constraints, and remix feedback prompts.
   This editable scenario supports responsible sharing of teacher-facing activity
   notes; it is not full UI automation, not creative assessment, not
-  learner-world grading, not complete Alice coverage, and not a deployed
-  community platform.
+  learner-world grading, not complete Alice coverage, not hosted sharing, not
+  deployed sharing, not platform success, and not a deployed community platform.
 personas:
   instructors: [teacher-community-curator, classroom-orchestrator, assessment-curator]
   students: [collaborative-peer-mentor, accessibility-advocate]
@@ -52,7 +52,8 @@ agentic_test_prompt: >-
   classroom teacher, and two feedback questions for future remix. Keep language
   editable and teacher-facing. State explicitly that this is not full UI
   automation, not creative assessment, not learner-world grading, not complete
-  Alice coverage, and not a deployed community platform.
+  Alice coverage, not hosted sharing, not deployed sharing, not platform success,
+  and not a deployed community platform.
 acceptance_criteria:
   - given: >-
       a teacher wants to share an Alice activity with another classroom
@@ -80,7 +81,7 @@ acceptance_probes:
   - Classroom handoff note tells the next teacher what to prepare, what learners produce, what support signals to watch, and what can be adapted.
   - Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
   - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
-  - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+  - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not hosted sharing, not deployed sharing, not platform success, and not a deployed community platform.
 rubric:
   - criterion: Share card usefulness
     evidence:
@@ -98,7 +99,7 @@ avoid:
   - Exact user interface coordinates, menu paths, or private implementation details.
   - Treating shared materials as final publication with no classroom adaptation notes.
   - Popularity ranking, automated creative scoring, learner-world grading, or complete Alice coverage claims.
-  - Claims that a teacher community platform has been deployed.
+  - Claims that hosted sharing, deployed sharing, platform success, or a teacher community platform has been proven.
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -121,5 +122,5 @@ unsupported_policy: >-
   cited Alice.org resource basis, fail visibly and report the missing evidence.
   Do not replace instructor judgment with brittle user interface assertions. Do
   not claim this scenario is full UI automation, creative assessment,
-  learner-world grading, complete Alice coverage, or a deployed community
-  platform.
+  learner-world grading, complete Alice coverage, hosted sharing, deployed
+  sharing, platform success, or a deployed community platform.
