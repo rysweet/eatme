@@ -16,6 +16,7 @@ justification. It does not merge the PR.
 - [Generic readiness procedure](#generic-readiness-procedure)
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
+- [Preserved patch recovery](#preserved-patch-recovery)
 - [Sharing-readiness recovery profile](#sharing-readiness-recovery-profile)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
 - [Three-cycle quality audit](#three-cycle-quality-audit)
@@ -33,6 +34,7 @@ current branch head being reviewed.
 | --- | --- |
 | Current checkout | The worktree is on the intended branch, the current `HEAD` is recorded, and the final validation worktree is clean. |
 | PR association | GitHub reports that the PR head branch is the same branch being recovered. |
+| Preserved recovery patch | When recovery depends on a saved uncommitted patch, the patch is readable, inspected directly, and compared with the current branch before any no-op or readiness decision. |
 | GitHub checks | Required checks are green for the PR head SHA. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
@@ -73,6 +75,7 @@ review artifact, not a source file that must be committed.
 | `pr_number` | Pull request number being recovered. |
 | `pr_head_branch` | GitHub PR head branch from `headRefName`. |
 | `pr_head_sha` | GitHub PR head SHA from `headRefOid`. |
+| `preserved_patch_review` | Required when a saved uncommitted patch is part of recovery. Records the patch source, inspection result, affected paths, and whether the patch is already represented by the current branch. |
 | `checks` | Required check states for `pr_head_sha`. |
 | `merge_state` | `mergeStateStatus` and `mergeable`. |
 | `asset_validation` | Result of `assets validate --json`, when applicable. |
@@ -87,7 +90,7 @@ review artifact, not a source file that must be committed.
 | `workflow_readiness_evidence` | Current-head workflow readiness summary tying the executed gates to the evaluated branch and SHA. |
 | `review_evidence` | Review-relevant PR metadata, check rollup, and bounded claim review used to decide whether readiness can be posted. |
 | `finalization_evidence` | Finalization-relevant state showing whether the workflow may record readiness, no-op acceptance, or a blocker without claiming merge completion. |
-| `decision` | `MERGE_READY` or `NOT_MERGE_READY`, with explicit blockers or evidence. A no-op recovery that passes every gate is recorded as `MERGE_READY` with a no-op justification. |
+| `decision` | `MERGE_READY`, `NOT_MERGE_READY`, or `BLOCKED`, with explicit blockers or evidence. A no-op recovery that passes every gate is recorded as `MERGE_READY` with a no-op justification. `BLOCKED` means required recovery evidence could not be inspected, so no readiness decision was made. |
 | `bounded_claim` | Short statement of what the executed evidence proves and what it does not prove. |
 
 ## Generic readiness procedure
@@ -114,57 +117,73 @@ Run the gate from the repository root.
      --json number,title,headRefName,headRefOid,baseRefName,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url
    ```
 
-3. Validate persona and scenario assets:
+3. Inspect the preserved recovery patch when the workflow provides one. Read the
+   patch directly, record the affected paths and claims it represents, and compare
+   those changes with the current branch before deciding that no repository
+   changes are required. If the patch cannot be read or its contents cannot be
+   validated, stop with `BLOCKED`.
+
+   Do not infer patch coverage from matching-looking repository state alone. For
+   example, a version value in `pyproject.toml` is only an observation until the
+   preserved patch itself shows that the value was part of the recovered change.
+
+4. Validate persona and scenario assets:
 
    ```bash
    cargo run -q -p eatme-cli -- assets validate --json
    ```
 
-4. Check generated Gadugi adapter freshness:
+5. Check generated Gadugi adapter freshness:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
    ```
 
-5. Build the documentation site in strict mode:
+6. Build the documentation site in strict mode:
 
    ```bash
    mkdocs build --strict
    ```
 
-6. Run the repository quality gate when full readiness is required:
+7. Run the repository quality gate when full readiness is required:
 
    ```bash
    TMPDIR=/tmp ./scripts/quality-gates.sh
    ```
 
-7. Run focused tests for the PR-specific guard behavior when such tests exist.
+8. When committing a recovered repository change, let the repository's commit
+   hooks run. If the global `pre-commit` hook is installed but this repository
+   has no `.pre-commit-config.yaml`, use `PRE_COMMIT_ALLOW_NO_CONFIG=1` only
+   because the repository has no pre-commit config and the project uses Cargo and
+   MkDocs quality gates instead of a pre-commit-managed hook set.
+
+9. Run focused tests for the PR-specific guard behavior when such tests exist.
    For the sharing-readiness guard tests, run:
 
    ```bash
    cargo test -q -p eatme-assets outside_in_alice_expansion_tests
    ```
 
-8. Inspect the changed-file list and reject unrelated scope expansion:
+10. Inspect the changed-file list and reject unrelated scope expansion:
 
    ```bash
    gh pr diff 173 --name-only
    ```
 
-9. Inspect the relevant documentation, scenario assets, generated adapters, guard
-   tests, and PR description for overbroad or stale claims.
+11. Inspect the relevant documentation, scenario assets, generated adapters, guard
+    tests, and PR description for overbroad or stale claims.
 
-10. Complete three quality-audit cycles. Each cycle records a SEEK target, the
-    VALIDATE command or inspection used, and the FIX result. If no repository
-    change is required, the FIX result states why the current head already
-    satisfies the target.
+12. Complete three quality-audit cycles. Each cycle records a SEEK target, the
+     VALIDATE command or inspection used, and the FIX result. If no repository
+     change is required, the FIX result states why the current head already
+     satisfies the target.
 
-11. If all gates pass and no stale claims are found, record `MERGE_READY`. When
-    no repository changes are needed, record `MERGE_READY` with a no-op
-    justification instead of inventing a third final state. If a gate fails
-    because a document, scenario, adapter, test, check, worktree state, or PR
-    description is stale, make the smallest targeted change and rerun the
-    affected gates plus the full quality gate.
+13. If all gates pass and no stale claims are found, record `MERGE_READY`. When
+     no repository changes are needed, record `MERGE_READY` with a no-op
+     justification instead of treating no-op as a separate readiness state. If a
+     gate fails because a document, scenario, adapter, test, check, worktree
+     state, or PR description is stale, make the smallest targeted change and
+     rerun the affected gates plus the full quality gate.
 
 Do not wrap these commands in shell `timeout` helpers. Long-running commands
 should finish naturally or fail with their own diagnostics.
@@ -216,6 +235,46 @@ If the local `HEAD` differs from `headRefOid`, the recovery record must say whic
 state was evaluated. Do not describe local validation as proof for the published
 PR head unless the SHAs match or the checked files are intentionally uncommitted
 documentation being prepared for that head.
+
+## Preserved patch recovery
+
+A preserved patch is authoritative recovery evidence when an outer workflow saved
+uncommitted changes before failing. Inspect it before changing repository files,
+running expensive gates for a no-op decision, or posting readiness.
+
+The rule is to treat the preserved patch as untrusted input until inspected. The
+patch review must reject absolute paths, reject `..` path traversal, reject
+secrets and credentials, reject session artifacts and machine-specific files, and
+modify only repository files proven intentional by the readable patch.
+
+The patch review records:
+
+| Item | Required content |
+| --- | --- |
+| Patch source | The saved artifact path or review artifact identifier, kept in the recovery artifact or PR comment rather than committed docs. |
+| Readability | Whether the patch contents were inspected directly. |
+| Affected paths | Files and surfaces changed by the patch. |
+| Intended change | The behavior, version, documentation, asset, or generated-output change represented by the patch. |
+| Current-head comparison | Whether the current branch already contains the patch's changes, still needs them applied, or conflicts with them. |
+
+If the preserved patch is unreadable, missing, restricted by access policy, or
+otherwise cannot be inspected, the workflow output is `BLOCKED`. It is not
+`MERGE_READY`, not a workflow-accepted no-op, and not evidence that the current
+branch already contains the patch. Do not commit, push, post readiness, or run a
+final no-op path until the patch has been inspected or the recovery requirement
+has been explicitly replaced by a new source of truth.
+
+When the patch is readable and already represented by the current branch, record
+that comparison in the recovery artifact, then continue through the normal
+current-head gates. When it is readable but not represented, make the smallest
+repository change that applies the patch's intended behavior and rerun affected
+gates.
+
+For pyproject package metadata recovery, compare the preserved patch hunk with
+the current branch before touching `pyproject.toml`. A `project.version` value
+such as the one in `[project]` is not enough on its own: do not treat a matching
+version value as confirmation. The workflow must reproduce only the metadata change represented by
+the readable patch.
 
 ## Sharing-readiness recovery profile
 
@@ -281,7 +340,7 @@ Use these default cycles for sharing-readiness recovery:
 
 | Cycle | SEEK | VALIDATE | FIX when clean |
 | --- | --- | --- | --- |
-| 1. Scope and claim accuracy | Overbroad sharing, deployment, UI, grading, creative-assessment, lesson-completion, or merge-completion claims. | Review `docs/sharing-readiness-boundary.md`, this guide, the PR description, changed scenario assets, generated adapters, and guard tests. | No repository change required when every claim stays within classroom handoff evidence. |
+| 1. Scope and claim accuracy | Overbroad sharing, deployment, UI, grading, creative-assessment, lesson-completion, or merge-completion claims, including claims that a preserved patch is already represented without direct patch inspection. | Review the preserved patch when provided, `docs/sharing-readiness-boundary.md`, this guide, the PR description, changed scenario assets, generated adapters, and guard tests. | No repository change required when every claim stays within classroom handoff evidence and any preserved patch has been inspected and matched to current head. |
 | 2. Canonical and generated asset consistency | Drift between canonical eatme scenarios and generated Gadugi adapters. | Run `cargo run -q -p eatme-cli -- assets validate --json` and `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`. | No repository change required when assets validate and check mode reports fresh generated adapters. |
 | 3. Gate completeness and final readiness | Missing runnable QA, failing or incomplete Actions, stale PR evidence, docs impact gaps, unfocused diff, dirty worktree, or a final overclaim. | Run applicable focused tests such as `cargo test -q -p eatme-assets outside_in_alice_expansion_tests`, `mkdocs build --strict`, `TMPDIR=/tmp ./scripts/quality-gates.sh`, `gh pr view`, `gh pr diff --name-only`, and local git status checks. | No repository change required only when the final cycle is clean, the worktree is clean, and all evidence points to the same head. |
 
@@ -291,18 +350,23 @@ the third cycle is clean.
 
 ## Merge-ready decision
 
-The final decision is one of two states:
+The workflow outcome is one of three states:
 
 | Decision | Use when |
 | --- | --- |
-| `MERGE_READY` | Local branch, local `HEAD`, PR head SHA, required checks, mergeability, runnable QA, docs impact review, focused diff, PR description evidence, and three quality-audit cycles all pass for the same current head. |
+| `MERGE_READY` | Local branch, local `HEAD`, PR head SHA, required checks, mergeability, runnable QA, docs impact review, focused diff, PR description evidence, any required preserved patch review, and three quality-audit cycles all pass for the same current head. |
 | `NOT_MERGE_READY` | Any required gate is missing, failing, stale, tied to a different head, or broader than the evidence proves. |
+| `BLOCKED` | Required recovery evidence, such as a preserved patch, cannot be inspected. This stops the workflow before a readiness or no-op decision. |
 
 `MERGE_READY` does not mean the workflow merged the PR. It means the evidence is
 complete enough for a separate merge mechanism or maintainer decision.
 
-`NOT_MERGE_READY` must name concrete blockers. Good blockers are specific and
-actionable:
+`BLOCKED` is reserved for cases where the workflow cannot inspect required
+evidence. It is not a weaker readiness decision; it means the workflow did not
+evaluate enough evidence to decide readiness.
+
+`NOT_MERGE_READY` and `BLOCKED` outputs must name concrete blockers. Good
+blockers are specific and actionable:
 
 ```text
 NOT_MERGE_READY
@@ -321,13 +385,14 @@ readiness proof unless branch protection requires that job.
 
 ## No-op justification
 
-A workflow-accepted no-op justification is not a third final decision state. It
-is a `MERGE_READY` decision with a no-op justification, accepted only when
-current-head evidence, review evidence, and finalization evidence prove that no
-repository changes were required. The output must tie current head/checks, PR
-head checks, and the current PR head to merge-ready blockers or evidence; when
-that tie is present and clean, the report uses an explicit workflow-accepted
-No-op justification.
+A workflow-accepted no-op justification is not an additional decision state. It
+is a `MERGE_READY` outcome with a no-op justification, accepted only when
+current-head evidence, review evidence, finalization evidence, and any required
+preserved patch review prove that no repository changes were required. The
+output must tie current head/checks, PR head checks, preserved patch coverage
+when applicable, and the current PR head to merge-ready blockers or evidence;
+when that tie is present and clean, the report uses an explicit
+workflow-accepted No-op justification.
 
 The justification should include:
 
@@ -337,9 +402,15 @@ The justification should include:
 | Worktree state | Clean final worktree state. |
 | PR metadata | PR number, head branch, head SHA, merge state, mergeability, and check summary. |
 | Executed gates | Commands that passed for the evaluated state. |
+| Preserved patch coverage | Required only when recovery supplied a saved patch. State that the patch was inspected and is already represented by the current head, or do not use no-op wording. |
 | Claim boundary | The exact readiness claim and explicit non-claims. |
 | No-op reason | Why docs, assets, generated adapters, and tests already satisfy the contract. |
 | Audit cycles | The three SEEK / VALIDATE / FIX cycles, including the clean final cycle. |
+
+When a saved patch is part of recovery, the output must use a literal `No-op`
+only after recording the current PR head SHA, current check status, mergeability
+state, and confirmation that the preserved patch is already represented. The rule
+is: do not use no-op wording when the preserved patch is unreadable.
 
 Example no-op wording:
 
@@ -411,6 +482,8 @@ verification.
 | --- | --- |
 | Wrong branch | Switch to the PR branch worktree or stop recovery for the current checkout. |
 | Local/PR head mismatch | State the mismatch and verify the intended head before making readiness claims. |
+| Preserved patch unreadable or unavailable | Record `BLOCKED`; do not infer a no-op, commit, push, or post readiness until the patch can be inspected or a new recovery source of truth replaces it. |
+| Preserved patch not represented by current head | Apply the minimal intended change from the patch, then rerun affected gates and current-head verification. |
 | Failing, pending, cancelled, missing, or wrong-head checks | Fix the failing check, wait for completion, or rerun the missing check before readiness. |
 | Dirty merge state | Resolve only the mergeability issue. |
 | Overclaiming docs or scenario language | Edit the canonical documentation or scenario wording and rerun affected gates. |

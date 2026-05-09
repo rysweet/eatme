@@ -185,6 +185,7 @@ For a sharing-readiness PR such as `#173` on branch
 | --- | --- | --- |
 | Local branch, head, and worktree state | `git --no-pager status --short --branch`, `git --no-pager rev-parse --abbrev-ref HEAD`, and `git --no-pager rev-parse HEAD` | Cite local validation only for the recorded checkout. |
 | PR metadata | `gh pr view 173 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url` | Treat GitHub checks and mergeability as evidence for the recorded PR head. |
+| Preserved recovery patch | Saved patch artifact from a failed outer workflow, when one is supplied | Inspect the patch directly before claiming that current head already contains the recovered change. If the patch is unreadable, record `BLOCKED` instead of readiness or no-op. |
 | Asset validity | `cargo run -q -p eatme-cli -- assets validate --json` | Rerun for the evaluated head before claiming asset readiness. |
 | Generated adapter freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Rerun whenever canonical scenario assets or generated adapters are in scope. |
 | Documentation validity | `mkdocs build --strict` | Rerun when this guide or linked readiness docs change. |
@@ -192,9 +193,17 @@ For a sharing-readiness PR such as `#173` on branch
 | Claim boundary | Review of this page, `docs/default-workflow-pr-readiness.md`, the sharing scenarios, generated adapters, and Rust guard tests | State only the classroom sharing-readiness evidence that was actually checked. |
 
 If local `HEAD` differs from the PR head, the artifact must state the mismatch
-and must not describe local validation as proof for the published PR head. If
-the heads match and the checks pass, the artifact may say that the current head
-satisfies the classroom sharing-readiness boundary.
+and must not describe local validation as proof for the published PR head. If a
+preserved patch is part of recovery, the artifact must state whether the patch
+was inspected and whether the current head represents it. A matching version
+number, file value, or check result is not enough by itself. If the heads match
+and the checks pass, and any required patch has been inspected, the artifact may
+say that the current head satisfies the classroom sharing-readiness boundary.
+
+If the patch is unreadable, record `BLOCKED` instead of readiness or no-op. A
+matching version number, file value, or check result is not enough by itself. In
+that state, do not emit `No-op`, do not claim `MERGE_READY`, and state that the
+patch-inspection acceptance criterion is unmet.
 
 The recovery statement must remain narrow: it may cite bounded
 silver-thread/e2e sharing-readiness evidence for classroom handoff artifacts. It
