@@ -118,10 +118,9 @@ Run the gate from the repository root.
    ```
 
 3. Inspect the preserved recovery patch when the workflow provides one. Read the
-   patch directly, record the affected paths and claims it represents, and compare
-   those changes with the current branch before deciding that no repository
-   changes are required. If the patch cannot be read or its contents cannot be
-   validated, stop with `BLOCKED`.
+   patch directly, record its affected paths and claims, compare those changes
+   with the current branch, and stop with `BLOCKED` if the patch cannot be read
+   or validated.
 
    Do not infer patch coverage from matching-looking repository state alone. For
    example, a version value in `pyproject.toml` is only an observation until the
@@ -247,15 +246,9 @@ patch review must reject absolute paths, reject `..` path traversal, reject
 secrets and credentials, reject session artifacts and machine-specific files, and
 modify only repository files proven intentional by the readable patch.
 
-The patch review records:
-
-| Item | Required content |
-| --- | --- |
-| Patch source | The saved artifact path or review artifact identifier, kept in the recovery artifact or PR comment rather than committed docs. |
-| Readability | Whether the patch contents were inspected directly. |
-| Affected paths | Files and surfaces changed by the patch. |
-| Intended change | The behavior, version, documentation, asset, or generated-output change represented by the patch. |
-| Current-head comparison | Whether the current branch already contains the patch's changes, still needs them applied, or conflicts with them. |
+The patch review records the patch source, readability, affected paths, intended
+change, and current-head comparison in the recovery artifact or PR comment, not
+as point-in-time committed documentation.
 
 If the preserved patch is unreadable, missing, restricted by access policy, or
 otherwise cannot be inspected, the workflow output is `BLOCKED`. It is not
@@ -273,8 +266,8 @@ gates.
 For pyproject package metadata recovery, compare the preserved patch hunk with
 the current branch before touching `pyproject.toml`. A `project.version` value
 such as the one in `[project]` is not enough on its own: do not treat a matching
-version value as confirmation. The workflow must reproduce only the metadata change represented by
-the readable patch.
+version value as confirmation. The workflow must reproduce only the metadata
+change represented by the readable patch.
 
 ## Sharing-readiness recovery profile
 

@@ -200,10 +200,8 @@ number, file value, or check result is not enough by itself. If the heads match
 and the checks pass, and any required patch has been inspected, the artifact may
 say that the current head satisfies the classroom sharing-readiness boundary.
 
-If the patch is unreadable, record `BLOCKED` instead of readiness or no-op. A
-matching version number, file value, or check result is not enough by itself. In
-that state, do not emit `No-op`, do not claim `MERGE_READY`, and state that the
-patch-inspection acceptance criterion is unmet.
+When the patch is unreadable, do not emit `No-op`, do not claim `MERGE_READY`,
+and state that the patch-inspection acceptance criterion is unmet.
 
 The recovery statement must remain narrow: it may cite bounded
 silver-thread/e2e sharing-readiness evidence for classroom handoff artifacts. It
