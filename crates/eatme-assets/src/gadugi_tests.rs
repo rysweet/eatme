@@ -212,6 +212,13 @@ fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundar
         "not creative assessment",
         "not learner-world grading",
         "not complete Alice coverage",
+        "records bounded starter-world and readiness-gap artifacts",
+        "eatme launch-smoke evidence without claiming save/reopen/export coverage",
+        "starter-world-change-note.txt",
+        "run-observe-readiness-gaps.txt",
+        "not visible rendering correctness proof",
+        "not first-lesson completion",
+        "not full Save completion",
     ] {
         assert!(
             normalized.contains(required),
@@ -221,6 +228,8 @@ fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundar
     for blocked in [
         format!("{}{}", "la", "ne"),
         format!("{}{}", "lesson-", "path"),
+        "source boundary".into(),
+        "manifest-level evidence only".into(),
     ] {
         assert!(
             !normalized.to_lowercase().contains(&blocked),

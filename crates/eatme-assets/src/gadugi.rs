@@ -268,7 +268,7 @@ fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
         && text.contains("opened starter project")
         && text.contains("not complete alice coverage")
     {
-        return " This adapter preserves the source boundary: real Alice action evidence for the opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence only; not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage.";
+        return " This automation scenario keeps honest limits: real Alice action evidence for the opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence only; not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage.";
     }
     if text.contains("not full ui automation")
         && text.contains("not creative assessment")

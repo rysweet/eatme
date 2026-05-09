@@ -137,6 +137,59 @@ fn starter_project_preflight_contract_names_real_action_evidence_without_overcla
 }
 
 #[test]
+fn starter_project_preflight_contract_records_edit_run_observe_and_readiness_gaps() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme", "starter-project-open-save-export-preflight");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+
+    assert!(
+        scenario
+            .steps
+            .iter()
+            .any(|step| step.id == "record-starter-world-change"
+                && step.command.contains("starter-world-change-note.txt")),
+        "starter preflight must record an editable starter-world change note"
+    );
+    assert!(
+        scenario
+            .steps
+            .iter()
+            .any(|step| step.id == "record-run-observe-readiness-gaps"
+                && step.command.contains("run-observe-readiness-gaps.txt")),
+        "starter preflight must record run/observe and readiness gap notes"
+    );
+    assert_contains_all(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &[
+            "launch real Alice",
+            "small editable starter-world change",
+            "attempt to run or observe",
+            "save/reopen/export/readiness gaps",
+            "editable_starter_world_change_note",
+            "run_or_observe_attempt_note",
+            "save_reopen_export_readiness_gap_note",
+            "starter-world-change-note.txt",
+            "run-observe-readiness-gaps.txt",
+            "not visible rendering correctness proof",
+            "not first-lesson completion",
+            "not grading",
+            "not full Save completion",
+        ],
+    );
+    assert_not_contains_any(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &[
+            "source boundary".into(),
+            "manifest-level evidence only".into(),
+            "lane".into(),
+        ],
+    );
+}
+
+#[test]
 fn teacher_community_sharing_loop_contract_names_handoff_and_honest_boundaries() {
     let root = repository_root();
     let contract = fs::read_to_string(scenario_path(
