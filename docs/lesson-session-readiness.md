@@ -55,9 +55,9 @@ explicitly distinguishes them.
 
 This matrix explains what each scenario is meant to show, what remains
 unproven, and what evidence would be needed before claiming that capability. It
-includes the canonical lesson-session rows above and adjacent
-classroom-readiness scenarios. Each gap is written as the missing proof a
-student or instructor would need to see, not as an internal task.
+describes each gap as the missing proof a student or instructor would need to
+see, not as an internal task. The matrix includes the canonical lesson-session
+rows above and adjacent classroom-readiness scenarios.
 
 | Scenario | What the user is trying to do | Remaining gap | Evidence still needed |
 | --- | --- | --- | --- |
