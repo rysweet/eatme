@@ -299,12 +299,24 @@ Generated runners are a compatibility API for Gadugi consumers. Change the
 canonical scenario or generator policy when this contract needs new wording,
 commands, or checks.
 
-### Generator contract follow-ups
+### Shell quoting safety
 
-Generator implementation follow-ups must keep this contract honest: generated
-shell commands should quote `${ALICE_HOME}` and `${RUN_ID}` consistently, and
-instructor-agentic generated runners should either declare `RUN_ID` optional
-where they export it or avoid exporting it.
+Generated shell commands quote every shell-expanded launch argument. The
+generator replaces unquoted `--alice-home ${ALICE_HOME}` with
+`--alice-home "${ALICE_HOME}"` and unquoted `--run-id ${RUN_ID}` with
+`--run-id "${RUN_ID}"`. This prevents word-splitting and globbing when paths
+contain spaces or special characters.
+
+The quoting contract is enforced by the
+`generated_launch_commands_quote_environment_argument_expansions` regression
+test, which asserts that every generated launch command includes the quoted form
+and rejects the unquoted form.
+
+Generated CLI launch runners that export `RUN_ID` with a default value also
+declare `RUN_ID` under `environment.optional`. The
+`generated_runners_declare_run_id_optional_when_commands_export_it` test
+enforces this contract across all generated runners that contain
+`export RUN_ID=`.
 
 ## Generated YAML contract
 
@@ -497,6 +509,8 @@ Before review, confirm:
 - Scenario links are authored in `assets/scenarios/eatme/`.
 - Generated Gadugi runners are fresh and reproducible.
 - Generated descriptions name the source scenario and bounded evidence scope.
+- Generated shell commands quote `${ALICE_HOME}` and `${RUN_ID}`.
+- Generated runners that export `RUN_ID` declare it under `environment.optional`.
 - First-lesson wording says readiness evidence, not lesson completion.
 - UI action gaps fail loudly instead of silently passing.
 - Docs and generated runners avoid claims about full UI automation, rendering

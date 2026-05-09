@@ -148,6 +148,31 @@ Hand edits to generated adapters are only appropriate for generator development
 itself, and those changes must be followed by a generator run that proves the
 committed output is reproducible.
 
+## Shell quoting safety
+
+Generated shell commands quote every shell-expanded launch argument to prevent
+word-splitting when paths contain spaces or special characters:
+
+```text
+--alice-home "${ALICE_HOME}"
+--run-id "${RUN_ID}"
+```
+
+Generated CLI launch runners that export `RUN_ID` declare it under
+`environment.optional`. These contracts are enforced by regression tests in
+`gadugi_tests.rs`:
+
+- `generated_launch_commands_quote_environment_argument_expansions`
+- `generated_runners_declare_run_id_optional_when_commands_export_it`
+
+## Performance
+
+The adapter generator preallocates collections (`Vec::with_capacity`) for steps,
+assertions, and source paths based on the discovered scenario count. Evidence
+scanning uses `case-insensitive byte-window matching instead of allocating
+lowercased copies, keeping the generator fast even as the scenario inventory
+grows.
+
 Hand-authored Gadugi regression scenarios may live beside generated adapters when
 they test the eatme CLI or validation contract directly. They still count as
 scenario assets and must pass `assets validate`.

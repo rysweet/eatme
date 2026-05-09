@@ -62,6 +62,36 @@ assertion helpers. Focused child modules own the tests:
 The split is mechanical. It does not change asset behavior, readiness claims,
 assertion language, generated adapter expectations, or validation semantics.
 
+### Scenario-link silver thread tests
+
+The `scenario_links_silver_thread_tests` module is a separate top-level test
+module in `crates/eatme-assets/src/lib.rs`, not a child of the outside-in
+expansion tests. It enforces the reader-facing silver thread from the docs home
+page through scenario authoring to first-lesson validation evidence:
+
+| File | Responsibility |
+| --- | --- |
+| `crates/eatme-assets/src/scenario_links_silver_thread_tests.rs` | MkDocs nav ordering, scenario-link cross-references, reader-path forward links, plain outcome language in reader sections, canonical scenario prose language, proof-verb prohibition, and default-workflow readiness evidence. |
+
+Run the silver thread tests with:
+
+```bash
+cargo test -p eatme-assets scenario_links_silver_thread_tests
+```
+
+The silver thread tests verify:
+
+- MkDocs nav exposes the first-lesson reader path in the expected order.
+- Reader docs link each first-lesson scenario id to its canonical asset YAML.
+- Each docs page in the first-lesson path links forward to the next page.
+- Reader sections use plain outcome language instead of implementation terms.
+- Canonical scenario prose avoids internal terms in reader-facing fields.
+- Scenario-link docs use checked evidence language instead of positive proof
+  verbs (the proof-verb check strips backtick code spans so prohibited-phrase
+  table entries do not trigger false positives).
+- Default-workflow readiness docs require finalization outputs without
+  point-in-time recovery instructions.
+
 ## Internal helper API
 
 These helpers are test-only implementation details of the parent module. Child
@@ -189,6 +219,7 @@ Before merging a change that touches these tests:
 | --- | --- |
 | Format Rust files | `cargo fmt --check` |
 | Run focused expansion tests | `cargo test -p eatme-assets outside_in_alice_expansion_tests` |
+| Run scenario-link silver thread tests | `cargo test -p eatme-assets scenario_links_silver_thread_tests` |
 | Run all asset crate tests | `cargo test -p eatme-assets` |
 | Validate assets | `cargo run -q -p eatme-cli -- assets validate --json` |
 | Check generated adapters | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` |

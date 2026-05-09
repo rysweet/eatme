@@ -28,7 +28,7 @@ contract, see
 | Prerequisites | `capabilities`, `real_alice.gated_by`, `timeouts`, and step commands | Name required tools and gates before execution; do not imply they are optional when the scenario fails loudly without them. |
 | Learner-facing boundary | `purpose`, `acceptance_criteria`, step `evidence`, and `unsupported_policy` | Say what evidence is recorded and what remains unsupported. |
 | Follow-on path | `agentic_follow_on`, instructor/student handoff scenarios, and docs links | Route the reader to the next bounded action or human review step, not to a completion claim. |
-| Generated runner path | Regenerated files under `assets/scenarios/gadugi/` | Keep generated runner wording reproducible from canonical scenario data. |
+| Generated runner path | Regenerated files under `assets/scenarios/gadugi/` | Keep generated runner wording reproducible from canonical scenario data. Generated shell commands quote `${ALICE_HOME}` and `${RUN_ID}` to prevent word-splitting. |
 
 For the first-lesson path, link `first-lessons-real-ui-actions` to the
 instructor handoff and outcomes scenarios only as readiness evidence and
