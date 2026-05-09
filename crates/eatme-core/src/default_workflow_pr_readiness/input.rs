@@ -20,6 +20,9 @@ pub(crate) struct OfflineEvidenceInput {
     pub(crate) pr_number: u64,
     pub(crate) head_ref_name: String,
     pub(crate) pr_head_sha: String,
+    pub(crate) state: Option<String>,
+    #[serde(alias = "isDraft", alias = "is_draft")]
+    pub(crate) draft: Option<bool>,
     pub(crate) local_branch: String,
     pub(crate) local_head_sha: String,
     pub(crate) final_pr_head_sha: String,

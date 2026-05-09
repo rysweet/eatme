@@ -107,6 +107,8 @@ fn current_head_evidence_template_requires_readiness_review_and_finalization_fie
             "`pr_number`",
             "`pr_head_branch`",
             "`pr_head_sha`",
+            "`state`",
+            "`draft`",
             "`checks`",
             "`merge_state`",
             "`asset_validation`",

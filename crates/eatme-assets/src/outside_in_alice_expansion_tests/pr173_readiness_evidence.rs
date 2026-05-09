@@ -39,7 +39,7 @@ fn sharing_recovery_docs_keep_pr173_as_reusable_profile_example() {
             "sharing-readiness PR such as `#173`",
             "wave6-deployed-sharing-gap-1778302300",
             "gh pr view 173",
-            "headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url",
+            "headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,isDraft,url",
         ],
     );
 }

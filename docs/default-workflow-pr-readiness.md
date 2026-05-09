@@ -126,6 +126,11 @@ a clean final cycle.
 The workflow records evidence as a small, inspectable record. The record is a
 review artifact, not a source file that must be committed.
 
+Offline JSON passed to `eatme pr-readiness finalize --evidence` must include
+explicit PR `state` and `draft` fields from current GitHub metadata. Missing
+fields are invalid evidence; closed, merged, or draft PR evidence must produce
+`NOT_MERGE_READY`, never a no-op justification.
+
 | Field | Meaning |
 | --- | --- |
 | `repository` | Repository owner and name, such as `rysweet/eatme`. |
@@ -136,6 +141,8 @@ review artifact, not a source file that must be committed.
 | `pr_number` | Pull request number being recovered. |
 | `pr_head_branch` | GitHub PR head branch from `headRefName`. |
 | `pr_head_sha` | GitHub PR head SHA from `headRefOid`. |
+| `state` | Offline evidence must include GitHub PR `state`; readiness requires `OPEN`. |
+| `draft` | Offline evidence must include whether the PR is a draft; readiness requires `false`. This may be populated from GitHub `isDraft`. |
 | `preserved_patch_review` | Required when a saved uncommitted patch is part of recovery. Records the patch source, inspection result, affected paths, and whether the patch is already represented by the current branch. |
 | `checks` | Required check names, conclusions, and source URLs for `pr_head_sha`. |
 | `merge_state` | `mergeStateStatus` and `mergeable`. |
@@ -294,7 +301,7 @@ PR_HEAD_SHA="$(gh pr view "${PR_NUMBER}" --json headRefOid --jq .headRefOid)"
     test "${FINAL_PR_HEAD_SHA}" = "${PR_HEAD_SHA}"
     test "$(git rev-parse HEAD)" = "${FINAL_PR_HEAD_SHA}"
     gh pr view "${PR_NUMBER}" \
-      --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url
+      --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,isDraft,url
     ```
 
     If the PR head moved, stop and report `NOT_MERGE_READY`; prior local
@@ -349,6 +356,7 @@ The readiness gate consumes these `gh pr view` fields:
 | `statusCheckRollup` | Required check and check-run names, conclusions, `detailsUrl`, `workflowName`, and source URLs for `headRefOid`. |
 | `reviewDecision` | Review state used as review/finalization context, not as a replacement for executable evidence. |
 | `state` | The PR remains open unless a separate merge workflow closes it. |
+| `isDraft` | Must be `false`; draft PRs are not readiness evidence. |
 
 `statusCheckRollup` is green only when every required check for `headRefOid` has
 completed successfully. Record the exact check-run names, conclusions,

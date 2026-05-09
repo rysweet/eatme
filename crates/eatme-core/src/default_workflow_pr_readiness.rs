@@ -27,6 +27,16 @@ pub struct FinalizationEvidence {
 impl FinalizationEvidence {
     pub fn from_offline_json(input: &str) -> Result<Self> {
         let raw: OfflineEvidenceInput = serde_json::from_str(input)?;
+        let Some(pr_state) = raw
+            .state
+            .map(|state| state.trim().to_string())
+            .filter(|state| !state.is_empty())
+        else {
+            bail!("offline evidence missing required PR state field `state`");
+        };
+        let Some(pr_draft) = raw.draft else {
+            bail!("offline evidence missing required PR draft field `draft`");
+        };
         let checks = raw.checks;
         let scope_changes = raw
             .changed_files
@@ -57,8 +67,8 @@ impl FinalizationEvidence {
                 raw.pr_number,
                 raw.head_ref_name,
                 raw.pr_head_sha.clone(),
-                "OPEN",
-                false,
+                &pr_state,
+                pr_draft,
             ),
             local: LocalHeadEvidence {
                 branch: raw.local_branch,
@@ -143,6 +153,10 @@ impl PrHeadMetadata {
 
     pub fn head_sha(&self) -> &str {
         &self.head_ref_oid
+    }
+
+    pub fn state(&self) -> &str {
+        &self.state
     }
 
     pub fn is_open(&self) -> bool {
@@ -273,7 +287,11 @@ pub fn evaluate_finalization(evidence: FinalizationEvidence) -> FinalizationDeci
         ));
     }
     if !evidence.pr.is_open() {
-        blockers.push(format!("PR #{} is not open", evidence.pr_number));
+        blockers.push(format!(
+            "PR #{} state is {} instead of OPEN",
+            evidence.pr_number,
+            evidence.pr.state()
+        ));
     }
     if evidence.pr.is_draft() {
         blockers.push(format!("PR #{} is still a draft", evidence.pr_number));

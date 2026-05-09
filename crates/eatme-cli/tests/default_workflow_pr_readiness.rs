@@ -66,6 +66,8 @@ fn clean_evidence_json(final_pr_head_sha: &str) -> String {
             "pr_number": 173,
             "head_ref_name": "wave6-deployed-sharing-gap-1778302300",
             "pr_head_sha": "{HEAD_SHA}",
+            "state": "OPEN",
+            "draft": false,
             "local_branch": "wave6-deployed-sharing-gap-1778302300",
             "local_head_sha": "{HEAD_SHA}",
             "final_pr_head_sha": "{final_pr_head_sha}",

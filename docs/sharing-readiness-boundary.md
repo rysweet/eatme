@@ -189,7 +189,7 @@ For a sharing-readiness PR such as `#173` on branch
 | --- | --- | --- |
 | Evidence collection time | `date -u +"%Y-%m-%dT%H:%M:%SZ"` | Publish the UTC timestamp with the PR head SHA so reviewers know when metadata was collected. |
 | Local branch, head, and worktree state | `git --no-pager status --short --branch`, `git --no-pager rev-parse --abbrev-ref HEAD`, and `git --no-pager rev-parse HEAD` | Cite local validation only for the recorded checkout. |
-| PR metadata | `gh pr view 173 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url` | Treat GitHub checks and mergeability as evidence for the recorded PR head. Publish exact check or check-run names and conclusions, not only a summarized green status. |
+| PR metadata | `gh pr view 173 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,isDraft,url` | Treat GitHub checks and mergeability as evidence for the recorded open, non-draft PR head. Publish exact check or check-run names and conclusions, not only a summarized green status. |
 | Preserved recovery patch | Saved patch artifact from a failed outer workflow, when one is supplied | Inspect the patch directly before claiming that current head already contains the recovered change. If the patch is unreadable, record `BLOCKED` instead of readiness or no-op. |
 | Asset validity | `cargo run -q -p eatme-cli -- assets validate --json` | Rerun for the evaluated head before claiming asset readiness. |
 | Generated adapter freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Rerun whenever canonical scenario assets or generated adapters are in scope. |

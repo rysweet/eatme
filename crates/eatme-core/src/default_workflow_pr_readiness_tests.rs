@@ -36,6 +36,54 @@ fn pr_head_resolver_uses_live_head_ref_oid_as_the_authoritative_sha() {
 }
 
 #[test]
+fn offline_json_requires_explicit_pr_state_and_draft_evidence() {
+    let missing_state = offline_evidence_json(None, Some(false), HEAD_SHA);
+    let state_error = FinalizationEvidence::from_offline_json(&missing_state)
+        .unwrap_err()
+        .to_string();
+    assert!(state_error.contains("state"), "{state_error}");
+
+    let missing_draft = offline_evidence_json(Some("OPEN"), None, HEAD_SHA);
+    let draft_error = FinalizationEvidence::from_offline_json(&missing_draft)
+        .unwrap_err()
+        .to_string();
+    assert!(draft_error.contains("draft"), "{draft_error}");
+}
+
+#[test]
+fn offline_json_closed_pr_is_not_merge_ready() {
+    let evidence = FinalizationEvidence::from_offline_json(&offline_evidence_json(
+        Some("CLOSED"),
+        Some(false),
+        HEAD_SHA,
+    ))
+    .expect("closed PR evidence should parse before evaluation");
+
+    let decision = evaluate_finalization(evidence);
+
+    assert_eq!(decision.decision, Decision::NotMergeReady);
+    assert!(decision.no_op_justification.is_none());
+    assert_contains(&decision.blockers, "CLOSED");
+    assert_contains(&decision.blockers, "OPEN");
+}
+
+#[test]
+fn offline_json_draft_pr_is_not_merge_ready() {
+    let evidence = FinalizationEvidence::from_offline_json(&offline_evidence_json(
+        Some("OPEN"),
+        Some(true),
+        HEAD_SHA,
+    ))
+    .expect("draft PR evidence should parse before evaluation");
+
+    let decision = evaluate_finalization(evidence);
+
+    assert_eq!(decision.decision, Decision::NotMergeReady);
+    assert!(decision.no_op_justification.is_none());
+    assert_contains(&decision.blockers, "draft");
+}
+
+#[test]
 fn local_head_verifier_rejects_readiness_when_local_head_differs_from_pr_head() {
     let mut evidence = clean_finalization_evidence();
     evidence.local = LocalHeadEvidence {
@@ -228,6 +276,72 @@ fn check(name: &str, head_sha: &str, conclusion: CheckConclusion) -> CheckRunEvi
             "https://github.com/rysweet/eatme/actions/runs/{name}"
         )),
     }
+}
+
+fn offline_evidence_json(
+    state: Option<&str>,
+    draft: Option<bool>,
+    final_pr_head_sha: &str,
+) -> String {
+    let state_field = state
+        .map(|state| format!(r#""state": "{state}","#))
+        .unwrap_or_default();
+    let draft_field = draft
+        .map(|draft| format!(r#""draft": {draft},"#))
+        .unwrap_or_default();
+    format!(
+        r#"{{
+            "repository": "rysweet/eatme",
+            "pr_number": 173,
+            "head_ref_name": "wave6-deployed-sharing-gap-1778302300",
+            "pr_head_sha": "{HEAD_SHA}",
+            {state_field}
+            {draft_field}
+            "local_branch": "wave6-deployed-sharing-gap-1778302300",
+            "local_head_sha": "{HEAD_SHA}",
+            "final_pr_head_sha": "{final_pr_head_sha}",
+            "worktree_clean": true,
+            "merge_state_status": "CLEAN",
+            "mergeable": "MERGEABLE",
+            "checks": [
+                {{
+                    "name": "quality-gates",
+                    "head_sha": "{HEAD_SHA}",
+                    "conclusion": "SUCCESS",
+                    "required": true,
+                    "workflow_name": "CI",
+                    "details_url": "https://github.com/rysweet/eatme/actions/runs/quality-gates"
+                }},
+                {{
+                    "name": "mkdocs",
+                    "head_sha": "{HEAD_SHA}",
+                    "conclusion": "SUCCESS",
+                    "required": true,
+                    "workflow_name": "CI",
+                    "details_url": "https://github.com/rysweet/eatme/actions/runs/mkdocs"
+                }}
+            ],
+            "validated_gates": ["mkdocs build --strict"],
+            "changed_files": ["docs/default-workflow-pr-readiness.md"],
+            "quality_audit_cycles": [
+                {{
+                    "seek": "scope and claim accuracy",
+                    "validate": "reviewed readiness docs and PR metadata",
+                    "fix": "no repository change required"
+                }},
+                {{
+                    "seek": "canonical and generated asset consistency",
+                    "validate": "GitHub checks current for head",
+                    "fix": "no repository change required"
+                }},
+                {{
+                    "seek": "gate completeness and final readiness",
+                    "validate": "final PR head re-check matched",
+                    "fix": "no repository change required"
+                }}
+            ]
+        }}"#
+    )
 }
 
 fn assert_contains(lines: &[String], needle: &str) {
