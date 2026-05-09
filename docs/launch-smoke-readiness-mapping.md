@@ -403,7 +403,9 @@ artifacts:
   log: runs/real-alice-launch-smoke/${RUN_ID}/alice.log
 unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, or Maven prerequisites are missing, fail
-  loudly with a missing_dependency category. Do not silently skip.
+  loudly with a missing_dependency category. Do not silently skip. This baseline
+  maps launch smoke only: it is not full UI automation, not creative
+  assessment, and not learner-world grading.
 ```
 
 The scenario is validated by `cargo run -q -p eatme-cli -- assets validate --json`
