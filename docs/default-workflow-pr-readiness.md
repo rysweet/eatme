@@ -70,7 +70,7 @@ directly to the readiness gates:
 | `ExactHeadVerifier` | [Exact-head setup](#exact-head-setup), [GitHub evidence](#github-evidence) | Fetch the published PR branch and verify local `HEAD`, `origin/<branch>`, and PR `headRefOid` all equal the evaluated head before any evidence is accepted. |
 | `PrMetadataCollector` | [GitHub evidence](#github-evidence), [PR-state review](#pr-state-review), [Troubleshooting](#troubleshooting) | Collect PR number, title, body, head branch, head SHA, mergeability, merge state, draft status, labels, review decision, latest reviews, check rollup, and changed files through `gh pr view` with typed response parsing. |
 | `LocalQARunner` | [Local QA evidence](#local-qa-evidence), [Troubleshooting](#troubleshooting) | Run existing repository validation commands directly, without timeout wrappers or substituted commands. |
-| `ReadinessScopeAuditor` | [Scenario evidence review](#scenario-evidence-review), [Run/observe readiness scope audit](#runobserve-readiness-scope-audit), [Documentation impact review](#documentation-impact-review) | Inspect docs, scenario assets, generated Gadugi adapters, and default-workflow readiness tests for concrete run/observe readiness gaps. |
+| `ReadinessScopeAuditor` | [Scenario evidence review](#scenario-evidence-review), [Run/observe readiness scope audit](#runobserve-readiness-scope-audit), [Documentation impact review](#documentation-impact-review) | Design-level concept (distributed across the `reviews/` modules in code) that inspects docs, scenario assets, generated Gadugi adapters, and default-workflow readiness tests for concrete run/observe readiness gaps. |
 | `DocsImpactReviewer` | [Documentation impact review](#documentation-impact-review), [Bounded evidence language](#bounded-evidence-language) | Confirm documentation matches the implementation scope and does not contain stale status, progress, or overbroad readiness claims. |
 | `FocusedDiffReviewer` | [Focused diff review](#focused-diff-review) | Confirm changed files belong to the PR purpose and generated assets are fresh when canonical assets change. |
 | `QualityAuditRunner` | [Quality-audit cycles](#quality-audit-cycles) | Document at least three `SEEK / VALIDATE / FIX` cycles and require the final cycle to be clean. |
@@ -150,7 +150,7 @@ The GitHub evidence passes only when:
 
 - `headRefName` is the expected PR branch.
 - `headRefOid` matches local `HEAD`.
-- `mergeStateStatus` is clean enough for repository branch protection.
+- `mergeStateStatus` is `CLEAN` or `HAS_HOOKS` (both satisfy repository branch protection).
 - `mergeable` does not report an unmergeable state.
 - the PR is not a draft.
 - no configured blocking label is present.
@@ -446,8 +446,10 @@ If any item is unavailable or blocked, the no-op output must say
 
 ## PR #171 run/observe recovery profile
 
-PR #171 uses this reusable profile template. Record the exact evaluated SHA in
-the PR body or readiness comment, not as a permanent hard-coded value here:
+PR #171 uses this reusable profile template. The branch name and PR number below
+are specific to this PR — adapt them when reusing for a different recovery.
+Record the exact evaluated SHA in the PR body or readiness comment, not as a
+permanent hard-coded value here:
 
 ```text
 PR: 171
