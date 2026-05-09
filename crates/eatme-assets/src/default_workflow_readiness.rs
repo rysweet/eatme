@@ -367,9 +367,14 @@ fn missing_pr_evidence(input: &ReadinessInput, item: &str) -> ReadinessArtifact 
 fn is_focused_readiness_path(path: &str) -> bool {
     matches!(
         path,
-        "docs/default-workflow-pr-readiness.md"
+        "Cargo.lock"
+            | "crates/eatme-assets/Cargo.toml"
+            | "docs/default-workflow-pr-readiness.md"
+            | "docs/lesson-session-readiness.md"
+            | "pyproject.toml"
             | "crates/eatme-assets/src/lib.rs"
             | "crates/eatme-assets/src/default_workflow_readiness.rs"
+            | "crates/eatme-assets/src/lesson_session_readiness_doc_tests.rs"
     ) || path.starts_with("crates/eatme-assets/src/default_workflow_readiness/")
         || path.starts_with("crates/eatme-assets/tests/default_workflow_readiness")
 }
