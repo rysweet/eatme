@@ -9,6 +9,7 @@ mod launch_edit_procedure;
 mod launch_license;
 mod launch_object_placement;
 mod launch_options;
+mod launch_reopen_project;
 mod launch_run_window;
 mod launch_run_world;
 mod launch_save_project;
