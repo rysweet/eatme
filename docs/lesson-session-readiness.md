@@ -69,6 +69,30 @@ journey from setup, to first action, to reflection and sharing.
 | Student outcomes discussion rubric | Discuss student Alice projects using visible behavior, learner explanation, process evidence, and one next revision. | The record does not yet show different instructors using the discussion frame consistently with visible evidence and learner explanation. | Instructor-visible rubric use notes showing examples of visible behavior, student explanation, process evidence, and revision feedback across varied projects. |
 | Classroom gallery walk and rubric | Help students review one another's Alice projects with respectful evidence, questions, and revision ideas. | The record does not yet show a live group giving useful peer feedback while protecting student privacy and keeping revision expectations clear. | Classroom-facing gallery notes showing peer observations, creator responses, revision checkpoints, and instructor boundary notes without private student records. |
 
+## Gap-matrix evidence boundary
+
+The scenario-to-gap matrix is a readiness documentation lane. It records what the
+repository can describe and validate, then names the learner- or
+instructor-visible proof still needed before the project can make broader
+classroom claims.
+
+| Evidence category | What this lane can verify | What stays outside this lane |
+| --- | --- | --- |
+| Scenario readiness | Canonical lesson-session scenarios exist, use user-facing language, and validate as repository assets. | Live classroom use of those scenarios by students or instructors. |
+| Adapter readiness | Generated Gadugi adapters can be checked for freshness when scenario assets change. | External runner behavior that is not represented in committed scenario assets or generated adapters. |
+| Documentation contract | The readiness page keeps the matrix structure, required scenario rows, missing-proof wording, and no-overclaim boundaries. | Runtime Alice behavior that is not backed by current comparison, launch, or RabbitHole evidence. |
+| PR readiness evidence | A reviewer can tie validation commands, diff review, and bounded conclusions to the exact pull-request head being reviewed. | Any conclusion for a different head, any future commit, or any behavior not reviewed in the diff. |
+
+When this page is used as pull-request evidence, the readiness note must name the
+PR number, exact `headRefOid`, UTC timestamp, command results, and review scope.
+If the PR head changes after evidence is gathered, discard the old readiness
+note and gather fresh command and review evidence for the new `headRefOid`.
+
+The lane does not verify full Alice UI automation, grading, creative assessment,
+visible rendering correctness, Save completion, or first-lesson completion.
+Those claims stay unverified until a separate evidence source proves them
+directly for the same pull-request head and scenario boundary.
+
 ## First-lesson next action readiness
 
 eatme checks whether RabbitHole has produced the evidence needed before
