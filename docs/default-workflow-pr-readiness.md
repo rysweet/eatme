@@ -17,6 +17,7 @@ readiness comment only after every gate passes.
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
+- [Executable starter-project boundary check](#executable-starter-project-boundary-check)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
 - [PR #164 readiness example](#pr-164-readiness-example)
 - [Readiness comment](#readiness-comment)
@@ -116,10 +117,10 @@ real Alice launch/opened-project evidence for the bundled starter project, an
 editable starter-world change note, an attempted run or observation, and
 readiness-gap notes.
 
-When older wording or generated output uses the phrase "action evidence," read it
-only as bounded launch/opened-project evidence. It does not mean user-like UI
-automation, save/reopen/export completion, learner-world grading, or creative
-assessment.
+When older wording or generated output uses action-oriented evidence shorthand,
+read it only as bounded launch/opened-project evidence. It does not mean
+user-like UI automation, save/reopen/export completion, learner-world grading,
+or creative assessment.
 
 The wording must not say or imply that the scenario proves:
 
@@ -135,6 +136,58 @@ The wording must not say or imply that the scenario proves:
 
 Use the generated adapter only as a consumer of this contract. Do not hand-edit
 generated Gadugi YAML to change mission intent.
+
+## Executable starter-project boundary check
+
+The current focused Rust test surface for starter-project preflight boundary
+wording is:
+
+```text
+crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs
+```
+
+Run the contract check directly with:
+
+```bash
+cargo test -p eatme-assets starter_project_preflight_boundary
+```
+
+That test validates the canonical scenario YAML, generated Gadugi adapter
+wording, and scoped starter-project/preflight evidence documentation. It checks
+that those executable assets and scoped docs use bounded, user-facing language
+for launch/opened-project evidence, editable starter-world change notes,
+attempted run or observation evidence, generated adapter freshness, asset
+validation, and explicit readiness gaps.
+
+The documentation-overclaim check inspects this source contract and the scoped
+starter-project evidence page:
+
+```text
+docs/default-workflow-pr-readiness.md
+docs/starter-project-preflight-evidence.md
+```
+
+The documentation-overclaim check fails only on narrow readiness overclaim
+phrases, not broad negative statements that explain what the scenario does not
+prove. Prohibited phrases are:
+
+| Prohibited phrase | Bounded replacement |
+| --- | --- |
+| `PR ready` | `starter-project preflight evidence recorded` |
+| `merge ready` | `starter-project evidence boundary satisfied` |
+| `production ready` | `bounded preflight evidence available for review` |
+| `ready for merge` | `readiness gaps are documented for later gates` |
+| `readiness guaranteed` | `readiness depends on the separate readiness gates` |
+| `complete PR readiness` | `starter-project preflight evidence only` |
+
+Failure output names the violating file, the matched phrase, this source
+contract, and the bounded replacement wording.
+
+The check is intentionally narrow. It does not prove pull request readiness,
+mergeability, production suitability, complete lesson execution, user-like Alice
+UI coverage, save/reopen/export completion, grading, creative assessment,
+visible rendering correctness, or complete Alice coverage. Those claims require
+their own evidence and gates.
 
 ## Generated Gadugi adapter freshness
 
