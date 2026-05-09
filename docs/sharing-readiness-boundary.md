@@ -17,6 +17,23 @@ platform, or platform access controls work.
 The scenario names use "share" in the classroom sense: a packet, card, note, or
 prompt that one person can review. The word does not imply deployment.
 
+## Quick start
+
+Use the sharing readiness scenarios when a student or teacher needs a bounded
+handoff artifact:
+
+1. Choose the scenario that matches the handoff:
+   `student-artifact-package-share-evidence` for one learner artifact, or
+   `teacher-community-sharing-loop` for a teacher-facing activity note.
+2. Collect the required packet fields from the scenario contract.
+3. Add the review boundary in plain language.
+4. Validate the asset set and generated adapters before using the packet in an
+   agentic or Gadugi flow.
+
+The output is ready when another person can review the artifact, evidence, and
+next step without needing a public URL, account workflow, hosted gallery,
+deployment log, or platform screenshot.
+
 ## Student share packet
 
 Use `student-artifact-package-share-evidence` when the learner is ready to hand
@@ -51,6 +68,20 @@ mission needs it. That manifest proves only the stated launch-smoke boundary. It
 does not prove learner understanding, artifact quality, public sharing, hosted
 availability, or platform success.
 
+### Tutorial: review a student packet
+
+A reviewer can use this short loop for a classroom conversation:
+
+1. Ask the student to point to the artifact or screenshot.
+2. Ask what they changed in Alice.
+3. Run or view the artifact evidence and name the visible result.
+4. Check attribution, classroom context, or partner role.
+5. Ask for one next revision.
+6. Record feedback without treating the packet as a deployed sharing result.
+
+The review is complete when the next revision is clear. It is not blocked by the
+absence of a hosted gallery entry or publishing workflow.
+
 ## Teacher-community handoff
 
 Use `teacher-community-sharing-loop` when the output is a teacher-facing activity
@@ -65,6 +96,22 @@ handoff. The handoff includes:
 The handoff is editable classroom documentation. It is not a platform publishing
 flow and should not describe public distribution unless a separate
 platform/deployment feature is explicitly scoped and proven.
+
+### Tutorial: prepare a teacher handoff
+
+Use this sequence when a teacher wants another teacher to reuse or adapt an
+Alice activity:
+
+1. Name the activity, audience, prerequisites, timing, and setup constraints.
+2. Link the editable scenario and persona assets that ground the activity.
+3. Describe the student evidence another teacher should expect.
+4. Add attribution and any accessibility notes.
+5. Ask two remix questions: what to keep, and what to change next time.
+6. Keep the handoff editable so the next classroom can adapt it.
+
+The handoff succeeds when another teacher can understand the classroom activity
+and provide useful remix feedback. It does not require a teacher account,
+ranking, moderation queue, public gallery, or platform distribution step.
 
 ## Configuration
 
@@ -96,6 +143,20 @@ network API.
 | --- | --- |
 | `student-artifact-package-share-evidence` | Student packet for artifact reference, student change, visible run result, attribution or classroom context, next revision, and review boundary. |
 | `teacher-community-sharing-loop` | Teacher-facing handoff for share card, classroom note, accessibility notes, attribution, student evidence expectations, and remix feedback. |
+
+## Output contract reference
+
+Sharing readiness outputs are plain review artifacts. They should use these
+fields so humans and agents can inspect them consistently.
+
+| Output | Required fields |
+| --- | --- |
+| Student artifact review packet | Artifact reference, student change, visible run result, context or attribution, next revision, review boundary |
+| Student evidence handoff prompt | Artifact reference, observable behavior question, student explanation question, feedback request, revision request |
+| Instructor review boundary note | Environment evidence if present, learner evidence still required, human judgment still required, unsupported claims |
+| Teacher-community share card | Activity purpose, audience, prerequisites, timing, classroom constraints, attribution, editable scenario/persona links, student evidence |
+| Classroom handoff note | Setup assumptions, learner-facing evidence, accessibility notes, adaptation choices, support signals |
+| Remix feedback prompt | Classroom fit question, learner evidence question, accessibility question, one suggested revision |
 
 Acceptance probes should reject responses that:
 
