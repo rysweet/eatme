@@ -169,17 +169,12 @@ fn finalization_evidence_defines_external_publication_head_record_contract() {
         "finalization evidence",
     );
 
-    let missing_fields = missing_required_publication_record_fields(finalization);
-    assert!(
-        missing_fields.is_empty(),
-        "external publication-head record contract is missing required fields:\n{}",
-        missing_fields.join("\n")
-    );
+    assert_publication_record_fields_present(finalization, "finalization evidence");
 }
 
 #[test]
-fn publication_record_contract_accepts_complete_fixture() {
-    let fixture = "\
+fn publication_record_contract_requires_head_checks_and_scope_fields() {
+    let complete_fixture = "\
 External publication-head evidence record:
 - Publication head SHA: abc8ceb636f8970027d9ada8e36c9d54928529ae
 - GitHub check rollup for that exact SHA: 7 successful checks, 2 skipped checks, 0 failing checks, 0 pending checks.
@@ -192,18 +187,13 @@ External publication-head evidence record:
 - PR evidence comment: URL for the external publication-head record.
 ";
 
-    assert!(
-        missing_required_publication_record_fields(fixture).is_empty(),
-        "complete publication record fixture should satisfy the contract"
+    assert_publication_record_fields_present(
+        complete_fixture,
+        "complete publication record fixture",
     );
-}
-
-#[test]
-fn publication_record_contract_rejects_noop_without_head_checks_and_scope() {
-    let fixture = "No-op: PR looks good.";
 
     assert_eq!(
-        missing_required_publication_record_fields(fixture),
+        missing_required_publication_record_fields("No-op: PR looks good."),
         REQUIRED_PUBLICATION_RECORD_FIELDS,
         "no-op justification must be tied to publication head, check rollup, and focused scope"
     );
@@ -340,6 +330,15 @@ fn missing_required_publication_record_fields(text: &str) -> Vec<&'static str> {
         .copied()
         .filter(|field| !normalized_text.contains(&normalize_whitespace(field)))
         .collect()
+}
+
+fn assert_publication_record_fields_present(text: &str, context: &str) {
+    let missing_fields = missing_required_publication_record_fields(text);
+    assert!(
+        missing_fields.is_empty(),
+        "{context} is missing required publication-head fields:\n{}",
+        missing_fields.join("\n")
+    );
 }
 
 fn unsupported_success_claim_lines(text: &str) -> Vec<&str> {
