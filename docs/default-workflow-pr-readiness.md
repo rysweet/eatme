@@ -3,9 +3,8 @@
 ## PR #175 evidence contract
 
 This page is the self-contained recovery artifact for PR #175. It records
-bounded evidence for the checked-out repository HEAD, GitHub PR metadata, and
-current-head executable checks observed during PR #175 default-workflow
-recovery.
+bounded evidence for a validated PR evidence head, GitHub PR metadata observed
+at evidence-capture time, and the publication-head boundary for this artifact.
 
 This is evidence-contract finalization, not validation completion. Treat every
 claim below as limited to the command, timestamp, and observed value that
@@ -20,22 +19,24 @@ supports it.
 | PR | [#175 Document evidence artifact contract](https://github.com/rysweet/eatme/pull/175) |
 | Local branch | `wave6-evidence-artifact-contract-1778302300` |
 | Local upstream | `origin/wave6-evidence-artifact-contract-1778302300` |
-| Checked-out local HEAD | `d8ddab5bbc443623f0bd49d3e134b37d842b0872` |
-| Checked-out local HEAD short SHA | `d8ddab5` |
-| Observed GitHub PR head | `d8ddab5bbc443623f0bd49d3e134b37d842b0872` |
+| Validated evidence head | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| Validated evidence head short SHA | `a951f34` |
+| Observed GitHub PR head at evidence capture | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
 | Observed base branch | `master` |
 | Observed base SHA | `17521c40bb72dd22669b596179327fc5cf307305` |
-| Current-head executable evidence capture | `2026-05-09T18:52:56Z` |
-| GitHub PR metadata capture | `2026-05-09T18:52:56Z` |
+| Evidence-head executable evidence capture | `2026-05-09T19:02:06Z` |
+| GitHub PR metadata capture | `2026-05-09T19:02:06Z` |
+| Artifact publication head | not embedded in this committed artifact; committing a documentation refinement changes the PR head. The exact post-push publication head/check rollup belongs in the PR finalization record outside this file. |
 
-Within this page, `local HEAD` and `observed PR head` refer to the same full
-SHA in this table unless a command output shows a SHA verbatim.
+Within this page, `validated evidence head` means the PR head whose metadata and
+check rollup were captured above. `Artifact publication head` means the later
+commit that publishes this page after refinement.
 
-At current capture time, the checked-out local HEAD and GitHub PR `headRefOid`
-both resolved to `d8ddab5bbc443623f0bd49d3e134b37d842b0872`. Therefore, the
+At evidence-capture time, the checked-out local HEAD and GitHub PR `headRefOid`
+both resolved to `a951f34a0a187adfa24cfe0555ca00da6a04197d`. Therefore, the
 GitHub check rollup, mergeability metadata, and review metadata below are
-current-head evidence for the same commit. This page does not claim that future
-PR #175 heads, checks, reviews, or mergeability match these observations.
+validated evidence-head observations for the same commit. This page deliberately
+does not claim that its own eventual publication commit has checked itself.
 
 ## Readiness evidence
 
@@ -53,34 +54,23 @@ git rev-parse @{u}
 git status --short
 ```
 
-Observed result at `2026-05-09T18:52:56Z`:
+Observed result at `2026-05-09T19:02:06Z`, before this refinement changed the
+artifact/test files:
 
 ```text
 branch=wave6-evidence-artifact-contract-1778302300
-head_sha=d8ddab5bbc443623f0bd49d3e134b37d842b0872
-head_short=d8ddab5
+head_sha=a951f34a0a187adfa24cfe0555ca00da6a04197d
+head_short=a951f34
 upstream=origin/wave6-evidence-artifact-contract-1778302300
-upstream_sha=d8ddab5bbc443623f0bd49d3e134b37d842b0872
+upstream_sha=a951f34a0a187adfa24cfe0555ca00da6a04197d
 status_short_begin
 status_short_end
 ```
 
-Current recovery capture starts from a clean local branch that matches the
-observed GitHub PR head. No local source or contract-test change is required to
-refresh the evidence artifact contract scope.
-
-Historical Step 8 evidence capture reported a clean baseline before this
-readiness artifact/test update in an earlier handoff. That historical note also
-reported the local branch one commit ahead of upstream at that earlier capture
-time:
-
-```text
-## wave6-evidence-artifact-contract-1778302300...origin/wave6-evidence-artifact-contract-1778302300 [ahead 1]
-```
-
-That historical clean baseline is not a claim about the current handoff
-worktree. The archived wording, "current handoff intentionally contains only
-these two pending readiness files," applied only to that earlier Step 8 handoff:
+This clean status is a pre-refinement observation for the validated evidence
+head. It is not a claim about the post-edit worktree or the eventual
+publication head. This refinement intentionally changes only the readiness
+artifact and the contract tests that guard it:
 
 ```text
 docs/default-workflow-pr-readiness.md
@@ -105,9 +95,9 @@ Observed metadata:
 | `state` | `OPEN` |
 | `isDraft` | `false` |
 | `createdAt` | `2026-05-09T05:02:52Z` |
-| `updatedAt` | `2026-05-09T18:41:45Z` |
+| `updatedAt` | `2026-05-09T18:55:26Z` |
 | `headRefName` | `wave6-evidence-artifact-contract-1778302300` |
-| `headRefOid` | `d8ddab5bbc443623f0bd49d3e134b37d842b0872` |
+| `headRefOid` | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
 | `baseRefName` | `master` |
 | `baseRefOid` | `17521c40bb72dd22669b596179327fc5cf307305` |
 | `mergeStateStatus` | `CLEAN` |
@@ -117,53 +107,61 @@ Observed metadata:
 
 The `mergeStateStatus` and `mergeable` values are recorded as GitHub metadata
 only. They are treated as merge-readiness evidence only in combination with the
-current-head green check rollup below and the focused evidence-artifact scope.
+validated evidence-head green check rollup below, the publication-head boundary,
+and the focused evidence-artifact scope.
 
 ### GitHub status-check rollup observation
 
-`gh pr view` returned these `statusCheckRollup` entries for the observed PR head:
+`gh pr view` returned these `statusCheckRollup` entries for the validated
+evidence head:
 
 | Workflow | Check | Status | Conclusion | Completed |
 | --- | --- | --- | --- | --- |
-| Documentation Site | Build MkDocs site | `COMPLETED` | `SUCCESS` | `2026-05-09T11:52:04Z` |
-| Quality Gates | detect changed files | `COMPLETED` | `SUCCESS` | `2026-05-09T11:51:57Z` |
-| Documentation Site | Deploy to GitHub Pages | `COMPLETED` | `SKIPPED` | `2026-05-09T11:52:04Z` |
-| Quality Gates | fmt, clippy, module size | `COMPLETED` | `SUCCESS` | `2026-05-09T11:52:31Z` |
-| Quality Gates | tests | `COMPLETED` | `SUCCESS` | `2026-05-09T11:54:38Z` |
-| Quality Gates | coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T11:54:41Z` |
-| Quality Gates | fmt, clippy, tests, module size, coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T11:54:48Z` |
-| Quality Gates | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` | `2026-05-09T11:54:48Z` |
-| none returned | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` | `2026-05-09T11:51:46Z` |
+| Documentation Site | Build MkDocs site | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:44Z` |
+| Quality Gates | detect changed files | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:37Z` |
+| Documentation Site | Deploy to GitHub Pages | `COMPLETED` | `SKIPPED` | `2026-05-09T18:55:45Z` |
+| Quality Gates | fmt, clippy, module size | `COMPLETED` | `SUCCESS` | `2026-05-09T18:56:19Z` |
+| Quality Gates | tests | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:29Z` |
+| Quality Gates | coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:30Z` |
+| Quality Gates | fmt, clippy, tests, module size, coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:38Z` |
+| Quality Gates | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` | `2026-05-09T18:58:38Z` |
+| none returned | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:30Z` |
 
-These entries are per-check observations for the observed PR head. Skipped rows
-are explicitly not counted as successful checks, approval, branch-protection
-sufficiency, or manual real Alice launch evidence.
+These entries are per-check observations for the validated evidence head: 7
+successful checks, 2 skipped checks, 0 failing checks, and 0 pending checks.
+Skipped rows are explicitly not counted as successful checks, approval,
+branch-protection sufficiency, or manual real Alice launch evidence.
 
-### Current-head executable evidence
+### Validated evidence-head executable evidence
 
-Current-head executable evidence uses the GitHub status-check rollup for PR
-head `d8ddab5bbc443623f0bd49d3e134b37d842b0872` as the source of truth. The
-rollup is complete for that head, contains no failing or pending checks, and is
-sufficient for this focused evidence-artifact finalization. Backup local
+Validated evidence-head executable evidence uses the GitHub status-check rollup
+for PR head `a951f34a0a187adfa24cfe0555ca00da6a04197d` as the source of truth.
+The rollup is complete for that head, contains no failing or pending checks, and
+is sufficient for the evidence baseline before this refinement. Backup local
 validation commands remain documented with the required
 `NODE_OPTIONS=--max-old-space-size=32768` setting and no timeout wrapper, but
 they are not rerun unless GitHub evidence is stale, missing, ambiguous, or local
 files change.
 
-| Backup command | Current evidence source | Bounded claim |
+| Backup command | Evidence source | Bounded claim |
 | --- | --- | --- |
-| `cargo run -q -p eatme-cli -- assets validate --json` | Covered by the current-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if asset evidence becomes ambiguous. | Persona and scenario asset validation is within current-head validation scope. This is asset-contract evidence, not lesson-completion or grading evidence. |
-| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Covered by the current-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if generated-adapter evidence becomes ambiguous. | Generated Gadugi adapter freshness is within current-head validation scope. This is adapter freshness evidence, not UI rendering or grading evidence. |
-| `mkdocs build --strict` | Current-head Documentation Site `Build MkDocs site` completed with `SUCCESS`. | The documentation site renders under strict MkDocs rules for the current PR head. |
-| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Current-head Quality Gates aggregate `fmt, clippy, tests, module size, coverage` completed with `SUCCESS`. | The repository quality gate passes for the current PR head. This does not prove manual real Alice desktop launch, full UI automation, visual rendering correctness, grading, creative assessment, or lesson completion. |
+| `cargo run -q -p eatme-cli -- assets validate --json` | Covered by the validated evidence-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if asset evidence becomes ambiguous. | Persona and scenario asset validation is within validated evidence-head scope. This is asset-contract evidence, not lesson-completion or grading evidence. |
+| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Covered by the validated evidence-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if generated-adapter evidence becomes ambiguous. | Generated Gadugi adapter freshness is within validated evidence-head scope. This is adapter freshness evidence, not UI rendering or grading evidence. |
+| `mkdocs build --strict` | Validated evidence-head Documentation Site `Build MkDocs site` completed with `SUCCESS`. | The documentation site renders under strict MkDocs rules for the validated evidence head. |
+| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Validated evidence-head Quality Gates aggregate `fmt, clippy, tests, module size, coverage` completed with `SUCCESS`. | The repository quality gate passes for the validated evidence head. This does not prove manual real Alice desktop launch, full UI automation, visual rendering correctness, grading, creative assessment, or lesson completion. |
+
+Because this file and its contract tests are part of the refinement, the exact
+post-push publication head must be checked after push and recorded outside this
+committed artifact. This avoids a self-referential freshness claim where editing
+the artifact invalidates the SHA it names as current.
 
 ### Historical same-head outside-in testing evidence
 
 The Step 16b user-path commands below were previously run from this branch at
 the recorded head `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`. That recorded
 head was same-head evidence for an earlier PR capture. It is now historical
-silver-thread/e2e context only, not current-head proof and not a substitute for
-the current GitHub check rollup above.
+silver-thread/e2e context only, not validated evidence-head proof and not a
+substitute for the GitHub check rollup above.
 
 The `@wave6-evidence-artifact-contract-1778302300` install target in these
 commands was a branch ref as resolved at execution time, not an immutable
@@ -206,7 +204,8 @@ was observed. The artifact therefore remains at
 
 The Step 8 review keeps this page as an evidence contract and checks that it:
 
-1. Separately scopes current local executable evidence and GitHub PR metadata.
+1. Separately scopes validated evidence-head executable evidence and GitHub PR
+   metadata.
 2. Keeps local Git evidence, GitHub PR metadata, status-check metadata, and
    executable evidence in separate sections.
 3. Lists skipped, not-measured, no-execute, and historical states as nonclaims
@@ -215,6 +214,8 @@ The Step 8 review keeps this page as an evidence contract and checks that it:
    not as a product readiness success.
 5. Provides explicit nonclaims so recovery can continue without prior
    rate-limited session context.
+6. Separates the validated evidence head from the later artifact publication
+   head so the page cannot become stale solely by being committed.
 
 ### Security review
 
@@ -233,36 +234,38 @@ source, workflow, or credential-handling changes was found in this artifact.
 
 ## Finalization evidence
 
-PR #175 remains unmerged. The observed GitHub PR state is `OPEN`, the observed
-head ref is `wave6-evidence-artifact-contract-1778302300`, and the observed
-GitHub PR head SHA is `d8ddab5bbc443623f0bd49d3e134b37d842b0872`. The
-checked-out local branch head is the same SHA, and the branch is not ahead of
-the observed PR head at capture time.
+PR #175 remains unmerged. At evidence-capture time, the observed GitHub PR state
+was `OPEN`, the observed head ref was
+`wave6-evidence-artifact-contract-1778302300`, and the validated evidence head
+was `a951f34a0a187adfa24cfe0555ca00da6a04197d`. That SHA is the evidence head
+for this page, not the immutable publication head for this committed
+refinement.
 
 No manual merge was performed. This recovery only updates workflow
 readiness/review/finalization evidence and the executable readiness-contract
 tests that guard it.
 
-Finalization status: `merge-ready` for PR #175 evidence-contract recovery. The
-previous `limited-ready` state no longer applies because local HEAD and GitHub
-PR `headRefOid` now match, GitHub reports `mergeStateStatus: CLEAN`,
-`mergeable: MERGEABLE`, and the current-head status-check rollup has completed
-with successful required evidence checks and only explicitly skipped optional
-deployment/manual-smoke rows. This means the artifact records executable
-evidence, review boundaries, and explicit nonclaims sufficient for owner-free
-workflow merge action. It does not mean the PR is already approved, merged, or
-validated for UI automation, rendering correctness, grading, creative
-assessment, or lesson completion.
+Finalization status: `merge-ready-after-publication-head-checks` for PR #175
+evidence-contract recovery. The validated evidence head is `CLEAN`,
+`MERGEABLE`, and has 7 successful checks, 2 skipped checks, 0 failing checks,
+and 0 pending checks. Because this refinement changes the committed artifact,
+final owner-free merge evidence must use the post-push publication head/check
+rollup recorded outside this file. This artifact records executable evidence,
+review boundaries, and explicit nonclaims; it does not mean the PR is already
+approved, merged, or validated for UI automation, rendering correctness,
+grading, creative assessment, or lesson completion.
 
 ## Nonclaims
 
 - No PR approval is claimed.
-- No blanket CI success is claimed beyond the listed current-head GitHub
-  status-check rollup.
-- No test coverage sufficiency is claimed beyond the reported current-head
-  coverage summary.
-- No local quality-gate rerun is claimed beyond the current-head GitHub Quality
-  Gates rollup.
+- No blanket CI success is claimed beyond the listed validated evidence-head
+  GitHub status-check rollup.
+- No test coverage sufficiency is claimed beyond the reported validated
+  evidence-head coverage summary.
+- No local quality-gate rerun is claimed beyond the validated evidence-head
+  GitHub Quality Gates rollup.
+- No post-push publication-head check rollup is claimed inside this committed
+  artifact.
 - No real Alice desktop execution is claimed.
 - No full Alice UI automation is claimed.
 - No full first-lesson readiness is claimed.
@@ -271,8 +274,8 @@ assessment, or lesson completion.
 - No visible rendering correctness is claimed.
 - No grading or creative assessment is claimed.
 - No claim is made that skipped checks are successful checks.
-- No claim is made that GitHub has observed local commits beyond the recorded PR
-  `headRefOid`.
+- No claim is made inside this file that GitHub has observed the eventual
+  publication commit beyond the recorded validated evidence-head `headRefOid`.
 - No claim is made that future PR #175 heads, checks, reviews, or mergeability
   match the observations recorded here.
 - No prior rate-limited/default-workflow session context is required to continue

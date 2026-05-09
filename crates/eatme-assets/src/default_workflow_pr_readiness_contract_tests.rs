@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 const ARTIFACT_PATH: &str = "docs/default-workflow-pr-readiness.md";
-const REQUIRED_CURRENT_HEAD_COMMANDS: &[&str] = &[
+const REQUIRED_VALIDATED_EVIDENCE_HEAD_COMMANDS: &[&str] = &[
     "cargo run -q -p eatme-cli -- assets validate --json",
     "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
     "mkdocs build --strict",
@@ -35,38 +35,38 @@ fn readiness_artifact_has_readiness_review_and_finalization_sections() {
 }
 
 #[test]
-fn current_head_evidence_records_required_commands_without_timeout_wrappers() {
+fn validated_evidence_head_records_required_commands_without_timeout_wrappers() {
     let artifact = read_artifact();
-    let current_head = section(
+    let evidence_head = section(
         artifact,
-        "### Current-head executable evidence",
+        "### Validated evidence-head executable evidence",
         "### Historical same-head outside-in testing evidence",
     );
 
     assert!(
-        current_head.contains("`NODE_OPTIONS=--max-old-space-size=32768`"),
-        "current-head evidence must record the required Node memory setting"
+        evidence_head.contains("`NODE_OPTIONS=--max-old-space-size=32768`"),
+        "validated evidence-head evidence must record the required Node memory setting"
     );
     assert!(
-        current_head.contains("no timeout wrapper"),
-        "current-head evidence must explicitly say timeout wrappers were not used"
+        evidence_head.contains("no timeout wrapper"),
+        "validated evidence-head evidence must explicitly say timeout wrappers were not used"
     );
 
-    for command in REQUIRED_CURRENT_HEAD_COMMANDS {
+    for command in REQUIRED_VALIDATED_EVIDENCE_HEAD_COMMANDS {
         assert!(
-            current_head.contains(command),
-            "current-head evidence must include executable command: {command}"
+            evidence_head.contains(command),
+            "validated evidence-head evidence must include executable command: {command}"
         );
     }
 
     assert!(
-        !contains_timeout_wrapper(current_head),
-        "current-head evidence must not include timeout wrapper commands"
+        !contains_timeout_wrapper(evidence_head),
+        "validated evidence-head evidence must not include timeout wrapper commands"
     );
 }
 
 #[test]
-fn local_git_evidence_frames_clean_status_as_historical_step_8_capture() {
+fn local_git_evidence_frames_clean_status_as_pre_refinement_capture() {
     let local_git = section(
         read_artifact(),
         "### Local Git observations",
@@ -76,9 +76,10 @@ fn local_git_evidence_frames_clean_status_as_historical_step_8_capture() {
     assert_contains_all_normalized(
         local_git,
         &[
-            "Step 8 evidence capture reported a clean baseline before this readiness artifact/test update",
-            "not a claim about the current handoff worktree",
-            "current handoff intentionally contains only these two pending readiness files",
+            "before this refinement changed the artifact/test files",
+            "pre-refinement observation for the validated evidence head",
+            "not a claim about the post-edit worktree or the eventual publication head",
+            "This refinement intentionally changes only the readiness artifact and the contract tests that guard it",
             "docs/default-workflow-pr-readiness.md",
             "crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs",
         ],
@@ -87,6 +88,32 @@ fn local_git_evidence_frames_clean_status_as_historical_step_8_capture() {
     assert!(
         !local_git.contains("The local branch was clean"),
         "local git evidence must not frame historical clean status as current handoff state"
+    );
+}
+
+#[test]
+fn artifact_distinguishes_validated_evidence_head_from_publication_head() {
+    let artifact = read_artifact();
+    let scope = section(artifact, "## Scope", "## Readiness evidence");
+
+    assert_contains_all_normalized(
+        scope,
+        &[
+            "Validated evidence head",
+            "Artifact publication head",
+            "not embedded in this committed artifact",
+            "committing a documentation refinement changes the PR head",
+            "does not claim that its own eventual publication commit has checked itself",
+        ],
+        "scope evidence",
+    );
+    assert!(
+        !scope.contains("| Checked-out local HEAD |"),
+        "scope must not frame the evidence SHA as the committed artifact publication head"
+    );
+    assert!(
+        !artifact.contains("### Current-head executable evidence"),
+        "artifact must use validated evidence-head wording instead of self-staling current-head wording"
     );
 }
 
@@ -100,9 +127,18 @@ fn finalization_evidence_records_unmerged_pr_status_and_workflow_boundary() {
             "PR #175 remains unmerged",
             "No manual merge was performed",
             "workflow readiness/review/finalization evidence",
-            "limited-ready",
+            "Finalization status: `merge-ready-after-publication-head-checks`",
+            "post-push publication head/check rollup recorded outside this file",
         ],
         "finalization evidence",
+    );
+    assert!(
+        !finalization.contains("limited-ready"),
+        "finalization evidence must assert the exact finalization status instead of passing on stale limited-ready wording"
+    );
+    assert!(
+        !finalization.contains("checked-out local branch head is the same SHA"),
+        "finalization evidence must not claim the committed artifact publication head is the validated evidence head"
     );
 }
 
