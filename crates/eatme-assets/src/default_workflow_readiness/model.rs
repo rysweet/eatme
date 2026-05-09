@@ -75,6 +75,7 @@ pub struct DocsImpactReview {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PREvidenceReview {
     pub location: String,
+    pub trusted_provenance: bool,
     pub head_sha: String,
     pub recorded_commands: Vec<String>,
     pub records_github_checks: bool,

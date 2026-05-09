@@ -254,6 +254,17 @@ fn pr_evidence_review_requires_current_head_evidence_and_recheck_after_updates()
     let result = PREvidenceReview::validate(&updated_without_recheck).unwrap_err();
     assert_eq!(result.marker(), "NOT_MERGE_READY");
     assert!(result.blocker().contains("reconfirm"));
+
+    let untrusted_pr_evidence = ReadinessInput {
+        pr_evidence: PREvidenceReview {
+            trusted_provenance: false,
+            ..passing_review().pr_evidence
+        },
+        ..passing_review()
+    };
+    let result = PREvidenceReview::validate(&untrusted_pr_evidence).unwrap_err();
+    assert_eq!(result.marker(), "NOT_MERGE_READY");
+    assert!(result.blocker().contains("not trusted"));
 }
 
 #[test]
@@ -344,6 +355,7 @@ fn passing_review() -> ReadinessInput {
         },
         pr_evidence: PREvidenceReview {
             location: "PR body".into(),
+            trusted_provenance: true,
             head_sha: HEAD.into(),
             recorded_commands: REQUIRED_COMMANDS
                 .iter()

@@ -123,6 +123,7 @@ pub struct GitHubPullRequest {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GitHubEvidenceText {
     pub location: String,
+    pub trusted: bool,
     pub body: String,
 }
 
@@ -275,7 +276,8 @@ impl GitHubReadinessClient for GhCliReadinessClient {
             "view".into(),
             pr_number.to_string(),
             "--json".into(),
-            "headRefName,headRefOid,mergeStateStatus,mergeable,body,comments".into(),
+            "headRefName,headRefOid,mergeStateStatus,mergeable,isCrossRepository,body,comments"
+                .into(),
         ];
         let output = self.gh_json(&args)?;
         let response: GhPullRequestResponse = serde_json::from_str(&output).map_err(|error| {
@@ -287,6 +289,7 @@ impl GitHubReadinessClient for GhCliReadinessClient {
 
         let mut evidence_texts = vec![GitHubEvidenceText {
             location: "PR body".into(),
+            trusted: !response.is_cross_repository,
             body: response.body,
         }];
         evidence_texts.extend(
@@ -295,7 +298,12 @@ impl GitHubReadinessClient for GhCliReadinessClient {
                 .into_iter()
                 .enumerate()
                 .map(|(index, comment)| GitHubEvidenceText {
-                    location: format!("PR comment {}", index + 1),
+                    location: format!(
+                        "PR comment {} ({})",
+                        index + 1,
+                        comment.author_association.as_deref().unwrap_or("UNKNOWN")
+                    ),
+                    trusted: is_trusted_comment_association(comment.author_association.as_deref()),
                     body: comment.body,
                 }),
         );
@@ -315,7 +323,7 @@ impl GitHubReadinessClient for GhCliReadinessClient {
             "checks".into(),
             pr_number.to_string(),
             "--json".into(),
-            "name,state,conclusion,bucket".into(),
+            "name,state,bucket".into(),
         ];
         let output = self.gh_json(&args)?;
         let response: Vec<GhCheckResponse> = serde_json::from_str(&output).map_err(|error| {
@@ -330,10 +338,7 @@ impl GitHubReadinessClient for GhCliReadinessClient {
             .map(|check| GitHubCheckRun {
                 name: check.name,
                 status: map_check_status(check.state.as_deref()),
-                conclusion: map_check_conclusion(
-                    check.conclusion.as_deref(),
-                    check.bucket.as_deref(),
-                ),
+                conclusion: map_check_conclusion(check.state.as_deref(), check.bucket.as_deref()),
             })
             .collect())
     }
@@ -346,6 +351,7 @@ struct GhPullRequestResponse {
     head_ref_oid: String,
     merge_state_status: String,
     mergeable: String,
+    is_cross_repository: bool,
     #[serde(default)]
     body: String,
     #[serde(default)]
@@ -356,13 +362,14 @@ struct GhPullRequestResponse {
 struct GhCommentResponse {
     #[serde(default)]
     body: String,
+    #[serde(rename = "authorAssociation")]
+    author_association: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct GhCheckResponse {
     name: String,
     state: Option<String>,
-    conclusion: Option<String>,
     bucket: Option<String>,
 }
 
@@ -370,8 +377,9 @@ fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvidenceReview 
     let evidence_text = pull_request
         .evidence_texts
         .iter()
+        .filter(|text| text.trusted)
         .find(|text| text.body.contains(&pull_request.head_ref_oid))
-        .or_else(|| pull_request.evidence_texts.first());
+        .or_else(|| pull_request.evidence_texts.iter().find(|text| text.trusted));
 
     let Some(evidence_text) = evidence_text else {
         return empty_pr_evidence();
@@ -380,6 +388,7 @@ fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvidenceReview 
     let lower = evidence_text.body.to_lowercase();
     PREvidenceReview {
         location: evidence_text.location.clone(),
+        trusted_provenance: true,
         head_sha: if evidence_text.body.contains(&pull_request.head_ref_oid) {
             pull_request.head_ref_oid.clone()
         } else {
@@ -403,6 +412,7 @@ fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvidenceReview 
 fn empty_pr_evidence() -> PREvidenceReview {
     PREvidenceReview {
         location: "missing".into(),
+        trusted_provenance: false,
         head_sha: String::new(),
         recorded_commands: Vec::new(),
         records_github_checks: false,
@@ -417,15 +427,18 @@ fn empty_pr_evidence() -> PREvidenceReview {
 
 fn map_check_status(state: Option<&str>) -> CheckStatus {
     match normalize(state).as_deref() {
-        Some("COMPLETED") => CheckStatus::Completed,
+        Some(
+            "COMPLETED" | "SUCCESS" | "FAILURE" | "CANCELLED" | "SKIPPED" | "TIMED_OUT"
+            | "TIMEDOUT" | "NEUTRAL",
+        ) => CheckStatus::Completed,
         Some("IN_PROGRESS") | Some("ACTION_REQUIRED") => CheckStatus::InProgress,
         Some("QUEUED") | Some("REQUESTED") | Some("WAITING") => CheckStatus::Queued,
         _ => CheckStatus::Pending,
     }
 }
 
-fn map_check_conclusion(conclusion: Option<&str>, bucket: Option<&str>) -> CheckConclusion {
-    match normalize(conclusion).as_deref() {
+fn map_check_conclusion(state: Option<&str>, bucket: Option<&str>) -> CheckConclusion {
+    match normalize(state).as_deref() {
         Some("SUCCESS") => CheckConclusion::Success,
         Some("FAILURE") => CheckConclusion::Failure,
         Some("CANCELLED") => CheckConclusion::Cancelled,
@@ -440,6 +453,13 @@ fn map_check_conclusion(conclusion: Option<&str>, bucket: Option<&str>) -> Check
             _ => CheckConclusion::Unknown,
         },
     }
+}
+
+fn is_trusted_comment_association(author_association: Option<&str>) -> bool {
+    matches!(
+        normalize(author_association).as_deref(),
+        Some("OWNER" | "MEMBER" | "COLLABORATOR")
+    )
 }
 
 fn normalize(value: Option<&str>) -> Option<String> {

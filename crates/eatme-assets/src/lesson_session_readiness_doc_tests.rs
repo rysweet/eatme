@@ -203,7 +203,7 @@ fn default_workflow_pr193_boundary_requires_external_exact_head_evidence() {
             "After the final commit is pushed",
             "headRefOid",
             "outside the repository commit",
-            "PR body, PR comment, or status summary",
+            "same-repository PR body, a trusted PR comment, or status summary",
             "Do not treat uncommitted local documentation edits as evidence for a PR head",
             "externally recorded exact head",
         ],

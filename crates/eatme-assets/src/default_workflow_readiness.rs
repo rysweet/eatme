@@ -261,6 +261,14 @@ impl GitHubActionsReview {
 impl PREvidenceReview {
     pub fn validate(input: &ReadinessInput) -> Result<(), ReadinessArtifact> {
         let evidence = &input.pr_evidence;
+        if !evidence.trusted_provenance {
+            return Err(ReadinessArtifact::blocked(
+                input,
+                "PR evidence source is not trusted",
+                "record current-head evidence in the same-repository PR body or a trusted PR comment",
+            ));
+        }
+
         if evidence.head_sha != input.head_ref_oid {
             return Err(ReadinessArtifact::blocked(
                 input,

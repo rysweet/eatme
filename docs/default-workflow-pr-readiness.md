@@ -51,7 +51,7 @@ being reviewed.
 | Docs impact | Documentation changes build under strict MkDocs and do not record stale point-in-time evidence. |
 | Scope | No unrelated files or behavior are changed. |
 | Final artifact | The result begins with `MERGE_READY_EVIDENCE` only when every gate passes. Otherwise it begins with `NOT_MERGE_READY`. |
-| PR evidence | The PR body or a PR comment records current-head evidence, or the final artifact is `NOT_MERGE_READY` with the missing evidence named. |
+| PR evidence | The same-repository PR body or a trusted PR comment records current-head evidence, or the final artifact is `NOT_MERGE_READY` with the missing evidence named. |
 
 A previous wrapper failure is not a blocker when direct verification proves the
 same head, runnable evidence, successful current-head checks, clean
@@ -80,8 +80,8 @@ Run the gate in this order:
 9. Review docs impact and ensure strict MkDocs evidence covers doc changes.
 10. Complete three quality-audit SEEK/VALIDATE/FIX cycles; the third cycle must
     be clean.
-11. Review the PR body and comments for current-head evidence.
-12. If the PR body or comments are updated, reconfirm the PR head after the
+11. Review the same-repository PR body and trusted comments for current-head evidence.
+12. If the PR body or trusted comments are updated, reconfirm the PR head after the
     update. The reconfirmed head must still match the local evidence head.
 13. Emit `MERGE_READY_EVIDENCE` only when every required gate passed for the
     reconfirmed head; otherwise emit `NOT_MERGE_READY` with the blocker.
@@ -235,7 +235,7 @@ initial evidence commands and before the final readiness claim.
 | Phase | Required action |
 | --- | --- |
 | SEEK | Look for head mismatches, stale PR evidence, failed or pending checks, overclaiming documentation, unrelated diff scope, missing docs impact, stale generated adapters, and missing command evidence. |
-| VALIDATE | Bind each suspected issue to exact evidence: command output, `gh` metadata, PR body or comment text, changed files, or committed documentation. Unsupported or ambiguous findings become blockers. |
+| VALIDATE | Bind each suspected issue to exact evidence: command output, `gh` metadata, trusted PR body/comment text, changed files, or committed documentation. Unsupported or ambiguous findings become blockers. |
 | FIX | Apply the minimal repository or PR-evidence correction when a fix is in scope. If no repository change is needed, record a no-op rationale tied to the exact head instead of editing files. |
 
 Cycle 1 establishes the first complete blocker list. Cycle 2 validates that
@@ -311,8 +311,8 @@ gh pr view 193 --json number,url,state,headRefName,headRefOid,mergeStateStatus,m
 
 Record the resulting `headRefOid`, command outcomes, GitHub check state, bounded
 change scope, and no-manual-merge decision outside the repository commit, such as
-in the PR body, PR comment, or status summary. Do not treat uncommitted local
-documentation edits as evidence for a PR head.
+in the same-repository PR body, a trusted PR comment, or status summary. Do not
+treat uncommitted local documentation edits as evidence for a PR head.
 
 The external PR #193 evidence must include these command outcomes for the final
 pushed head:
@@ -377,9 +377,11 @@ produce `NOT_MERGE_READY`.
 
 ## PR description evidence
 
-The PR body or a PR comment must contain evidence for the current final head
-before readiness is recorded. The evidence may be concise, but it must be
-specific enough that a reviewer can match every claim to the exact head.
+The same-repository PR body or a trusted PR comment must contain evidence for the
+current final head before readiness is recorded. Trusted comments are comments
+from `OWNER`, `MEMBER`, or `COLLABORATOR` author associations. The evidence may
+be concise, but it must be specific enough that a reviewer can match every claim
+to the exact head.
 
 | Evidence item | Required content |
 | --- | --- |
@@ -429,7 +431,7 @@ The final result must begin with exactly one literal marker:
 
 | Marker | When allowed |
 | --- | --- |
-| `MERGE_READY_EVIDENCE` | Every readiness gate passed for the reconfirmed exact PR head, and any PR body or comment mutation has been followed by another head check. |
+| `MERGE_READY_EVIDENCE` | Every readiness gate passed for the reconfirmed exact PR head, and any trusted PR body/comment mutation has been followed by another head check. |
 | `NOT_MERGE_READY` | Any gate is failing, pending, missing, ambiguous, tied to the wrong head, or not yet recorded as current-head PR evidence. |
 
 `MERGE_READY_EVIDENCE` is the only successful readiness artifact. It must name
@@ -455,7 +457,7 @@ GitHub evidence:
 Review evidence:
 - diff scope: focused on <bounded PR purpose>
 - docs impact: strict MkDocs passed; docs claim only <bounded evidence lane>
-- PR evidence: body/comment records this exact head and command evidence
+- PR evidence: trusted body/comment records this exact head and command evidence
 - quality audit: three SEEK/VALIDATE/FIX cycles completed; final cycle clean
 - no manual merge: no git merge, gh pr merge, force-push, rebase, or equivalent manual merge operation was run
 
@@ -489,5 +491,5 @@ and repeat exact-head verification against the new PR head.
 | Asset validation failure | Fix the invalid scenario or persona asset. |
 | Unrelated changes | Remove the unrelated change from the readiness work. |
 | Missing quality-audit cycle | Run the missing SEEK/VALIDATE/FIX cycle and require a clean final cycle. |
-| Stale PR evidence | Update the PR body or comment with current-head evidence, then reconfirm the head. |
+| Stale or untrusted PR evidence | Update the same-repository PR body or a trusted comment with current-head evidence, then reconfirm the head. |
 | Missing no-op rationale | Record why no repository changes are required for the current head, or make the minimal required change. |
