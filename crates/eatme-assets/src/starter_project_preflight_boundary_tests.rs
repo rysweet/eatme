@@ -1,4 +1,10 @@
 use crate::generate_gadugi_adapter_yaml;
+use crate::overclaim_test_helpers::{
+    CONTRACT_DOC_PATH, EVIDENCE_DOC_PATH, OverclaimRule, assert_contains_none_with_message,
+    assert_no_doc_overclaims, assert_rules_match_contract, doc_overclaims_in,
+    format_overclaim_failures, overclaim_rules_from_contract, read_contract_overclaim_rules,
+    read_repo_text,
+};
 use crate::schema::EatmeScenarioAsset;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -9,9 +15,6 @@ const SOURCE_SCENARIO_PATH: &str =
     "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml";
 const GENERATED_ADAPTER_PATH: &str =
     "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml";
-const CONTRACT_DOC_PATH: &str = "docs/default-workflow-pr-readiness.md";
-const EVIDENCE_DOC_PATH: &str = "docs/starter-project-preflight-evidence.md";
-const OVERCLAIM_RULE_TABLE_HEADER: &str = "| Prohibited phrase | Bounded replacement |";
 
 static SOURCE_TEXT: OnceLock<String> = OnceLock::new();
 static SOURCE_SCENARIO: OnceLock<EatmeScenarioAsset> = OnceLock::new();
@@ -148,7 +151,6 @@ const PROHIBITED_READINESS_REPORT_CLAIMS: &[&str] = &[
 fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
     let text = source_text();
     let scenario = source_scenario();
-
     assert_eq!(scenario.id, SCENARIO_ID);
     assert_eq!(scenario.kind, "alice_lesson_smoke");
     assert_contains_all(
@@ -161,9 +163,10 @@ fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
         text,
         INTERNAL_OR_OVERBROAD_LANGUAGE,
     );
+    let root = repository_root();
     assert_no_doc_overclaims(
         SOURCE_SCENARIO_PATH,
-        &text,
+        text,
         &read_contract_overclaim_rules(&root),
     );
 }
@@ -172,7 +175,6 @@ fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
 fn source_readiness_report_keeps_silver_thread_contract_on_existing_artifact() {
     let command = source_readiness_report_command();
     let report = starter_project_readiness_report_segment(command);
-
     assert_readiness_report_contract("starter-project readiness report", report);
 }
 
@@ -187,7 +189,6 @@ fn source_silver_thread_contract_stays_on_existing_readiness_report_artifact() {
                 || value.ends_with("starter-project-readiness-report.txt")
         })
         .count();
-
     assert_eq!(
         report_surface_count, 1,
         "silver-thread evidence must stay on the existing readiness report artifact"
@@ -198,7 +199,8 @@ fn source_silver_thread_contract_stays_on_existing_readiness_report_artifact() {
             .get("starter_project_readiness_report")
             .map(String::as_str),
         Some(
-            "runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-project-readiness-report.txt"
+            "runs/starter-project-open-save-export-preflight/\
+             ${RUN_ID}/starter-project-readiness-report.txt"
         )
     );
 }
@@ -209,7 +211,6 @@ fn generated_starter_project_preflight_adapter_uses_same_plain_boundaries() {
     let committed_path = scenario_path(&root, "gadugi");
     let generated = generated_adapter_yaml();
     let committed = fs::read_to_string(&committed_path).unwrap();
-
     assert_eq!(
         committed,
         generated,
@@ -228,7 +229,7 @@ fn generated_starter_project_preflight_adapter_uses_same_plain_boundaries() {
     );
     assert_no_doc_overclaims(
         GENERATED_ADAPTER_PATH,
-        &generated,
+        generated,
         &read_contract_overclaim_rules(&root),
     );
 }
@@ -238,7 +239,6 @@ fn documented_contract_defines_current_executable_doc_overclaim_check() {
     let root = repository_root();
     let text = read_repo_text(&root, CONTRACT_DOC_PATH);
     let rules = overclaim_rules_from_contract(&text);
-
     assert_contains_all(
         "starter-project/preflight readiness source contract",
         &text,
@@ -248,7 +248,8 @@ fn documented_contract_defines_current_executable_doc_overclaim_check() {
         &text,
         PLANNED_EXTENSION_WORDING,
         &format!(
-            "{CONTRACT_DOC_PATH} must describe the scoped documentation overclaim check as current executable behavior, not planned future work"
+            "{CONTRACT_DOC_PATH} must describe the scoped documentation \
+             overclaim check as current executable behavior, not planned future work"
         ),
     );
     assert_rules_match_contract(&rules, REQUIRED_DOCUMENTED_OVERCLAIM_RULES);
@@ -259,7 +260,6 @@ fn scoped_starter_project_preflight_docs_do_not_overclaim_readiness_or_evidence(
     let root = repository_root();
     let contract = read_repo_text(&root, CONTRACT_DOC_PATH);
     let text = read_repo_text(&root, EVIDENCE_DOC_PATH);
-
     assert_no_doc_overclaims(
         EVIDENCE_DOC_PATH,
         &text,
@@ -284,7 +284,6 @@ It is not pull request readiness, mergeability, \
 production suitability, complete lesson execution, user-like Alice UI coverage, \
 save/reopen/export completion, grading, creative assessment, visible rendering \
 correctness, or complete Alice coverage.";
-
     assert_no_doc_overclaims("docs/example.md", text, &rules);
 }
 
@@ -299,10 +298,10 @@ fn readiness_overclaim_detector_reports_actionable_failure_details() {
     ];
     let violations = doc_overclaims_in(
         "docs/example.md",
-        "This starter-project preflight evidence is PR ready.\nIt proves visible rendering correctness.",
+        "This starter-project preflight evidence is PR ready.\n\
+         It proves visible rendering correctness.",
         &rules,
     );
-
     assert_eq!(violations.len(), 2);
     let details = format_overclaim_failures(&violations);
     assert!(details.contains("docs/example.md"));
@@ -332,9 +331,7 @@ fn overclaim_rules_from_contract_ignores_unrelated_markdown_tables() {
 
 | `unrelated` | `ignored` |
 ";
-
     let rules = overclaim_rules_from_contract(contract);
-
     assert_rules_match_contract(
         &rules,
         &[
@@ -347,7 +344,6 @@ fn overclaim_rules_from_contract_ignores_unrelated_markdown_tables() {
 #[test]
 fn generated_adapter_readiness_report_preserves_silver_thread_contract() {
     let report = starter_project_readiness_report_segment(generated_adapter_yaml());
-
     assert_readiness_report_contract("generated starter-project readiness report", report);
 }
 
@@ -359,15 +355,6 @@ fn scenario_path(root: &Path, collection: &str) -> PathBuf {
     root.join("assets/scenarios")
         .join(collection)
         .join(format!("{SCENARIO_ID}.yaml"))
-}
-
-fn read_repo_text(root: &Path, repo_relative_path: &str) -> String {
-    fs::read_to_string(root.join(repo_relative_path))
-        .unwrap_or_else(|error| panic!("failed to read {repo_relative_path}: {error}"))
-}
-
-fn read_contract_overclaim_rules(root: &Path) -> Vec<OverclaimRule> {
-    overclaim_rules_from_contract(&read_repo_text(root, CONTRACT_DOC_PATH))
 }
 
 fn source_readiness_report_command() -> &'static str {
@@ -388,8 +375,7 @@ fn source_text() -> &'static str {
     SOURCE_TEXT
         .get_or_init(|| {
             let root = repository_root();
-            let path = scenario_path(&root, "eatme");
-            fs::read_to_string(path).unwrap()
+            fs::read_to_string(scenario_path(&root, "eatme")).unwrap()
         })
         .as_str()
 }
@@ -398,22 +384,21 @@ fn generated_adapter_yaml() -> &'static str {
     GENERATED_ADAPTER
         .get_or_init(|| {
             let root = repository_root();
-            let source_path = scenario_path(&root, "eatme");
-            generate_gadugi_adapter_yaml(&root, &source_path).unwrap()
+            let source = scenario_path(&root, "eatme");
+            generate_gadugi_adapter_yaml(&root, &source).unwrap()
         })
         .as_str()
 }
 
 fn starter_project_readiness_report_segment(text: &str) -> &str {
-    let report_path = "starter-project-readiness-report.txt";
+    let path = "starter-project-readiness-report.txt";
     let end = text
-        .find(report_path)
+        .find(path)
         .expect("starter-project readiness report must be written");
-    let before_report_path = &text[..end];
-    let start = before_report_path
+    let start = text[..end]
         .rfind("printf")
         .expect("starter-project readiness report must be written by printf");
-    &before_report_path[start..]
+    &text[start..end]
 }
 
 fn assert_readiness_report_contract(label: &str, report: &str) {
@@ -436,13 +421,11 @@ fn assert_readiness_report_contract(label: &str, report: &str) {
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize(text);
-    let missing = needles
+    let missing: Vec<_> = needles
         .iter()
-        .filter_map(|needle| {
-            let normalized_needle = normalize(needle);
-            (!normalized_text.contains(&normalized_needle)).then_some(*needle)
-        })
-        .collect::<Vec<_>>();
+        .filter(|n| !normalized_text.contains(&normalize(n)))
+        .copied()
+        .collect();
     assert!(
         missing.is_empty(),
         "{label} is missing required bounded language: {missing:?}"
@@ -457,195 +440,6 @@ fn assert_contains_none(label: &str, text: &str, needles: &[&str]) {
     );
 }
 
-fn assert_contains_none_with_message(text: &str, needles: &[&str], message: &str) {
-    let normalized_text = normalize_lowercase(text);
-    let present = needles
-        .iter()
-        .filter_map(|needle| {
-            let normalized_needle = normalize_lowercase(needle);
-            normalized_text
-                .contains(&normalized_needle)
-                .then_some(*needle)
-        })
-        .collect::<Vec<_>>();
-    assert!(present.is_empty(), "{message}: {present:?}");
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct OverclaimRule {
-    phrase: String,
-    normalized_phrase: String,
-    bounded_replacement: String,
-}
-
-impl OverclaimRule {
-    fn new(phrase: &str, bounded_replacement: &str) -> Self {
-        Self {
-            phrase: phrase.to_string(),
-            normalized_phrase: normalize(phrase).to_lowercase(),
-            bounded_replacement: bounded_replacement.to_string(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct ReadinessOverclaim<'a> {
-    file: &'static str,
-    line_number: usize,
-    phrase: &'a str,
-    bounded_replacement: &'a str,
-}
-
-fn assert_no_doc_overclaims(file: &'static str, text: &str, rules: &[OverclaimRule]) {
-    let violations = doc_overclaims_in(file, text, rules);
-    assert!(
-        violations.is_empty(),
-        "{}",
-        format_overclaim_failures(&violations)
-    );
-}
-
-fn doc_overclaims_in<'a>(
-    file: &'static str,
-    text: &str,
-    rules: &'a [OverclaimRule],
-) -> Vec<ReadinessOverclaim<'a>> {
-    text.lines()
-        .enumerate()
-        .flat_map(|(line_index, line)| {
-            let normalized_line = normalize(line).to_lowercase();
-            rules
-                .iter()
-                .filter(move |rule| line_overclaims(&normalized_line, rule))
-                .map(move |rule| ReadinessOverclaim {
-                    file,
-                    line_number: line_index + 1,
-                    phrase: &rule.phrase,
-                    bounded_replacement: &rule.bounded_replacement,
-                })
-        })
-        .collect()
-}
-
-fn line_overclaims(normalized_line: &str, rule: &OverclaimRule) -> bool {
-    normalized_line
-        .match_indices(&rule.normalized_phrase)
-        .any(|(index, _)| !is_negated_boundary(&normalized_line[..index]))
-}
-
-fn is_negated_boundary(prefix: &str) -> bool {
-    prefix.ends_with(" not ")
-        || prefix.ends_with(" does not ")
-        || prefix.ends_with(" do not ")
-        || prefix.ends_with(" without ")
-}
-
-fn format_overclaim_failures(violations: &[ReadinessOverclaim<'_>]) -> String {
-    violations
-        .iter()
-        .map(|violation| {
-            format!(
-                "{} overclaims starter-project/preflight readiness or evidence with prohibited phrase `{}` on line {}; source contract: {}; use bounded wording such as `{}`",
-                violation.file,
-                violation.phrase,
-                violation.line_number,
-                CONTRACT_DOC_PATH,
-                violation.bounded_replacement
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn overclaim_rules_from_contract(text: &str) -> Vec<OverclaimRule> {
-    let mut lines = text
-        .lines()
-        .skip_while(|line| line.trim() != OVERCLAIM_RULE_TABLE_HEADER);
-    let Some(_) = lines.next() else {
-        panic!("{CONTRACT_DOC_PATH} is missing table header `{OVERCLAIM_RULE_TABLE_HEADER}`");
-    };
-
-    let mut rules = Vec::new();
-    for line in lines {
-        let trimmed = line.trim();
-        if !trimmed.starts_with('|') {
-            break;
-        }
-        if is_markdown_table_separator(trimmed) {
-            continue;
-        }
-        rules.push(parse_overclaim_rule(trimmed).unwrap_or_else(|| {
-            panic!(
-                "{CONTRACT_DOC_PATH} contains a malformed overclaim rule row after `{OVERCLAIM_RULE_TABLE_HEADER}`: {trimmed}"
-            )
-        }));
-    }
-
-    assert!(
-        !rules.is_empty(),
-        "{CONTRACT_DOC_PATH} table `{OVERCLAIM_RULE_TABLE_HEADER}` must define at least one overclaim rule"
-    );
-    rules
-}
-
-fn parse_overclaim_rule(line: &str) -> Option<OverclaimRule> {
-    let trimmed = line.trim();
-    if !trimmed.starts_with('|') {
-        return None;
-    }
-
-    let mut cells = trimmed.trim_matches('|').split('|').map(str::trim);
-    let phrase = code_span_text(cells.next()?)?;
-    let bounded_replacement = code_span_text(cells.next()?)?;
-    if cells.next().is_some() {
-        return None;
-    }
-
-    Some(OverclaimRule::new(phrase, bounded_replacement))
-}
-
-fn code_span_text(cell: &str) -> Option<&str> {
-    cell.strip_prefix('`')?.strip_suffix('`')
-}
-
-fn is_markdown_table_separator(line: &str) -> bool {
-    line.trim_matches('|')
-        .split('|')
-        .map(str::trim)
-        .all(|cell| cell.chars().all(|ch| ch == '-'))
-}
-
-fn assert_rules_match_contract(rules: &[OverclaimRule], expected_rules: &[(&str, &str)]) {
-    let documented_rules = rules
-        .iter()
-        .map(|rule| (rule.phrase.as_str(), rule.bounded_replacement.as_str()))
-        .collect::<Vec<_>>();
-    assert_eq!(
-        documented_rules, expected_rules,
-        "{CONTRACT_DOC_PATH} must define exactly the documented starter-project/preflight overclaim rules"
-    );
-}
-
 fn normalize(text: &str) -> String {
-    let mut normalized = String::with_capacity(text.len());
-    for word in text.split_whitespace() {
-        if !normalized.is_empty() {
-            normalized.push(' ');
-        }
-        normalized.push_str(word);
-    }
-    normalized
-}
-
-fn normalize_lowercase(text: &str) -> String {
-    let mut normalized = String::with_capacity(text.len());
-    for word in text.split_whitespace() {
-        if !normalized.is_empty() {
-            normalized.push(' ');
-        }
-        for character in word.chars().flat_map(char::to_lowercase) {
-            normalized.push(character);
-        }
-    }
-    normalized
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
