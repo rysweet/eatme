@@ -77,8 +77,10 @@ fn gh_cli_client_uses_supported_check_fields_and_maps_final_states() {
     assert_eq!(checks.len(), 2);
     assert_eq!(checks[0].status, CheckStatus::Completed);
     assert_eq!(checks[0].conclusion, CheckConclusion::Success);
+    assert!(checks[0].required);
     assert_eq!(checks[1].status, CheckStatus::Completed);
     assert_eq!(checks[1].conclusion, CheckConclusion::Skipped);
+    assert!(!checks[1].required);
 }
 
 #[test]
@@ -288,6 +290,7 @@ fn github_check(name: &str) -> GitHubCheckRun {
         name: name.into(),
         status: CheckStatus::Completed,
         conclusion: CheckConclusion::Success,
+        required: true,
     }
 }
 
@@ -300,9 +303,15 @@ fn fake_gh_script() -> std::path::PathBuf {
         &script_path,
         r#"#!/bin/sh
 if [ "$1" = "pr" ] && [ "$2" = "checks" ]; then
-  case "$5" in
-    *conclusion*) echo "unexpected conclusion field" >&2; exit 9 ;;
+  case "$5 $6" in
+     *conclusion*) echo "unexpected conclusion field" >&2; exit 9 ;;
   esac
+  if [ "$4" = "--required" ]; then
+    cat <<'JSON'
+[{"name":"tests","state":"SUCCESS","bucket":"pass"}]
+JSON
+    exit 0
+  fi
   cat <<'JSON'
 [{"name":"tests","state":"SUCCESS","bucket":"pass"},{"name":"manual real Alice launch smoke","state":"SKIPPED","bucket":"skipping"}]
 JSON

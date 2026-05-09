@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use std::process::Command;
 use std::thread;
@@ -9,6 +10,9 @@ use super::{
     CheckConclusion, CheckRunEvidence, CheckStatus, CommandEvidence, DocsImpactReview,
     PREvidenceReview, QualityAuditCycle, ReadinessInput,
 };
+use errors::classify_gh_failure;
+
+mod errors;
 
 const DEFAULT_GH_BINARY: &str = "gh";
 
@@ -132,6 +136,7 @@ pub struct GitHubCheckRun {
     pub name: String,
     pub status: CheckStatus,
     pub conclusion: CheckConclusion,
+    pub required: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -198,6 +203,7 @@ where
                 status: check.status,
                 conclusion: check.conclusion,
                 head_sha: confirmed_pull_request.head_ref_oid.clone(),
+                required: check.required,
             })
             .collect();
 
@@ -326,16 +332,37 @@ impl GitHubReadinessClient for GhCliReadinessClient {
             "name,state,bucket".into(),
         ];
         let output = self.gh_json(&args)?;
+        let required_args = vec![
+            "pr".into(),
+            "checks".into(),
+            pr_number.to_string(),
+            "--required".into(),
+            "--json".into(),
+            "name,state,bucket".into(),
+        ];
+        let required_output = self.gh_json(&required_args)?;
         let response: Vec<GhCheckResponse> = serde_json::from_str(&output).map_err(|error| {
             ExternalServiceError::new(
                 ExternalServiceErrorKind::ParseFailed,
                 format!("failed to parse gh pr checks response: {error}"),
             )
         })?;
+        let required_response: Vec<GhCheckResponse> = serde_json::from_str(&required_output)
+            .map_err(|error| {
+                ExternalServiceError::new(
+                    ExternalServiceErrorKind::ParseFailed,
+                    format!("failed to parse gh pr checks --required response: {error}"),
+                )
+            })?;
+        let required_names: HashSet<String> = required_response
+            .into_iter()
+            .map(|check| check.name)
+            .collect();
 
         Ok(response
             .into_iter()
             .map(|check| GitHubCheckRun {
+                required: required_names.contains(&check.name),
                 name: check.name,
                 status: map_check_status(check.state.as_deref()),
                 conclusion: map_check_conclusion(check.state.as_deref(), check.bucket.as_deref()),
@@ -464,22 +491,4 @@ fn is_trusted_comment_association(author_association: Option<&str>) -> bool {
 
 fn normalize(value: Option<&str>) -> Option<String> {
     value.map(|value| value.trim().replace('-', "_").to_uppercase())
-}
-
-fn classify_gh_failure(stderr: &str) -> ExternalServiceError {
-    let lower = stderr.to_lowercase();
-    let kind = if lower.contains("rate limit") || lower.contains("secondary rate limit") {
-        ExternalServiceErrorKind::RateLimited
-    } else if lower.contains("timeout") || lower.contains("timed out") {
-        ExternalServiceErrorKind::Timeout
-    } else if lower.contains("502")
-        || lower.contains("503")
-        || lower.contains("504")
-        || lower.contains("temporarily unavailable")
-    {
-        ExternalServiceErrorKind::TemporarilyUnavailable
-    } else {
-        ExternalServiceErrorKind::CommandFailed
-    };
-    ExternalServiceError::new(kind, stderr)
 }

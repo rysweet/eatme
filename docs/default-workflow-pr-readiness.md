@@ -6,7 +6,8 @@ useful output.
 
 This page specifies the readiness behavior the gate requires: verify the exact
 PR head, run repository evidence commands directly without timeout wrappers,
-inspect GitHub metadata for that same head, require three quality-audit
+inspect GitHub metadata for that same head, classify required green checks
+separately from optional skipped jobs, require three quality-audit
 SEEK/VALIDATE/FIX cycles with a clean final cycle, preserve the bounded evidence
 contracts, and emit a narrowly scoped final artifact only after every gate
 passes.
@@ -15,8 +16,10 @@ passes.
 
 - [Readiness contract](#readiness-contract)
 - [Generic readiness procedure](#generic-readiness-procedure)
+- [Finalization components](#finalization-components)
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
+- [Check classification](#check-classification)
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
 - [Runnable evidence commands](#runnable-evidence-commands)
@@ -40,7 +43,7 @@ being reviewed.
 | Exact head | The PR head SHA equals the requested SHA. A mismatch blocks readiness. |
 | Direct execution | Repository evidence commands run directly, without shell timeout wrappers or background kill wrappers. |
 | Runnable evidence | Applicable repository-supported QA and scenario commands pass for the same local checkout. |
-| GitHub checks | Every current-head check run is complete and successful for that same SHA. Green checks are necessary but not sufficient. |
+| GitHub checks | Every required current-head check run is complete and successful for that same SHA. Optional skipped jobs are recorded separately and do not make a required green check look green. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
 | Quality audit | At least three SEEK/VALIDATE/FIX cycles complete, and the final cycle is clean. |
@@ -50,7 +53,7 @@ being reviewed.
 | Silver-thread/e2e gap matrix | When the PR touches lesson-session readiness docs, the scenario map and gap matrix name only the bounded user journey, remaining missing proof, and evidence still needed. |
 | Docs impact | Documentation changes build under strict MkDocs and do not record stale point-in-time evidence. |
 | Scope | No unrelated files or behavior are changed. |
-| Final artifact | The result begins with `MERGE_READY_EVIDENCE` only when every gate passes. Otherwise it begins with `NOT_MERGE_READY`. |
+| Final artifact | The result begins with `No-op` for an evidence refresh that needs no repository edits, `MERGE_READY_EVIDENCE` for a successful readiness decision, or `NOT_MERGE_READY` when any gate blocks readiness. |
 | PR evidence | The same-repository PR body or a trusted PR comment records current-head evidence, or the final artifact is `NOT_MERGE_READY` with the missing evidence named. |
 
 A previous wrapper failure is not a blocker when direct verification proves the
@@ -64,11 +67,13 @@ stale, pending, ambiguous, or tied to a different head, the gate reports
 
 Run the gate in this order:
 
-1. Verify the local branch is the PR branch and local `HEAD` equals the PR
-   `headRefOid`.
+1. Use a local checkout only when file inspection or command evidence is needed.
+   Before using local evidence, verify the checked-out PR branch and local
+   `HEAD` both match the PR `headRefOid`.
 2. Run applicable repository evidence commands directly, without timeout
    wrappers.
-3. Verify every check run is complete and successful for that same SHA.
+3. Classify the current-head check rollup into required green checks, optional
+   skipped jobs, failed checks, pending checks, and unknown checks.
 4. Verify `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE`.
 5. Inspect the starter-project preflight scenario wording if the PR touches that
    evidence contract.
@@ -83,8 +88,25 @@ Run the gate in this order:
 11. Review the same-repository PR body and trusted comments for current-head evidence.
 12. If the PR body or trusted comments are updated, reconfirm the PR head after the
     update. The reconfirmed head must still match the local evidence head.
-13. Emit `MERGE_READY_EVIDENCE` only when every required gate passed for the
-    reconfirmed head; otherwise emit `NOT_MERGE_READY` with the blocker.
+13. Emit `No-op` when the requested finalization needs no repository edits and
+    every no-op gate passed for the reconfirmed head. Emit
+    `MERGE_READY_EVIDENCE` when every readiness gate passed for the reconfirmed
+    head. Otherwise emit `NOT_MERGE_READY` with the blocker.
+
+## Finalization components
+
+The finalization workflow is implemented as a small evidence pipeline. Each
+component owns one decision and passes explicit facts to the next component; no
+component infers readiness from an older PR head or from uncommitted files.
+
+| Component | Responsibility | Output |
+| --- | --- | --- |
+| PR Metadata Reader | Reads live PR metadata with `gh pr view`, including `headRefOid`, state, draft status, mergeability, review decision, files, body, comments, reviews, and check rollup. | Current PR facts bound to one head SHA. |
+| Check Classifier | Separates required green checks from optional skipped jobs, failed checks, pending checks, and unknown checks. | A check summary with blockers named explicitly. |
+| Gap-Matrix Evidence Inspector | Confirms that gap-matrix or readiness evidence names the current `headRefOid` and matches the scoped lane. | Current-head evidence status: current, stale, missing, or inconsistent. |
+| Repository Scope Inspector | Confirms changed files are explained by the gap-matrix/readiness lane before accepting evidence. | Focused-scope or blocker decision. |
+| Edit Decision Gate | Allows repository edits only when evidence is stale, missing, or inconsistent with the documented scope. | Edit-required or no-op decision. |
+| Finalization Reporter | Emits the final artifact with head, checks, scoped evidence, blockers, and no-manual-merge status. | `No-op`, `MERGE_READY_EVIDENCE`, or `NOT_MERGE_READY`. |
 
 ## Configuration
 
@@ -120,25 +142,45 @@ The readiness gate consumes these `gh pr view` fields:
 | Field | Required value |
 | --- | --- |
 | `headRefOid` | Exact requested SHA |
+| `state` | `OPEN` while finalization evidence is collected |
+| `isDraft` | `false` |
 | `mergeStateStatus` | `CLEAN` |
 | `mergeable` | `MERGEABLE` |
-| `statusCheckRollup` | Every current-head check run is complete and successful for `headRefOid` |
+| `reviewDecision` | Reported as evidence; a blocking value is surfaced as a blocker. |
+| `files` | All changed files are explained by the scoped readiness lane. |
+| `body`, `comments`, and `reviews` | Same-repository or trusted evidence can be matched to the current `headRefOid`. |
+| `statusCheckRollup` | Every required current-head check run is complete and successful for `headRefOid`; optional skipped jobs are reported separately. |
 
-Fetch the PR head, merge state, mergeability, and check summary:
+Fetch the PR head, review state, changed files, trusted evidence surfaces, and
+check summary:
 
 ```bash
-gh pr view 164 \
-  --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+gh pr view 193 \
+  --json number,url,state,isDraft,headRefName,headRefOid,mergeStateStatus,mergeable,reviewDecision,files,body,comments,reviews,statusCheckRollup
 ```
 
-`statusCheckRollup` is green only when every check run for `headRefOid` has
-completed successfully. A check blocks readiness when it is pending, queued, in
-progress, requested, failing, errored, timed out, skipped, cancelled, missing, or
-reported for a different head. A successful check rollup for an older SHA is not
-evidence for the current head.
-
+A successful check rollup for an older SHA is not evidence for the current head.
 If the head changes during review, stop and restart the readiness verification
 for the newly requested SHA.
+
+## Check classification
+
+The Check Classifier turns `statusCheckRollup` into five buckets before any
+readiness or no-op decision is made:
+
+| Bucket | Meaning | Readiness effect |
+| --- | --- | --- |
+| Required green checks | Required checks whose `status` is complete and whose `conclusion` is success or neutral when branch protection accepts neutral. | Required for readiness. |
+| Optional skipped jobs | Jobs skipped by workflow conditions, such as deploy jobs that run only on the default branch or manually gated real Alice smoke jobs. | Recorded as optional evidence; not a blocker when branch protection does not require them. |
+| Failed checks | Required or unclassified checks with failure, error, timed-out, cancelled, action-required, or startup-failure conclusions. | Block readiness. |
+| Pending checks | Required or unclassified checks that are queued, requested, waiting, expected, or in progress. | Block readiness until complete. |
+| Unknown checks | Checks whose required/optional status cannot be determined from branch protection, workflow policy, or repository convention. | Block readiness until classified. |
+
+Skipped status is safe only for optional jobs. A skipped required check, a missing
+required check, or a check reported for any head other than `headRefOid` blocks
+readiness. The final artifact names both the required green checks and optional
+skipped jobs so reviewers can see that skipped jobs were classified rather than
+ignored.
 
 ## Starter-project evidence boundary
 
@@ -306,13 +348,15 @@ head, so committed exact-head evidence here would become self-stale.
 After the final commit is pushed, gather fresh exact-head evidence with:
 
 ```bash
-gh pr view 193 --json number,url,state,headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+gh pr view 193 \
+  --json number,url,state,isDraft,headRefName,headRefOid,mergeStateStatus,mergeable,reviewDecision,files,body,comments,reviews,statusCheckRollup
 ```
 
-Record the resulting `headRefOid`, command outcomes, GitHub check state, bounded
-change scope, and no-manual-merge decision outside the repository commit, such as
-in the same-repository PR body, a trusted PR comment, or status summary. Do not
-treat uncommitted local documentation edits as evidence for a PR head.
+Record the resulting `headRefOid`, command outcomes, required green checks,
+optional skipped jobs, bounded change scope, gap-matrix evidence status, and
+no-manual-merge decision outside the repository commit, such as in the
+same-repository PR body, a trusted PR comment, or status summary. Do not treat
+uncommitted local documentation edits as evidence for a PR head.
 
 The external PR #193 evidence must include these command outcomes for the final
 pushed head:
@@ -328,10 +372,12 @@ The allowed readiness conclusion for PR #193 is narrow: the final pushed head ma
 support only the lesson-session silver-thread/e2e gap-matrix documentation lane,
 with asset validation, generated adapter freshness, strict docs build,
 repository quality gates, three clean-ending quality-audit cycles, focused diff
-scope, current PR evidence, and GitHub checks tied to the externally recorded
-exact head. It does not claim full UI automation, rendering correctness,
-grading, creative assessment, Save completion, lesson completion, live classroom
-use, manual merge completion, or any evidence from uncommitted local files.
+scope, current PR evidence, and required green GitHub checks tied to the
+externally recorded exact head. Optional skipped jobs are listed as skipped and
+optional; they are not counted as green checks. The conclusion does not claim
+full UI automation, rendering correctness, grading, creative assessment, Save
+completion, lesson completion, live classroom use, manual merge completion, or
+any evidence from uncommitted local files.
 
 ## Historical PR #164 starter-project example
 
@@ -387,7 +433,7 @@ to the exact head.
 | --- | --- |
 | Head identity | PR number, branch name, and current `headRefOid`. |
 | Local command evidence | The applicable repository commands and pass/fail result for the same local checkout. |
-| GitHub Actions | Check rollup or check-run summary showing every current-head check run complete and successful for the same head. |
+| GitHub Actions | Check summary showing required current-head checks complete and successful for the same head, with optional skipped jobs listed separately. |
 | Diff scope | Changed files reviewed and why the scope is focused. |
 | Docs impact | Strict MkDocs result and the bounded documentation claim being supported. |
 | Quality audit | Three SEEK/VALIDATE/FIX cycles with the final cycle clean, or an explicit blocker. |
@@ -404,7 +450,8 @@ checks.
 ## No-op finalization record
 
 Use a no-op finalization only when the repository already contains the required
-implementation and documentation at the exact PR head. The record must include:
+implementation and documentation at the exact PR head. The record begins with the
+literal marker `No-op` and must include:
 
 | Field | Required value |
 | --- | --- |
@@ -414,6 +461,7 @@ implementation and documentation at the exact PR head. The record must include:
 | Local commands | Each repository-defined command, its exit result, and the bounded fact it proves. |
 | GitHub state | PR state, merge state, and check summary for the same head. |
 | No-op reason | A plain statement that no repository file changes are required because the current head already satisfies the documented contract. |
+| Gap-matrix evidence | Confirmation that scoped gap-matrix lane evidence is current for the same `headRefOid`, or the specific stale/missing evidence blocker. |
 | Quality audit | Three SEEK/VALIDATE/FIX cycles completed with a clean final cycle. |
 | No-merge statement | A statement that readiness was recorded without manually merging the PR. |
 
@@ -425,17 +473,36 @@ new head.
 A dirty worktree is never a no-op finalization source. Local edits that have not
 been committed and pushed make any exact-head readiness record stale.
 
+Use this shape for a no-op evidence refresh:
+
+```text
+No-op
+PR: #<number> (<headRefName>)
+Exact head: <headRefOid>
+Checks: required checks green; optional skipped jobs: <names or none>
+Gap-matrix lane evidence: current for <headRefOid> and scoped to <bounded lane>
+No-op reason: no repository file changes are required because the current head already satisfies the documented contract
+Blockers: none
+No manual merge: no git merge, gh pr merge, force-push, rebase, or equivalent manual merge operation was run
+```
+
 ## Final output contract
 
 The final result must begin with exactly one literal marker:
 
 | Marker | When allowed |
 | --- | --- |
+| `No-op` | The requested work is an evidence refresh or finalization check, the current PR head already satisfies the documented contract, required checks are green, optional skipped jobs are classified, scoped gap-matrix evidence is current, and no repository edits are required. |
 | `MERGE_READY_EVIDENCE` | Every readiness gate passed for the reconfirmed exact PR head, and any trusted PR body/comment mutation has been followed by another head check. |
 | `NOT_MERGE_READY` | Any gate is failing, pending, missing, ambiguous, tied to the wrong head, or not yet recorded as current-head PR evidence. |
 
-`MERGE_READY_EVIDENCE` is the only successful readiness artifact. It must name
-the exact head and the bounded evidence it proves:
+`No-op` is an edit-decision artifact, not a manual merge artifact. It is allowed
+only when the final report also states the exact head, required green checks,
+optional skipped jobs, scoped gap-matrix evidence, blockers, and no-manual-merge
+status.
+
+`MERGE_READY_EVIDENCE` is the successful readiness artifact for a merge-ready
+decision. It must name the exact head and the bounded evidence it proves:
 
 ```text
 MERGE_READY_EVIDENCE
@@ -450,7 +517,8 @@ Command evidence for this head:
 - TMPDIR=/tmp ./scripts/quality-gates.sh: passed
 
 GitHub evidence:
-- statusCheckRollup: every current-head check run complete and successful
+- required checks: every required current-head check run complete and successful
+- optional skipped jobs: <names or none>
 - mergeStateStatus: CLEAN
 - mergeable: MERGEABLE
 
@@ -484,7 +552,7 @@ and repeat exact-head verification against the new PR head.
 | Blocker | Minimal response |
 | --- | --- |
 | Head mismatch | Stop readiness for the old SHA and verify the requested new head. |
-| Failing, pending, cancelled, missing, or wrong-head checks | Fix the failing check, wait for completion, or rerun the missing check before readiness. |
+| Failing, pending, cancelled, missing, wrong-head, or unclassified checks | Fix the failing check, wait for completion, rerun the missing check, or classify optional skipped jobs before readiness. |
 | Dirty merge state | Resolve only the mergeability issue. |
 | Overclaiming scenario language | Edit the canonical scenario wording and regenerate adapters if affected. |
 | Stale generated adapter | Regenerate adapters from canonical sources. |

@@ -190,23 +190,39 @@ fn docs_impact_review_requires_strict_mkdocs_and_bounded_claims() {
 }
 
 #[test]
-fn github_actions_review_requires_every_current_head_check_to_complete_successfully() {
+fn github_actions_review_accepts_only_required_green_and_optional_skipped_checks() {
     let review = passing_review();
     assert!(
         GitHubActionsReview::validate(&review).is_ok(),
         "successful completed check runs for the exact head must pass"
     );
 
-    let skipped_check = ReadinessInput {
+    let optional_skipped_check = ReadinessInput {
         check_runs: vec![CheckRunEvidence {
             name: "manual real Alice launch smoke".into(),
             status: CheckStatus::Completed,
             conclusion: CheckConclusion::Skipped,
             head_sha: HEAD.into(),
+            required: false,
         }],
         ..passing_review()
     };
-    let result = GitHubActionsReview::validate(&skipped_check).unwrap_err();
+    assert!(
+        GitHubActionsReview::validate(&optional_skipped_check).is_ok(),
+        "optional skipped jobs are recorded separately and must not block readiness"
+    );
+
+    let required_skipped_check = ReadinessInput {
+        check_runs: vec![CheckRunEvidence {
+            name: "tests".into(),
+            status: CheckStatus::Completed,
+            conclusion: CheckConclusion::Skipped,
+            head_sha: HEAD.into(),
+            required: true,
+        }],
+        ..passing_review()
+    };
+    let result = GitHubActionsReview::validate(&required_skipped_check).unwrap_err();
     assert_eq!(result.marker(), "NOT_MERGE_READY");
     assert!(result.blocker().contains("skipped"));
 
@@ -216,6 +232,7 @@ fn github_actions_review_requires_every_current_head_check_to_complete_successfu
             status: CheckStatus::InProgress,
             conclusion: CheckConclusion::Unknown,
             head_sha: HEAD.into(),
+            required: true,
         }],
         ..passing_review()
     };
@@ -408,6 +425,7 @@ fn check_passed(name: &str) -> CheckRunEvidence {
         status: CheckStatus::Completed,
         conclusion: CheckConclusion::Success,
         head_sha: HEAD.into(),
+        required: true,
     }
 }
 

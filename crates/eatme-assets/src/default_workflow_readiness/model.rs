@@ -37,6 +37,7 @@ pub struct CheckRunEvidence {
     pub status: CheckStatus,
     pub conclusion: CheckConclusion,
     pub head_sha: String,
+    pub required: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

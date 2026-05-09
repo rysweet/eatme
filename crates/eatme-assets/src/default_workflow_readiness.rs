@@ -47,6 +47,10 @@ impl ReadinessArtifact {
     }
 
     fn ready(input: &ReadinessInput) -> Self {
+        let required_checks = check_names(input, |check| check.required);
+        let optional_skipped_checks = check_names(input, |check| {
+            !check.required && check.conclusion == CheckConclusion::Skipped
+        });
         let text = format!(
             "MERGE_READY_EVIDENCE\n\
              PR: #{} ({})\n\
@@ -56,11 +60,12 @@ impl ReadinessArtifact {
              - cargo run -q -p eatme-cli -- assets validate --json: passed\n\
              - cargo run -q -p eatme-cli -- assets generate-gadugi --check --json: passed\n\
              - mkdocs build --strict: passed\n\
-             - TMPDIR=/tmp ./scripts/quality-gates.sh: passed\n\n\
-             GitHub evidence:\n\
-             - statusCheckRollup: every current-head check run completed successfully\n\
-             - mergeStateStatus: {}\n\
-             - mergeable: {}\n\n\
+              - TMPDIR=/tmp ./scripts/quality-gates.sh: passed\n\n\
+              GitHub evidence:\n\
+              - required checks: {}\n\
+              - optional skipped jobs: {}\n\
+              - mergeStateStatus: {}\n\
+              - mergeable: {}\n\n\
              Review evidence:\n\
              - diff scope: focused on the default-workflow PR readiness evidence lane\n\
              - docs impact: strict MkDocs passed; docs claim only bounded readiness evidence\n\
@@ -72,6 +77,8 @@ impl ReadinessArtifact {
             input.head_ref_name,
             input.head_ref_oid,
             input.local_head_sha,
+            required_checks,
+            optional_skipped_checks,
             input.merge_state_status,
             input.mergeable,
             input.pr_evidence.location
@@ -397,5 +404,19 @@ fn display_or_unknown(value: &str) -> &str {
         "unknown"
     } else {
         value
+    }
+}
+
+fn check_names(input: &ReadinessInput, include: impl Fn(&CheckRunEvidence) -> bool) -> String {
+    let names = input
+        .check_runs
+        .iter()
+        .filter(|check| include(check))
+        .map(|check| check.name.as_str())
+        .collect::<Vec<_>>();
+    if names.is_empty() {
+        "none".into()
+    } else {
+        names.join(", ")
     }
 }

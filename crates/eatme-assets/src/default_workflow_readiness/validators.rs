@@ -106,11 +106,19 @@ pub(super) fn validate_check_run(
             "wait for every current-head check run to complete",
         ));
     }
+    if !check.required && check.conclusion == CheckConclusion::Skipped {
+        return Ok(());
+    }
     if check.conclusion != CheckConclusion::Success {
         return Err(ReadinessArtifact::blocked(
             input,
             format!(
-                "check '{}' concluded {}",
+                "{} check '{}' concluded {}",
+                if check.required {
+                    "required"
+                } else {
+                    "optional"
+                },
                 check.name,
                 check_conclusion_label(&check.conclusion)
             ),
