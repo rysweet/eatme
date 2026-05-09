@@ -16,7 +16,6 @@ use std::fs;
 use std::path::Path;
 
 mod assertions;
-mod contract_evidence;
 mod desktop_proof;
 mod no_go;
 mod output;
@@ -25,9 +24,6 @@ pub use assertions::LessonActionAssertionEvidence;
 use assertions::{
     action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,
 };
-pub use contract_evidence::{ContractDiagnostic, ContractEvidenceItem};
-pub(crate) use contract_evidence::{error_diagnostic, evidence_item};
-use contract_evidence::{readiness_contract_evidence, readiness_diagnostics};
 pub use desktop_proof::DesktopProofContract;
 use desktop_proof::desktop_proof_contract;
 pub use no_go::LessonSessionNoGoContract;
@@ -95,8 +91,6 @@ pub struct LessonSessionReadinessReport {
     pub contract_check: LessonSessionContractCheck,
     pub execute_requested: Option<bool>,
     pub target_evidence: Vec<LessonTargetEvidence>,
-    pub diagnostics: Vec<ContractDiagnostic>,
-    pub contract_evidence: Vec<ContractEvidenceItem>,
     pub issues: Vec<String>,
     pub limitations: Vec<String>,
 }
@@ -187,9 +181,6 @@ pub fn check_lesson_session_readiness(
     let not_yet_shown = not_yet_shown(&evidence_progress, &evidence_boundaries);
     let desktop_next_action = desktop_next_action_summary(&target_evidence);
     let unproven_claims = unproven_claims();
-    let diagnostics = readiness_diagnostics(execute_requested, &target_evidence, &issues);
-    let contract_evidence =
-        readiness_contract_evidence(execute_requested, &target_evidence, &readiness_status);
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
@@ -213,8 +204,6 @@ pub fn check_lesson_session_readiness(
         contract_check,
         execute_requested,
         target_evidence,
-        diagnostics,
-        contract_evidence,
         issues,
         limitations: limitations(),
     })
@@ -271,7 +260,10 @@ fn inspect_target_evidence(
                 .iter()
                 .map(|value| (*value).into())
                 .collect(),
-            missing_required_actions: required_ui_action_ids(),
+            missing_required_actions: REQUIRED_UI_ACTION_IDS
+                .iter()
+                .map(|value| (*value).into())
+                .collect(),
             blockers: required_action_evidence_blockers(role, &[]),
             no_go_contracts: Vec::new(),
         };
@@ -346,7 +338,10 @@ fn inspect_target_evidence(
         .and_then(serde_json::Value::as_str)
         .map(str::to_string);
     let mut required_actions = Vec::new();
-    let mut missing_required_actions = required_ui_action_ids();
+    let mut missing_required_actions = REQUIRED_UI_ACTION_IDS
+        .iter()
+        .map(|value| (*value).to_string())
+        .collect::<Vec<_>>();
     let mut ui_action_contract_readable = false;
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
@@ -386,6 +381,7 @@ fn inspect_target_evidence(
                                 check_first_lesson_next_action_evidence(&evidence_root, &resolved);
                             issues.extend(first_lesson_next_action.issue_when_invalid());
                             issues.extend(first_lesson_next_action.boundary_issues());
+                            issues.extend(first_lesson_next_action.proof_artifact_issues());
                             desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
                                 check_visible_desktop_evidence(&evidence_root, &resolved)
@@ -429,13 +425,6 @@ fn inspect_target_evidence(
         blockers,
         no_go_contracts,
     }
-}
-
-fn required_ui_action_ids() -> Vec<String> {
-    REQUIRED_UI_ACTION_IDS
-        .iter()
-        .map(|value| (*value).into())
-        .collect()
 }
 
 fn required_action_evidence_blockers(

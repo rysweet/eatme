@@ -49,12 +49,12 @@ Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
 and any hand-authored Gadugi regression scenarios.
 
-The current committed inventory has 69 scenario YAML files:
+The current committed inventory has 93 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
-| Canonical eatme scenarios | 34 |
-| Generated Gadugi adapters | 34 |
+| Canonical eatme scenarios | 46 |
+| Generated Gadugi adapters | 46 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
@@ -65,7 +65,7 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 69'
+    - '"scenario_asset_count": 93'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
@@ -251,14 +251,14 @@ The Rust asset validation and generator commands do not require Node. Keeping
 
 ### Valid generated count
 
-For the current 53-file inventory, validation output
+For the current 93-file inventory, validation output
 includes:
 
 ```json
 {
   "schema_version": "eatme.assets/validation/v1",
   "passed": true,
-  "scenario_asset_count": 53,
+  "scenario_asset_count": 93,
   "errors": []
 }
 ```
@@ -269,7 +269,7 @@ count:
 ```yaml
 stdout_contains:
   - '"passed": true'
-  - '"scenario_asset_count": 53'
+  - '"scenario_asset_count": 93'
 ```
 
 ### Stale adapter check

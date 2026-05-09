@@ -9,14 +9,16 @@ it does not generate new proof.
 The Rust API and JSON output preserve legacy fields such as
 `evidence_progress`, `evidence_boundaries`, `issues`, and `limitations` for
 existing consumers while adding the user-facing report shape described here. The
-`alice run-first-lesson-readiness` command renders those user-facing sections
-directly when it is run without `--json`.
+plain CLI renders the user-facing sections directly.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
-the bounded claim named in the report. It never implies full UI automation,
-grading, creative assessment, visible rendering correctness, Save completion, or
-first-lesson completion unless explicit evidence for that exact claim exists.
+the bounded claim named in the report. It never implies full UI automation, full
+world execution, grading, creative assessment, visible rendering correctness,
+Save completion, deployed sharing/platform success, or first-lesson completion
+unless explicit evidence for that exact claim exists.
+The artifact shape and wording rules for preserving this boundary are documented
+in [Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Quick start
 
@@ -24,8 +26,7 @@ Check an existing first-lesson comparison manifest:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-readiness \
-  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json \
-  --json
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json
 ```
 
 Run the bounded first-lesson comparison and readiness sequence:
@@ -51,10 +52,9 @@ runs/comparisons/first-lessons-real-ui-actions/<run-id>/comparison-manifest.json
 
 and immediately applies the same readiness report to that manifest.
 
-Use `alice check-lesson-readiness --json` for the structured readiness API. Use
-`alice run-first-lesson-readiness` without `--json` when a reviewer needs the
-plain human report; add `--json` to that sequence command when a consumer needs
-the structured wrapper around the same readiness result.
+Use `--json` when a consumer needs the structured API instead of the plain human
+report. The same commands remain the entry points for plain and structured
+readiness reporting.
 
 ## What the report decides
 
@@ -96,26 +96,15 @@ traversal, symlink escapes, unreadable files, malformed JSON, wrong schema
 versions, empty artifacts, and artifact references outside the comparison
 evidence root are not shown as evidence.
 
-The formal executable validation surface is the readiness report itself.
-`contract_evidence[]` represents required contract evidence; missing, invalid,
-unsafe, not-observed, blocked-without-structure, or stale required entries remain
-visible and produce structured `diagnostics[]`.
-`alice check-lesson-readiness` emits the structured JSON report.
-`alice run-first-lesson-readiness` emits either the structured wrapper with
-`--json` or the plain human report without it. Both commands exit non-zero when
-required contract evidence fails. A report may still exit zero with
-`status: "blocked"` only when the blocker is explicit, structured, and attached
-to the bounded claim that is not yet shown.
-
 Generated Gadugi adapters remain generated artifacts. Change scenario intent in
 the editable YAML under `assets/scenarios/eatme/`, then regenerate adapters
 rather than hand-editing generated files.
 
 ## Plain report contract
 
-Plain output from `alice run-first-lesson-readiness` without `--json` is for
-reviewers, instructors, and PR readers. It renders the readiness heading, one
-`Desktop proof` line, and then the user-facing sections in this order:
+Plain output is for reviewers, instructors, and PR readers. It renders the
+readiness heading, one `Desktop proof` line, and then the user-facing sections in
+this order:
 
 | Section | When it appears | Meaning |
 | --- | --- | --- |
@@ -187,12 +176,14 @@ does not make another boundary present.
 | `visible_rendering` | Visible rendering scenario evidence | Explicit visible rendering observation from the run boundary. | Visible rendering correctness, animation correctness, creative quality, or complete visual validation. |
 | `grading` | Grading scenario evidence | Explicit grading evidence from a scenario that owns grading. | Any automatic grade when no grading evidence exists. |
 | `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. When evidence is missing, limited, or unavailable, the report can surface available evidence and suggest bounded next steps for the learner's creative work in this scenario. | Creativity grading, quality judgment, learner-world grading, instructor judgment, or marked lesson completion. |
-| `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, or substep evidence alone. |
+| `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, substep evidence, full world execution, deployed sharing, or platform success alone. |
 
 ### User-facing state wording
 
-Structured JSON keeps machine states, but the plain sequence output maps them
-to user-facing language:
+Structured JSON keeps machine states, but plain output maps them to user-facing
+language. These are readiness output states; artifact input status values are
+defined separately in the
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 | JSON state | Plain wording | Meaning |
 | --- | --- | --- |
@@ -202,6 +193,11 @@ to user-facing language:
 | `not_observed` | `not yet shown` | A producer ran, but the expected observation was not made. |
 | `blocked` | `not yet shown` or `not yet proven` with the supplied reason | RabbitHole or original Alice supplied an explicit reason the claim cannot yet be shown. |
 
+Legacy boundary artifact inputs may use `declared` or `observed` to describe
+metadata availability. Those values are not readiness output states; they
+normalize to output `missing` unless distinct boundary evidence is present, with
+the metadata state preserved for diagnostics.
+
 Primary human output avoids internal terms such as `no_go`,
 `ui-action-contract`, `desktop-run-pixel`, and raw artifact paths. JSON reference
 sections may document those stable field names for automation consumers.
@@ -209,7 +205,7 @@ sections may document those stable field names for automation consumers.
 ## Canonical unproven claims
 
 `unproven_claims` is the canonical home for the six non-claims that must remain
-visible in JSON and in the plain sequence report:
+visible in plain output and JSON:
 
 ```text
 Full Alice UI automation is not proven.
@@ -223,6 +219,10 @@ First-lesson completion is not proven.
 Legacy `limitations` remains for compatibility. It may be a broader or superset
 list for older consumers, but it must include these six claims exactly enough for
 automation to preserve them. New consumers should read `unproven_claims` first.
+The canonical non-claims are produced by readiness output even when a
+next-action artifact omits its optional `does_not_claim`/`doesNotClaim` input.
+If that input is present, it is validated and merged into the desktop
+next-action non-claims instead of replacing the canonical list.
 
 Save wording has one extra rule: Save action, Save option, Save shortcut, and
 Save proof-artifact availability may be shown, but Save completion remains
@@ -264,8 +264,6 @@ Top-level fields:
 | `role_readiness` | array | Role-specific readiness envelopes. |
 | `lesson_session_readiness` | object | Backward-compatible student readiness envelope. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
-| `contract_evidence` | array | Required executable evidence checklist. Each item has `id`, `state`, `required`, and `summary`; required entries must be `present` or explicitly `blocked` with a structured blocker to avoid `passed: false`. |
-| `diagnostics` | array | Structured contract diagnostics with `code`, `severity`, `field`, optional `expected`, and `message`. Any `error` diagnostic explains why the command exits non-zero. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the six canonical `unproven_claims`. |
@@ -312,12 +310,12 @@ appropriate for the failure mode.
 | --- | --- | --- |
 | `status` | string | RabbitHole next-action state, such as `present` or `blocked`. |
 | `summary` | string | Safe user-facing summary. |
-| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole. |
-| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next. |
+| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole; empty when the optional artifact input is absent. |
+| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next; empty when the optional artifact input is absent. |
 | `observations` | array of strings | Plain observations from the next-action evidence. |
-| `does_not_prove` | array of strings | Non-claims preserved for the desktop next-action section. |
+| `does_not_prove` | array of strings | Canonical non-claims plus any validated optional `does_not_claim`/`doesNotClaim` input values preserved for the desktop next-action section. |
 
-Example:
+Example excerpt:
 
 ```json
 {
@@ -404,12 +402,10 @@ Save option evidence is shown as an observed option/action only.
 Save completion is not yet proven.
 ```
 
-Unsafe wording:
+Unsafe wording categories:
 
-```text
-The project was saved successfully.
-The first lesson was completed.
-```
+- saved-project success
+- first-lesson completion
 
 ### Review a creative-assessment gap safely
 
@@ -421,11 +417,9 @@ reviewer needs.
 
 Do not translate a creative-assessment gap into:
 
-```text
-The learner's world was graded.
-The creative work is good or bad.
-The first lesson is complete.
-```
+- learner-world grading
+- creative-quality judgment
+- first-lesson completion
 
 ### Keep evidence assets editable
 
@@ -472,7 +466,7 @@ The Rust implementation:
    `desktop_next_action`, `unproven_claims`, and boundary-facing evidence items.
 2. Maps existing progress and boundary states to user-facing `shown`, `not yet
    shown`, and `not yet proven` wording without exposing internal artifact paths
-   in the plain sequence output.
+   in plain output.
 3. Emits top-level `desktop_next_action` only for valid, safe, current RabbitHole
    evidence; otherwise it leaves the condition in `not_yet_shown`, `issues`, or
    legacy progress/boundary fields.
@@ -480,8 +474,7 @@ The Rust implementation:
    `lesson_session_readiness`, `role_readiness`, `issues`, and `limitations`.
 5. Makes `unproven_claims` the canonical six non-claims and keeps `limitations`
    as compatibility output that includes those six.
-6. Renders `alice run-first-lesson-readiness` without `--json` as readiness
-   heading, `Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next
-   action`, and `Unproven`.
+6. Renders the plain CLI as readiness heading, `Desktop proof`, `Shown`, `Not
+   yet shown`, optional `Desktop next action`, and `Unproven`.
 7. Keeps Save action/artifact evidence separate from Save completion unless an
    explicit Save-completion evidence item exists.

@@ -15,19 +15,21 @@ through asset and adapter checks. The contract connects four surfaces:
 
 The readiness contract is deliberately outside-in. It reports required assets,
 manifests, first-lesson automation scenario evidence, and not-yet-shown states
-as structured JSON and, for the sequence command, a plain user-facing report. It
-does not implement missing Alice desktop affordances, does not automate a
-complete lesson, does not perform creative assessment, and does not grade
-student worlds.
+in machine-readable and user-facing forms. It does not implement missing Alice
+desktop affordances, does not automate a complete lesson, does not perform
+creative assessment, and does not grade student worlds.
 
 For the conservative original Alice and RabbitHole boundary contract for Select
 Project, procedure/edit, Save option/action evidence, visible rendering, grading,
 creative assessment, and first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
 defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
-`Desktop next action`, and `Unproven` sequence output, plus additive JSON
+`Desktop next action`, and `Unproven` output, plus additive JSON
 `shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
 `unproven_claims` fields while preserving legacy progress and boundary fields.
+For the artifact shape, filler rejection, and non-claim wording contract for
+those evidence surfaces, see
+[Evidence Artifact Contract](evidence-artifact-contract.md).
 
 ## Scenario map
 
@@ -47,106 +49,6 @@ targets unless a harness owns that behavior.
 
 Instructor and teacher mean the same role in this contract unless a scenario
 explicitly distinguishes them.
-
-## Formal executable contract validation
-
-This section defines the executable contract the formal implementation satisfies
-with structured fields and focused tests.
-
-Lesson-session readiness is accepted only when the manifest contract and the
-evidence contract are executable. The validator checks the selected
-`comparison-manifest.json`; it must not infer readiness from docs, generated
-adapter prose, or unsupported automation claims.
-
-The executable contract has three layers:
-
-| Layer | Command | Required result |
-| --- | --- | --- |
-| Manifest contract | `cargo run -q -p eatme-cli -- alice check-lesson-session --manifest <comparison-manifest.json> --json` | `passed: true`; matching scenario id; supported contract schema; non-empty roles, steps, evidence, and boundaries; first-lesson steps and non-claims present. |
-| Readiness evidence | `cargo run -q -p eatme-cli -- alice check-lesson-readiness --manifest <comparison-manifest.json> --json` | `passed: true`; first-lesson scenario; `--execute` evidence present; baseline and modernized target evidence; required assertions, UI action ids, proof-artifact states, and any explicit blockers normalized. |
-| Sequence gate | `cargo run -q -p eatme-cli -- alice run-first-lesson-readiness --run-id <run-id> --json --execute` | Writes the comparison manifest, immediately applies the same readiness check, and exits non-zero if the generated evidence is incomplete. |
-
-`check-lesson-session` and `check-lesson-readiness` are structured check
-surfaces. Use their JSON fields for automation and review. The plain human
-readiness report is produced by `run-first-lesson-readiness` when `--json` is
-omitted.
-
-`check-lesson-session` and `check-lesson-readiness` fail closed. A missing
-contract field, wrong schema, wrong scenario id, missing target, manifest-only
-run, malformed JSON, unsafe artifact path, out-of-root artifact, missing
-required action id, missing required assertion, or unsupported desktop action
-that lacks a structured blocker is a validation failure. JSON CLI checks
-synthesize a safe report with diagnostics before non-zero exit for malformed
-comparison-manifest JSON.
-
-`diagnostics[]` is the stable automation surface for formal contract failures:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `code` | string | Stable category such as `missing_lesson_session_contract`, `invalid_lesson_session_contract`, `execution_not_requested`, `missing_target_evidence`, `missing_required_action`, `malformed_comparison_manifest`, or `contract_validation_failed`. |
-| `severity` | string | `error` for a blocking contract failure or `warning` for a non-blocking compatibility note. Readiness commands exit non-zero when any `error` is present. |
-| `field` | string | Contract field, JSON path, or evidence boundary being checked. |
-| `expected` | string | Optional human-readable expectation for diagnostics that name a missing value. |
-| `message` | string | Safe, actionable diagnostic without absolute host paths, raw artifact contents, secrets, environment dumps, screenshots, or logs. |
-
-Target failed manifest-contract report:
-
-```json
-{
-  "schema_version": "eatme.alice-lesson-session-check/v1",
-  "passed": false,
-  "scenario_id": "first-lessons-real-ui-actions",
-  "issues": [
-    "lesson_session_contract required_session_steps must include \"student saves the project and records one next revision\""
-  ],
-  "diagnostics": [
-    {
-      "code": "invalid_lesson_session_contract",
-      "severity": "error",
-      "field": "lesson_session_contract.required_session_steps",
-      "message": "lesson_session_contract required_session_steps must include exact entry \"student saves the project and records one next revision\""
-    }
-  ]
-}
-```
-
-Target not-ready evidence report:
-
-```json
-{
-  "schema_version": "eatme.alice-lesson-session-readiness/v1",
-  "passed": false,
-  "status": "not_ready",
-  "readiness_status": "incomplete",
-  "issues": [
-    "comparison manifest must be produced with --execute to contain target launch evidence"
-  ],
-  "contract_evidence": [
-    {
-      "id": "execute_requested",
-      "state": "missing",
-      "required": true,
-      "summary": "Executed comparison evidence is not yet shown."
-    }
-  ],
-  "diagnostics": [
-    {
-      "code": "execution_not_requested",
-      "severity": "error",
-      "field": "execute_requested",
-      "message": "comparison manifest must be produced with --execute to contain target launch evidence"
-    }
-  ]
-}
-```
-
-A missing, invalid, unsafe, not-observed, stale, or blocked-without-structure
-required entry fails the contract. A structurally valid `blocked` report can pass
-only when the blocker is explicit, structured, and attached to the bounded claim
-that is not yet shown; that blocker does not produce an `error` diagnostic. The
-report remains a blocked readiness state and must not be described as completed
-UI automation, Save completion, grading, creative assessment, visible rendering
-correctness, or first-lesson completion.
 
 ## First-lesson next action readiness
 
@@ -394,12 +296,10 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow. The JSON report emits `shown_evidence[]`,
-`not_yet_shown[]`, optional `desktop_next_action`, and `unproven_claims` while
-still keeping Save Project and Select Project proof-artifact categories in
-legacy `evidence_progress.items[]`. The sequence command renders the matching
-`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
-`Unproven` sections when run without `--json`.
+student first-lesson flow. The plain output renders `Desktop proof`, `Shown`,
+`Not yet shown`, optional `Desktop next action`, and `Unproven`. JSON adds
+the matching user-facing arrays while still keeping Save Project and Select
+Project proof-artifact categories in legacy `evidence_progress.items[]`.
 Declarations come from the modernized target's desktop next-action evidence; if
 that evidence or a category declaration is absent, the category remains visible
 as not yet shown.
@@ -524,7 +424,7 @@ Top-level fields:
 | `shown_evidence` | array | User-facing evidence facts that are shown by accepted evidence. |
 | `not_yet_shown` | array | User-facing missing, invalid, not-observed, or blocked claims. |
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable to the current run. Missing or invalid evidence is represented through not-yet-shown, issues, or legacy fields instead. |
-| `unproven_claims` | array | Canonical non-claims that remain visible in JSON and in the sequence command's plain output. |
+| `unproven_claims` | array | Canonical non-claims that remain visible in plain output and JSON. |
 | `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
 | `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints using explicit `present`, `missing`, `invalid`, `not_observed`, and `blocked` states. |
 | `required_evidence` | array of strings | Durable evidence names required by the readiness check, including Save Project and Select Project proof-artifact state entries. |
@@ -532,8 +432,6 @@ Top-level fields:
 | `lesson_session_readiness` | object | Backward-compatible normalized student readiness envelope. |
 | `role_readiness` | array | Normalized readiness envelopes for `instructor` and `student`. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
-| `contract_evidence` | array | Executable contract-evidence checklist entries. Each entry has `id`, `state`, `required`, and `summary`; missing, invalid, unsafe, not-observed, stale, or blocked-without-structure required entries prevent silent success. |
-| `diagnostics` | array | Structured validation diagnostics with `code`, `severity`, `field`, optional `expected`, and `message`. Any `error` diagnostic makes readiness commands exit non-zero. A structurally valid `blocked` report has no `error` diagnostic for the explicit blocker itself. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `evidence_progress.next_missing_real_desktop_proof` | string or omitted | Plain next missing real-desktop proof after the current window/action diagnostics, such as Alice window activation, Run-window observation, desktop execution, screenshot capture, Run pixel observation, desktop next-action evidence, Save Project proof artifact, or Select Project proof artifact. This value uses display-safe evidence labels rather than internal artifact paths. |
 | `target_evidence` | array | Per-target launch/action evidence for baseline and modernized targets. |
@@ -547,10 +445,9 @@ Consumers that need the bounded automation scenarios contract should read
 
 ### Evidence progress API
 
-`evidence_progress` is the shared progress object used by JSON output and the
-sequence command's plain CLI output. It reports observed evidence state only; it
-does not grade the lesson, prove UI completion, or collapse blocked evidence
-into missing evidence.
+`evidence_progress` is the shared progress object used by JSON output and plain
+CLI output. It reports observed evidence state only; it does not grade the
+lesson, prove UI completion, or collapse blocked evidence into missing evidence.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -584,7 +481,8 @@ Project proof-artifact item example:
 ```
 
 This means proof collection hit an explicit boundary. It does not mean Alice
-completed a lesson, saved a learner world through full UI automation, or graded
+completed a lesson, fully executed a learner world, saved a learner world through
+full UI automation, deployed sharing, proved platform success, or graded
 creative work.
 
 ### Desktop proof contract
@@ -597,7 +495,7 @@ automation. It reports what happened to the modernized desktop proof attempt:
 | `skipped` | Execution was not requested, or no modernized target evidence exists. This is a deliberate manual smoke skip, not a failed proof. |
 | `unsupported_environment` | Execution was requested, but the modernized target could not launch desktop proof collection, for example because Alice home resolution or required target paths failed. |
 | `launched_but_unverified` | Alice launch evidence exists, but Run-window, desktop execution, screenshot, or pixel-observation proof is missing, blocked, invalid, or not observed. |
-| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, rendering correctness, grading, save behavior, or creative assessment. |
+| `verified` | The modernized evidence includes Run-window dispatch, desktop execution, visible screenshot, and observed pixel evidence. This still does not prove complete lesson automation, full world execution, rendering correctness, grading, save behavior, deployed sharing/platform success, or creative assessment. |
 
 This legacy desktop proof contract includes `reason_code`, `detail`,
 `target_role`, and optional `artifact` fields so CI and reports can preserve the
@@ -671,8 +569,7 @@ from the report.
 Artifact paths emitted by readiness are evidence-root-relative paths from the
 declaration. The readiness report must not emit absolute host paths for Save
 Project or Select Project proof artifacts, must not read the referenced project
-artifact contents, and must not embed artifact contents in JSON or the sequence
-command's plain output.
+artifact contents, and must not embed artifact contents in JSON or plain output.
 RabbitHole metadata and blockers are normalized into summaries; raw metadata and
 raw blocker objects are not part of the shared progress-item schema.
 
@@ -944,9 +841,8 @@ This is acceptable first-lesson evidence when the report also includes
 
 ### Student flow: inspect first-lesson scenario evidence
 
-When `alice run-first-lesson-readiness` is run without `--json`, boundary
-reporting makes the plain output name shown and not-yet-shown scenario evidence
-boundaries:
+Boundary reporting makes plain output name shown and not-yet-shown scenario
+evidence boundaries:
 
 ```text
 First-lesson automation scenario readiness: not ready
@@ -1117,5 +1013,5 @@ summary in the PR description:
 | Readiness output | Student first-lesson reports expose normalized `status`, `lesson_session_readiness`, `target_evidence[]`, `evidence_boundaries[]`, and `evidence_progress.items[]`; instructor-only changes do not claim a readiness report unless a harness produces one. |
 | First-lesson scenario evidence | Reports preserve target-local launch/action diagnostics, project proof-artifact, readiness progress, and boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion as `present`, `missing`, `invalid`, `not_observed`, or `blocked`, with normalized blocker summaries when supplied. |
 | Unsupported desktop actions | Unsupported desktop actions are explicit blockers that report `blocked`. |
-| Boundaries | The change does not claim full UI automation, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, or deployed-service status unless distinct explicit evidence exists. |
+| Boundaries | The change does not claim full UI automation, full world execution, visible rendering correctness, Save completion, grading, creative assessment, learner-world grading, first-lesson completion, complete Alice coverage, deployed sharing/platform success, or deployed-service status unless distinct explicit evidence exists. |
 | Quality gate | `./scripts/quality-gates.sh` passed. |

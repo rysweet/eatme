@@ -1,452 +1,329 @@
 # Default-workflow PR readiness
 
-Default-workflow PR readiness is the exact-head recovery gate used when a pull
-request needs a bounded merge-readiness decision and an owner-free wrapper exit,
-including `NO_OP_GUARD`, did not produce usable evidence.
+## PR #175 evidence contract
 
-The workflow treats `NO_OP_GUARD` as a recovery trigger, not as success. It
-fetches the PR branch or PR ref, checks out the exact GitHub `headRefOid` in
-detached mode, runs mandatory repository evidence without timeout wrappers,
-records at least three SEEK/VALIDATE/FIX audit cycles, and renders either
-`MERGE_READY` or `NOT_MERGE_READY`.
+This page is the self-contained recovery artifact for PR #175. It records
+bounded evidence for a validated PR evidence head, GitHub PR metadata observed
+at evidence-capture time, and the publication-head boundary for this artifact.
 
-GitHub Actions being green is necessary but not sufficient. A ready decision
-also requires non-draft mergeable PR metadata, runnable repository evidence,
-documentation-impact review, focused diff scope, PR description evidence, and a
-clean final quality-audit cycle.
+This is evidence-contract finalization, not validation completion. Treat every
+claim below as limited to the command, timestamp, and observed value that
+supports it.
 
-## Contents
+## Scope
 
-- [Readiness contract](#readiness-contract)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Inputs and outputs](#inputs-and-outputs)
-- [Head alignment gate](#head-alignment-gate)
-- [PR metadata auditor](#pr-metadata-auditor)
-- [GitHub Actions auditor](#github-actions-auditor)
-- [Runnable evidence runner](#runnable-evidence-runner)
-- [Quality audit cycles](#quality-audit-cycles)
-- [Focused diff auditor](#focused-diff-auditor)
-- [Docs impact auditor](#docs-impact-auditor)
-- [PR description evidence auditor](#pr-description-evidence-auditor)
-- [No-op justification](#no-op-justification)
-- [Decision rendering](#decision-rendering)
-- [PR #203 recovery example](#pr-203-recovery-example)
-- [Claim boundaries](#claim-boundaries)
-- [Troubleshooting blockers](#troubleshooting-blockers)
-
-## Readiness contract
-
-A pull request is default-workflow ready only when every gate passes for the
-exact commit being reviewed.
-
-| Gate | Required result |
+| Field | Observed value |
 | --- | --- |
-| Exact head | Local `HEAD` equals the PR `headRefOid` fetched from GitHub. |
-| Manual merge avoidance | The workflow fetches the PR branch or PR ref, then detaches at the exact `headRefOid` without merging into the base branch. |
-| GitHub Actions | All required checks and relevant workflow runs are complete and green for `headRefOid`. |
-| PR state | The PR is open, non-draft, mergeable, and has a clean merge state. |
-| Runnable evidence | Required repository QA, scenario, generated-asset, and docs commands pass without timeout wrappers. |
-| Quality audit | At least three SEEK/VALIDATE/FIX cycles are documented, and the final cycle is clean. |
-| Diff scope | The PR diff is focused and contains no unrelated churn or accidental generated artifacts. |
-| Docs impact | Documentation impact is reviewed, the mandatory docs build passes, and affected docs are updated or explicitly ruled out. |
-| PR description | The PR body contains current, bounded evidence for the same head and does not overclaim readiness. |
+| Artifact path | `docs/default-workflow-pr-readiness.md` |
+| Repository | `rysweet/eatme` |
+| PR | [#175 Document evidence artifact contract](https://github.com/rysweet/eatme/pull/175) |
+| Local branch | `wave6-evidence-artifact-contract-1778302300` |
+| Local upstream | `origin/wave6-evidence-artifact-contract-1778302300` |
+| Validated evidence head | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| Validated evidence head short SHA | `a951f34` |
+| Observed GitHub PR head at evidence capture | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| Observed base branch | `master` |
+| Observed base SHA | `17521c40bb72dd22669b596179327fc5cf307305` |
+| Evidence-head executable evidence capture | `2026-05-09T19:02:06Z` |
+| GitHub PR metadata capture | `2026-05-09T19:02:06Z` |
+| Artifact publication head | not embedded in this committed artifact; committing a documentation refinement changes the PR head. The exact post-push publication head/check rollup belongs in the PR finalization record outside this file. |
 
-If any gate is missing, stale, inconclusive, skipped when required, or tied to a
-different commit, the decision is `NOT_MERGE_READY`.
+Within this page, `validated evidence head` means the PR head whose metadata and
+check rollup were captured above. `Artifact publication head` means the later
+commit that publishes this page after refinement.
 
-## Usage
+At evidence-capture time, the checked-out local HEAD and GitHub PR `headRefOid`
+both resolved to `a951f34a0a187adfa24cfe0555ca00da6a04197d`. Therefore, the
+GitHub check rollup, mergeability metadata, and review metadata below are
+validated evidence-head observations for the same commit. This page deliberately
+does not claim that its own eventual publication commit has checked itself.
 
-Run the recovery from the repository root with authenticated `gh` access. Do not
-wrap any command in `timeout`, `gtimeout`, shell watchdogs, background-kill
-helpers, or workflow timeout wrappers.
+## Readiness evidence
 
-1. Export the repository workflow heap setting:
+### Local Git observations
 
-   ```bash
-   export NODE_OPTIONS=--max-old-space-size=32768
-   ```
-
-2. Read the PR head from GitHub:
-
-   ```bash
-   gh pr view 203 --json headRefOid,headRefName,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,body
-   ```
-
-3. Fetch the PR ref or branch, then check out the exact PR head SHA without
-   merging:
-
-   ```bash
-   HEAD_REF_OID="$(gh pr view 203 --json headRefOid --jq .headRefOid)"
-   git fetch origin pull/203/head
-   git switch --detach "$HEAD_REF_OID"
-   git rev-parse HEAD
-   ```
-
-4. Compare `git rev-parse HEAD` with `headRefOid`. A mismatch stops the run.
-
-5. Run all mandatory repository evidence commands:
-
-   ```bash
-   TMPDIR=/tmp ./scripts/quality-gates.sh
-   cargo run -q -p eatme-cli -- assets validate --json
-   cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-   mkdocs build --strict
-   ```
-
-6. Record at least three SEEK/VALIDATE/FIX cycles. The final cycle must find no
-   remaining blocker.
-
-7. Render `MERGE_READY` only when every gate passes. Otherwise render
-   `NOT_MERGE_READY` with explicit blockers.
-
-## Configuration
-
-| Setting | Required value | Purpose |
-| --- | --- | --- |
-| `NODE_OPTIONS` | `--max-old-space-size=32768` | Keeps Node-based workflow wrappers on the repository's saved large-heap setting. |
-| `TMPDIR` | `/tmp` for deep worktrees | Keeps temporary socket paths short for the full repository quality gate. |
-| `gh` authentication | Authenticated to `rysweet/eatme` | Allows PR metadata, checks, diff, and body evidence to be audited. |
-
-The workflow does not require a timeout wrapper. Long-running gates are allowed
-to run to completion through their normal command behavior.
-
-Do not print or persist tokens, credential paths, environment dumps, private
-runner details, or other secrets in readiness evidence.
-
-## Inputs and outputs
-
-| Surface | Contract |
-| --- | --- |
-| PR number | The pull request being recovered, for example `203`. |
-| Head branch | The current remote PR branch, not a local merge result. |
-| Required evidence | PR metadata, exact-head checks, runnable command results, diff scope, docs impact, PR body evidence, and audit cycles. |
-| Success output | `MERGE_READY` plus exact-head evidence and bounded gate list. |
-| Failure output | `NOT_MERGE_READY` plus explicit blockers. |
-| Repository changes | Focused fixes only. If files change, report `Files modified`. |
-| No repository changes | Include a workflow-accepted no-op justification tied to current head, checks, and blockers or evidence. |
-
-The CLI can render a structured decision from collected evidence:
+Captured with:
 
 ```bash
-cargo run -q -p eatme-cli -- default-workflow pr-readiness \
-  --evidence readiness-evidence.json \
-  --json
+date -u +%Y-%m-%dT%H:%M:%SZ
+git branch --show-current
+git rev-parse HEAD
+git rev-parse --short HEAD
+git rev-parse --abbrev-ref --symbolic-full-name @{u}
+git rev-parse @{u}
+git status --short
 ```
 
-The evidence file is a JSON record of the documented command sequence. The CLI
-does not run repository gates on its own; command evidence must be collected
-first so every claim remains tied to the exact PR head.
+Observed result at `2026-05-09T19:02:06Z`, before this refinement changed the
+artifact/test files:
 
-GitHub and git evidence can be collected through the external-service adapter:
+```text
+branch=wave6-evidence-artifact-contract-1778302300
+head_sha=a951f34a0a187adfa24cfe0555ca00da6a04197d
+head_short=a951f34
+upstream=origin/wave6-evidence-artifact-contract-1778302300
+upstream_sha=a951f34a0a187adfa24cfe0555ca00da6a04197d
+status_short_begin
+status_short_end
+```
+
+This clean status is a pre-refinement observation for the validated evidence
+head. It is not a claim about the post-edit worktree or the eventual
+publication head. This refinement intentionally changes only the readiness
+artifact and the contract tests that guard it:
+
+```text
+docs/default-workflow-pr-readiness.md
+crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs
+```
+
+### GitHub PR #175 observations
+
+Captured with:
 
 ```bash
-cargo run -q -p eatme-cli -- default-workflow collect-github-evidence \
-  --pr 203 \
-  --json
+gh pr view 175 --json number,title,state,url,headRefName,headRefOid,baseRefName,baseRefOid,isDraft,mergeStateStatus,mergeable,reviewDecision,statusCheckRollup,latestReviews,updatedAt,createdAt
 ```
 
-Add `--checkout` only when the worktree is ready to detach at the exact PR head.
-The adapter calls `gh pr view`, `gh pr diff`, `gh run list`, `git fetch`,
-`git rev-parse`, and `git status --short` with bounded retries and reports
-external-call failures as hard errors instead of readiness success.
+Observed metadata:
 
-## Head alignment gate
-
-The head alignment gate proves that local evidence is about the same commit that
-GitHub will evaluate.
-
-Required behavior:
-
-1. Read the GitHub `headRefOid`.
-2. Fetch the PR branch or PR ref from `origin` so the head object is available.
-3. Check out the exact `headRefOid` in detached mode.
-4. Compare `git rev-parse HEAD` with `headRefOid`.
-5. Stop with `NOT_MERGE_READY` if the SHAs differ.
-
-Detached checkout is acceptable. Manual merging, rebasing, force-pushing, and
-history rewriting are not part of the readiness workflow.
-
-## PR metadata auditor
-
-The metadata auditor reads:
-
-```bash
-gh pr view 203 \
-  --json state,isDraft,mergeable,mergeStateStatus,headRefOid,headRefName,body
-```
-
-The CLI service adapter uses the same metadata request with `statusCheckRollup`
-included and records the returned body separately from the readiness decision.
-
-The PR metadata gate passes only when:
-
-| Field | Required value |
+| Field | Observed value |
 | --- | --- |
+| `number` | `175` |
+| `title` | `Document evidence artifact contract` |
+| `url` | `https://github.com/rysweet/eatme/pull/175` |
 | `state` | `OPEN` |
 | `isDraft` | `false` |
-| `mergeable` | `MERGEABLE` |
+| `createdAt` | `2026-05-09T05:02:52Z` |
+| `updatedAt` | `2026-05-09T18:55:26Z` |
+| `headRefName` | `wave6-evidence-artifact-contract-1778302300` |
+| `headRefOid` | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| `baseRefName` | `master` |
+| `baseRefOid` | `17521c40bb72dd22669b596179327fc5cf307305` |
 | `mergeStateStatus` | `CLEAN` |
-| `headRefOid` | Equal to local `HEAD` |
+| `mergeable` | `MERGEABLE` |
+| `reviewDecision` | Empty value returned; owner-free finalization does not require approval evidence. |
+| `latestReviews` | Empty list returned; no human approval is claimed. |
 
-Any unknown, dirty, blocked, draft, closed, stale, or mismatched state is a
-`NOT_MERGE_READY` blocker.
+The `mergeStateStatus` and `mergeable` values are recorded as GitHub metadata
+only. They are treated as merge-readiness evidence only in combination with the
+validated evidence-head green check rollup below, the publication-head boundary,
+and the focused evidence-artifact scope.
 
-## GitHub Actions auditor
+### GitHub status-check rollup observation
 
-The Actions auditor verifies check conclusions for the exact PR head:
+`gh pr view` returned these `statusCheckRollup` entries for the validated
+evidence head:
 
-```bash
-gh pr view 203 --json headRefOid,statusCheckRollup
-```
+| Workflow | Check | Status | Conclusion | Completed |
+| --- | --- | --- | --- | --- |
+| Documentation Site | Build MkDocs site | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:44Z` |
+| Quality Gates | detect changed files | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:37Z` |
+| Documentation Site | Deploy to GitHub Pages | `COMPLETED` | `SKIPPED` | `2026-05-09T18:55:45Z` |
+| Quality Gates | fmt, clippy, module size | `COMPLETED` | `SUCCESS` | `2026-05-09T18:56:19Z` |
+| Quality Gates | tests | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:29Z` |
+| Quality Gates | coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:30Z` |
+| Quality Gates | fmt, clippy, tests, module size, coverage | `COMPLETED` | `SUCCESS` | `2026-05-09T18:58:38Z` |
+| Quality Gates | manual real Alice launch smoke | `COMPLETED` | `SKIPPED` | `2026-05-09T18:58:38Z` |
+| none returned | GitGuardian Security Checks | `COMPLETED` | `SUCCESS` | `2026-05-09T18:55:30Z` |
 
-The check gate is green only when every required check for `headRefOid` has
-completed successfully. The gate blocks readiness when a required or relevant
-check is pending, queued, in progress, requested, failing, errored, timed out,
-cancelled, skipped when it is expected to run, missing, or reported for a
-different SHA.
+These entries are per-check observations for the validated evidence head: 7
+successful checks, 2 skipped checks, 0 failing checks, and 0 pending checks.
+Skipped rows are explicitly not counted as successful checks, approval,
+branch-protection sufficiency, or manual real Alice launch evidence.
 
-Known skipped status-rollup entries from optional conditional jobs are retained
-in collected evidence but do not count as required checks. Other skipped entries
-remain required-check blockers unless explicitly classified as optional
-conditional jobs. Skipped optional entries also do not satisfy the required-check
-evidence minimum; at least one required exact-head check must still complete
-successfully.
+### Validated evidence-head executable evidence
 
-When a workflow run is needed to distinguish stale from exact-head checks, query
-workflow runs by branch and head SHA:
+Validated evidence-head executable evidence uses the GitHub status-check rollup
+for PR head `a951f34a0a187adfa24cfe0555ca00da6a04197d` as the source of truth.
+The rollup is complete for that head, contains no failing or pending checks, and
+is sufficient for the evidence baseline before this refinement. Backup local
+validation commands remain documented with the required
+`NODE_OPTIONS=--max-old-space-size=32768` setting and no timeout wrapper, but
+they are not rerun unless GitHub evidence is stale, missing, ambiguous, or local
+files change.
 
-```bash
-gh run list \
-  --branch feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul \
-  --json databaseId,headSha,status,conclusion,workflowName
-```
+| Backup command | Evidence source | Bounded claim |
+| --- | --- | --- |
+| `cargo run -q -p eatme-cli -- assets validate --json` | Covered by the validated evidence-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if asset evidence becomes ambiguous. | Persona and scenario asset validation is within validated evidence-head scope. This is asset-contract evidence, not lesson-completion or grading evidence. |
+| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Covered by the validated evidence-head Quality Gates `tests` and aggregate successful rollup; rerun locally only if generated-adapter evidence becomes ambiguous. | Generated Gadugi adapter freshness is within validated evidence-head scope. This is adapter freshness evidence, not UI rendering or grading evidence. |
+| `mkdocs build --strict` | Validated evidence-head Documentation Site `Build MkDocs site` completed with `SUCCESS`. | The documentation site renders under strict MkDocs rules for the validated evidence head. |
+| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Validated evidence-head Quality Gates aggregate `fmt, clippy, tests, module size, coverage` completed with `SUCCESS`. | The repository quality gate passes for the validated evidence head. This does not prove manual real Alice desktop launch, full UI automation, visual rendering correctness, grading, creative assessment, or lesson completion. |
 
-The external adapter treats missing, malformed, or non-zero `gh` responses as
-service-call failures. It does not convert unavailable GitHub evidence into a
-passing check.
+Because this file and its contract tests are part of the refinement, the exact
+post-push publication head must be checked after push and recorded outside this
+committed artifact. This avoids a self-referential freshness claim where editing
+the artifact invalidates the SHA it names as current.
 
-Green checks alone never produce `MERGE_READY`; they only satisfy the Actions
-gate.
+### Historical same-head outside-in testing evidence
 
-## Runnable evidence runner
+The Step 16b user-path commands below were previously run from this branch at
+the recorded head `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`. That recorded
+head was same-head evidence for an earlier PR capture. It is now historical
+silver-thread/e2e context only, not validated evidence-head proof and not a
+substitute for the GitHub check rollup above.
 
-The recovery runs all mandatory existing repository commands. It does not add new
-tools or use timeout wrappers.
-
-| Evidence | Command |
-| --- | --- |
-| Full repository quality gate | `TMPDIR=/tmp ./scripts/quality-gates.sh` |
-| Persona and scenario asset validation | `cargo run -q -p eatme-cli -- assets validate --json` |
-| Generated Gadugi adapter freshness | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` |
-| Documentation build | `mkdocs build --strict` |
-
-All four commands are mandatory for this recovery lane, regardless of PR scope.
-Scenario-specific manual gates, real-Alice smoke gates, and other focused checks
-remain additional evidence when the PR scope requires them.
-
-If a host cannot run an applicable real-Alice or scenario-specific manual gate,
-the decision must say that the gate is unavailable or not run. Do not convert a
-missing manual gate into a passing automated claim.
-
-## Quality audit cycles
-
-The quality audit recorder documents at least three cycles. Each cycle has three
-parts:
-
-| Step | Meaning |
-| --- | --- |
-| SEEK | Identify one evidence gap, risk, stale claim, or possible defect in the recovery surface. |
-| VALIDATE | Prove the finding with a command, metadata query, diff review, docs review, or bounded inspection. |
-| FIX | Apply a focused fix when a validated defect exists, or record `no repository change` when validation shows no fix is required. |
-
-The final cycle must be clean: SEEK finds no remaining blocker after the
-previous fixes or no-op validations, VALIDATE confirms all gates are still tied
-to the exact head, and FIX records `no repository change`.
-
-Example audit-cycle record:
-
-```text
-Cycle 1
-SEEK: Check exact-head alignment after NO_OP_GUARD.
-VALIDATE: local HEAD equals gh pr view headRefOid.
-FIX: no repository change.
-
-Cycle 2
-SEEK: Check runnable QA and generated adapter evidence.
-VALIDATE: quality-gates, assets validate, generate-gadugi --check, and mkdocs build pass.
-FIX: no repository change.
-
-Cycle 3
-SEEK: Check final metadata, PR body evidence, and diff scope.
-VALIDATE: PR is open, non-draft, mergeable, checks are green for headRefOid, diff is focused, body evidence is bounded.
-FIX: no repository change; final cycle clean.
-```
-
-If a cycle validates a defect, make only the focused PR-scoped fix and rerun the
-impacted evidence before the next cycle.
-
-## Focused diff auditor
-
-The diff auditor checks the PR scope, not just local status:
+The `@wave6-evidence-artifact-contract-1778302300` install target in these
+commands was a branch ref as resolved at execution time, not an immutable
+SHA-pinned install reference. The same-head claim depends on the recorded
+execution context, not on the install URL alone.
 
 ```bash
-gh pr diff 203 --name-only
-git status --short
-git diff --stat
+uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack <command>
 ```
 
-The gate passes when changed files match the PR purpose and no accidental local
-files, generated artifacts, logs, reports, temporary files, or unrelated cleanup
-are included.
+| Scenario | Command | Result | Key output | Fix count |
+| --- | --- | --- | --- | --- |
+| Simple asset validation | `uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack assets validate --json` | Exit `0` | `"passed": true`, `instructor_count: 11`, `student_count: 13`, `scenario_asset_count: 93`, `errors: []`, `warnings: []` | 0 |
+| Integration manifest contract | `uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack alice compare-launch-smoke --scenario first-lessons-real-ui-actions --run-id step16b-manifest-contract --runs-dir /tmp/eatme-step16b-compare-runs --json` followed by `uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack alice check-lesson-session --manifest /tmp/eatme-step16b-compare-runs/comparisons/first-lessons-real-ui-actions/step16b-manifest-contract/comparison-manifest.json --json` | Exit `0` for both commands | Comparison manifest used `execute_requested: false`, `functionality_result: not_measured`, and `timing_result: not_measured`; contract check returned `"passed": true`, `automation_status: action_contract_blocked_until_ui_automation`, `issues: []` | 0 |
+| Readiness nonclaim probe | `uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack alice run-first-lesson-readiness --run-id step16b-current-head --runs-dir /tmp/eatme-step16b-runs --json` | Exit `1` | `"passed": false`, `status: not_ready`, `readiness_status: incomplete`, desktop proof `reason_code: execute_not_requested`, `2 of 10 required evidence items are present; 8 missing`, and `Error: first-lesson readiness sequence incomplete` | 0 |
 
-Generated assets are acceptable only when they are the expected output of a
-canonical asset change and the freshness check passes.
+The readiness nonclaim probe is recorded because it documents fail-closed
+behavior when real Alice desktop execution is not requested. It is not counted
+as merge readiness, real-desktop proof, full first-lesson readiness, or a
+successful outside-in scenario.
 
-## Docs impact auditor
+## Review evidence
 
-Docs impact is explicit:
+### Location review
 
-| PR scope | Required docs result |
-| --- | --- |
-| Docs changed | `mkdocs build --strict` passes. |
-| Scenario or adapter behavior changed | Affected docs are updated or the no-impact rationale explains why existing docs remain accurate. |
-| PR body cites docs evidence | The cited docs exist and describe only proven behavior. |
-| No docs impact | The decision records a bounded no-impact rationale. |
+`mkdocs.yml` includes this artifact in the documentation navigation:
 
-Docs should not contain point-in-time CI logs, status reports, progress notes, or
-merge claims. Those belong in PR comments, PR descriptions, or workflow logs.
-
-## PR description evidence auditor
-
-The PR body must contain current, bounded evidence for the exact head before the
-workflow can render `MERGE_READY`.
-
-Required PR description evidence:
-
-| Evidence | Required content |
-| --- | --- |
-| Exact head | The reviewed SHA or a clear statement that evidence is for the current `headRefOid`. |
-| GitHub checks | Green exact-head checks or a blocker if checks are missing or incomplete. |
-| Runnable QA | All mandatory commands run and pass, or each command that did not run or pass is listed as a blocker. |
-| Scenario evidence | Asset, Gadugi, and scenario-specific evidence where applicable. |
-| Docs impact | Docs changed and built, or no-impact rationale. |
-| Audit cycles | At least three SEEK/VALIDATE/FIX cycles with a clean final cycle. |
-| Claim boundaries | No unsupported claims about UI automation, rendering correctness, grading, creative assessment, full lesson completion, or full Tweedle/player decode. |
-
-If the body is stale or overclaims, update it with bounded evidence before
-readiness is rendered. If the body cannot be updated, render `NOT_MERGE_READY`
-with a PR-description blocker.
-
-## No-op justification
-
-When recovery finds no repository defect, the workflow emits an explicit
-workflow-accepted no-op justification instead of treating `NO_OP_GUARD` as
-success.
-
-The no-op justification includes:
-
-```text
-No-op justification: workflow accepted no repository changes because local HEAD
-matches PR headRefOid, exact-head GitHub checks and runnable evidence satisfy the
-readiness gates, diff scope is focused, docs impact is accounted for, PR body
-evidence is current and bounded, and three SEEK/VALIDATE/FIX cycles completed
-with a clean final cycle.
+```yaml
+- Default-workflow PR Readiness: default-workflow-pr-readiness.md
 ```
 
-If any evidence is missing, the no-op justification is still allowed, but the
-decision is `NOT_MERGE_READY` and the missing evidence is listed as a blocker.
-
-## Decision rendering
-
-Render one of two decisions.
-
-Use `MERGE_READY` only when every required gate passes:
-
-```text
-MERGE_READY
-
-PR: #203
-Head: <headRefOid>
-Evidence: exact-head checkout, green GitHub Actions for the same head,
-non-draft mergeable PR metadata, runnable QA/scenario/docs evidence, focused
-diff scope, current PR description evidence, and three SEEK/VALIDATE/FIX cycles
-with a clean final cycle.
-Files modified: <list, or "none">
-```
-
-Use `NOT_MERGE_READY` when any gate is missing or failed:
-
-```text
-NOT_MERGE_READY
-
-PR: #203
-Head: <headRefOid or "unverified">
-Blockers:
-1. <explicit blocker>
-2. <explicit blocker>
-No-op justification: <include when no repository files changed>
-Files modified: <list, or "none">
-```
-
-Do not publish or claim readiness when the decision is `NOT_MERGE_READY`.
-
-## PR #203 recovery example
-
-This example shows how the workflow recovers PR #203 on branch
-`feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul` without a
-manual merge.
-
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-
-gh pr view 203 \
-  --json headRefOid,headRefName,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,body
-
-HEAD_REF_OID="$(gh pr view 203 --json headRefOid --jq .headRefOid)"
-git fetch origin pull/203/head
-git switch --detach "$HEAD_REF_OID"
-git rev-parse HEAD
-
-TMPDIR=/tmp ./scripts/quality-gates.sh
-cargo run -q -p eatme-cli -- assets validate --json
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-mkdocs build --strict
-
-gh pr diff 203 --name-only
-gh run list \
-  --branch feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul \
-  --json databaseId,headSha,status,conclusion,workflowName
-```
-
-The example produces `MERGE_READY` only if the checked-out SHA equals
-`headRefOid`, all exact-head checks are green, metadata is non-draft and
-mergeable, command evidence passes, the diff is focused, docs impact is
-accounted for, the PR description contains bounded evidence, and the third audit
-cycle is clean.
-
-## Claim boundaries
-
-The recovery decision must stay inside the evidence collected. It must not claim:
-
-| Unsupported claim | Required wording |
-| --- | --- |
-| Full UI automation | Say only which repository or scenario evidence ran. |
-| Visible rendering correctness | Treat screenshots or windows as observation evidence only. |
-| Grading correctness | Say evidence was recorded for review; do not say learner work was graded. |
-| Creative assessment | Say prompts or artifacts are available for review; do not say creativity was assessed. |
-| Full lesson completion | Say only the bounded lesson or readiness evidence that ran. |
-| Full Tweedle/player decode | Say only which asset, adapter, or harness checks passed. |
-
-### Starter-project evidence boundary
-
-Starter-project preflight evidence is a bounded artifact trail, not complete PR
-readiness. The executable starter-project boundary check scans
-`docs/starter-project-preflight-evidence.md`, the source scenario, and the
-generated Gadugi adapter against this contract in
+Repository search for `Default-workflow PR Readiness`,
+`default-workflow-pr-readiness`, `evidence artifact contract`, and `PR
+readiness` across `docs/` and `mkdocs.yml` found this page, its MkDocs nav
+entry, and links from `docs/index.md`; no stronger PR-specific artifact location
+was observed. The artifact therefore remains at
 `docs/default-workflow-pr-readiness.md`.
 
-### Executable starter-project boundary check
+### Content review
+
+The Step 8 review keeps this page as an evidence contract and checks that it:
+
+1. Separately scopes validated evidence-head executable evidence and GitHub PR
+   metadata.
+2. Keeps local Git evidence, GitHub PR metadata, status-check metadata, and
+   executable evidence in separate sections.
+3. Lists skipped, not-measured, no-execute, and historical states as nonclaims
+   instead of implying success.
+4. Records the no-execute readiness probe as historical fail-closed behavior,
+   not as a product readiness success.
+5. Provides explicit nonclaims so recovery can continue without prior
+   rate-limited session context.
+6. Separates the validated evidence head from the later artifact publication
+   head so the page cannot become stale solely by being committed.
+
+### Security review
+
+The Step 8 security review treated local Git output, GitHub PR metadata, and
+command output as untrusted evidence. No security issue requiring
+source, workflow, or credential-handling changes was found in this artifact.
+
+| Checklist item | Result | Evidence or mitigation |
+| --- | --- | --- |
+| Input validation | Pass | SHA-like values in scope are recorded as observed 40-character lowercase hexadecimal values, except the explicitly labeled 7-character short SHA. Timestamps are recorded in UTC ISO format, and ambiguous PR fields are kept as metadata rather than readiness claims. |
+| Output encoding | Pass | Command text is fenced as `bash` or wrapped in Markdown tables/code spans; observed dynamic values are plain text, not raw HTML. |
+| Authentication/authorization | Pass | The artifact records fixed read-only `git`, `gh pr view`, local validation, and historical branch-installed `uvx` observations. It does not merge, approve, alter workflows, or modify PR state. |
+| Sensitive data handling | Pass | The page includes bounded recovery evidence: repository, PR, branch, SHA, status-check, command, and nonclaim data. It does not include tokens, environment dumps, auth configuration, private config, or unrelated local file contents. |
+| No hardcoded secrets | Pass | No password, token, API key, credential, or secret literal was observed. |
+| Proper error messages | Pass | Skipped, historical, not-measured, no-execute, and unavailable states are recorded as nonclaims rather than success-shaped fallbacks, stack traces, credential-bearing errors, or hidden failures. |
+
+## Finalization evidence
+
+PR #175 remains unmerged. At evidence-capture time, the observed GitHub PR state
+was `OPEN`, the observed head ref was
+`wave6-evidence-artifact-contract-1778302300`, and the validated evidence head
+was `a951f34a0a187adfa24cfe0555ca00da6a04197d`. That SHA is the evidence head
+for this page, not the immutable publication head for this committed
+refinement.
+
+No manual merge was performed. This recovery only updates workflow
+readiness/review/finalization evidence and the executable readiness-contract
+tests that guard it.
+
+Finalization status: `merge-ready-after-publication-head-checks` for PR #175
+evidence-contract recovery. The validated evidence head is `CLEAN`,
+`MERGEABLE`, and has 7 successful checks, 2 skipped checks, 0 failing checks,
+and 0 pending checks. Because this refinement changes the committed artifact,
+final owner-free merge evidence must use the post-push publication head/check
+rollup recorded outside this file. This artifact records executable evidence,
+review boundaries, and explicit nonclaims; it does not mean the PR is already
+approved, merged, or validated for UI automation, rendering correctness,
+grading, creative assessment, or lesson completion.
+
+### External publication-head evidence record
+
+The exact publication-head evidence must be recorded outside this committed
+artifact after push, because the act of committing this file creates a new PR
+head that this file cannot already have observed. The external record must name
+the publication head SHA and the GitHub check rollup for that exact SHA before
+calling the PR merge-ready or giving a literal no-op justification tied to the
+publication head, check rollup, and focused artifact-contract scope.
+
+Required external record fields:
+
+| Field | Required evidence |
+| --- | --- |
+| Publication head SHA | Full 40-character PR `headRefOid` observed from GitHub after push. |
+| GitHub check rollup for that exact SHA | Successful, skipped, failing, and pending check counts for the publication head. |
+| Merge state | GitHub `mergeStateStatus` and `mergeable` values for the publication head. |
+| Review state | Current `reviewDecision` and latest review observations, including any empty owner-free state. |
+| Owner-free decision | Explicit statement that owner-free finalization does not require owner intervention. |
+| Scope decision | Confirmation that finalization remains limited to the focused artifact-contract scope. |
+| Validation decision | Whether GitHub current-head evidence is sufficient or which focused local checks were rerun. |
+| Finalization decision | Merge-ready conclusion or literal no-op justification tied to the publication head, checks, and scope. |
+| PR evidence comment | URL or identifier for the external publication-head evidence record. |
+
+## Nonclaims
+
+- No PR approval is claimed.
+- No blanket CI success is claimed beyond the listed validated evidence-head
+  GitHub status-check rollup.
+- No test coverage sufficiency is claimed beyond the reported validated
+  evidence-head coverage summary.
+- No local quality-gate rerun is claimed beyond the validated evidence-head
+  GitHub Quality Gates rollup.
+- No post-push publication-head check rollup is claimed inside this committed
+  artifact.
+- No real Alice desktop execution is claimed.
+- No full Alice UI automation is claimed.
+- No full first-lesson readiness is claimed.
+- No first-lesson completion is claimed.
+- No Save completion is claimed.
+- No visible rendering correctness is claimed.
+- No grading or creative assessment is claimed.
+- No claim is made that skipped checks are successful checks.
+- No claim is made inside this file that GitHub has observed the eventual
+  publication commit beyond the recorded validated evidence-head `headRefOid`.
+- No claim is made that future PR #175 heads, checks, reviews, or mergeability
+  match the observations recorded here.
+- No prior rate-limited/default-workflow session context is required to continue
+  recovery from this artifact.
+
+## Starter-project evidence boundary
+
+Starter-project preflight evidence is bounded setup evidence for opening the
+bundled starter project and recording reviewable launch artifacts. It is not PR
+readiness, mergeability, production suitability, complete lesson execution,
+full Alice UI automation, visible rendering correctness, Save/reopen/export
+completion, grading, creative assessment, or complete Alice coverage.
+
+The source contract for this boundary is split across:
+
+- `docs/default-workflow-pr-readiness.md`
+- `docs/starter-project-preflight-evidence.md`
+
+## Executable starter-project boundary check
+
+The current executable starter-project boundary check lives in
+`crates/eatme-assets/src/starter_project_preflight_boundary_tests.rs`. It reads
+this contract table and applies the same overclaim rules to the canonical
+scenario text, generated Gadugi adapter output, and scoped starter-project
+preflight evidence documentation.
 
 | Prohibited phrase | Bounded replacement |
 | --- | --- |
@@ -461,18 +338,3 @@ generated Gadugi adapter against this contract in
 | `first lesson is complete` | `starter-project preflight evidence only` |
 | `grades learner work` | `records evidence for review; it does not grade` |
 | `assesses creativity` | `names an editable change without assessing creativity` |
-
-## Troubleshooting blockers
-
-| Blocker | Response |
-| --- | --- |
-| `NO_OP_GUARD` exit | Run recovery validation. Do not classify the exit as success. |
-| Head mismatch | Fetch the current PR head and restart exact-head verification. |
-| Draft PR | Render `NOT_MERGE_READY` until the PR is non-draft. |
-| Unknown mergeability | Wait for GitHub to compute mergeability, then re-query metadata. |
-| Dirty merge state | Render `NOT_MERGE_READY`; do not manually merge. |
-| Pending, missing, skipped, stale, or failing checks | Render `NOT_MERGE_READY` until exact-head checks are complete and green. |
-| Failed repository command | Make a focused fix if the failure is PR-scoped, then rerun impacted evidence. |
-| Missing scenario evidence | Run the applicable asset, Gadugi, or scenario gate; otherwise list the missing evidence as a blocker. |
-| Stale PR body | Update the body with current bounded evidence or block readiness. |
-| Unrelated diff | Remove only the unrelated change or block readiness. |

@@ -186,6 +186,7 @@ mod tests {
                         "sh",
                         counter_path.to_str().unwrap(),
                     ])
+                    .timeout(Duration::from_secs(2))
                     .retries(2, Duration::from_millis(10)),
             )
             .unwrap();
