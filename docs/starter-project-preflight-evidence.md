@@ -72,6 +72,7 @@ the minimal open/save/export readiness path for the bundled starter project.
 | `starter_world_change_evidence` | States whether a starter world change was observed; when absent, use `not observed` or `missing`. |
 | `starter_program_change_evidence` | States whether a starter program change was observed; when absent, use `not observed` or `missing`. |
 | `save_evidence` | States whether save evidence is present; when absent, use `not observed`, `unavailable`, or `missing`. |
+| `reopen_evidence` | States whether reopen evidence is present; when absent, use `not observed`, `unavailable`, or `missing`. |
 | `export_evidence` | States whether export evidence is present; when absent, use `not observed`, `unavailable`, or `missing`. |
 | `configuration_state` | Names unavailable prerequisites or optional paths with `not configured` when they were not set for the run. |
 | `claim_boundary` | States the report is not full UI automation, not visible rendering correctness proof, not completed save/export evidence, and not broad Alice coverage. |
@@ -94,11 +95,12 @@ report schema.
 ## Example readiness report
 
 ```text
-silver_thread=minimal open/save/export path for bundled starter project
+silver_thread=minimal open/save/export path for bundled starter project; silver thread is bounded to starter world/program observable change evidence
 open_evidence=observed via launch-smoke JSON report, manifest, log, and screenshot/window evidence
 starter_world_change_evidence=not observed; starter-world-change-note.txt names the expected small editable change for a later user-like pass
-starter_program_change_evidence=not observed; no starter program edit evidence was captured in this preflight
+starter_program_change_evidence=not observed; no starter program observable change evidence was captured in this preflight
 save_evidence=missing; save still needs user-like Alice evidence before it is trusted
+reopen_evidence=not observed; reopen still needs user-like Alice evidence before it is trusted
 export_evidence=unavailable; export still needs user-like Alice evidence before it is trusted
 configuration_state=not configured; optional follow-on desktop observation evidence was not supplied
 claim_boundary=not full UI automation, not visible rendering correctness proof, not completed save/export evidence, and not broad Alice coverage
