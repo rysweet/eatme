@@ -5,7 +5,7 @@ use std::path::Path;
 use super::evidence_text_contract::{
     limitation_array, validate_claim_text, validate_limitation_text,
 };
-use super::first_lesson_next_action::ProjectProofArtifactInfo;
+use super::project_proof_artifact::ProjectProofArtifactInfo;
 use super::resolve_run_dir_artifact_path_under_root;
 
 const DEFAULT_BOUNDARY_SOURCE: &str = "automation_scenario";
