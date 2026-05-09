@@ -88,6 +88,7 @@ acceptance_probes:
   - Artifact review packet checklist includes artifact or screenshot reference, student change, visible run result, attribution or classroom context, and one next revision.
   - Student evidence handoff prompt asks the student to explain one Alice change and the visible behavior after running.
   - Instructor review boundary note separates environment evidence from student learning evidence and names what still needs human judgment.
+  - Readiness impact says the instructor gets a classroom/review handoff and the student produces an evidence package, not proof that deployed sharing works.
   - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, not hosted sharing, not deployed sharing, and not platform success.
 rubric:
   - criterion: Review packet completeness
