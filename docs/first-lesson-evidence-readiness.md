@@ -64,10 +64,10 @@ It does not answer whether a learner completed the lesson, whether an Alice
 world is creatively successful, whether a saved project should receive a grade,
 whether rendering is correct, or whether the entire Alice UI flow is automated.
 
-When creative-assessment evidence is missing or limited, the report can surface
-available evidence and suggest next steps for the learner's creative work in
-this scenario. It does not grade creativity, judge quality, or mark the lesson
-complete.
+When creative-assessment evidence is missing, limited, or unavailable, the
+report can surface available evidence and suggest bounded next steps for the
+learner's creative work in this scenario. It does not grade creativity, judge
+quality, or mark the lesson complete.
 
 | Result | Meaning | What to do |
 | --- | --- | --- |
@@ -128,9 +128,10 @@ Not yet shown:
 - Visible rendering correctness is not yet proven.
 - Grading is not yet shown.
 - Creative assessment is not yet shown. Available evidence does not yet show
-  creative assessment; the report can surface available evidence and suggest
-  next steps for the learner's creative work in this scenario, but it does not
-  grade creativity, judge quality, or mark the lesson complete.
+  creative assessment or shows that creative-assessment evidence is unavailable;
+  the report can surface available evidence and suggest bounded next steps for
+  the learner's creative work in this scenario, but it does not grade
+  creativity, judge quality, or mark the lesson complete.
 - First-lesson completion is not yet shown.
 
 Desktop next action:
@@ -171,7 +172,7 @@ does not make another boundary present.
 | `save_project` | Save option/action scenario evidence | Explicit bounded evidence that a Save affordance, action, declaration, or proof artifact was observed. This is not a completion signal. | Save completion, grading, creative assessment, or first-lesson completion. |
 | `visible_rendering` | Visible rendering scenario evidence | Explicit visible rendering observation from the run boundary. | Visible rendering correctness, animation correctness, creative quality, or complete visual validation. |
 | `grading` | Grading scenario evidence | Explicit grading evidence from a scenario that owns grading. | Any automatic grade when no grading evidence exists. |
-| `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. When evidence is missing or limited, the report can surface available evidence and suggest next steps for the learner's creative work in this scenario. | Creativity grading, quality judgment, learner-world grading, instructor judgment, or marked lesson completion. |
+| `creative_assessment` | Creative assessment scenario evidence | Explicit creative assessment evidence from a scenario that owns creative review. When evidence is missing, limited, or unavailable, the report can surface available evidence and suggest bounded next steps for the learner's creative work in this scenario. | Creativity grading, quality judgment, learner-world grading, instructor judgment, or marked lesson completion. |
 | `first_lesson_completion` | First-lesson completion scenario evidence | Explicit first-lesson completion evidence from the completion boundary. | Completed first lesson from launch, Save, rendering, grading, or substep evidence alone. |
 
 ### User-facing state wording
@@ -272,7 +273,7 @@ Example:
   "id": "creative_assessment",
   "state": "missing",
   "summary": "Creative assessment is not yet shown.",
-  "detail": "Available evidence does not yet show creative assessment; the report can surface available evidence and suggest next steps for the learner's creative work in this scenario. The report does not grade creativity, judge quality, or mark the lesson complete.",
+  "detail": "Available evidence does not yet show creative assessment or shows that creative-assessment evidence is unavailable; the report can surface available evidence and suggest bounded next steps for the learner's creative work in this scenario. The report does not grade creativity, judge quality, or mark the lesson complete.",
   "does_not_prove": [
     "creative assessment",
     "creativity grading",
