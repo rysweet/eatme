@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 const SCENARIO_ID: &str = "starter-project-open-save-export-preflight";
 const CONTRACT_DOC_PATH: &str = "docs/default-workflow-pr-readiness.md";
 const EVIDENCE_DOC_PATH: &str = "docs/starter-project-preflight-evidence.md";
+const OVERCLAIM_RULE_TABLE_HEADER: &str = "| Prohibited phrase | Bounded replacement |";
 
 const REQUIRED_SOURCE_BOUNDARIES: &[&str] = &[
     "plain automation scenario for instructors and students",
@@ -62,7 +63,7 @@ const PLANNED_EXTENSION_WORDING: &[&str] = &[
     "planned documentation-overclaim extension will",
 ];
 
-const PROHIBITED_READINESS_OVERCLAIMS: &[(&str, &str)] = &[
+const REQUIRED_DOCUMENTED_OVERCLAIM_RULES: &[(&str, &str)] = &[
     ("PR ready", "starter-project preflight evidence recorded"),
     ("merge ready", "starter-project evidence boundary satisfied"),
     (
@@ -80,6 +81,26 @@ const PROHIBITED_READINESS_OVERCLAIMS: &[(&str, &str)] = &[
     (
         "complete PR readiness",
         "starter-project preflight evidence only",
+    ),
+    (
+        "proves visible rendering correctness",
+        "screenshot or window evidence is observation evidence only",
+    ),
+    (
+        "proves save/reopen/export",
+        "save, reopen, and export remain readiness gaps",
+    ),
+    (
+        "first lesson is complete",
+        "starter-project preflight evidence only",
+    ),
+    (
+        "grades learner work",
+        "records evidence for review; it does not grade",
+    ),
+    (
+        "assesses creativity",
+        "names an editable change without assessing creativity",
     ),
 ];
 
@@ -134,6 +155,7 @@ fn generated_starter_project_preflight_adapter_uses_same_plain_boundaries() {
 fn documented_contract_defines_current_executable_doc_overclaim_check() {
     let root = repository_root();
     let text = read_repo_text(&root, CONTRACT_DOC_PATH);
+    let rules = overclaim_rules_from_contract(&text);
 
     assert_contains_all(
         "starter-project/preflight readiness source contract",
@@ -141,47 +163,103 @@ fn documented_contract_defines_current_executable_doc_overclaim_check() {
         REQUIRED_DOCUMENTED_CONTRACT_BOUNDARIES,
     );
     assert_contains_none_with_message(
-        "starter-project/preflight readiness source contract",
         &text,
         PLANNED_EXTENSION_WORDING,
         &format!(
             "{CONTRACT_DOC_PATH} must describe the scoped documentation overclaim check as current executable behavior, not planned future work"
         ),
     );
+    assert_rules_match_contract(&rules, REQUIRED_DOCUMENTED_OVERCLAIM_RULES);
 }
 
 #[test]
 fn scoped_starter_project_preflight_docs_do_not_overclaim_readiness_or_evidence() {
     let root = repository_root();
+    let contract = read_repo_text(&root, CONTRACT_DOC_PATH);
     let text = read_repo_text(&root, EVIDENCE_DOC_PATH);
 
-    assert_no_readiness_overclaims(EVIDENCE_DOC_PATH, &text);
+    assert_no_doc_overclaims(
+        EVIDENCE_DOC_PATH,
+        &text,
+        &overclaim_rules_from_contract(&contract),
+    );
 }
 
 #[test]
 fn readiness_overclaim_detector_allows_negative_boundary_statements() {
+    let rules = vec![
+        OverclaimRule::new("PR ready", "starter-project preflight evidence recorded"),
+        OverclaimRule::new("merge ready", "starter-project evidence boundary satisfied"),
+        OverclaimRule::new(
+            "production ready",
+            "bounded preflight evidence available for review",
+        ),
+    ];
     let text = "\
-starter-project preflight evidence is not pull request readiness, mergeability, \
+starter-project preflight evidence is not PR ready. \
+It is not merge ready. It is not production ready. \
+It is not pull request readiness, mergeability, \
 production suitability, complete lesson execution, user-like Alice UI coverage, \
 save/reopen/export completion, grading, creative assessment, visible rendering \
 correctness, or complete Alice coverage.";
 
-    assert_no_readiness_overclaims("docs/example.md", text);
+    assert_no_doc_overclaims("docs/example.md", text, &rules);
 }
 
 #[test]
 fn readiness_overclaim_detector_reports_actionable_failure_details() {
-    let violations = readiness_overclaims_in(
+    let rules = vec![
+        OverclaimRule::new("PR ready", "starter-project preflight evidence recorded"),
+        OverclaimRule::new(
+            "proves visible rendering correctness",
+            "screenshot or window evidence is observation evidence only",
+        ),
+    ];
+    let violations = doc_overclaims_in(
         "docs/example.md",
-        "This starter-project preflight evidence is PR ready.",
+        "This starter-project preflight evidence is PR ready.\nIt proves visible rendering correctness.",
+        &rules,
     );
 
-    assert_eq!(violations.len(), 1);
+    assert_eq!(violations.len(), 2);
     let details = format_overclaim_failures(&violations);
     assert!(details.contains("docs/example.md"));
     assert!(details.contains("PR ready"));
+    assert!(details.contains("proves visible rendering correctness"));
     assert!(details.contains(CONTRACT_DOC_PATH));
     assert!(details.contains("starter-project preflight evidence recorded"));
+    assert!(details.contains("screenshot or window evidence is observation evidence only"));
+}
+
+#[test]
+fn overclaim_rules_from_contract_ignores_unrelated_markdown_tables() {
+    let contract = "\
+## GitHub metadata fields
+
+| Field | Required value |
+| --- | --- |
+| `mergeStateStatus` | `CLEAN` |
+| `mergeable` | `MERGEABLE` |
+
+## Executable starter-project boundary check
+
+| Prohibited phrase | Bounded replacement |
+| --- | --- |
+| `PR ready` | `starter-project preflight evidence recorded` |
+| `merge ready` | `starter-project evidence boundary satisfied` |
+
+| `unrelated` | `ignored` |
+";
+
+    let rules = overclaim_rules_from_contract(contract);
+
+    assert_rules_match_contract(
+        &rules,
+        &[
+            ("PR ready", "starter-project preflight evidence recorded"),
+            ("merge ready", "starter-project evidence boundary satisfied"),
+        ],
+    );
 }
 
 fn repository_root() -> PathBuf {
@@ -214,14 +292,13 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
 
 fn assert_contains_none(label: &str, text: &str, needles: &[&str]) {
     assert_contains_none_with_message(
-        label,
         text,
         needles,
         &format!("{label} contains internal or overbroad language"),
     );
 }
 
-fn assert_contains_none_with_message(_label: &str, text: &str, needles: &[&str], message: &str) {
+fn assert_contains_none_with_message(text: &str, needles: &[&str], message: &str) {
     let normalized_text = normalize(text).to_lowercase();
     let present = needles
         .iter()
@@ -232,15 +309,32 @@ fn assert_contains_none_with_message(_label: &str, text: &str, needles: &[&str],
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct ReadinessOverclaim {
-    file: &'static str,
-    line_number: usize,
-    phrase: &'static str,
-    bounded_replacement: &'static str,
+struct OverclaimRule {
+    phrase: String,
+    normalized_phrase: String,
+    bounded_replacement: String,
 }
 
-fn assert_no_readiness_overclaims(file: &'static str, text: &str) {
-    let violations = readiness_overclaims_in(file, text);
+impl OverclaimRule {
+    fn new(phrase: &str, bounded_replacement: &str) -> Self {
+        Self {
+            phrase: phrase.to_string(),
+            normalized_phrase: normalize(phrase).to_lowercase(),
+            bounded_replacement: bounded_replacement.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ReadinessOverclaim<'a> {
+    file: &'static str,
+    line_number: usize,
+    phrase: &'a str,
+    bounded_replacement: &'a str,
+}
+
+fn assert_no_doc_overclaims(file: &'static str, text: &str, rules: &[OverclaimRule]) {
+    let violations = doc_overclaims_in(file, text, rules);
     assert!(
         violations.is_empty(),
         "{}",
@@ -248,30 +342,47 @@ fn assert_no_readiness_overclaims(file: &'static str, text: &str) {
     );
 }
 
-fn readiness_overclaims_in(file: &'static str, text: &str) -> Vec<ReadinessOverclaim> {
+fn doc_overclaims_in<'a>(
+    file: &'static str,
+    text: &str,
+    rules: &'a [OverclaimRule],
+) -> Vec<ReadinessOverclaim<'a>> {
     text.lines()
         .enumerate()
         .flat_map(|(line_index, line)| {
             let normalized_line = normalize(line).to_lowercase();
-            PROHIBITED_READINESS_OVERCLAIMS
+            rules
                 .iter()
-                .filter(move |(phrase, _)| normalized_line.contains(&phrase.to_lowercase()))
-                .map(move |(phrase, bounded_replacement)| ReadinessOverclaim {
+                .filter(move |rule| line_overclaims(&normalized_line, rule))
+                .map(move |rule| ReadinessOverclaim {
                     file,
                     line_number: line_index + 1,
-                    phrase,
-                    bounded_replacement,
+                    phrase: &rule.phrase,
+                    bounded_replacement: &rule.bounded_replacement,
                 })
         })
         .collect()
 }
 
-fn format_overclaim_failures(violations: &[ReadinessOverclaim]) -> String {
+fn line_overclaims(normalized_line: &str, rule: &OverclaimRule) -> bool {
+    normalized_line
+        .match_indices(&rule.normalized_phrase)
+        .any(|(index, _)| !is_negated_boundary(&normalized_line[..index]))
+}
+
+fn is_negated_boundary(prefix: &str) -> bool {
+    prefix.ends_with(" not ")
+        || prefix.ends_with(" does not ")
+        || prefix.ends_with(" do not ")
+        || prefix.ends_with(" without ")
+}
+
+fn format_overclaim_failures(violations: &[ReadinessOverclaim<'_>]) -> String {
     violations
         .iter()
         .map(|violation| {
             format!(
-                "{} overclaims starter-project/preflight readiness with prohibited phrase `{}` on line {}; source contract: {}; use bounded wording such as `{}`",
+                "{} overclaims starter-project/preflight readiness or evidence with prohibited phrase `{}` on line {}; source contract: {}; use bounded wording such as `{}`",
                 violation.file,
                 violation.phrase,
                 violation.line_number,
@@ -283,6 +394,82 @@ fn format_overclaim_failures(violations: &[ReadinessOverclaim]) -> String {
         .join("\n")
 }
 
+fn overclaim_rules_from_contract(text: &str) -> Vec<OverclaimRule> {
+    let mut lines = text
+        .lines()
+        .skip_while(|line| line.trim() != OVERCLAIM_RULE_TABLE_HEADER);
+    let Some(_) = lines.next() else {
+        panic!("{CONTRACT_DOC_PATH} is missing table header `{OVERCLAIM_RULE_TABLE_HEADER}`");
+    };
+
+    let mut rules = Vec::new();
+    for line in lines {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('|') {
+            break;
+        }
+        if is_markdown_table_separator(trimmed) {
+            continue;
+        }
+        rules.push(parse_overclaim_rule(trimmed).unwrap_or_else(|| {
+            panic!(
+                "{CONTRACT_DOC_PATH} contains a malformed overclaim rule row after `{OVERCLAIM_RULE_TABLE_HEADER}`: {trimmed}"
+            )
+        }));
+    }
+
+    assert!(
+        !rules.is_empty(),
+        "{CONTRACT_DOC_PATH} table `{OVERCLAIM_RULE_TABLE_HEADER}` must define at least one overclaim rule"
+    );
+    rules
+}
+
+fn parse_overclaim_rule(line: &str) -> Option<OverclaimRule> {
+    let trimmed = line.trim();
+    if !trimmed.starts_with('|') {
+        return None;
+    }
+
+    let mut cells = trimmed.trim_matches('|').split('|').map(str::trim);
+    let phrase = code_span_text(cells.next()?)?;
+    let bounded_replacement = code_span_text(cells.next()?)?;
+    if cells.next().is_some() {
+        return None;
+    }
+
+    Some(OverclaimRule::new(phrase, bounded_replacement))
+}
+
+fn code_span_text(cell: &str) -> Option<&str> {
+    cell.strip_prefix('`')?.strip_suffix('`')
+}
+
+fn is_markdown_table_separator(line: &str) -> bool {
+    line.trim_matches('|')
+        .split('|')
+        .map(str::trim)
+        .all(|cell| cell.chars().all(|ch| ch == '-'))
+}
+
+fn assert_rules_match_contract(rules: &[OverclaimRule], expected_rules: &[(&str, &str)]) {
+    let documented_rules = rules
+        .iter()
+        .map(|rule| (rule.phrase.as_str(), rule.bounded_replacement.as_str()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        documented_rules, expected_rules,
+        "{CONTRACT_DOC_PATH} must define exactly the documented starter-project/preflight overclaim rules"
+    );
+}
+
 fn normalize(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut normalized = String::with_capacity(text.len());
+    for part in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        normalized.push_str(part);
+    }
+    normalized
 }

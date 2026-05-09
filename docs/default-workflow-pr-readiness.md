@@ -167,9 +167,9 @@ docs/default-workflow-pr-readiness.md
 docs/starter-project-preflight-evidence.md
 ```
 
-The documentation-overclaim check fails only on narrow readiness overclaim
-phrases, not broad negative statements that explain what the scenario does not
-prove. Prohibited phrases are:
+The documentation-overclaim check fails only on narrow readiness or evidence
+overclaim phrases, not broad negative statements that explain what the scenario
+does not prove. Prohibited phrases are:
 
 | Prohibited phrase | Bounded replacement |
 | --- | --- |
@@ -179,6 +179,11 @@ prove. Prohibited phrases are:
 | `ready for merge` | `readiness gaps are documented for later gates` |
 | `readiness guaranteed` | `readiness depends on the separate readiness gates` |
 | `complete PR readiness` | `starter-project preflight evidence only` |
+| `proves visible rendering correctness` | `screenshot or window evidence is observation evidence only` |
+| `proves save/reopen/export` | `save, reopen, and export remain readiness gaps` |
+| `first lesson is complete` | `starter-project preflight evidence only` |
+| `grades learner work` | `records evidence for review; it does not grade` |
+| `assesses creativity` | `names an editable change without assessing creativity` |
 
 Failure output names the violating file, the matched phrase, this source
 contract, and the bounded replacement wording.
