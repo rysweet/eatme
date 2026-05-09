@@ -877,10 +877,6 @@ evidence boundaries:
 First-lesson automation scenario readiness: not ready
 Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch lacks modernized-target proof
 
-Original Alice action evidence:
-- Original Alice action evidence is missing.
-- Original Alice action evidence was not found in the comparison target evidence.
-
 Shown:
 - Select Project scenario evidence is shown.
 - Procedure/edit scenario evidence is shown.
@@ -889,6 +885,10 @@ Shown:
 Not yet shown:
 - Save completion is not yet proven.
 - First-lesson completion is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.

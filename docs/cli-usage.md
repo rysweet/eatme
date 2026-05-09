@@ -307,10 +307,6 @@ plain output scenario-focused:
 First-lesson automation scenario readiness: not ready
 Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof
 
-Original Alice action evidence:
-- Original Alice action evidence is missing.
-- Original Alice action evidence was not found in the comparison target evidence.
-
 Shown:
 - Alice launch scenario evidence is shown.
 - Visible rendering scenario evidence is shown.
@@ -322,6 +318,10 @@ Not yet shown:
 - Grading is not yet shown.
 - Creative assessment is not yet shown.
 - First-lesson completion is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.

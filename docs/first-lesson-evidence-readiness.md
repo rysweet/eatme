@@ -106,10 +106,10 @@ reviewers, instructors, and PR readers. It renders the readiness heading, one
 | Section | When it appears | Meaning |
 | --- | --- | --- |
 | `Desktop proof` | Always, as a single line after the readiness heading. | Machine-readable desktop proof status rendered for humans. It is not a completion claim. |
-| `Original Alice action evidence` | `original_alice_action_evidence.status` is `missing`. | Explicitly reports `Original Alice action evidence is missing.` It is reportable state, not a completion claim. |
 | `Shown` | One or more bounded evidence facts are present. | Evidence was read and is safe to summarize for the named claim only. |
 | `Not yet shown` | Any required evidence is missing, invalid, not observed, or blocked. | The claim is not yet shown or not yet proven in user-facing wording. |
 | `Desktop next action` | RabbitHole desktop next-action evidence exists, is valid, and applies to the current run. | RabbitHole reported observations, candidate next actions, or explicit next-action reasons. |
+| `Original Alice action evidence` | `original_alice_action_evidence.status` is `missing`. | Explicitly reports `Original Alice action evidence is missing.` It is reportable state, not a completion claim. |
 | `Unproven` | Always. | The six required non-claims that the report must not imply. |
 
 Example plain report:
@@ -117,10 +117,6 @@ Example plain report:
 ```text
 First-lesson automation scenario readiness: not ready
 Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch lacks modernized-target proof
-
-Original Alice action evidence:
-- Original Alice action evidence is missing.
-- Original Alice action evidence was not found in the comparison target evidence.
 
 Shown:
 - RabbitHole launch/action evidence is shown.
@@ -143,6 +139,10 @@ Desktop next action:
 - Save option/action evidence is present as an observation only.
 - Next evidence needed: Collect explicit Save completion evidence before reporting Save completion.
 
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
+
 Unproven:
 - Full Alice UI automation is not proven.
 - Grading is not proven.
@@ -159,7 +159,7 @@ omission is not silent: the missing or invalid condition must still appear in
 when that evidence is required for the current claim.
 
 If original Alice action evidence is missing, the plain report always includes
-the `Original Alice action evidence` section before `Shown` with this fixed
+the `Original Alice action evidence` section before `Unproven` with this fixed
 summary:
 
 ```text
