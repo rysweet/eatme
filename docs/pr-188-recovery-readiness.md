@@ -1,10 +1,15 @@
 # PR #188 recovery readiness
 
-PR #188 recovery readiness is the documented handoff path for the
-`wave6-real-alice-smoke-report-1778302300` branch. It keeps review evidence tied
-to the current branch `HEAD`, preserves the silver-thread/e2e launch-smoke
-boundary, and leaves the pull request unmerged until the normal review path
-accepts it.
+PR #188 recovery readiness is a PR-specific specialization of
+[Default Workflow PR Readiness](default-workflow-pr-readiness.md) for the
+`wave6-real-alice-smoke-report-1778302300` branch. It documents the intended
+review-handoff behavior for recovery work: evidence must be produced from the
+current branch `HEAD`, the pull request remains unmerged until normal review
+accepts it, and claims stay within the silver-thread/e2e launch-smoke boundary.
+
+Here, silver-thread/e2e launch-smoke means the narrow end-to-end path that proves
+Alice can be packaged, launched, observed, and reported through deterministic
+launch-smoke artifacts. It does not mean complete UI-driven lesson execution.
 
 Use this guide when PR #188 needs recovery after an interrupted owner session,
 rate limit, or no-op readiness handoff.
@@ -17,7 +22,7 @@ rate limit, or no-op readiness handoff.
 - [No-op acceptance](#no-op-acceptance)
 - [Review and finalization evidence](#review-and-finalization-evidence)
 - [Output boundary](#output-boundary)
-- [Tutorial: recover PR #188](#tutorial-recover-pr-188)
+- [Recovery command sequence](#recovery-command-sequence)
 
 ## Scope
 
@@ -125,7 +130,7 @@ Evidence:
 - NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh
 - cargo run -q -p eatme-cli -- assets validate --json
 - cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-- mkdocs build --strict
+- mkdocs build --strict (include only when documentation changed)
 
 Scope:
 - Silver-thread/e2e launch-smoke readiness only.
@@ -171,7 +176,7 @@ rendering correctness, grading, Save completion, lesson completion, complete
 end-to-end lesson execution, learner-world correctness, or deployed
 sharing/platform success.
 
-## Tutorial: recover PR #188
+## Recovery command sequence
 
 Use this command sequence for a local recovery run:
 
