@@ -41,6 +41,11 @@ const PROHIBITED_PLACEHOLDERS: &[&str] = &[
     "PR #164",
     "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
 ];
+const PROHIBITED_EVIDENCE_PHRASES: &[&str] = &[
+    "validated exact HEAD",
+    "default-workflow evidence passed",
+    "ready for handoff",
+];
 
 #[test]
 fn readiness_doc_names_the_exact_pr_branch_assets_and_commands() {
@@ -66,6 +71,11 @@ fn readiness_doc_names_the_exact_pr_branch_assets_and_commands() {
         "default-workflow readiness inputs",
         &evidence,
         PROHIBITED_PLACEHOLDERS,
+    );
+    assert_not_contains_any(
+        "default-workflow readiness overclaims",
+        &evidence,
+        PROHIBITED_EVIDENCE_PHRASES,
     );
 }
 
@@ -143,11 +153,7 @@ fn readiness_doc_keeps_claims_and_manual_fallbacks_bounded() {
     assert_not_contains_any(
         "manual fallback log boundary",
         &fallback_log,
-        &[
-            "validated exact HEAD",
-            "default-workflow evidence passed",
-            "ready for handoff",
-        ],
+        PROHIBITED_EVIDENCE_PHRASES,
     );
 }
 

@@ -109,8 +109,8 @@ explain why recovery was needed, but it cannot replace exact-HEAD validation fro
 the repository root.
 
 `default-workflow-attempt.log` is allowed to say why earlier recovery evidence is
-invalid. It must not say that default-workflow evidence passed, that exact head
-validation succeeded, or that the PR is ready for handoff.
+invalid. It must not report a passing default-workflow gate, successful
+exact-head validation, or a publishable PR state.
 
 ## Handoff note shape
 
