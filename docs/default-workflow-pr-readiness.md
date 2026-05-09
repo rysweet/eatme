@@ -9,6 +9,11 @@ that applies to the PR, checks GitHub metadata for the same branch head, and
 then records either a bounded readiness decision or a bounded no-op
 justification. It does not merge the PR.
 
+There is no single repository command named "finalization recovery." Treat this
+guide as the executable evidence checklist: run the existing repository commands
+and GitHub metadata queries below, then publish the current evidence in a PR
+comment or body update.
+
 ## Contents
 
 - [Readiness contract](#readiness-contract)
@@ -69,6 +74,7 @@ review artifact, not a source file that must be committed.
 | Field | Meaning |
 | --- | --- |
 | `repository` | Repository owner and name, such as `rysweet/eatme`. |
+| `evidence_collected_at` | UTC timestamp when GitHub metadata and local evidence were collected. |
 | `branch` | Local branch under review. |
 | `head_sha` | Current local `HEAD` SHA from `git rev-parse HEAD`. |
 | `worktree_status` | `git status --short --branch` result. Readiness evidence is accepted only from a clean final worktree. |
@@ -76,7 +82,7 @@ review artifact, not a source file that must be committed.
 | `pr_head_branch` | GitHub PR head branch from `headRefName`. |
 | `pr_head_sha` | GitHub PR head SHA from `headRefOid`. |
 | `preserved_patch_review` | Required when a saved uncommitted patch is part of recovery. Records the patch source, inspection result, affected paths, and whether the patch is already represented by the current branch. |
-| `checks` | Required check states for `pr_head_sha`. |
+| `checks` | Required check names, conclusions, and source URLs for `pr_head_sha`. |
 | `merge_state` | `mergeStateStatus` and `mergeable`. |
 | `asset_validation` | Result of `assets validate --json`, when applicable. |
 | `gadugi_freshness` | Result of `assets generate-gadugi --check --json`, when applicable. |
@@ -95,7 +101,15 @@ review artifact, not a source file that must be committed.
 
 ## Generic readiness procedure
 
-Run the gate from the repository root.
+Run the gate from the repository root. Use only existing repository validation
+commands and focused tests that already exist; name every command in the
+published evidence.
+
+Record an evidence collection timestamp before reading GitHub metadata:
+
+```bash
+date -u +"%Y-%m-%dT%H:%M:%SZ"
+```
 
 1. Confirm the branch, local `HEAD`, and worktree state:
 
@@ -116,6 +130,10 @@ Run the gate from the repository root.
    gh pr view 173 \
      --json number,title,headRefName,headRefOid,baseRefName,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url
    ```
+
+   Expand `statusCheckRollup` into exact check or check-run names and
+   conclusions. Do not publish only a summarized check status without the
+   concrete check details it summarizes.
 
 3. Inspect the preserved recovery patch when the workflow provides one. Read the
    patch directly, record its affected paths and claims, compare those changes
@@ -220,15 +238,21 @@ The readiness gate consumes these `gh pr view` fields:
 | `headRefOid` | The PR head SHA that GitHub checks and mergeability describe. |
 | `mergeStateStatus` | `CLEAN`. |
 | `mergeable` | `MERGEABLE`. |
-| `statusCheckRollup` | Required checks green for `headRefOid`. |
+| `statusCheckRollup` | Required check and check-run names, conclusions, `detailsUrl`, `workflowName`, and source URLs for `headRefOid`. |
 | `reviewDecision` | Review state used as review/finalization context, not as a replacement for executable evidence. |
 | `state` | The PR remains open unless a separate merge workflow closes it. |
 
 `statusCheckRollup` is green only when every required check for `headRefOid` has
-completed successfully. A required check blocks readiness when it is pending,
-queued, in progress, requested, failing, errored, timed out, skipped when branch
-protection requires it to run, cancelled, missing, or reported for a different
-head.
+completed successfully. Record the exact check-run names, conclusions,
+`detailsUrl`, `workflowName`, and source URLs so reviewers can trace each status
+back to the GitHub run or external check that produced it. A required check
+blocks readiness when it is pending, queued, in progress, requested, failing,
+errored, timed out, skipped when branch protection requires it to run,
+cancelled, missing, or reported for a different head.
+
+Older PR-body claims tied to previous SHAs are context only. Ignore them or
+supersede them with a timestamped current-head PR comment or body update before
+using the PR description as readiness evidence.
 
 If the local `HEAD` differs from `headRefOid`, the recovery record must say which
 state was evaluated. Do not describe local validation as proof for the published
@@ -291,6 +315,11 @@ automation, rendering correctness, grading correctness, creative assessment,
 full Tweedle/player decode unless directly proven, Save completion, lesson
 completion, production readiness, deployment success, merge completion, or
 manual merge.
+
+The published PR #173 statement must include the evidence collection timestamp,
+the exact PR head SHA, merge state, mergeability, and the exact required check or
+check-run names with conclusions. A stale PR-body claim from an older head must
+be explicitly superseded rather than reused as merge-ready evidence.
 
 ## Generated Gadugi adapter freshness
 
@@ -391,13 +420,16 @@ The justification should include:
 
 | Item | Required content |
 | --- | --- |
+| Evidence timestamp | UTC timestamp for the metadata and local evidence collection. |
 | Branch and head | Local branch and `HEAD` SHA. |
 | Worktree state | Clean final worktree state. |
-| PR metadata | PR number, head branch, head SHA, merge state, mergeability, and check summary. |
+| PR metadata | PR number, head branch, head SHA, merge state, mergeability, and exact check names with conclusions. |
 | Executed gates | Commands that passed for the evaluated state. |
 | Preserved patch coverage | Required only when recovery supplied a saved patch. State that the patch was inspected and is already represented by the current head, or do not use no-op wording. |
 | Claim boundary | The exact readiness claim and explicit non-claims. |
 | No-op reason | Why docs, assets, generated adapters, and tests already satisfy the contract. |
+| Changed-file scope | Changed-file scope reviewed for the current PR head, with unrelated changes rejected before no-op output. |
+| Blockers | Blockers list showing `none` only when every gate is clean; otherwise emit `NOT_MERGE_READY` with specific blockers. |
 | Audit cycles | The three SEEK / VALIDATE / FIX cycles, including the clean final cycle. |
 
 When a saved patch is part of recovery, the output must use a literal `No-op`
@@ -405,15 +437,28 @@ only after recording the current PR head SHA, current check status, mergeability
 state, and confirmation that the preserved patch is already represented. The rule
 is: do not use no-op wording when the preserved patch is unreadable.
 
+Do not emit `No-op` when local `HEAD` differs from the PR head. Do not emit
+`No-op` when the final worktree is dirty. Either case must produce
+`NOT_MERGE_READY` with specific blockers instead of a success-shaped no-op
+justification.
+
+For PR #173, use this final sentence only after current GitHub metadata confirms
+the clean protected-flow state for the recorded head:
+
+```text
+No-op justification: PR #173 current head ${PR_HEAD_SHA} is the sole review basis; current GitHub checks/mergeability show the PR is clean/green for the protected flow; sharing readiness is limited to classroom review handoff readiness, not deployed/hosted/product readiness; no merge-ready blockers remain; no repository edits or commits were required.
+```
+
 Example no-op wording:
 
 ```text
 MERGE_READY
 
 Workflow-accepted no-op recovery recorded for PR #173 at current branch head
-${HEAD_SHA}. The local branch matches the PR head, the worktree is clean, and
-current-head evidence passed for asset validation, generated Gadugi freshness,
-focused readiness-guard tests, strict documentation build, quality gates, review
+${HEAD_SHA}. Evidence was collected at ${EVIDENCE_COLLECTED_AT}. The local
+branch matches PR head ${PR_HEAD_SHA}, the worktree is clean, and current-head
+evidence passed for asset validation, generated Gadugi freshness, focused
+readiness-guard tests, strict documentation build, quality gates, review
 evidence, and PR metadata review.
 
 No repository changes were required because the committed sharing-readiness docs,
@@ -433,19 +478,51 @@ completion, production readiness, deployment success, or merge completion.
 ## Readiness comment
 
 Publish readiness only after all required gates pass for the evaluated head. The
-comment should name the head and avoid broader product-readiness claims.
+comment should name the evidence timestamp, exact head, merge state,
+mergeability, and required check details, then avoid broader product-readiness
+claims.
 
 Create a comment body from the evidence record:
 
 ```bash
 HEAD_SHA="$(git rev-parse HEAD)"
+EVIDENCE_COLLECTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cat > readiness-comment.txt <<EOF
 Default-workflow recovery recorded for PR #173 at current branch head ${HEAD_SHA}.
 
-Verified current-head gates: asset validation, generated Gadugi freshness,
-focused readiness-guard tests, strict documentation build, quality gates, PR
-metadata review, focused diff review, PR description/current-head evidence
-review, and bounded sharing-readiness claim review.
+Evidence collected at: ${EVIDENCE_COLLECTED_AT}
+PR head: ${PR_HEAD_SHA}
+Merge state: ${MERGE_STATE_STATUS}
+Mergeability: ${MERGEABLE}
+
+Required checks for ${PR_HEAD_SHA}:
+
+| Check | Conclusion | Workflow | Source |
+| --- | --- | --- | --- |
+| ${CHECK_NAME_1} | ${CHECK_CONCLUSION_1} | ${WORKFLOW_NAME_1} | ${DETAILS_URL_1} |
+| ${CHECK_NAME_2} | ${CHECK_CONCLUSION_2} | ${WORKFLOW_NAME_2} | ${DETAILS_URL_2} |
+
+Validated current-head gates: asset validation
+(\`cargo run -q -p eatme-cli -- assets validate --json\`), generated Gadugi
+freshness (\`cargo run -q -p eatme-cli -- assets generate-gadugi --check --json\`),
+focused readiness-guard tests, strict documentation build
+(\`mkdocs build --strict\`), quality gates
+(\`TMPDIR=/tmp ./scripts/quality-gates.sh\`), PR metadata review, focused diff
+review, PR description/current-head evidence review, and bounded
+sharing-readiness claim review.
+
+Changed-file scope: ${CHANGED_FILE_SCOPE}
+Blockers: ${BLOCKER_SUMMARY}
+
+Supersedes stale PR-body evidence: this comment is the current-head evidence for
+${PR_HEAD_SHA}; older PR-body readiness claims are context only.
+
+Skipped or manual jobs treated as non-evidence:
+
+| Job | Treatment |
+| --- | --- |
+| Deploy to GitHub Pages | Non-evidence for classroom sharing-readiness unless required branch protection makes it a required check for this head. |
+| manual real Alice launch smoke | Non-evidence unless separately executed and recorded for this head. |
 
 The recovery supports classroom sharing handoff readiness only. It does not
 claim hosted sharing, deployed sharing, platform success, full UI automation,

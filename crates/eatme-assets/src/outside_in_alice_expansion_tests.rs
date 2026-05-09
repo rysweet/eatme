@@ -6,6 +6,7 @@ mod asset_validation;
 mod first_lesson_evidence;
 mod gadugi_adapters;
 mod module_size_contracts;
+mod pr173_finalization_output_contract;
 mod pr173_readiness_evidence;
 mod pr173_recovery_gate;
 mod scenario_contracts;
