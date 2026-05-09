@@ -1,0 +1,143 @@
+schema_version: eatme.scenario/v1
+id: sharing-readiness-boundary-qa
+title: Sharing Readiness Boundary QA
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Sharing readiness boundary documentation
+    url: docs/sharing-readiness-boundary.md
+    use: >-
+      Use the boundary documentation as the canonical reference for what sharing
+      readiness is and is not.
+  - name: Student artifact package share evidence scenario
+    url: assets/scenarios/eatme/student-artifact-package-share-evidence.yaml
+    use: >-
+      Use the student sharing scenario as a positive-space evidence surface to
+      scan for overclaim patterns.
+  - name: Teacher community sharing loop scenario
+    url: assets/scenarios/eatme/teacher-community-sharing-loop.yaml
+    use: >-
+      Use the teacher sharing scenario as a positive-space evidence surface to
+      scan for overclaim patterns.
+  - name: Student artifact Gadugi adapter
+    url: assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml
+    use: >-
+      Use the generated Gadugi adapter for the student sharing scenario as an
+      evidence surface to scan for overclaim patterns.
+  - name: Teacher community Gadugi adapter
+    url: assets/scenarios/gadugi/teacher-community-sharing-loop.yaml
+    use: >-
+      Use the generated Gadugi adapter for the teacher sharing scenario as an
+      evidence surface to scan for overclaim patterns.
+purpose: >-
+  Validate that sharing readiness language across all sharing evidence surfaces
+  stays bounded to classroom review artifacts and does not drift toward
+  deployment, platform, or success claims. This editable scenario is the
+  negative-space companion to the two positive sharing scenarios. It defines
+  what sharing readiness is not: not full user interface automation, not
+  automated creative assessment, not learner-world grading, not complete Alice
+  coverage, not hosted sharing, not deployed sharing, and not platform success.
+personas:
+  instructors: [assessment-curator, teacher-community-curator, classroom-orchestrator]
+  students: [reflective-debugger, collaborative-peer-mentor]
+agentic_flow:
+  focus: sharing-readiness-boundary-qa
+  instructor_goal: >-
+    Confirm that all sharing evidence surfaces stay bounded to classroom review
+    artifacts by scanning for overclaim patterns and reporting any violations,
+    preservation evidence, and remediation guidance.
+  prompt_source: assets/scenarios/eatme/sharing-readiness-boundary-qa.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - boundary_violation_report
+    - boundary_preservation_summary
+    - remediation_guidance
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent validating the sharing readiness
+  boundary. Scan the five sharing evidence surfaces listed in resource_basis for
+  any overclaim patterns from SHARING_SUCCESS_CLAIM_PATTERNS. Produce a
+  boundary_violation_report listing any overclaim patterns found (empty when the
+  boundary holds), a boundary_preservation_summary confirming which bounded
+  terms were checked and that sharing evidence stays bounded to classroom review
+  artifacts, and remediation_guidance suggesting replacement wording when
+  violations are found. State explicitly that sharing readiness is not full user
+  interface automation, not automated creative assessment, not learner-world
+  grading, not complete Alice coverage, not hosted sharing, not deployed
+  sharing, and not platform success.
+acceptance_criteria:
+  - given: >-
+      sharing evidence surfaces exist for student and teacher sharing scenarios
+    when: >-
+      the boundary violation report is produced
+    then: >-
+      the report lists any overclaim patterns found or confirms zero violations
+  - given: >-
+      the boundary preservation summary is produced
+    when: >-
+      a reviewer reads the summary
+    then: >-
+      the summary confirms which bounded terms were checked and that all
+      sharing evidence surfaces stay bounded to classroom review artifacts
+  - given: >-
+      a violation is found in a sharing evidence surface
+    when: >-
+      the remediation guidance is produced
+    then: >-
+      the guidance names the specific overclaim pattern and suggests bounded
+      replacement wording that stays within the classroom review boundary
+acceptance_probes:
+  - Boundary violation report scans all five sharing evidence surfaces for overclaim patterns and reports violations or confirms none.
+  - Boundary preservation summary confirms that sharing evidence stays bounded to classroom review artifacts.
+  - Remediation guidance names the specific overclaim and suggests bounded replacement wording when violations are found.
+  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, not hosted sharing, not deployed sharing, and not platform success.
+  - Readiness impact says the reviewer gets a boundary validation report for classroom review artifacts, not proof of deployment or platform operation.
+rubric:
+  - criterion: Overclaim detection completeness
+    evidence:
+      - All 23 overclaim patterns from SHARING_SUCCESS_CLAIM_PATTERNS are scanned across all five evidence surfaces.
+      - Violations are reported with the exact pattern text and the surface where they appear.
+  - criterion: Boundary preservation clarity
+    evidence:
+      - Summary names which bounded terms were checked and whether each surface remained clean.
+      - Summary can be understood by a reviewer who has not read the overclaim pattern list.
+  - criterion: Remediation usefulness
+    evidence:
+      - Guidance suggests specific bounded replacement wording for each violation.
+      - Replacement wording stays within the classroom review boundary.
+avoid:
+  - Claims that hosted sharing, deployed sharing, or platform readiness has been proven.
+  - Treating the absence of overclaim patterns as proof of deployed sharing or platform operation.
+  - Exact user interface coordinates, menu paths, or private implementation details.
+  - Replacing instructor or reviewer judgment with automated validation alone.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes sharing-readiness-boundary-qa
+  - id: agentic-boundary-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/sharing-readiness-boundary-qa.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  boundary_violation_report: agentic://instructor/boundary-violation-report
+  boundary_preservation_summary: agentic://instructor/boundary-preservation-summary
+  remediation_guidance: agentic://instructor/remediation-guidance
+unsupported_policy: >-
+  If the agent cannot read this editable YAML, the sharing evidence surfaces in
+  resource_basis, or the overclaim pattern list, fail visibly and report the
+  missing evidence. Do not treat boundary validation as proof of deployed
+  sharing, platform operation, or any claim outside the classroom review
+  boundary. Do not claim this scenario is full user interface automation,
+  automated creative assessment, learner-world grading, complete Alice coverage,
+  hosted sharing, deployed sharing, or platform success.

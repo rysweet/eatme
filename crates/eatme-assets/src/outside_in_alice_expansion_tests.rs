@@ -11,9 +11,10 @@ mod pr173_readiness_evidence;
 mod pr173_recovery_gate;
 mod scenario_contracts;
 mod sharing_readiness_boundary;
+mod sharing_readiness_boundary_qa;
 mod workflow_readiness_evidence;
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 93;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 95;
 
 struct TargetScenario {
     id: &'static str,

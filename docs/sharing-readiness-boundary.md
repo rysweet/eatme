@@ -18,6 +18,7 @@ or access-control system exists.
 - [Teacher-community handoff](#teacher-community-handoff)
 - [Configuration](#configuration)
 - [Recovery evidence artifacts](#recovery-evidence-artifacts)
+- [Boundary QA validation](#boundary-qa-validation)
 - [Scenario contract reference](#scenario-contract-reference)
 - [Output contract reference](#output-contract-reference)
 - [Example student packet](#example-student-packet)
@@ -40,8 +41,10 @@ Use the sharing readiness scenarios when a student or teacher needs a bounded
 handoff artifact:
 
 1. Choose the scenario that matches the handoff:
-   `student-artifact-package-share-evidence` for one learner artifact, or
-   `teacher-community-sharing-loop` for a teacher-facing activity note.
+   `student-artifact-package-share-evidence` for one learner artifact,
+   `teacher-community-sharing-loop` for a teacher-facing activity note, or
+   `sharing-readiness-boundary-qa` to validate that sharing language stays
+   bounded.
 2. Collect the required packet fields from the scenario contract.
 3. Add the review boundary in plain language.
 4. Validate the asset set and generated adapters before using the packet in an
@@ -215,6 +218,102 @@ automation, rendering correctness, grading correctness, creative assessment,
 Save completion, lesson completion, production readiness, deployment success,
 merge completion, or manual merge.
 
+## Boundary QA validation
+
+Use `sharing-readiness-boundary-qa` when the review needs an explicit check that
+sharing readiness language stays bounded to classroom review artifacts and does
+not drift toward deployment, platform, or success claims.
+
+This scenario is the negative-space companion to the two positive sharing
+scenarios. Where `student-artifact-package-share-evidence` defines what a student
+packet contains and `teacher-community-sharing-loop` defines what a teacher
+handoff contains, the boundary QA scenario defines what sharing readiness
+**is not**.
+
+### When to use the boundary QA scenario
+
+Use it in any of these situations:
+
+- An agent or workflow produces sharing-related output and you need to verify the
+  output does not overclaim hosting, deployment, platform success, or other
+  unsupported capabilities.
+- A PR changes sharing readiness documentation, scenarios, or generated adapters
+  and the review needs explicit evidence that boundary language was preserved.
+- An acceptance probe suite needs a negative-space contract: a scenario whose
+  acceptance criteria succeed only when forbidden claims are absent.
+
+### What the boundary QA scenario checks
+
+The scenario validates that sharing evidence surfaces stay bounded by checking
+for the absence of overclaim patterns. The acceptance criteria reject output
+that:
+
+| Forbidden pattern category | Description |
+| --- | --- |
+| Hosted or deployed sharing claims | Assertions that hosted or deployed sharing is working or validated |
+| Platform or production claims | Assertions that platform or production readiness is proven |
+| Automation or grading claims | Assertions that full UI automation, grading, or creative assessment is validated |
+| Completion claims | Assertions that Save completion or first-lesson completion is proven |
+| Rendering correctness claims | Assertions that UI or visible rendering correctness is proven |
+| Merge or deployment claims | Assertions that merge readiness or deployment is successful |
+
+These patterns are case-insensitive. The full list of 23 banned phrases is
+maintained in the Rust overclaim guard at
+`crates/eatme-assets/src/outside_in_alice_expansion_tests.rs:SHARING_SUCCESS_CLAIM_PATTERNS`.
+Consult that constant for the exact strings; they are not reproduced here
+because the overclaim guard also scans this document.
+
+### Boundary QA expected outputs
+
+| Output | Purpose |
+| --- | --- |
+| `boundary_violation_report` | Lists any overclaim patterns found in the evaluated sharing evidence surface. Empty when the boundary holds. |
+| `boundary_preservation_summary` | Confirms which bounded terms were checked and that no forbidden success claims were present. |
+| `remediation_guidance` | When violations are found, names the specific overclaim and suggests replacement wording that stays within the classroom review boundary. |
+
+### Example: boundary QA pass
+
+```text
+Boundary QA: sharing-readiness-boundary-qa
+
+Surfaces checked:
+  - docs/sharing-readiness-boundary.md
+  - assets/scenarios/eatme/student-artifact-package-share-evidence.yaml
+  - assets/scenarios/eatme/teacher-community-sharing-loop.yaml
+  - assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml
+  - assets/scenarios/gadugi/teacher-community-sharing-loop.yaml
+
+Overclaim patterns scanned: 23
+Violations found: 0
+
+Boundary preservation summary:
+  All sharing evidence surfaces stay bounded to classroom review artifacts.
+  No overclaim patterns from SHARING_SUCCESS_CLAIM_PATTERNS were found.
+```
+
+### Example: boundary QA failure
+
+```text
+Boundary QA: sharing-readiness-boundary-qa
+
+Surfaces checked:
+  - docs/sharing-readiness-boundary.md
+
+Overclaim patterns scanned: 23
+Violations found: 1
+
+Violation:
+  Surface: docs/sharing-readiness-boundary.md
+  Pattern: <one of the 23 banned phrases from SHARING_SUCCESS_CLAIM_PATTERNS>
+  Context: "The <banned phrase> proves the feature is ready."
+
+Remediation:
+  Replace the overclaim with bounded language such as
+  "The classroom handoff packet is ready for peer review."
+  Sharing readiness proves only that a reviewable packet exists,
+  not that a hosted sharing service was validated.
+```
+
 ## Scenario contract reference
 
 The sharing readiness boundary is expressed through scenario assets, not a
@@ -224,6 +323,7 @@ network API.
 | --- | --- |
 | `student-artifact-package-share-evidence` | Student packet for artifact reference, student change, observable result, attribution or classroom context, next revision, and review boundary. |
 | `teacher-community-sharing-loop` | Teacher-facing handoff for share card, classroom note, accessibility notes, attribution, student evidence expectations, and remix feedback. |
+| `sharing-readiness-boundary-qa` | Negative-space boundary check that rejects overclaim patterns across all sharing evidence surfaces. Succeeds only when no forbidden success claims are present. |
 
 Generated Gadugi adapters consume these scenario contracts. Do not hand-edit the
 generated adapters to broaden mission intent; update the canonical eatme
@@ -242,6 +342,9 @@ fields so humans and agents can inspect them consistently.
 | Teacher-community share card | Activity purpose, audience, prerequisites, timing, classroom constraints, attribution, editable scenario/persona links, student evidence |
 | Classroom handoff note | Setup assumptions, learner-facing evidence, accessibility notes, adaptation choices, support signals |
 | Remix feedback prompt | Classroom fit question, learner evidence question, accessibility question, one suggested revision |
+| Boundary violation report | Overclaim pattern, source surface, matched text, violation count |
+| Boundary preservation summary | Surfaces checked, patterns scanned, violation count (zero for pass), bounded-term confirmation |
+| Remediation guidance | Violated pattern, original text, suggested replacement wording within classroom review boundary |
 
 Acceptance probes should reject responses that:
 
@@ -254,6 +357,13 @@ Acceptance probes should reject responses that:
   completion, lesson completion, production readiness, or deployment success
 - omit attribution, classroom context, accessibility notes, or the next revision
   when the scenario asks for them
+
+The boundary QA scenario (`sharing-readiness-boundary-qa`) automates this
+rejection check by scanning all sharing evidence surfaces for the overclaim
+patterns listed in the [boundary QA validation](#boundary-qa-validation) section.
+When the boundary QA scenario is included in a validation run, it provides a
+machine-readable violation report in addition to the human-readable probes
+above.
 
 ## Example student packet
 
