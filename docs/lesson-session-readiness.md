@@ -34,14 +34,17 @@ those evidence surfaces, see
 
 ## Scenario map
 
-Use these canonical scenarios for instructor/student lesson-session evidence:
+Use these canonical and adjacent readiness scenarios for instructor/student
+lesson-session evidence:
 
 | Scenario | Role | Evidence contract |
 | --- | --- | --- |
 | `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress evidence, first-lesson automation scenario evidence boundaries, and plain not-yet-shown states for missing desktop affordances. |
+| `starter-project-open-save-export-preflight` | Student | Starter project opening, save/export preflight language, a change note for a later user-like pass, and explicit boundaries that avoid claiming return or export success. |
 | `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
 | `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
 | `instructor-student-outcomes-rubric` | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
+| `classroom-gallery-walk-and-rubric` | Instructor/student | Peer review prompts, evidence-focused gallery walk notes, privacy boundaries, and revision-language support without claiming live classroom use. |
 
 The `alice check-lesson-readiness` and `alice run-first-lesson-readiness`
 commands bind to `first-lessons-real-ui-actions`. Instructor scenarios are
@@ -62,8 +65,8 @@ journey from setup, to first action, to reflection and sharing.
 
 | Scenario | What the user is trying to do | Remaining gap | Evidence still needed |
 | --- | --- | --- | --- |
-| First lesson real UI actions | Start Alice, see the lesson window, and try the first visible classroom actions with clear stopping points. | The record does not yet show a learner moving from opening Alice to one visible action while knowing exactly where the current evidence stops. | A learner-facing run showing the visible action attempted, what appeared on screen, where the learner had to stop, and the prompt they saw next. |
-| Starter project open, save, and export preflight | Open a starter project, choose one small change to try, and understand what still needs to be checked before relying on the project in class. | The record does not yet show a learner returning to the project later or sharing an exported artifact without help. | A reproducible learner journey showing the opened project, the change attempt, the later return or export attempt, and the exact result shown to the learner. |
+| First lesson real UI actions | Start Alice, see the lesson window, and attempt one learner-visible action boundary with clear stopping points. | The record does not yet show a learner completing a visible action; it shows where the action attempt boundary and current evidence stop. | A learner-facing run showing the visible action attempted, what appeared on screen, where the learner had to stop, and the prompt they saw next. |
+| Starter project open, save, and export preflight | Open a starter project, name one small change to try in a later pass, and understand what still needs to be checked before relying on the project in class. | The record does not yet show a learner returning to the project later or sharing an exported artifact without help. | A reproducible learner journey showing the opened project, the recorded change note, the later return or export attempt, and the exact result shown to the learner. |
 | Instructor lesson materials remix | Prepare a teacher plan, student handout, and exit ticket from Alice lesson resources. | The record does not yet show students using the remixed packet in class without the instructor filling in hidden steps. | Instructor-facing classroom notes showing which prompts students used, what confused them, and what the instructor changed before reuse. |
 | Instructor-to-student launch handoff | Turn launch and window evidence into a plain student prompt for recording one Alice action, visible result, and next revision. | The record does not yet show students separating "Alice opened on this machine" from "my project behavior worked." | Student-visible handoff samples and instructor notes showing what students recorded, where they needed help, and which evidence stayed environment-only. |
 | Student outcomes discussion rubric | Discuss student Alice projects using visible behavior, learner explanation, process evidence, and one next revision. | The record does not yet show different instructors using the discussion frame consistently with visible evidence and learner explanation. | Instructor-visible rubric use notes showing examples of visible behavior, student explanation, process evidence, and revision feedback across varied projects. |

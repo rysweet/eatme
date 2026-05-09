@@ -2,10 +2,22 @@ use std::fs;
 use std::path::Path;
 use std::sync::OnceLock;
 
+const SCENARIO_MAP_HEADING: &str = "## Scenario map";
+const SCENARIO_MAP_HEADER: &str = "| Scenario | Role | Evidence contract |";
+const SCENARIO_MAP_DIVIDER: &str = "| --- | --- | --- |";
 const MATRIX_HEADING: &str = "## Scenario-to-gap matrix";
 const REQUIRED_HEADER: &str =
     "| Scenario | What the user is trying to do | Remaining gap | Evidence still needed |";
 const REQUIRED_DIVIDER: &str = "| --- | --- | --- | --- |";
+
+const REQUIRED_SCENARIO_IDS: [&str; 6] = [
+    "first-lessons-real-ui-actions",
+    "starter-project-open-save-export-preflight",
+    "instructor-lesson-materials-remix",
+    "instructor-student-launch-evidence-handoff",
+    "instructor-student-outcomes-rubric",
+    "classroom-gallery-walk-and-rubric",
+];
 
 const REQUIRED_SCENARIOS: [&str; 6] = [
     "First lesson real UI actions",
@@ -33,7 +45,7 @@ const PROHIBITED_MATRIX_LANGUAGE: [&str; 10] = [
 fn lesson_session_readiness_matrix_sits_after_the_scenario_map() {
     let doc = readiness_doc();
     let scenario_map_index = doc
-        .find("## Scenario map")
+        .find(SCENARIO_MAP_HEADING)
         .expect("lesson readiness doc must keep a Scenario map section");
     let matrix_index = doc
         .find(MATRIX_HEADING)
@@ -43,6 +55,36 @@ fn lesson_session_readiness_matrix_sits_after_the_scenario_map() {
         scenario_map_index < matrix_index,
         "scenario-to-gap matrix should appear after the existing scenario map"
     );
+}
+
+#[test]
+fn lesson_session_readiness_scenario_map_tracks_the_matrix_scenarios() {
+    let doc = readiness_doc();
+    let scenario_map = scenario_map_section(doc);
+    let rows = markdown_table_rows(scenario_map, SCENARIO_MAP_HEADER, SCENARIO_MAP_DIVIDER);
+
+    assert_eq!(
+        rows.len(),
+        REQUIRED_SCENARIO_IDS.len(),
+        "scenario map should list the same scenario set as the matrix"
+    );
+
+    for (row, expected_id) in rows.iter().zip(REQUIRED_SCENARIO_IDS) {
+        assert_eq!(
+            row.len(),
+            3,
+            "scenario map rows must have exactly three cells: {row:?}"
+        );
+        assert_eq!(
+            row[0].trim_matches('`'),
+            expected_id,
+            "scenario map should track the matrix scenario set in the same order"
+        );
+        assert!(
+            row[1..].iter().all(|cell| !cell.trim().is_empty()),
+            "scenario map rows must not contain empty role or evidence cells: {row:?}"
+        );
+    }
 }
 
 #[test]
@@ -140,9 +182,17 @@ fn readiness_doc() -> &'static str {
 }
 
 fn matrix_section(doc: &str) -> &str {
+    section(doc, MATRIX_HEADING)
+}
+
+fn scenario_map_section(doc: &str) -> &str {
+    section(doc, SCENARIO_MAP_HEADING)
+}
+
+fn section<'a>(doc: &'a str, heading: &str) -> &'a str {
     let start = doc
-        .find(MATRIX_HEADING)
-        .expect("lesson readiness doc must contain the matrix heading");
+        .find(heading)
+        .unwrap_or_else(|| panic!("lesson readiness doc must contain the {heading} heading"));
     let rest = &doc[start..];
     let end = rest.find("\n## ").unwrap_or(rest.len());
 
@@ -150,10 +200,14 @@ fn matrix_section(doc: &str) -> &str {
 }
 
 fn table_rows(matrix: &str) -> Vec<Vec<&str>> {
-    matrix
+    markdown_table_rows(matrix, REQUIRED_HEADER, REQUIRED_DIVIDER)
+}
+
+fn markdown_table_rows<'a>(section: &'a str, header: &str, divider: &str) -> Vec<Vec<&'a str>> {
+    section
         .lines()
         .filter(|line| line.starts_with('|'))
-        .filter(|line| *line != REQUIRED_HEADER && *line != REQUIRED_DIVIDER)
+        .filter(|line| *line != header && *line != divider)
         .map(|line| {
             line.trim_matches('|')
                 .split('|')
