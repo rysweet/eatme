@@ -45,7 +45,10 @@ fn unproven_claims_are_exactly_eight() {
         "Save completion is not proven.",
         "Deployed sharing/platform success is not proven.",
     ] {
-        assert!(r.unproven_claims.iter().any(|c| c == expected), "missing: {expected:?}");
+        assert!(
+            r.unproven_claims.iter().any(|c| c == expected),
+            "missing: {expected:?}"
+        );
     }
 }
 
@@ -59,7 +62,10 @@ fn limitations_are_exactly_fourteen() {
 fn ready_desktop_proof_contract_is_verified() {
     let r = check_lesson_session_readiness(&write_manifest(both_ready())).unwrap();
     assert_eq!(r.desktop_proof_contract.status, "verified");
-    assert_eq!(r.desktop_proof_contract.reason_code, "launch_smoke_manifest_ready");
+    assert_eq!(
+        r.desktop_proof_contract.reason_code,
+        "launch_smoke_manifest_ready"
+    );
 }
 
 #[test]
@@ -70,17 +76,24 @@ fn missing_manifest_proof_contract_is_unsupported_environment() {
     }));
     let r = check_lesson_session_readiness(&m).unwrap();
     assert_eq!(r.desktop_proof_contract.status, "unsupported_environment");
-    assert_eq!(r.desktop_proof_contract.reason_code, "launch_smoke_manifest_missing");
+    assert_eq!(
+        r.desktop_proof_contract.reason_code,
+        "launch_smoke_manifest_missing"
+    );
 }
 
 #[test]
 fn failed_assertions_proof_contract_is_launched_but_unverified() {
     let mut t = ready_target("modernized");
     t["launch_manifest"]["assertions"]["startup_screenshot"]["passed"] = serde_json::json!(false);
-    let m = write_manifest(serde_json::json!({"baseline": ready_target("baseline"), "modernized": t}));
+    let m =
+        write_manifest(serde_json::json!({"baseline": ready_target("baseline"), "modernized": t}));
     let r = check_lesson_session_readiness(&m).unwrap();
     assert_eq!(r.desktop_proof_contract.status, "launched_but_unverified");
-    assert_eq!(r.desktop_proof_contract.reason_code, "launch_smoke_manifest_incomplete");
+    assert_eq!(
+        r.desktop_proof_contract.reason_code,
+        "launch_smoke_manifest_incomplete"
+    );
 }
 
 #[test]
@@ -108,7 +121,13 @@ fn required_evidence_text_is_stable() {
 #[test]
 fn mapping_doc_references_assertions() {
     let doc = read_doc("docs/launch-smoke-readiness-mapping.md");
-    for name in ["display_responsive", "process_started", "startup_screenshot", "no_fatal_logs", "real_alice_execution_evidence"] {
+    for name in [
+        "display_responsive",
+        "process_started",
+        "startup_screenshot",
+        "no_fatal_logs",
+        "real_alice_execution_evidence",
+    ] {
         assert!(doc.contains(name), "doc missing assertion {name:?}");
     }
 }
@@ -135,14 +154,20 @@ fn both_failed() -> serde_json::Value {
 }
 
 fn read_doc(path: &str) -> String {
-    fs::read_to_string(workspace_root().join(path)).unwrap().to_ascii_lowercase()
+    fs::read_to_string(workspace_root().join(path))
+        .unwrap()
+        .to_ascii_lowercase()
 }
 
 fn write_manifest(targets: serde_json::Value) -> PathBuf {
     let root = unique_test_dir("contract");
     fs::create_dir_all(&root).unwrap();
     let path = root.join("comparison-manifest.json");
-    fs::write(&path, serde_json::to_string_pretty(&manifest(&path, targets)).unwrap()).unwrap();
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&manifest(&path, targets)).unwrap(),
+    )
+    .unwrap();
     path
 }
 
@@ -249,13 +274,26 @@ fn lm(role: &str, fc: Option<&str>, ss: bool, arts: bool) -> serde_json::Value {
     })
 }
 
-fn a(passed: bool) -> serde_json::Value { serde_json::json!({"passed": passed, "detail": "ok"}) }
-fn art(path: &str) -> serde_json::Value { serde_json::json!({"path": path, "size_bytes": 1, "sha256": "t"}) }
+fn a(passed: bool) -> serde_json::Value {
+    serde_json::json!({"passed": passed, "detail": "ok"})
+}
+fn art(path: &str) -> serde_json::Value {
+    serde_json::json!({"path": path, "size_bytes": 1, "sha256": "t"})
+}
 
 fn unique_test_dir(prefix: &str) -> PathBuf {
     let c = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
-    workspace_root().join("target/eatme-alice-readiness-tests").join(format!("{prefix}-{}-{c}-{}", std::process::id(), now_ms()))
+    workspace_root()
+        .join("target/eatme-alice-readiness-tests")
+        .join(format!("{prefix}-{}-{c}-{}", std::process::id(), now_ms()))
 }
 
-fn workspace_root() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("../..") }
-fn now_ms() -> u128 { SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() }
+fn workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+fn now_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+}

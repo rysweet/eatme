@@ -79,8 +79,11 @@ fn write_manifest_with_execute(targets: serde_json::Value, execute: bool) -> Pat
     let root = unique_test_dir("edge");
     fs::create_dir_all(&root).unwrap();
     let path = root.join("comparison-manifest.json");
-    fs::write(&path, serde_json::to_string_pretty(&manifest(&path, targets, execute)).unwrap())
-        .unwrap();
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&manifest(&path, targets, execute)).unwrap(),
+    )
+    .unwrap();
     path
 }
 
@@ -162,7 +165,12 @@ fn missing_launch_manifest_target(role: &str) -> serde_json::Value {
     t
 }
 
-fn launch_manifest(role: &str, fc: Option<&str>, screenshot: bool, arts: bool) -> serde_json::Value {
+fn launch_manifest(
+    role: &str,
+    fc: Option<&str>,
+    screenshot: bool,
+    arts: bool,
+) -> serde_json::Value {
     serde_json::json!({
         "schema_version": "eatme.launch-smoke/v1", "scenario_id": SCENARIO_ID,
         "run_id": format!("{role}-run"), "alice_home": format!("/tmp/{role}-alice"),
@@ -198,14 +206,26 @@ fn artifact(path: &str) -> serde_json::Value {
 }
 
 fn assert_contains(values: &[String], expected: &str) {
-    assert!(values.iter().any(|v| v.contains(expected)), "expected {values:?} to contain {expected:?}");
+    assert!(
+        values.iter().any(|v| v.contains(expected)),
+        "expected {values:?} to contain {expected:?}"
+    );
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {
     let c = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
-    workspace_root().join("target/eatme-alice-readiness-tests").join(format!("{prefix}-{}-{c}-{}", std::process::id(), now_ms()))
+    workspace_root()
+        .join("target/eatme-alice-readiness-tests")
+        .join(format!("{prefix}-{}-{c}-{}", std::process::id(), now_ms()))
 }
 
-fn workspace_root() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("../..") }
+fn workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
 
-fn now_ms() -> u128 { SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() }
+fn now_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+}
