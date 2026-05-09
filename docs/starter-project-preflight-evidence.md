@@ -62,8 +62,8 @@ that reopened-state verification evidence exists.
 
 Closing this gap uses a separate persistence evidence lane that exercises the
 save path, records the saved artifact, reopens that artifact, and records
-hook-declared reopened-state verification evidence. Until that separate evidence
-exists for a run, this report should be read only as starter-project
+reopened-state evidence reported by the reopen step. Until that separate
+evidence exists for a run, this report should be read only as starter-project
 open-readiness evidence.
 
 The deterministic save/reopen boundary is:
@@ -72,7 +72,7 @@ The deterministic save/reopen boundary is:
 2. make or identify a deterministic, reviewer-visible save-worthy project state;
 3. save the project and record the saved artifact path, size, and run metadata;
 4. reopen that saved artifact in a new or explicitly reset Alice session;
-5. record hook-declared reopened-state verification and non-empty state evidence;
+5. record reopened-state verification and non-empty state evidence from the reopen step;
 6. report the save/reopen evidence in its own manifest or report, separate from
    this preflight evidence.
 
@@ -91,9 +91,9 @@ each persistence step without borrowing claims from this preflight report.
 
 | Save/reopen evidence | Required meaning |
 | --- | --- |
-| Save action evidence | Shows the workflow invoked Alice's save path after opening the starter project. |
+| Save proof | Shows the workflow invoked Alice's save path after opening the starter project. |
 | Saved artifact evidence | Identifies the saved `.a3p` artifact and records that it exists, is non-empty, and belongs to the current run. |
-| Reopen action evidence | Shows Alice reopened the saved artifact, not the original bundled starter project. |
+| Reopen proof | Shows Alice reopened the saved artifact, not the original bundled starter project. |
 | Reopened-state verification | Records `state_verification: passed` from the reopen hook and preserves non-empty reopened-state evidence for review. |
 | Separate manifest or report | Keeps persistence evidence distinct from starter-project launch preflight evidence. |
 | Optional export evidence | If export is part of the scenario, identifies and verifies the exported artifact separately from save/reopen. |
