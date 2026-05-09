@@ -20,22 +20,24 @@ supports it.
 | PR | [#175 Document evidence artifact contract](https://github.com/rysweet/eatme/pull/175) |
 | Local branch | `wave6-evidence-artifact-contract-1778302300` |
 | Local upstream | `origin/wave6-evidence-artifact-contract-1778302300` |
-| Checked-out local HEAD | `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301` |
-| Checked-out local HEAD short SHA | `5b1c9f1` |
+| Checked-out local HEAD | `27cf8762416cf56d44cdf9bd7f191697f447a4da` |
+| Checked-out local HEAD short SHA | `27cf876` |
 | Observed GitHub PR head | `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301` |
 | Observed base branch | `master` |
 | Observed base SHA | `17521c40bb72dd22669b596179327fc5cf307305` |
-| Current-head executable evidence capture | `2026-05-09T10:38:36Z` |
-| GitHub PR metadata capture | `2026-05-09T10:35Z` |
+| Current-head executable evidence capture | `2026-05-09T10:59:04Z` |
+| GitHub PR metadata capture | `2026-05-09T10:59:04Z` |
 
-Within this page, `local HEAD` and `observed PR head` refer to the full SHAs in
-this table unless a command output shows the SHA verbatim.
+Within this page, `local HEAD` and `observed PR head` refer to the distinct
+full SHAs in this table unless a command output shows a SHA verbatim.
 
 At current capture time, `git rev-parse @{u}` returned the same SHA as the
-observed GitHub PR head, `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`.
-Therefore, this artifact is scoped to PR #175 and the checked-out local HEAD.
-It does not claim that future PR #175 heads, checks, reviews, or mergeability
-match these observations.
+observed GitHub PR head, `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`. The
+checked-out local branch was one commit ahead at
+`27cf8762416cf56d44cdf9bd7f191697f447a4da`. Therefore, executable evidence is
+scoped to the checked-out local HEAD, while GitHub PR metadata is scoped to the
+observed PR head. This page does not claim that future PR #175 heads, checks,
+reviews, or mergeability match these observations.
 
 ## Readiness evidence
 
@@ -53,22 +55,34 @@ git rev-parse @{u}
 git status --short
 ```
 
-Observed result at `2026-05-09T10:38:36Z`:
+Observed result at `2026-05-09T10:59:04Z`:
 
 ```text
 branch=wave6-evidence-artifact-contract-1778302300
-head_sha=5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301
-head_short=5b1c9f1
+head_sha=27cf8762416cf56d44cdf9bd7f191697f447a4da
+head_short=27cf876
 upstream=origin/wave6-evidence-artifact-contract-1778302300
 upstream_sha=5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301
-status_short= M crates/eatme-assets/src/lib.rs
- M docs/default-workflow-pr-readiness.md
-?? crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs
+status_short_begin
+status_short_end
 ```
 
-The dirty status is limited to the readiness artifact and the readiness-contract
-test module wired into `eatme-assets`. No unrelated dirty paths were observed at
-the capture time.
+Step 8 evidence capture reported a clean baseline before this readiness
+artifact/test update. It also reported the local branch one commit ahead of
+upstream at capture time:
+
+```text
+## wave6-evidence-artifact-contract-1778302300...origin/wave6-evidence-artifact-contract-1778302300 [ahead 1]
+```
+
+That clean baseline is historical Step 8 evidence, not a claim about the
+current handoff worktree. The current handoff intentionally contains only these
+two pending readiness files:
+
+```text
+docs/default-workflow-pr-readiness.md
+crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs
+```
 
 ### GitHub PR #175 observations
 
@@ -126,22 +140,24 @@ sufficiency, or manual real Alice launch evidence.
 
 All Step 8 evidence commands were run on branch
 `wave6-evidence-artifact-contract-1778302300` at local HEAD
-`5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301` with
+`27cf8762416cf56d44cdf9bd7f191697f447a4da` with
 `NODE_OPTIONS=--max-old-space-size=32768` and no timeout wrapper.
 
 | Command | Result | Bounded claim |
 | --- | --- | --- |
 | `cargo run -q -p eatme-cli -- assets validate --json` | Exit `0`; `"passed": true`, `instructor_count: 11`, `student_count: 13`, `core_scenario_count: 25`, `creative_scenario_count: 12`, `scenario_asset_count: 93`, `errors: []`, `warnings: []`. | Persona and scenario assets validate for this checkout. This is asset-contract evidence, not lesson-completion or grading evidence. |
 | `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | Exit `0`; `"passed": true`, `generated_count: 46`, `checked_count: 46`, `changed: []`, `errors: []`. | Generated Gadugi adapters are current for this checkout. This is adapter freshness evidence, not UI rendering or grading evidence. |
-| `mkdocs build --strict` | Exit `0`; MkDocs cleaned `site` and built documentation in `0.36` seconds. | The documentation site renders under strict MkDocs rules for this checkout. |
-| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Exit `0`; ran `cargo fmt`, `cargo clippy`, `cargo test`, module-size check, and `cargo llvm-cov`; the new readiness-contract tests passed in both `cargo test` and coverage runs, and the coverage summary reported `TOTAL` line coverage `86.34%`. | The repository quality gate passes for this checkout. This does not prove manual real Alice desktop launch, full UI automation, visual rendering correctness, grading, creative assessment, or lesson completion. |
+| `mkdocs build --strict` | Exit `0`; MkDocs cleaned `site` and built documentation in `0.37` seconds. | The documentation site renders under strict MkDocs rules for this checkout. |
+| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Exit `0`; ran `cargo fmt`, `cargo clippy`, `cargo test`, module-size check, and `cargo llvm-cov`; the readiness-contract tests passed in both `cargo test` and coverage runs, and the coverage summary reported `TOTAL` line coverage `86.34%`. | The repository quality gate passes for this checkout. This does not prove manual real Alice desktop launch, full UI automation, visual rendering correctness, grading, creative assessment, or lesson completion. |
 
 ### Historical same-head outside-in testing evidence
 
-The Step 16b user-path commands below were previously run from the same branch
-and same HEAD. They are retained as same-head history for silver-thread/e2e
-context, not as newly executed Step 8 proof. The current Step 8 executable
-evidence is the command table above.
+The Step 16b user-path commands below were previously run from this branch at
+the recorded head `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`. That recorded
+head now matches the observed GitHub PR head and upstream, not the checked-out
+local ahead commit. The commands are retained as same-head history for
+silver-thread/e2e context, not as newly executed Step 8 proof. The current Step
+8 executable evidence is the command table above.
 
 The `@wave6-evidence-artifact-contract-1778302300` install target in these
 commands was a branch ref as resolved at execution time, not an immutable
@@ -184,7 +200,7 @@ was observed. The artifact therefore remains at
 
 The Step 8 review keeps this page as an evidence contract and checks that it:
 
-1. Scopes observations to PR #175 and the current local/PR head.
+1. Separately scopes current local executable evidence and GitHub PR metadata.
 2. Keeps local Git evidence, GitHub PR metadata, status-check metadata, and
    executable evidence in separate sections.
 3. Lists skipped, not-measured, no-execute, and historical states as nonclaims
@@ -212,18 +228,23 @@ source, workflow, or credential-handling changes was found in this artifact.
 ## Finalization evidence
 
 PR #175 remains unmerged. The observed GitHub PR state is `OPEN`, the observed
-head ref is `wave6-evidence-artifact-contract-1778302300`, and the observed PR
-head SHA is `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`.
+head ref is `wave6-evidence-artifact-contract-1778302300`, and the observed
+GitHub PR head SHA is `5b1c9f18b474ee61e64f2298c9e0b6d0af4ad301`. The
+checked-out local branch head is
+`27cf8762416cf56d44cdf9bd7f191697f447a4da`, one commit ahead of that observed
+PR head.
 
-No manual merge was performed. This recovery only updates workflow readiness/review/finalization evidence and the executable readiness-contract tests
-that guard it.
+No manual merge was performed. This recovery only updates workflow
+readiness/review/finalization evidence and the executable readiness-contract
+tests that guard it.
 
-Finalization status: `limited-ready` for PR #175 evidence-contract recovery at
-the observed head. This means the artifact records current-head executable
-evidence, review boundaries, and explicit nonclaims sufficient for workflow
-handoff. It does not mean the PR is approved, merged, branch-protection
-sufficient, or validated for UI automation, rendering correctness, grading,
-creative assessment, or lesson completion.
+Finalization status: `limited-ready` for PR #175 evidence-contract recovery:
+current executable evidence is scoped to the checked-out local head, and GitHub
+PR metadata is scoped to the observed PR head. This means the artifact records
+executable evidence, review boundaries, and explicit nonclaims sufficient for
+workflow handoff. It does not mean the PR is approved, merged,
+branch-protection sufficient, or validated for UI automation, rendering
+correctness, grading, creative assessment, or lesson completion.
 
 ## Nonclaims
 
@@ -243,6 +264,8 @@ creative assessment, or lesson completion.
 - No grading or creative assessment is claimed.
 - No claim is made that skipped checks are acceptable for merge readiness.
 - No claim is made that branch-protection requirements were satisfied.
+- No claim is made that GitHub has observed local commits beyond the recorded
+  PR `headRefOid`.
 - No claim is made that future PR #175 heads, checks, reviews, or mergeability
   match the observations recorded here.
 - No prior rate-limited/default-workflow session context is required to continue

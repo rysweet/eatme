@@ -66,20 +66,44 @@ fn current_head_evidence_records_required_commands_without_timeout_wrappers() {
 }
 
 #[test]
+fn local_git_evidence_frames_clean_status_as_historical_step_8_capture() {
+    let local_git = section(
+        read_artifact(),
+        "### Local Git observations",
+        "### GitHub PR #175 observations",
+    );
+
+    assert_contains_all_normalized(
+        local_git,
+        &[
+            "Step 8 evidence capture reported a clean baseline before this readiness artifact/test update",
+            "not a claim about the current handoff worktree",
+            "current handoff intentionally contains only these two pending readiness files",
+            "docs/default-workflow-pr-readiness.md",
+            "crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs",
+        ],
+        "local git evidence",
+    );
+    assert!(
+        !local_git.contains("The local branch was clean"),
+        "local git evidence must not frame historical clean status as current handoff state"
+    );
+}
+
+#[test]
 fn finalization_evidence_records_unmerged_pr_status_and_workflow_boundary() {
     let finalization = section(read_artifact(), "## Finalization evidence", "## Nonclaims");
 
-    for expected in [
-        "PR #175 remains unmerged",
-        "No manual merge was performed",
-        "workflow readiness/review/finalization evidence",
-        "limited-ready",
-    ] {
-        assert!(
-            finalization.contains(expected),
-            "finalization evidence must record: {expected}"
-        );
-    }
+    assert_contains_all_normalized(
+        finalization,
+        &[
+            "PR #175 remains unmerged",
+            "No manual merge was performed",
+            "workflow readiness/review/finalization evidence",
+            "limited-ready",
+        ],
+        "finalization evidence",
+    );
 }
 
 #[test]
@@ -94,13 +118,13 @@ fn historical_branch_ref_evidence_is_bounded_to_recorded_execution_context() {
         historical.contains("branch ref as resolved at execution time"),
         "historical uvx evidence must state that the install target was a mutable branch ref"
     );
-    assert!(
-        historical.contains("not an immutable\nSHA-pinned install reference"),
-        "historical uvx evidence must not imply immutable SHA-pinned execution"
-    );
-    assert!(
-        historical.contains("same-head claim depends on the recorded\nexecution context"),
-        "same-head evidence must be scoped to recorded execution context"
+    assert_contains_all_normalized(
+        historical,
+        &[
+            "not an immutable SHA-pinned install reference",
+            "same-head claim depends on the recorded execution context",
+        ],
+        "historical uvx evidence",
     );
 }
 
@@ -181,6 +205,30 @@ fn contains_timeout_wrapper(text: &str) -> bool {
         .any(|line| line.starts_with("timeout ") || line.contains("`timeout "))
 }
 
+fn assert_contains_all_normalized(text: &str, expected_fragments: &[&str], context: &str) {
+    let normalized_text = normalize_whitespace(text);
+
+    for expected in expected_fragments {
+        assert!(
+            normalized_text.contains(&normalize_whitespace(expected)),
+            "{context} must record: {expected}"
+        );
+    }
+}
+
+fn normalize_whitespace(text: &str) -> String {
+    let mut normalized = String::with_capacity(text.len());
+
+    for word in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        normalized.push_str(word);
+    }
+
+    normalized
+}
+
 fn unsupported_success_claim_lines(text: &str) -> Vec<&str> {
     text.lines()
         .map(str::trim)
@@ -190,9 +238,17 @@ fn unsupported_success_claim_lines(text: &str) -> Vec<&str> {
 }
 
 fn contains_unsupported_success_claim(line: &str) -> bool {
-    let lower = line.to_ascii_lowercase();
-
     UNSUPPORTED_SUCCESS_CLAIMS
         .iter()
-        .any(|claim| lower.contains(claim))
+        .any(|claim| contains_ascii_case_insensitive(line, claim))
+}
+
+fn contains_ascii_case_insensitive(text: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+
+    text.as_bytes()
+        .windows(needle.len())
+        .any(|window| window.eq_ignore_ascii_case(needle.as_bytes()))
 }
