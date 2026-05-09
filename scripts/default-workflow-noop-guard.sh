@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if ! repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
-  echo "error: git rev-parse --show-toplevel failed; run this guard inside a git worktree or git repository." >&2
+if ! repo_root="$(git rev-parse --show-toplevel 2>&1)"; then
+  echo "error: git rev-parse --show-toplevel failed: $repo_root" >&2
+  echo "hint: run this guard inside a git worktree or git repository." >&2
   exit 2
 fi
 

@@ -12,6 +12,11 @@ fn guard_unit_contract_resolves_active_git_root_without_hard_coded_worktree_path
         source.contains("git rev-parse --show-toplevel"),
         "guard must resolve the active repository root at runtime with git rev-parse --show-toplevel"
     );
+    let suppressed_output = [">", "/dev/null"].concat();
+    assert!(
+        !source.contains(&suppressed_output),
+        "guard must surface command failures instead of suppressing them with null-device redirection"
+    );
     for forbidden in [
         workspace_root().display().to_string(),
         "wave6-real-alice-smoke-report-1778302300".to_string(),
