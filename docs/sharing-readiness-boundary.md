@@ -136,20 +136,38 @@ host, publish, moderate, or prove any deployed sharing service.
 
 ## PR 173 exact-head readiness evidence
 
-PR 173 readiness was evaluated on branch
-`wave6-deployed-sharing-gap-1778302300`.
+PR 173 current-head recovery statements apply only to branch
+`wave6-deployed-sharing-gap-1778302300` at exact evaluated HEAD SHA
+`5565fae102197b162b50eaa23ebad705eb416d0a`.
 
-| Evidence item | Result |
+| Evidence item | Recovery record |
 | --- | --- |
-| exact evaluated HEAD SHA | `7757f298bbdf220b37882c912abb05cae2277bd8` |
-| master sync status | `origin/master` is an ancestor of the exact evaluated HEAD SHA; no rebase was required for this check. |
-| validation commands | `NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`; `TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh` |
-| readiness result | The listed documentation, asset, generated-adapter, and quality gates completed for this readiness boundary. |
+| PR | `#173`, `docs: clarify sharing readiness boundary` |
+| PR head branch | `wave6-deployed-sharing-gap-1778302300` |
+| exact evaluated HEAD SHA | `5565fae102197b162b50eaa23ebad705eb416d0a` |
+| checked-out HEAD match | Local `HEAD` and PR `#173` head both resolved to `5565fae102197b162b50eaa23ebad705eb416d0a` during this recovery step. |
+| master sync status | `origin/master` was an ancestor of the exact evaluated HEAD SHA when checked during recovery. |
+| historical validation SHA | `7757f298bbdf220b37882c912abb05cae2277bd8` is historical context only. Validation completed at that SHA is not current-head proof for `5565fae102197b162b50eaa23ebad705eb416d0a`. |
+| current-head readiness boundary | The current-head record supports only the classroom sharing evidence boundary documented here. It is not production, deployment, merge, grading, Save, or UI-rendering readiness. |
 
-This evidence is limited to PR 173 readiness. It does not claim hosted sharing,
-deployed sharing, platform success, full UI automation, grading, creative
-assessment, Save completion, visible rendering correctness, or first-lesson
-completion.
+### Recovery-step validation status
+
+Only commands rerun for exact HEAD
+`5565fae102197b162b50eaa23ebad705eb416d0a` can be cited as current-head
+validation proof. Historical passing checks remain useful context, but they must
+not be described as proof for the current PR head.
+
+| Command | Recovery-step status |
+| --- | --- |
+| `NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict` | **not run in this recovery step** |
+| `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json` | **not run in this recovery step** |
+| `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | **not run in this recovery step** |
+| `TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh` | **not run in this recovery step** |
+
+This recovery record does not claim hosted sharing, deployed sharing, platform
+success, full UI automation, grading correctness, creative assessment, Save
+completion, visible rendering correctness, first-lesson completion, production
+readiness, merge readiness, or successful deployment.
 
 ## Scenario contract reference
 

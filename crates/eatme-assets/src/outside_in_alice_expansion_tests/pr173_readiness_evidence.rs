@@ -1,4 +1,7 @@
-use super::{assert_contains_all, sharing_readiness_boundary_doc};
+use super::{
+    PR173_CURRENT_HEAD_SHA, PR173_HISTORICAL_VALIDATION_SHA, PR173_RECOVERY_VALIDATION_COMMANDS,
+    assert_contains_all, sharing_readiness_boundary_doc,
+};
 
 const PR173_EVIDENCE_HEADING: &str = "## PR 173 exact-head readiness evidence";
 
@@ -23,6 +26,32 @@ fn pr173_evidence_names_branch_master_sync_and_exact_head_shape() {
 }
 
 #[test]
+fn pr173_evidence_pins_current_claims_to_actual_pr_head_sha() {
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
+    let expected_head_match =
+        format!("Local `HEAD` and PR `#173` head both resolved to `{PR173_CURRENT_HEAD_SHA}`");
+
+    assert_eq!(
+        exact_evaluated_head_sha(evidence),
+        Some(PR173_CURRENT_HEAD_SHA),
+        "PR 173 readiness evidence must pin current-head statements to the evaluated PR head"
+    );
+    assert_contains_all(
+        "PR 173 current-head identity",
+        evidence,
+        &[
+            "`#173`",
+            "`wave6-deployed-sharing-gap-1778302300`",
+            &expected_head_match,
+        ],
+    );
+    assert!(
+        !exact_head_row(evidence).contains(PR173_HISTORICAL_VALIDATION_SHA),
+        "the older documented SHA must never appear in the exact-head row"
+    );
+}
+
+#[test]
 fn pr173_evidence_lists_required_validation_gates_without_manual_fallback() {
     let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
 
@@ -40,6 +69,47 @@ fn pr173_evidence_lists_required_validation_gates_without_manual_fallback() {
     assert!(
         !evidence.to_lowercase().contains("manual fallback"),
         "PR 173 readiness evidence must not rely on the invalid manual fallback path"
+    );
+}
+
+#[test]
+fn pr173_recovery_validation_commands_are_explicitly_not_rerun_for_current_head() {
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
+    let missing = PR173_RECOVERY_VALIDATION_COMMANDS
+        .iter()
+        .filter(|command| {
+            !validation_status(evidence, command)
+                .is_some_and(|status| status == "**not run in this recovery step**")
+        })
+        .copied()
+        .collect::<Vec<_>>();
+
+    assert!(
+        missing.is_empty(),
+        "PR 173 recovery evidence must mark each non-rerun validation command exactly as not run in this recovery step: {missing:?}"
+    );
+}
+
+#[test]
+fn pr173_historical_validation_sha_is_context_not_current_head_proof() {
+    let evidence = pr173_evidence_section(sharing_readiness_boundary_doc());
+
+    assert_contains_all(
+        "PR 173 historical validation separation",
+        evidence,
+        &[
+            PR173_HISTORICAL_VALIDATION_SHA,
+            "historical context only",
+            "is not current-head proof",
+            PR173_CURRENT_HEAD_SHA,
+        ],
+    );
+    assert!(
+        historical_sha_sentences(evidence).iter().all(|sentence| {
+            sentence.contains("historical context only")
+                || sentence.contains("not current-head proof")
+        }),
+        "every mention of the historical validation SHA must explicitly keep it out of current-head proof"
     );
 }
 
@@ -106,14 +176,44 @@ fn pr173_evidence_section(docs: &str) -> &str {
 }
 
 fn exact_evaluated_head_sha(evidence: &str) -> Option<&str> {
-    let row = evidence
-        .lines()
-        .find(|line| line.contains("| exact evaluated HEAD SHA |"))?;
+    let row = exact_head_row(evidence);
     let mut sha_tokens = row
         .split(|c: char| !c.is_ascii_hexdigit())
         .filter(|token| token.len() == 40 && token.chars().all(|c| c.is_ascii_hexdigit()));
     let sha = sha_tokens.next()?;
     sha_tokens.next().is_none().then_some(sha)
+}
+
+fn exact_head_row(evidence: &str) -> &str {
+    evidence
+        .lines()
+        .find(|line| line.contains("| exact evaluated HEAD SHA |"))
+        .unwrap_or("")
+}
+
+fn validation_status<'a>(evidence: &'a str, command: &str) -> Option<&'a str> {
+    evidence
+        .lines()
+        .find(|line| line.contains(command))
+        .and_then(markdown_table_status)
+}
+
+fn markdown_table_status(line: &str) -> Option<&str> {
+    let cells = line
+        .trim()
+        .trim_matches('|')
+        .split('|')
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    (cells.len() == 2).then_some(cells[1])
+}
+
+fn historical_sha_sentences(evidence: &str) -> Vec<&str> {
+    evidence
+        .split('.')
+        .map(str::trim)
+        .filter(|sentence| sentence.contains(PR173_HISTORICAL_VALIDATION_SHA))
+        .collect()
 }
 
 fn assert_no_success_claims(evidence: &str) {

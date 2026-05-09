@@ -67,6 +67,35 @@ const FIRST_LESSON_REQUIRED_SMOKE_READY_EVIDENCE: &[&str] = &[
     "explicit_failure_when_ui_actions_are_not_automated",
 ];
 
+const PR173_CURRENT_HEAD_SHA: &str = "5565fae102197b162b50eaa23ebad705eb416d0a";
+const PR173_HISTORICAL_VALIDATION_SHA: &str = "7757f298bbdf220b37882c912abb05cae2277bd8";
+
+const PR173_RECOVERY_VALIDATION_COMMANDS: &[&str] = &[
+    "NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict",
+    "NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json",
+    "NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+    "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
+];
+
+const SHARING_OVERCLAIM_PATTERNS: &[&str] = &[
+    "hosted sharing works",
+    "hosted sharing passed",
+    "deployed sharing works",
+    "deployed sharing passed",
+    "save completion works",
+    "save completion passed",
+    "ui rendering correctness works",
+    "ui rendering correctness passed",
+    "grading correctness works",
+    "grading correctness passed",
+    "production readiness works",
+    "production readiness passed",
+    "merge readiness works",
+    "merge readiness passed",
+    "successful deployment works",
+    "successful deployment passed",
+];
+
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
