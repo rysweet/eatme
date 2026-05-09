@@ -12,7 +12,16 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 mod first_lesson;
+pub mod pr_readiness;
+mod pr_readiness_cli;
+#[cfg(test)]
+mod pr_readiness_github_tests;
+#[cfg(test)]
+mod pr_readiness_recovery_contract_tests;
+#[cfg(test)]
+mod pr_readiness_tests;
 use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
+use pr_readiness_cli::PrReadinessCommand;
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -35,6 +44,10 @@ enum Commands {
     Alice {
         #[command(subcommand)]
         command: AliceCommand,
+    },
+    PrReadiness {
+        #[command(subcommand)]
+        command: PrReadinessCommand,
     },
 }
 
@@ -295,6 +308,7 @@ fn main() -> Result<()> {
                 }
             }
         },
+        Commands::PrReadiness { command } => pr_readiness_cli::run(command, &runner)?,
     }
     Ok(())
 }
