@@ -52,6 +52,13 @@ Gadugi adapter. The scenario connects the teacher-community curator persona to a
 teacher-facing share card, classroom handoff note, and remix feedback prompt
 without claiming a deployed community platform.
 
+For student artifact sharing coverage, use
+`assets/scenarios/eatme/student-artifact-package-share-evidence.yaml` and its
+generated Gadugi adapter. The scenario keeps the student output at the artifact
+packet, evidence, classroom context, and review-handoff boundary. It does not
+claim hosted sharing, deployed sharing, or platform success. See
+[Sharing Readiness Boundary](sharing-readiness-boundary.md).
+
 ## QA-team outside-in test shape
 
 ```yaml

@@ -30,6 +30,7 @@ Eatme has three layers:
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
+| Reviewing classroom sharing readiness | [Sharing Readiness Boundary](sharing-readiness-boundary.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
@@ -65,6 +66,11 @@ implementation details, or grade saved learner worlds.
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
 and which parts are evidence expectations for human or agent review.
+
+Sharing readiness is one of those evidence expectations. A student share packet
+or teacher-community handoff is a classroom/review artifact, not proof of hosted
+sharing, deployed sharing, or platform success. See
+[Sharing Readiness Boundary](sharing-readiness-boundary.md).
 
 ## Outside-in evidence for Alice lesson scenarios
 

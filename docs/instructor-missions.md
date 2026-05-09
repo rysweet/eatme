@@ -83,6 +83,12 @@ The packet may point to a real Alice launch manifest as setup evidence. It must
 not present that manifest as proof of learner understanding, creative quality, or
 world correctness.
 
+Student artifact sharing and teacher-community sharing use the classroom review
+boundary documented in [Sharing Readiness Boundary](sharing-readiness-boundary.md).
+For instructors, sharing readiness means the handoff packet is reviewable; it
+does not prove hosted sharing, deployed sharing, platform access controls, or a
+live community service.
+
 The outside-in Alice QA expansion commits these instructor/student scenarios as
 canonical eatme scenarios with generated Gadugi adapters:
 

@@ -122,6 +122,11 @@ A student mission follows this rhythm:
 8. **Share** - Provide the artifact, screenshot, description, or reflection
    requested by the mission.
 
+For `student-artifact-package-share-evidence`, "share" means a review packet for
+an instructor or peer. The expected output is not a public URL, hosted gallery
+entry, deployment log, or proof that a sharing platform works. See
+[Sharing Readiness Boundary](sharing-readiness-boundary.md).
+
 ## Evidence expectations
 
 Good student evidence includes:
