@@ -12,7 +12,6 @@ use super::{
 };
 use anyhow::{Context, Result};
 use serde::Serialize;
-use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
@@ -347,7 +346,7 @@ fn inspect_target_evidence(
         .and_then(serde_json::Value::as_str)
         .map(str::to_string);
     let mut required_actions = Vec::new();
-    let mut missing_required_actions = Vec::new();
+    let mut missing_required_actions = required_ui_action_ids();
     let mut ui_action_contract_readable = false;
     let mut desktop_run_pixel_boundary = None;
     let mut desktop_run_pixel_observation = None;
@@ -363,13 +362,9 @@ fn inspect_target_evidence(
                         inspect_ui_action_contract(role, &contract, issues);
                         no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
-                        let required_action_ids = required_actions
-                            .iter()
-                            .map(String::as_str)
-                            .collect::<HashSet<_>>();
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
                             .iter()
-                            .filter(|id| !required_action_ids.contains(**id))
+                            .filter(|id| !required_actions.iter().any(|action| action == **id))
                             .map(|value| (*value).to_string())
                             .collect();
                         for action in &missing_required_actions {
@@ -413,10 +408,6 @@ fn inspect_target_evidence(
         issues.push(format!(
             "{role} launch_manifest is missing ui_action_contract.path"
         ));
-    }
-
-    if !ui_action_contract_readable {
-        missing_required_actions = required_ui_action_ids();
     }
 
     let blockers = required_action_evidence_blockers(role, &action_assertions);

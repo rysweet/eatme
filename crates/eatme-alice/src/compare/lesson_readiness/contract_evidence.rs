@@ -1,6 +1,5 @@
 use super::LessonTargetEvidence;
 use serde::Serialize;
-use std::collections::HashSet;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ContractEvidenceItem {
@@ -53,25 +52,24 @@ pub(super) fn readiness_contract_evidence(
     readiness_status: &str,
 ) -> Vec<ContractEvidenceItem> {
     let (baseline, modernized) = required_target_evidence(target_evidence);
-    let mut evidence = vec![
-        evidence_item(
-            "comparison_manifest",
-            "present",
-            "comparison manifest was parsed",
-        ),
-        evidence_item(
-            "execute_requested",
-            if execute_requested == Some(true) {
-                "present"
-            } else {
-                "missing"
-            },
-            "comparison manifest records executed target evidence",
-        ),
-    ];
+    let mut evidence = Vec::with_capacity(8 + missing_required_action_count(target_evidence));
+    evidence.push(evidence_item(
+        "comparison_manifest",
+        "present",
+        "comparison manifest was parsed",
+    ));
+    evidence.push(evidence_item(
+        "execute_requested",
+        if execute_requested == Some(true) {
+            "present"
+        } else {
+            "missing"
+        },
+        "comparison manifest records executed target evidence",
+    ));
 
     for (role, target) in [("baseline", baseline), ("modernized", modernized)] {
-        evidence.extend(target_contract_evidence(role, target));
+        push_target_contract_evidence(&mut evidence, role, target);
     }
 
     evidence.push(desktop_pixel_observation_evidence(modernized));
@@ -103,30 +101,29 @@ fn required_target_evidence(
     (baseline, modernized)
 }
 
-fn target_contract_evidence(
+fn push_target_contract_evidence(
+    evidence: &mut Vec<ContractEvidenceItem>,
     role: &str,
     target: Option<&LessonTargetEvidence>,
-) -> Vec<ContractEvidenceItem> {
-    let mut evidence = vec![
-        evidence_item(
-            format!("{role}.launch_manifest"),
-            if target.is_some_and(|target| target.launch_manifest_present) {
-                "present"
-            } else {
-                "missing"
-            },
-            format!("{role} target embeds launch manifest evidence"),
-        ),
-        evidence_item(
-            format!("{role}.ui_action_contract"),
-            if target.is_some_and(|target| target.ui_action_contract_readable) {
-                "present"
-            } else {
-                "missing"
-            },
-            format!("{role} target has readable UI action contract evidence"),
-        ),
-    ];
+) {
+    evidence.push(evidence_item(
+        format!("{role}.launch_manifest"),
+        if target.is_some_and(|target| target.launch_manifest_present) {
+            "present"
+        } else {
+            "missing"
+        },
+        format!("{role} target embeds launch manifest evidence"),
+    ));
+    evidence.push(evidence_item(
+        format!("{role}.ui_action_contract"),
+        if target.is_some_and(|target| target.ui_action_contract_readable) {
+            "present"
+        } else {
+            "missing"
+        },
+        format!("{role} target has readable UI action contract evidence"),
+    ));
 
     if let Some(target) = target {
         evidence.extend(target.missing_required_actions.iter().map(|action| {
@@ -137,8 +134,6 @@ fn target_contract_evidence(
             )
         }));
     }
-
-    evidence
 }
 
 fn desktop_pixel_observation_evidence(
@@ -168,7 +163,8 @@ pub(super) fn readiness_diagnostics(
     issues: &[String],
 ) -> Vec<ContractDiagnostic> {
     let (baseline, modernized) = required_target_evidence(target_evidence);
-    let mut diagnostics = Vec::new();
+    let mut diagnostics =
+        Vec::with_capacity(issues.len() + missing_required_action_count(target_evidence) + 3);
     if execute_requested != Some(true) {
         diagnostics.push(error_diagnostic(
             "execution_not_requested",
@@ -186,26 +182,26 @@ pub(super) fn readiness_diagnostics(
             ));
         }
     }
-    diagnostics.extend(missing_required_action_diagnostics(target_evidence));
-    let unreported_issue_diagnostics = {
-        let reported_messages = diagnostics
+    push_missing_required_action_diagnostics(&mut diagnostics, target_evidence);
+    for issue in issues {
+        if !diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.message.as_str())
-            .collect::<HashSet<_>>();
-        issues
-            .iter()
-            .filter(|issue| !reported_messages.contains(issue.as_str()))
-            .map(|issue| error_diagnostic("contract_validation_failed", "manifest", issue.clone()))
-            .collect::<Vec<_>>()
-    };
-    diagnostics.extend(unreported_issue_diagnostics);
+            .any(|diagnostic| diagnostic.message.as_str() == issue.as_str())
+        {
+            diagnostics.push(error_diagnostic(
+                "contract_validation_failed",
+                "manifest",
+                issue.clone(),
+            ));
+        }
+    }
     diagnostics
 }
 
-fn missing_required_action_diagnostics(
+fn push_missing_required_action_diagnostics(
+    diagnostics: &mut Vec<ContractDiagnostic>,
     target_evidence: &[LessonTargetEvidence],
-) -> Vec<ContractDiagnostic> {
-    let mut diagnostics = Vec::new();
+) {
     for target in target_evidence {
         for action in &target.missing_required_actions {
             diagnostics.push(ContractDiagnostic {
@@ -223,5 +219,11 @@ fn missing_required_action_diagnostics(
             });
         }
     }
-    diagnostics
+}
+
+fn missing_required_action_count(target_evidence: &[LessonTargetEvidence]) -> usize {
+    target_evidence
+        .iter()
+        .map(|target| target.missing_required_actions.len())
+        .sum()
 }

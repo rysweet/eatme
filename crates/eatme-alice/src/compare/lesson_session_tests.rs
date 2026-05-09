@@ -94,8 +94,8 @@ fn lesson_session_contract_check_fails_when_contract_is_missing() {
     assert_contract_contains(&report.issues, "missing lesson_session_contract");
 }
 #[test]
-fn lesson_session_contract_check_rejects_placeholder_first_lesson_steps() {
-    let root = unique_test_dir("placeholder-lesson-contract-check");
+fn lesson_session_contract_check_rejects_generic_first_lesson_steps() {
+    let root = unique_test_dir("generic-lesson-contract-check");
     let manifest = write_first_lesson_manifest(&root);
     let manifest_path = Path::new(&manifest.comparison_manifest_path);
     let mut value: serde_json::Value =

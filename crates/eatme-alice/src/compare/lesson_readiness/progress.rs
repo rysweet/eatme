@@ -132,11 +132,21 @@ pub(super) fn evidence_progress(
         |next_action| &next_action.select_project_proof_artifact,
     ));
 
-    let present = count_state(&items, "present");
-    let missing = count_state(&items, "missing");
-    let invalid = count_state(&items, "invalid");
-    let not_observed = count_state(&items, "not_observed");
-    let blocked = count_state(&items, "blocked");
+    let mut present = 0;
+    let mut missing = 0;
+    let mut invalid = 0;
+    let mut not_observed = 0;
+    let mut blocked = 0;
+    for item in &items {
+        match item.state.as_str() {
+            "present" => present += 1,
+            "missing" => missing += 1,
+            "invalid" => invalid += 1,
+            "not_observed" => not_observed += 1,
+            "blocked" => blocked += 1,
+            _ => {}
+        }
+    }
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
@@ -208,10 +218,6 @@ fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvi
         ),
         _ => artifact.detail.clone(),
     }
-}
-
-fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
 }
 
 pub(super) fn progress_item_id(evidence: &str) -> String {

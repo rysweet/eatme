@@ -4,6 +4,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const SCENARIO_ID: &str = "starter-project-open-save-export-preflight";
+const SOURCE_SCENARIO_PATH: &str =
+    "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml";
+const GENERATED_ADAPTER_PATH: &str =
+    "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml";
 const CONTRACT_DOC_PATH: &str = "docs/default-workflow-pr-readiness.md";
 const EVIDENCE_DOC_PATH: &str = "docs/starter-project-preflight-evidence.md";
 const OVERCLAIM_RULE_TABLE_HEADER: &str = "| Prohibited phrase | Bounded replacement |";
@@ -123,6 +127,11 @@ fn source_starter_project_preflight_uses_plain_bounded_user_facing_language() {
         &text,
         INTERNAL_OR_OVERBROAD_LANGUAGE,
     );
+    assert_no_doc_overclaims(
+        SOURCE_SCENARIO_PATH,
+        &text,
+        &read_contract_overclaim_rules(&root),
+    );
 }
 
 #[test]
@@ -148,6 +157,11 @@ fn generated_starter_project_preflight_adapter_uses_same_plain_boundaries() {
         "generated starter-project preflight adapter",
         &generated,
         INTERNAL_OR_OVERBROAD_LANGUAGE,
+    );
+    assert_no_doc_overclaims(
+        GENERATED_ADAPTER_PATH,
+        &generated,
+        &read_contract_overclaim_rules(&root),
     );
 }
 
@@ -275,6 +289,10 @@ fn scenario_path(root: &Path, collection: &str) -> PathBuf {
 fn read_repo_text(root: &Path, repo_relative_path: &str) -> String {
     fs::read_to_string(root.join(repo_relative_path))
         .unwrap_or_else(|error| panic!("failed to read {repo_relative_path}: {error}"))
+}
+
+fn read_contract_overclaim_rules(root: &Path) -> Vec<OverclaimRule> {
+    overclaim_rules_from_contract(&read_repo_text(root, CONTRACT_DOC_PATH))
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
