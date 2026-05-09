@@ -193,60 +193,71 @@ fn write_comparison_manifest(targets: serde_json::Value) -> PathBuf {
     let manifest_path = root.join("comparison-manifest.json");
     fs::write(
         &manifest_path,
-        serde_json::to_string_pretty(&serde_json::json!({
-            "schema_version": "eatme.alice-comparison/v1",
-            "comparison_contract": {
-                "schema_version": "eatme.alice-comparison-contract/v1",
-                "inputs": [],
-                "outputs": [],
-                "functionality_rules": [],
-                "timing_rules": [],
-                "non_claims": [],
-                "next_capabilities": []
-            },
-            "lesson_session_contract": {
-                "schema_version": "eatme.alice-lesson-session-contract/v1",
-                "scenario_id": SCENARIO_ID,
-                "session_kind": "launch_readiness",
-                "automation_status": "launch_smoke_only",
-                "actor_roles": [
-                    "target readiness evidence reviewer",
-                    "target launch evidence owner"
-                ],
-                "required_session_steps": [
-                    "resolve and prepare both Alice targets",
-                    "package each target when execution is requested",
-                    "launch each target under an isolated virtual display",
-                    "capture manifest, window, screenshot, log, assertion, and timing evidence"
-                ],
-                "executable_evidence": [
-                    "comparison manifest records target metadata, status, scorecard, timing, and differences",
-                    "target launch manifests are attached when execution is requested and reaches launch smoke"
-                ],
-                "boundaries": [
-                    "does not automate complete instructor assignment creation",
-                    "does not automate complete student lesson consumption",
-                    "does not perform creative assessment",
-                    "does not grade student worlds",
-                    "does not prove broad Alice compatibility beyond the selected scenario"
-                ]
-            },
-            "scenario_id": SCENARIO_ID,
-            "run_id": "launch-smoke-readiness-test",
-            "execute_requested": true,
-            "created_at_unix_ms": 1,
-            "started_at_unix_ms": 1,
-            "finished_at_unix_ms": 2,
-            "duration_ms": 1,
-            "comparison_manifest_path": manifest_path.display().to_string(),
-            "targets": targets,
-            "scorecard": {},
-            "diff": {}
-        }))
-        .unwrap(),
+        serde_json::to_string_pretty(&comparison_manifest(&manifest_path, targets)).unwrap(),
     )
     .unwrap();
     manifest_path
+}
+
+fn comparison_manifest(manifest_path: &Path, targets: serde_json::Value) -> serde_json::Value {
+    serde_json::json!({
+        "schema_version": "eatme.alice-comparison/v1",
+        "comparison_contract": comparison_contract(),
+        "lesson_session_contract": lesson_session_contract(),
+        "scenario_id": SCENARIO_ID,
+        "run_id": "launch-smoke-readiness-test",
+        "execute_requested": true,
+        "created_at_unix_ms": 1,
+        "started_at_unix_ms": 1,
+        "finished_at_unix_ms": 2,
+        "duration_ms": 1,
+        "comparison_manifest_path": manifest_path.display().to_string(),
+        "targets": targets,
+        "scorecard": {},
+        "diff": {}
+    })
+}
+
+fn comparison_contract() -> serde_json::Value {
+    serde_json::json!({
+        "schema_version": "eatme.alice-comparison-contract/v1",
+        "inputs": [],
+        "outputs": [],
+        "functionality_rules": [],
+        "timing_rules": [],
+        "non_claims": [],
+        "next_capabilities": []
+    })
+}
+
+fn lesson_session_contract() -> serde_json::Value {
+    serde_json::json!({
+        "schema_version": "eatme.alice-lesson-session-contract/v1",
+        "scenario_id": SCENARIO_ID,
+        "session_kind": "launch_readiness",
+        "automation_status": "launch_smoke_only",
+        "actor_roles": [
+            "target readiness evidence reviewer",
+            "target launch evidence owner"
+        ],
+        "required_session_steps": [
+            "resolve and prepare both Alice targets",
+            "package each target when execution is requested",
+            "launch each target under an isolated virtual display",
+            "capture manifest, window, screenshot, log, assertion, and timing evidence"
+        ],
+        "executable_evidence": [
+            "comparison manifest records target metadata, status, scorecard, timing, and differences",
+            "target launch manifests are attached when execution is requested and reaches launch smoke"
+        ],
+        "boundaries": [
+            "does not automate complete instructor assignment creation",
+            "does not automate complete student lesson consumption",
+            "does not perform creative assessment",
+            "does not grade student worlds",
+            "does not prove broad Alice compatibility beyond the selected scenario"
+        ]
+    })
 }
 
 fn ready_target(role: &str) -> serde_json::Value {

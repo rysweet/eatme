@@ -2,17 +2,18 @@ use super::{
     LessonSessionReadinessReport, REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID,
     desktop_proof::DesktopProofContract,
     output::{
-        LessonTargetEvidence, build_launch_smoke_readiness_output, launch_smoke_limitations,
-        launch_smoke_unproven_claims, not_yet_shown, shown_evidence,
+        LessonTargetEvidence, ReadinessOutput, build_launch_smoke_readiness_output,
+        launch_smoke_limitations, launch_smoke_unproven_claims, not_yet_shown, shown_evidence,
     },
-    progress::{
-        LessonReadinessEvidenceProgress, LessonReadinessEvidenceProgressItem, progress_item,
-    },
+    progress::LessonReadinessEvidenceProgress,
     string_field,
 };
 use crate::compare::LessonSessionContractCheck;
 use anyhow::Result;
 use std::path::Path;
+
+mod evidence_progress;
+use evidence_progress::launch_smoke_evidence_progress;
 
 const REQUIRED_LAUNCH_SMOKE_ASSERTIONS: &[&str] = &[
     "display_responsive",
@@ -22,6 +23,24 @@ const REQUIRED_LAUNCH_SMOKE_ASSERTIONS: &[&str] = &[
     "real_alice_execution_evidence",
 ];
 
+struct LaunchSmokeTargets {
+    evidence: Vec<LessonTargetEvidence>,
+    role_statuses: Vec<(&'static str, &'static str)>,
+    issues: Vec<String>,
+}
+
+struct LaunchSmokeReportParts<'a> {
+    manifest_path: &'a Path,
+    scenario_id: Option<String>,
+    contract_check: LessonSessionContractCheck,
+    execute_requested: Option<bool>,
+    issues: Vec<String>,
+    target_evidence: Vec<LessonTargetEvidence>,
+    readiness_status: String,
+    readiness_output: ReadinessOutput,
+    evidence_progress: LessonReadinessEvidenceProgress,
+}
+
 pub(super) fn check_launch_smoke_readiness(
     manifest_path: &Path,
     manifest: &serde_json::Value,
@@ -30,41 +49,13 @@ pub(super) fn check_launch_smoke_readiness(
     execute_requested: Option<bool>,
     mut issues: Vec<String>,
 ) -> Result<LessonSessionReadinessReport> {
-    if execute_requested != Some(true) {
-        issues.push(
-            "comparison manifest must be produced with --execute to contain target launch-smoke manifest evidence"
-                .into(),
-        );
-    }
+    push_execute_requested_issue(execute_requested, &mut issues);
 
     let targets = manifest
         .get("targets")
         .and_then(serde_json::Value::as_object);
-    let mut target_evidence = Vec::new();
-    let mut role_statuses = Vec::new();
-
-    for role in ["baseline", "modernized"] {
-        let mut role_issues = Vec::new();
-        match targets.and_then(|entries| entries.get(role)) {
-            Some(target) => {
-                let evidence = inspect_launch_smoke_target_evidence(role, target, &mut role_issues);
-                let role_status = if role_issues.is_empty() {
-                    "ready"
-                } else {
-                    "not_ready"
-                };
-                target_evidence.push(evidence);
-                role_statuses.push((role, role_status));
-                issues.extend(role_issues);
-            }
-            None => {
-                issues.push(format!(
-                    "comparison manifest is missing {role} target evidence"
-                ));
-                role_statuses.push((role, "not_ready"));
-            }
-        }
-    }
+    let inspected_targets = inspect_required_launch_smoke_targets(targets);
+    issues.extend(inspected_targets.issues);
 
     let readiness_status = if issues.is_empty() {
         "ready"
@@ -75,17 +66,55 @@ pub(super) fn check_launch_smoke_readiness(
     let readiness_output = build_launch_smoke_readiness_output(
         scenario_id.as_deref(),
         &readiness_status,
-        &role_statuses,
+        &inspected_targets.role_statuses,
     );
     let evidence_progress = launch_smoke_evidence_progress(
         &readiness_output.required_evidence,
-        &target_evidence,
+        &inspected_targets.evidence,
         &issues,
     );
+
+    Ok(launch_smoke_readiness_report(LaunchSmokeReportParts {
+        manifest_path,
+        scenario_id,
+        contract_check,
+        execute_requested,
+        issues,
+        target_evidence: inspected_targets.evidence,
+        readiness_status,
+        readiness_output,
+        evidence_progress,
+    }))
+}
+
+fn push_execute_requested_issue(execute_requested: Option<bool>, issues: &mut Vec<String>) {
+    if execute_requested != Some(true) {
+        issues.push(
+            "comparison manifest must be produced with --execute to contain target launch-smoke manifest evidence"
+                .into(),
+        );
+    }
+}
+
+fn launch_smoke_readiness_report(
+    parts: LaunchSmokeReportParts<'_>,
+) -> LessonSessionReadinessReport {
+    let LaunchSmokeReportParts {
+        manifest_path,
+        scenario_id,
+        contract_check,
+        execute_requested,
+        issues,
+        target_evidence,
+        readiness_status,
+        readiness_output,
+        evidence_progress,
+    } = parts;
     let shown_evidence = shown_evidence(&evidence_progress, &[]);
     let not_yet_shown = not_yet_shown(&evidence_progress, &[]);
+    let desktop_proof_contract = launch_smoke_desktop_proof_contract(&target_evidence, &issues);
 
-    Ok(LessonSessionReadinessReport {
+    LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
         scenario_id,
@@ -94,7 +123,7 @@ pub(super) fn check_launch_smoke_readiness(
         readiness_status,
         blocked_reason: readiness_output.blocked_reason,
         human_summary: readiness_output.human_summary,
-        desktop_proof_contract: launch_smoke_desktop_proof_contract(&target_evidence, &issues),
+        desktop_proof_contract,
         shown_evidence,
         not_yet_shown,
         desktop_next_action: None,
@@ -110,7 +139,50 @@ pub(super) fn check_launch_smoke_readiness(
         target_evidence,
         issues,
         limitations: launch_smoke_limitations(),
-    })
+    }
+}
+
+fn inspect_required_launch_smoke_targets(
+    targets: Option<&serde_json::Map<String, serde_json::Value>>,
+) -> LaunchSmokeTargets {
+    let mut inspected = LaunchSmokeTargets {
+        evidence: Vec::new(),
+        role_statuses: Vec::new(),
+        issues: Vec::new(),
+    };
+
+    for role in ["baseline", "modernized"] {
+        let Some(target) = targets.and_then(|entries| entries.get(role)) else {
+            inspected.issues.push(format!(
+                "comparison manifest is missing {role} target evidence"
+            ));
+            inspected.role_statuses.push((role, "not_ready"));
+            continue;
+        };
+
+        let mut role_issues = Vec::new();
+        inspected
+            .evidence
+            .push(inspect_launch_smoke_target_evidence(
+                role,
+                target,
+                &mut role_issues,
+            ));
+        inspected
+            .role_statuses
+            .push((role, role_status(&role_issues)));
+        inspected.issues.extend(role_issues);
+    }
+
+    inspected
+}
+
+fn role_status(issues: &[String]) -> &'static str {
+    if issues.is_empty() {
+        "ready"
+    } else {
+        "not_ready"
+    }
 }
 
 fn inspect_launch_smoke_target_evidence(
@@ -121,46 +193,57 @@ fn inspect_launch_smoke_target_evidence(
     let target_id = string_field(target, "target_id");
     let target_status = string_field(target, "status");
     let failure_category = string_field(target, "failure_category");
-    if target_status.as_deref() != Some("passed") {
-        issues.push(format!("{role} target status must be passed"));
-    }
-    if field_is_non_null(target, "failure_category") {
-        issues.push(format!("{role} target failure_category must be null"));
-    }
+    push_target_status_issues(role, target, target_status.as_deref(), issues);
 
     let launch_manifest = target
         .get("launch_manifest")
         .filter(|value| !value.is_null());
     let Some(launch_manifest) = launch_manifest else {
         issues.push(format!("{role} target is missing embedded launch_manifest"));
-        return LessonTargetEvidence {
-            role: role.into(),
+        return missing_launch_smoke_target_evidence(
+            role,
             target_id,
             target_status,
             failure_category,
-            launch_manifest_present: false,
-            ui_action_contract_path: None,
-            ui_action_contract_readable: false,
-            desktop_run_pixel_boundary: None,
-            desktop_run_pixel_observation: None,
-            desktop_first_lesson_next_action: None,
-            action_assertions: Vec::new(),
-            required_actions: Vec::new(),
-            missing_assertions: REQUIRED_LAUNCH_SMOKE_ASSERTIONS
-                .iter()
-                .map(|value| (*value).into())
-                .collect(),
-            missing_required_actions: Vec::new(),
-            blockers: Vec::new(),
-            no_go_contracts: Vec::new(),
-        };
+        );
     };
 
-    if launch_manifest
+    push_launch_manifest_identity_issues(role, launch_manifest, issues);
+    let missing_assertions = missing_launch_smoke_assertions(role, launch_manifest, issues);
+    push_missing_artifact_metadata_issues(role, launch_manifest, issues);
+
+    present_launch_smoke_target_evidence(
+        role,
+        target_id,
+        target_status,
+        failure_category,
+        missing_assertions,
+    )
+}
+
+fn push_target_status_issues(
+    role: &str,
+    target: &serde_json::Value,
+    target_status: Option<&str>,
+    issues: &mut Vec<String>,
+) {
+    if target_status != Some("passed") {
+        issues.push(format!("{role} target status must be passed"));
+    }
+    if field_is_non_null(target, "failure_category") {
+        issues.push(format!("{role} target failure_category must be null"));
+    }
+}
+
+fn push_launch_manifest_identity_issues(
+    role: &str,
+    launch_manifest: &serde_json::Value,
+    issues: &mut Vec<String>,
+) {
+    let scenario_id = launch_manifest
         .get("scenario_id")
-        .and_then(serde_json::Value::as_str)
-        != Some(REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID)
-    {
+        .and_then(serde_json::Value::as_str);
+    if scenario_id != Some(REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID) {
         issues.push(format!(
             "{role} launch_manifest scenario_id must be {REAL_ALICE_LAUNCH_SMOKE_SCENARIO_ID:?}"
         ));
@@ -170,16 +253,30 @@ fn inspect_launch_smoke_target_evidence(
             "{role} launch_manifest failure_category must be null"
         ));
     }
+}
 
-    let mut missing_assertions = Vec::new();
+fn missing_launch_smoke_assertions(
+    role: &str,
+    launch_manifest: &serde_json::Value,
+    issues: &mut Vec<String>,
+) -> Vec<String> {
+    let mut missing = Vec::new();
     for assertion in REQUIRED_LAUNCH_SMOKE_ASSERTIONS {
         if !launch_smoke_assertion_passed(launch_manifest, assertion) {
-            missing_assertions.push((*assertion).to_string());
+            missing.push((*assertion).to_string());
             issues.push(format!(
                 "{role} launch_manifest assertion {assertion:?} must pass"
             ));
         }
     }
+    missing
+}
+
+fn push_missing_artifact_metadata_issues(
+    role: &str,
+    launch_manifest: &serde_json::Value,
+    issues: &mut Vec<String>,
+) {
     for artifact in ["window_list", "screenshot", "log"] {
         if !artifact_metadata_present(launch_manifest, artifact) {
             issues.push(format!(
@@ -187,7 +284,44 @@ fn inspect_launch_smoke_target_evidence(
             ));
         }
     }
+}
 
+fn missing_launch_smoke_target_evidence(
+    role: &str,
+    target_id: Option<String>,
+    target_status: Option<String>,
+    failure_category: Option<String>,
+) -> LessonTargetEvidence {
+    LessonTargetEvidence {
+        role: role.into(),
+        target_id,
+        target_status,
+        failure_category,
+        launch_manifest_present: false,
+        ui_action_contract_path: None,
+        ui_action_contract_readable: false,
+        desktop_run_pixel_boundary: None,
+        desktop_run_pixel_observation: None,
+        desktop_first_lesson_next_action: None,
+        action_assertions: Vec::new(),
+        required_actions: Vec::new(),
+        missing_assertions: REQUIRED_LAUNCH_SMOKE_ASSERTIONS
+            .iter()
+            .map(|value| (*value).into())
+            .collect(),
+        missing_required_actions: Vec::new(),
+        blockers: Vec::new(),
+        no_go_contracts: Vec::new(),
+    }
+}
+
+fn present_launch_smoke_target_evidence(
+    role: &str,
+    target_id: Option<String>,
+    target_status: Option<String>,
+    failure_category: Option<String>,
+    missing_assertions: Vec<String>,
+) -> LessonTargetEvidence {
     LessonTargetEvidence {
         role: role.into(),
         target_id,
@@ -224,138 +358,6 @@ fn artifact_metadata_present(launch_manifest: &serde_json::Value, artifact: &str
         .and_then(|metadata| metadata.get("path"))
         .and_then(serde_json::Value::as_str)
         .is_some_and(|path| !path.trim().is_empty())
-}
-
-fn launch_smoke_evidence_progress(
-    required_evidence: &[String],
-    target_evidence: &[LessonTargetEvidence],
-    issues: &[String],
-) -> LessonReadinessEvidenceProgress {
-    let baseline = target_evidence
-        .iter()
-        .find(|target| target.role == "baseline");
-    let modernized = target_evidence
-        .iter()
-        .find(|target| target.role == "modernized");
-    let targets = [baseline, modernized];
-    let items = vec![
-        progress_item(
-            &required_evidence[0],
-            if baseline.is_some() && modernized.is_some() {
-                "present"
-            } else {
-                "missing"
-            },
-            "baseline and modernized target entries for launch-smoke readiness",
-        ),
-        progress_item(
-            &required_evidence[1],
-            if targets
-                .into_iter()
-                .flatten()
-                .all(|target| target.launch_manifest_present)
-                && baseline.is_some()
-                && modernized.is_some()
-            {
-                "present"
-            } else {
-                "missing"
-            },
-            "embedded launch-smoke manifest metadata for both targets",
-        ),
-        progress_item(
-            &required_evidence[2],
-            launch_smoke_target_status_state(&targets, issues),
-            "target status and failure-category metadata for both targets",
-        ),
-        progress_item(
-            &required_evidence[3],
-            if targets
-                .into_iter()
-                .flatten()
-                .all(|target| target.missing_assertions.is_empty())
-                && baseline.is_some()
-                && modernized.is_some()
-            {
-                "present"
-            } else {
-                "invalid"
-            },
-            "required launch-smoke assertions for both targets",
-        ),
-        progress_item(
-            &required_evidence[4],
-            if issues
-                .iter()
-                .any(|issue| issue.contains("metadata must be present"))
-            {
-                "missing"
-            } else if baseline.is_some() && modernized.is_some() {
-                "present"
-            } else {
-                "missing"
-            },
-            "window-list, screenshot, and log artifact metadata only",
-        ),
-    ];
-
-    let present = count_launch_smoke_state(&items, "present");
-    let missing = count_launch_smoke_state(&items, "missing");
-    let invalid = count_launch_smoke_state(&items, "invalid");
-    let not_observed = count_launch_smoke_state(&items, "not_observed");
-    let blocked = count_launch_smoke_state(&items, "blocked");
-    let total_required = items.len();
-    let summary = format!(
-        "{present} of {total_required} required launch-smoke evidence items are present; {missing} missing, {invalid} invalid, {not_observed} not observed, {blocked} blocked."
-    );
-
-    LessonReadinessEvidenceProgress {
-        total_required,
-        present,
-        missing,
-        invalid,
-        not_observed,
-        blocked,
-        summary,
-        next_actionable_blocker: launch_smoke_next_blocker(issues),
-        next_missing_real_desktop_proof: None,
-        items,
-    }
-}
-
-fn launch_smoke_target_status_state(
-    targets: &[Option<&LessonTargetEvidence>; 2],
-    issues: &[String],
-) -> &'static str {
-    if targets.iter().any(|target| target.is_none()) {
-        return "missing";
-    }
-    if issues.iter().any(|issue| {
-        issue.contains("target status must be passed")
-            || issue.contains("target failure_category must be null")
-            || issue.contains("launch_manifest failure_category must be null")
-    }) {
-        return "invalid";
-    }
-    if targets.iter().flatten().all(|target| {
-        target.target_status.as_deref() == Some("passed")
-            && target.failure_category.is_none()
-            && target.launch_manifest_present
-    }) {
-        "present"
-    } else {
-        "invalid"
-    }
-}
-
-fn count_launch_smoke_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
-}
-
-fn launch_smoke_next_blocker(issues: &[String]) -> Option<String> {
-    issues
-        .first()
-        .map(|issue| format!("next launch-smoke readiness evidence gap: {issue}"))
 }
 
 fn field_is_non_null(value: &serde_json::Value, field: &str) -> bool {

@@ -286,8 +286,7 @@ launch-smoke manifest evidence into launch-smoke readiness only. A ready result
 means the required launch-smoke manifests, assertions, failure-category state,
 and manifest-level artifact metadata were present and coherent. Missing,
 partial, malformed, manifest-only, failed, unsafe, or contradictory evidence is
-reported as `not_ready`; coherent evidence with an explicit known blocker is
-reported as `blocked`. The output must keep lesson completion, grading, creative
+reported as `not_ready`. The output must keep lesson completion, grading, creative
 assessment, full UI automation, and visible correctness explicitly unproven.
 
 See [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md)

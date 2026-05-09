@@ -25,7 +25,7 @@ readiness summary for the baseline real Alice launch smoke.
 | Need | Use |
 | --- | --- |
 | Show that real Alice launch-smoke evidence is present and coherent | `alice check-lesson-readiness` on a `real-alice-launch-smoke` comparison manifest |
-| Explain missing, failed, malformed, or manifest-only launch evidence | The same readiness report with `status: "not_ready"` or `status: "blocked"` |
+| Explain missing, failed, malformed, or manifest-only launch evidence | The same readiness report with `status: "not_ready"` |
 | Claim a completed Alice lesson, full world execution, grading result, creative quality, Save completion, deployed sharing/platform success, Full Alice UI automation, or visible rendering correctness | Do not use launch-smoke readiness for this |
 
 `real-alice-launch-smoke` is matched by exact scenario id. Other scenario ids
@@ -96,14 +96,13 @@ raw tool output to create new evidence.
 | --- | --- | --- |
 | Exact scenario id | The comparison and embedded launch manifests identify `real-alice-launch-smoke`. | Wrong, missing, or ambiguous scenario ids are `not_ready`. |
 | Executed launch-smoke target evidence | Required embedded target launch manifests for the baseline and modernized targets are present and structurally valid. | Manifest-only, missing, partial, or malformed launch evidence is `not_ready`. |
-| Launch result | Required launch-smoke evidence has no failure category and reports successful required assertions. | Failed assertions, non-null failure categories, incomplete status, or contradictory evidence are `not_ready` unless an explicit known blocker is present. |
+| Launch result | Required launch-smoke evidence has no failure category and reports successful required assertions. | Failed assertions, non-null failure categories, incomplete status, or contradictory evidence are `not_ready`. |
 | Launch-smoke assertions | Existing manifest assertions needed for launch-smoke readiness pass, including real Alice execution evidence and required startup artifact metadata. | Missing, malformed, failed, or unsafe assertion evidence is `not_ready`. |
-| Artifacts represented by the manifest | Manifest-level artifact metadata for log, window, screenshot, and startup evidence is safe to summarize as launch-smoke evidence. | Missing required artifact metadata remains `not_ready`; explicit unsupported-environment or dependency blockers remain `blocked` when represented as blockers. |
+| Artifacts represented by the manifest | Manifest-level artifact metadata for log, window, screenshot, and startup evidence is safe to summarize as launch-smoke evidence. | Missing required artifact metadata remains `not_ready`. |
 
 Successful launch-smoke evidence maps to `status: "ready"` only for the bounded
 launch-smoke claim. Missing, partial, malformed, unsafe, manifest-only, failed,
-or contradictory evidence maps to `status: "not_ready"`. Evidence that is
-coherent but carries an explicit known blocker maps to `status: "blocked"`.
+or contradictory evidence maps to `status: "not_ready"`.
 
 ## Plain output contract
 
@@ -132,8 +131,8 @@ Unproven:
 - Deployed sharing/platform success is not proven.
 ```
 
-A non-ready report keeps failures as missing or blocked evidence instead of
-turning them into success:
+A non-ready report keeps failures as missing evidence instead of turning them
+into success:
 
 ```text
 Real Alice launch-smoke readiness: not ready
@@ -179,11 +178,11 @@ interpreted as lesson completion or assessment.
 | Field | Type | Launch-smoke meaning |
 | --- | --- | --- |
 | `scenario_id` | string | Must be `real-alice-launch-smoke` for this branch. |
-| `status` | string | `ready`, `not_ready`, or `blocked` for bounded launch-smoke readiness. |
+| `status` | string | `ready` or `not_ready` for bounded launch-smoke readiness. |
 | `passed` | boolean | Structural readiness result for the evidence that was inspected. |
 | `readiness_status` | string | Backward-compatible detailed status. Prefer `status` for new consumers. |
 | `shown_evidence` | array | Launch-smoke evidence facts that are present and safe to summarize. |
-| `not_yet_shown` | array | Missing, failed, malformed, unsafe, incomplete, or blocked launch-smoke evidence. |
+| `not_yet_shown` | array | Missing, failed, malformed, unsafe, or incomplete launch-smoke evidence. |
 | `unproven_claims` | array | Required non-claims for launch-smoke readiness. |
 | `target_evidence` | array | Existing per-target launch-smoke evidence summarized from the comparison manifest. |
 | `issues` | array | Structural problems such as missing manifests, wrong scenario ids, failed assertions, or malformed evidence. |

@@ -101,7 +101,7 @@ existing launch-smoke manifest evidence: scenario identity, required launch
 assertions, failure-category state, target launch manifests, and manifest-level
 artifact metadata. It does not add detection, grading, assessment, or UI
 automation behavior. Missing, partial, malformed, manifest-only, failed, unsafe,
-or contradictory evidence stays non-ready; explicit known blockers stay blocked.
+or contradictory evidence stays non-ready.
 The report keeps lesson completion, grading, creative assessment, full UI
 automation, and visible correctness unproven. See
 [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md).

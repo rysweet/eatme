@@ -9,9 +9,11 @@ use crate::compare::desktop_evidence::{
 use serde::Serialize;
 
 mod claims;
+mod launch_smoke;
 pub(super) use claims::{
     launch_smoke_limitations, launch_smoke_unproven_claims, limitations, unproven_claims,
 };
+pub(super) use launch_smoke::build_launch_smoke_readiness_output;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessEnvelope {
@@ -98,31 +100,23 @@ pub(super) fn build_readiness_output(
         has_issues,
         default_scenario_id,
     );
-    let role_readiness = ["instructor", "student"]
-        .into_iter()
-        .map(|role| LessonSessionReadinessEnvelope {
-            scenario_id: scenario_id.map(str::to_string),
-            role: role.into(),
-            status: status.clone(),
-            blocked_reason: blocked_reason.clone(),
-            human_summary: human_summary.clone(),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: no_go_contracts.clone(),
-        })
-        .collect::<Vec<_>>();
-    let lesson_session_readiness = role_readiness
-        .iter()
-        .find(|readiness| readiness.role == "student")
-        .cloned()
-        .unwrap_or_else(|| LessonSessionReadinessEnvelope {
-            scenario_id: scenario_id.map(str::to_string),
-            role: "student".into(),
-            status: status.clone(),
-            blocked_reason: blocked_reason.clone(),
-            human_summary: human_summary.clone(),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: no_go_contracts.clone(),
-        });
+    let role_readiness = standard_role_readiness(
+        scenario_id,
+        &status,
+        blocked_reason.as_deref(),
+        &human_summary,
+        &required_evidence,
+        &no_go_contracts,
+    );
+    let lesson_session_readiness = standard_lesson_session_readiness(
+        scenario_id,
+        &status,
+        blocked_reason.as_deref(),
+        &human_summary,
+        &required_evidence,
+        &no_go_contracts,
+        &role_readiness,
+    );
 
     ReadinessOutput {
         status,
@@ -135,61 +129,53 @@ pub(super) fn build_readiness_output(
     }
 }
 
-pub(super) fn build_launch_smoke_readiness_output(
+fn standard_role_readiness(
     scenario_id: Option<&str>,
-    readiness_status: &str,
-    role_statuses: &[(&str, &str)],
-) -> ReadinessOutput {
-    let scenario = scenario_id.unwrap_or("real-alice-launch-smoke");
-    let status = normalized_readiness_status(readiness_status).to_string();
-    let blocked_reason = None;
-    let required_evidence = launch_smoke_required_evidence();
-    let human_summary = match status.as_str() {
-        "ready" => format!(
-            "{scenario} launch-smoke readiness is ready from existing target launch-smoke manifest evidence only."
-        ),
-        _ => format!(
-            "{scenario} launch-smoke readiness is not ready because required launch-smoke manifest evidence is missing, failed, malformed, or incomplete."
-        ),
-    };
-    let role_readiness = role_statuses
-        .iter()
-        .map(|(role, role_status)| LessonSessionReadinessEnvelope {
+    status: &str,
+    blocked_reason: Option<&str>,
+    human_summary: &str,
+    required_evidence: &[String],
+    no_go_contracts: &[LessonSessionNoGoContract],
+) -> Vec<LessonSessionReadinessEnvelope> {
+    ["instructor", "student"]
+        .into_iter()
+        .map(|role| LessonSessionReadinessEnvelope {
             scenario_id: scenario_id.map(str::to_string),
-            role: (*role).into(),
-            status: (*role_status).into(),
-            blocked_reason: None,
-            human_summary: launch_smoke_role_summary(scenario, role, role_status),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: Vec::new(),
+            role: role.into(),
+            status: status.into(),
+            blocked_reason: blocked_reason.map(str::to_string),
+            human_summary: human_summary.into(),
+            required_evidence: required_evidence.to_vec(),
+            no_go_contracts: no_go_contracts.to_vec(),
         })
-        .collect::<Vec<_>>();
-    let lesson_session_readiness = role_readiness
+        .collect()
+}
+
+fn standard_lesson_session_readiness(
+    scenario_id: Option<&str>,
+    status: &str,
+    blocked_reason: Option<&str>,
+    human_summary: &str,
+    required_evidence: &[String],
+    no_go_contracts: &[LessonSessionNoGoContract],
+    role_readiness: &[LessonSessionReadinessEnvelope],
+) -> LessonSessionReadinessEnvelope {
+    role_readiness
         .iter()
-        .find(|readiness| readiness.role == "modernized")
+        .find(|readiness| readiness.role == "student")
         .cloned()
         .unwrap_or_else(|| LessonSessionReadinessEnvelope {
             scenario_id: scenario_id.map(str::to_string),
-            role: "launch-smoke".into(),
-            status: status.clone(),
-            blocked_reason: None,
-            human_summary: human_summary.clone(),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: Vec::new(),
-        });
-
-    ReadinessOutput {
-        status,
-        blocked_reason,
-        human_summary,
-        required_evidence,
-        no_go_contracts: Vec::new(),
-        lesson_session_readiness,
-        role_readiness,
-    }
+            role: "student".into(),
+            status: status.into(),
+            blocked_reason: blocked_reason.map(str::to_string),
+            human_summary: human_summary.into(),
+            required_evidence: required_evidence.to_vec(),
+            no_go_contracts: no_go_contracts.to_vec(),
+        })
 }
 
-fn normalized_readiness_status(readiness_status: &str) -> &'static str {
+pub(super) fn normalized_readiness_status(readiness_status: &str) -> &'static str {
     match readiness_status {
         "ready" => "ready",
         "blocked_until_ui_automation" => "blocked",
@@ -213,29 +199,6 @@ fn required_evidence() -> Vec<String> {
     .into_iter()
     .map(str::to_string)
     .collect()
-}
-
-fn launch_smoke_required_evidence() -> Vec<String> {
-    [
-        "comparison manifest with baseline and modernized targets for real-alice-launch-smoke",
-        "embedded launch-smoke manifest for each target",
-        "each target status is passed with no launch failure category",
-        "required launch-smoke assertions passed for each target",
-        "launch-smoke artifact metadata for window list, screenshot, and log",
-    ]
-    .into_iter()
-    .map(str::to_string)
-    .collect()
-}
-
-fn launch_smoke_role_summary(scenario: &str, role: &str, status: &str) -> String {
-    if status == "ready" {
-        format!("{scenario} {role} target has bounded launch-smoke manifest evidence only.")
-    } else {
-        format!(
-            "{scenario} {role} target launch-smoke manifest evidence is missing, failed, malformed, or incomplete."
-        )
-    }
 }
 
 fn human_summary(
