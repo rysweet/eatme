@@ -94,6 +94,12 @@ student, agent, or adapter to reason about save, reopen, or export behavior. The
 next documented handoff is
 [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
 
+When this scenario is part of a recovered PR, use
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md) as the planned
+repository readiness contract. That readiness record belongs to the exact
+repository `HEAD`; it is not a substitute for Alice classroom evidence and does
+not expand what this preflight scenario proves.
+
 ## Manifest and artifact contract
 
 The durable API for this scenario is the JSON output from

@@ -9,6 +9,8 @@ mod assessment_boundary_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
 #[cfg(test)]
+mod default_workflow_pr_readiness_tests;
+#[cfg(test)]
 mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
@@ -21,11 +23,11 @@ mod outside_in_alice_expansion_tests;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
+#[cfg(test)]
+mod save_reopen_export_evidence_handoff_tests;
 mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
-#[cfg(test)]
-mod save_reopen_export_evidence_handoff_tests;
 #[cfg(test)]
 mod starter_project_preflight_boundary_tests;
 #[cfg(test)]

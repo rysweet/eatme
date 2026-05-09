@@ -1,3 +1,4 @@
-Fri May  8 00:58:21 UTC 2026
-DEFAULT-WORKFLOW FAILED — proceeding manually
-Reason: 'amplihack run' subcommand not found; same outcome as prior session log in eatme master
+This file is not PR readiness evidence.
+
+Use docs/default-workflow-pr-readiness.md for the default-workflow readiness
+contract. A manual fallback log must not be used to claim exact-HEAD readiness.
