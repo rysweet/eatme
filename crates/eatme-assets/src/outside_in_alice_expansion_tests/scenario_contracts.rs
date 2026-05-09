@@ -106,7 +106,8 @@ fn target_scenarios_use_required_personas_and_real_alice_gate_without_ci_auto_ru
 }
 
 #[test]
-fn starter_project_preflight_contract_names_real_action_evidence_without_overclaiming() {
+fn starter_project_preflight_contract_names_bounded_starter_project_evidence_without_overclaiming()
+{
     let root = repository_root();
     let contract = fs::read_to_string(scenario_path(
         &root,
@@ -119,10 +120,10 @@ fn starter_project_preflight_contract_names_real_action_evidence_without_overcla
         "starter-project-open-save-export-preflight contract",
         &contract,
         &[
-            "real Alice action evidence",
+            "bounded real Alice starter-project evidence",
             "opened starter project",
             "manifest/log/window/screenshot evidence",
-            "inspectable action evidence",
+            "inspectable readiness artifacts",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",
@@ -133,6 +134,59 @@ fn starter_project_preflight_contract_names_real_action_evidence_without_overcla
         "starter-project-open-save-export-preflight contract",
         &contract,
         &forbidden_internal_shorthand(),
+    );
+}
+
+#[test]
+fn starter_project_preflight_contract_records_edit_run_observe_and_readiness_gaps() {
+    let root = repository_root();
+    let path = scenario_path(&root, "eatme", "starter-project-open-save-export-preflight");
+    let contract = fs::read_to_string(&path).unwrap();
+    let scenario = read_eatme_scenario(&path);
+
+    assert!(
+        scenario
+            .steps
+            .iter()
+            .any(|step| step.id == "record-starter-world-change"
+                && step.command.contains("starter-world-change-note.txt")),
+        "starter preflight must record an editable starter-world change note"
+    );
+    assert!(
+        scenario
+            .steps
+            .iter()
+            .any(|step| step.id == "record-run-observe-readiness-gaps"
+                && step.command.contains("run-observe-readiness-gaps.txt")),
+        "starter preflight must record run/observe and readiness gap notes"
+    );
+    assert_contains_all(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &[
+            "launch real Alice",
+            "small editable starter-world change",
+            "attempt to run or observe",
+            "save/reopen/export/readiness gaps",
+            "editable_starter_world_change_note",
+            "run_or_observe_attempt_note",
+            "save_reopen_export_readiness_gap_note",
+            "starter-world-change-note.txt",
+            "run-observe-readiness-gaps.txt",
+            "not visible rendering correctness proof",
+            "not first-lesson completion",
+            "not grading",
+            "not full Save completion",
+        ],
+    );
+    assert_not_contains_any(
+        "starter-project-open-save-export-preflight contract",
+        &contract,
+        &[
+            "source boundary".into(),
+            "manifest-level evidence only".into(),
+            "lane".into(),
+        ],
     );
 }
 

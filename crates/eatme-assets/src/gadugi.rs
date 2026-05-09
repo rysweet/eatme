@@ -202,7 +202,8 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
         description: format!(
-            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; gadugi invokes eatme commands and checks manifest-level evidence only.{}",
+            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; {}.{}",
+            generated_evidence_scope(scenario),
             generated_boundary_note(scenario)
         ),
         version: "1.0.0".into(),
@@ -252,15 +253,21 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     render_yaml(adapter)
 }
 
+fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
+    if scenario.id == "starter-project-open-save-export-preflight" {
+        return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
+    }
+
+    "gadugi invokes eatme commands and checks manifest-level evidence only"
+}
+
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
+    if scenario.id == "starter-project-open-save-export-preflight" {
+        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
+    }
+
     let text =
         format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
-    if text.contains("real alice action evidence")
-        && text.contains("opened starter project")
-        && text.contains("not complete alice coverage")
-    {
-        return " This adapter preserves the source boundary: real Alice action evidence for the opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence only; not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage.";
-    }
     if text.contains("not full ui automation")
         && text.contains("not creative assessment")
         && text.contains("not learner-world grading")
