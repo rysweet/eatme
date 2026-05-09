@@ -8,6 +8,12 @@ members = [
 ]
 resolver = "3"
 
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.test]
+debug = "line-tables-only"
+
 [workspace.package]
 edition = "2024"
 license = "MIT"

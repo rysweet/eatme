@@ -17,7 +17,7 @@ def main() -> int:
         return 127
 
     env = os.environ.copy()
-    env.setdefault("CARGO_TARGET_DIR", str(_target_dir()))
+    env["CARGO_TARGET_DIR"] = str(_cargo_target_dir(env))
     command = [
         "cargo",
         "run",
@@ -36,7 +36,19 @@ def main() -> int:
         return 127
 
 
-def _target_dir() -> Path:
+def _cargo_target_dir(env: dict[str, str]) -> Path | str:
+    eatme_target_dir = env.get("EATME_CARGO_TARGET_DIR")
+    if eatme_target_dir:
+        return eatme_target_dir
+
+    cargo_target_dir = env.get("CARGO_TARGET_DIR")
+    if cargo_target_dir:
+        return cargo_target_dir
+
+    return _uvx_target_dir()
+
+
+def _uvx_target_dir() -> Path:
     cache_home = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     target_dir = cache_home / "eatme-uvx" / "target"
     target_dir.mkdir(parents=True, exist_ok=True)

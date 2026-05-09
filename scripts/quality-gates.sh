@@ -7,6 +7,10 @@ cd "$ROOT"
 export TMPDIR="${TMPDIR:-$ROOT/.cargo-tmp}"
 mkdir -p "$TMPDIR"
 
+if [[ -n "${EATME_CARGO_TARGET_DIR:-}" ]]; then
+  export CARGO_TARGET_DIR="$EATME_CARGO_TARGET_DIR"
+fi
+
 MODULE_MAX_LINES="${MODULE_MAX_LINES:-500}"
 COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-70}"
 
