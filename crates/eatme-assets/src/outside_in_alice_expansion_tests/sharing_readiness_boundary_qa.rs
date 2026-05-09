@@ -112,7 +112,11 @@ fn qa_scenario_acceptance_probes_reject_overclaim_patterns() {
     assert_contains_all(
         "sharing-readiness-boundary-qa acceptance probes",
         QA_EATME_SCENARIO,
-        &["overclaim patterns", "classroom review artifacts", "bounded"],
+        &[
+            "overclaim patterns",
+            "classroom review artifacts",
+            "bounded",
+        ],
     );
 }
 
