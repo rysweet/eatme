@@ -4,11 +4,12 @@ Default-workflow PR readiness is the exact-head gate used when a pull request
 needs a clear final readiness decision and the wrapper workflow did not produce
 useful output.
 
-This page specifies the readiness behavior the workflow should enforce: verify
-the exact PR head, inspect GitHub metadata for that same head, preserve the
-bounded starter-project evidence contract, require fresh generated Gadugi
-adapters when scenario assets are involved, and publish a narrowly scoped
-readiness comment only after every gate passes.
+This page specifies the readiness behavior the gate requires: verify the exact
+PR head, run repository evidence commands directly without timeout wrappers,
+inspect GitHub metadata for that same head, require three quality-audit
+SEEK/VALIDATE/FIX cycles with a clean final cycle, preserve the bounded evidence
+contracts, and emit a narrowly scoped final artifact only after every gate
+passes.
 
 ## Contents
 
@@ -18,11 +19,15 @@ readiness comment only after every gate passes.
 - [GitHub metadata fields](#github-metadata-fields)
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
+- [Runnable evidence commands](#runnable-evidence-commands)
+- [Quality-audit SEEK/VALIDATE/FIX cycles](#quality-audit-seekvalidatefix-cycles)
 - [Silver-thread/e2e gap-matrix readiness](#silver-threade2e-gap-matrix-readiness)
+- [Diff scope and docs impact review](#diff-scope-and-docs-impact-review)
 - [PR #193 finalization evidence boundary](#pr-193-finalization-evidence-boundary)
-- [PR #164 readiness example](#pr-164-readiness-example)
+- [Historical PR #164 starter-project example](#historical-pr-164-starter-project-example)
+- [PR description evidence](#pr-description-evidence)
 - [No-op finalization record](#no-op-finalization-record)
-- [Readiness comment](#readiness-comment)
+- [Final output contract](#final-output-contract)
 - [Blocker handling](#blocker-handling)
 
 ## Readiness contract
@@ -33,34 +38,53 @@ being reviewed.
 | Gate | Required result |
 | --- | --- |
 | Exact head | The PR head SHA equals the requested SHA. A mismatch blocks readiness. |
-| GitHub checks | Required checks are green for that same SHA. |
+| Direct execution | Repository evidence commands run directly, without shell timeout wrappers or background kill wrappers. |
+| Runnable evidence | Applicable repository-supported QA and scenario commands pass for the same local checkout. |
+| GitHub checks | Every current-head check run is complete and successful for that same SHA. Green checks are necessary but not sufficient. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
+| Quality audit | At least three SEEK/VALIDATE/FIX cycles complete, and the final cycle is clean. |
 | Starter-project wording | The canonical scenario uses plain, bounded, user-facing language. |
 | Overclaim boundary | The scenario does not claim first-lesson completion, grading, creative assessment, full UI automation, visible rendering correctness, full Save completion, or complete Alice coverage. |
 | Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
 | Silver-thread/e2e gap matrix | When the PR touches lesson-session readiness docs, the scenario map and gap matrix name only the bounded user journey, remaining missing proof, and evidence still needed. |
+| Docs impact | Documentation changes build under strict MkDocs and do not record stale point-in-time evidence. |
 | Scope | No unrelated files or behavior are changed. |
+| Final artifact | The result begins with `MERGE_READY_EVIDENCE` only when every gate passes. Otherwise it begins with `NOT_MERGE_READY`. |
+| PR evidence | The PR body or a PR comment records current-head evidence, or the final artifact is `NOT_MERGE_READY` with the missing evidence named. |
 
 A previous wrapper failure is not a blocker when direct verification proves the
-same head, green checks, clean mergeability, bounded wording, and fresh
-generated adapters.
+same head, runnable evidence, successful current-head checks, clean
+mergeability, bounded wording, fresh generated adapters, focused scope, current
+PR evidence, and a clean final quality-audit cycle. If any item is missing,
+stale, pending, ambiguous, or tied to a different head, the gate reports
+`NOT_MERGE_READY` instead of readiness.
 
 ## Generic readiness procedure
 
 Run the gate in this order:
 
-1. Verify the PR head equals the exact requested SHA.
-2. Verify GitHub checks are green for that same SHA.
-3. Verify `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE`.
-4. Inspect the starter-project preflight scenario wording if the PR touches that
+1. Verify the local branch is the PR branch and local `HEAD` equals the PR
+   `headRefOid`.
+2. Run applicable repository evidence commands directly, without timeout
+   wrappers.
+3. Verify every check run is complete and successful for that same SHA.
+4. Verify `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE`.
+5. Inspect the starter-project preflight scenario wording if the PR touches that
    evidence contract.
-5. Run the generated Gadugi adapter freshness check if any canonical scenario
+6. Run the generated Gadugi adapter freshness check if any canonical scenario
    asset is affected.
-6. Inspect the lesson-session scenario map and gap matrix if the PR touches
+7. Inspect the lesson-session scenario map and gap matrix if the PR touches
    silver-thread/e2e readiness documentation.
-7. Validate assets.
-8. Publish the readiness comment only when every required gate passed.
+8. Review the diff scope against the PR purpose and reject unrelated changes.
+9. Review docs impact and ensure strict MkDocs evidence covers doc changes.
+10. Complete three quality-audit SEEK/VALIDATE/FIX cycles; the third cycle must
+    be clean.
+11. Review the PR body and comments for current-head evidence.
+12. If the PR body or comments are updated, reconfirm the PR head after the
+    update. The reconfirmed head must still match the local evidence head.
+13. Emit `MERGE_READY_EVIDENCE` only when every required gate passed for the
+    reconfirmed head; otherwise emit `NOT_MERGE_READY` with the blocker.
 
 ## Configuration
 
@@ -77,9 +101,17 @@ The Rust asset validation and Gadugi generator commands do not require Node, but
 the environment variable is safe to keep exported for repository-wide workflow
 commands.
 
+Run repository commands directly. Do not wrap readiness commands in `timeout`,
+background watchdogs, or shell snippets that kill the command after a fixed
+duration. A long-running command should finish, fail, or be reported as blocked
+with the command still tied to the reviewed head.
+
 For GitHub checks, use authenticated `gh` access to the repository that owns the
 PR. Do not place tokens, secrets, local credential paths, environment dumps, or
-raw command output in readiness comments.
+raw command output in final artifacts.
+
+The workflow never runs `git merge`, `gh pr merge`, force-pushes, rebases, or
+equivalent manual merge operations while collecting readiness evidence.
 
 ## GitHub metadata fields
 
@@ -90,7 +122,7 @@ The readiness gate consumes these `gh pr view` fields:
 | `headRefOid` | Exact requested SHA |
 | `mergeStateStatus` | `CLEAN` |
 | `mergeable` | `MERGEABLE` |
-| `statusCheckRollup` | Required checks green for `headRefOid` |
+| `statusCheckRollup` | Every current-head check run is complete and successful for `headRefOid` |
 
 Fetch the PR head, merge state, mergeability, and check summary:
 
@@ -99,11 +131,11 @@ gh pr view 164 \
   --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
-`statusCheckRollup` is green only when every required check for `headRefOid` has
-completed successfully. A required check blocks readiness when it is pending,
-queued, in progress, requested, failing, errored, timed out, skipped when the
-branch protection requires it to run, cancelled, missing, or reported for a
-different head.
+`statusCheckRollup` is green only when every check run for `headRefOid` has
+completed successfully. A check blocks readiness when it is pending, queued, in
+progress, requested, failing, errored, timed out, skipped, cancelled, missing, or
+reported for a different head. A successful check rollup for an older SHA is not
+evidence for the current head.
 
 If the head changes during review, stop and restart the readiness verification
 for the newly requested SHA.
@@ -172,6 +204,49 @@ cargo run -q -p eatme-cli -- assets validate --json
 The validation gate passes only when the JSON report has `passed: true` and no
 blocking errors.
 
+## Runnable evidence commands
+
+For a PR that touches lesson-session readiness docs, scenario ids, generated
+adapters, or the default-workflow readiness contract, the workflow runs these
+repository-supported commands from the repository root:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+mkdocs build --strict
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+The evidence is valid only for the checkout whose `git rev-parse HEAD` matches
+the PR `headRefOid`. The asset commands prove committed asset validity and
+generated-adapter freshness. The MkDocs command proves strict documentation
+buildability. The quality-gates script proves the repository's Rust formatting,
+linting, tests, module-size, and coverage gates as implemented by the script.
+
+These commands do not prove full UI automation, visible rendering correctness,
+grading, creative assessment, full Save completion, lesson completion, live
+classroom use, or full Tweedle/player decode.
+
+## Quality-audit SEEK/VALIDATE/FIX cycles
+
+The readiness workflow performs at least three quality-audit cycles after the
+initial evidence commands and before the final readiness claim.
+
+| Phase | Required action |
+| --- | --- |
+| SEEK | Look for head mismatches, stale PR evidence, failed or pending checks, overclaiming documentation, unrelated diff scope, missing docs impact, stale generated adapters, and missing command evidence. |
+| VALIDATE | Bind each suspected issue to exact evidence: command output, `gh` metadata, PR body or comment text, changed files, or committed documentation. Unsupported or ambiguous findings become blockers. |
+| FIX | Apply the minimal repository or PR-evidence correction when a fix is in scope. If no repository change is needed, record a no-op rationale tied to the exact head instead of editing files. |
+
+Cycle 1 establishes the first complete blocker list. Cycle 2 validates that
+fixes or no-op rationales did not create new gaps. Cycle 3 is the final clean
+cycle: it must find no unresolved blockers, no stale evidence, and no new fixes
+needed. If the third cycle finds any issue, the workflow fixes or blocks it and
+then starts another cycle until the final cycle is clean.
+
+The audit result is evidence metadata, not product capability proof. It supports
+only the merge-ready gate for the reviewed PR head.
+
 ## Silver-thread/e2e gap-matrix readiness
 
 Use this lane when a PR documents the lesson-session silver thread instead of
@@ -199,6 +274,27 @@ head, command outcomes, GitHub check state, and no-merge decision.
 Do not treat uncommitted local documentation edits as evidence for a PR head.
 Commit and push the docs first, then gather fresh command and GitHub evidence for
 the new `headRefOid`.
+
+## Diff scope and docs impact review
+
+Diff scope is focused when every changed file is necessary for the PR's stated
+purpose and the documentation, tests, or code all point at the same evidence
+contract. For the lesson-session gap-matrix lane, the expected scope is the
+lesson-session readiness documentation, default-workflow readiness
+documentation, and any Rust doc tests or module wiring that enforce those docs.
+
+The scope review checks:
+
+| Surface | Required result |
+| --- | --- |
+| Changed files | Each path is explained by the PR purpose. Unrelated source, generated, or docs changes block readiness. |
+| Documentation impact | Strict MkDocs succeeds, new docs are linked from navigation or an existing parent page, and docs avoid point-in-time command transcripts. |
+| Test impact | Doc-test or quality-gate changes enforce the documented contract without expanding runtime claims. |
+| Claim boundary | The diff does not introduce claims beyond the runnable evidence commands and exact-head GitHub metadata. |
+
+When the diff is documentation-only, strict MkDocs is still required. Asset and
+Gadugi checks are also required when the docs mention scenario ids, persona
+assets, generated adapters, or evidence contracts that depend on those assets.
 
 ## PR #193 finalization evidence boundary
 
@@ -231,15 +327,17 @@ pushed head:
 The allowed readiness conclusion for PR #193 is narrow: the final pushed head may
 support only the lesson-session silver-thread/e2e gap-matrix documentation lane,
 with asset validation, generated adapter freshness, strict docs build,
-repository quality gates, and GitHub checks tied to the externally recorded exact
-head. It does not claim full UI automation, rendering correctness, grading,
-creative assessment, Save completion, lesson completion, live classroom use,
-manual merge completion, or any evidence from uncommitted local files.
+repository quality gates, three clean-ending quality-audit cycles, focused diff
+scope, current PR evidence, and GitHub checks tied to the externally recorded
+exact head. It does not claim full UI automation, rendering correctness,
+grading, creative assessment, Save completion, lesson completion, live classroom
+use, manual merge completion, or any evidence from uncommitted local files.
 
-## PR #164 readiness example
+## Historical PR #164 starter-project example
 
 This subsection is a concrete example for the PR #164 finalization gate. Do not
-reuse its PR number or SHA for future readiness decisions.
+reuse its PR number, SHA, or narrowed starter-project scope as the template for
+future readiness decisions.
 
 For PR #164, the exact accepted head is:
 
@@ -266,10 +364,40 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 cargo run -q -p eatme-cli -- assets validate --json
 ```
 
-The readiness decision for PR #164 is valid only if those commands pass, the
-GitHub checks are green for
-`eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba`, and the scenario wording stays
-within the starter-project evidence boundary above.
+Under the current contract, the readiness decision for PR #164 would be valid
+only if those commands pass, every check run is complete and successful for
+`eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba`,
+`mergeStateStatus=CLEAN`, `mergeable=MERGEABLE`, the scenario wording stays
+within the starter-project evidence boundary above, generated adapters are
+fresh, the diff scope is focused, docs impact is reviewed, PR evidence names the
+current head, no manual merge was run, and three SEEK/VALIDATE/FIX cycles
+complete with a clean final cycle. The final artifact would begin with
+`MERGE_READY_EVIDENCE` only after those gates pass; any missing item would
+produce `NOT_MERGE_READY`.
+
+## PR description evidence
+
+The PR body or a PR comment must contain evidence for the current final head
+before readiness is recorded. The evidence may be concise, but it must be
+specific enough that a reviewer can match every claim to the exact head.
+
+| Evidence item | Required content |
+| --- | --- |
+| Head identity | PR number, branch name, and current `headRefOid`. |
+| Local command evidence | The applicable repository commands and pass/fail result for the same local checkout. |
+| GitHub Actions | Check rollup or check-run summary showing every current-head check run complete and successful for the same head. |
+| Diff scope | Changed files reviewed and why the scope is focused. |
+| Docs impact | Strict MkDocs result and the bounded documentation claim being supported. |
+| Quality audit | Three SEEK/VALIDATE/FIX cycles with the final cycle clean, or an explicit blocker. |
+| No manual merge | Statement that no `git merge`, `gh pr merge`, or equivalent manual merge was run. |
+
+Stale PR evidence is a blocker. Evidence is stale when it names an older SHA,
+omits the current SHA, relies only on previous local output after the branch has
+moved, or claims readiness without the final clean quality-audit cycle.
+
+If the PR description cannot be updated, the gate records
+`NOT_MERGE_READY` with the missing evidence item rather than relying on implied
+checks.
 
 ## No-op finalization record
 
@@ -284,6 +412,7 @@ implementation and documentation at the exact PR head. The record must include:
 | Local commands | Each repository-defined command, its exit result, and the bounded fact it proves. |
 | GitHub state | PR state, merge state, and check summary for the same head. |
 | No-op reason | A plain statement that no repository file changes are required because the current head already satisfies the documented contract. |
+| Quality audit | Three SEEK/VALIDATE/FIX cycles completed with a clean final cycle. |
 | No-merge statement | A statement that readiness was recorded without manually merging the PR. |
 
 The no-op record must not use future-tense assumptions. If any command fails,
@@ -294,32 +423,61 @@ new head.
 A dirty worktree is never a no-op finalization source. Local edits that have not
 been committed and pushed make any exact-head readiness record stale.
 
-## Readiness comment
+## Final output contract
 
-Publish readiness only after all required gates pass for the exact head. The
-comment should name the head and avoid broader product-readiness claims.
+The final result must begin with exactly one literal marker:
 
-Example:
+| Marker | When allowed |
+| --- | --- |
+| `MERGE_READY_EVIDENCE` | Every readiness gate passed for the reconfirmed exact PR head, and any PR body or comment mutation has been followed by another head check. |
+| `NOT_MERGE_READY` | Any gate is failing, pending, missing, ambiguous, tied to the wrong head, or not yet recorded as current-head PR evidence. |
+
+`MERGE_READY_EVIDENCE` is the only successful readiness artifact. It must name
+the exact head and the bounded evidence it proves:
 
 ```text
-Default-workflow readiness recorded for PR #164 at exact head eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba.
+MERGE_READY_EVIDENCE
+PR: #<number> (<headRefName>)
+Exact head: <headRefOid>
+Local head: <git rev-parse HEAD>
 
-Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/visible rendering correctness/full Save completion, generated Gadugi adapter freshness, and asset validation.
+Command evidence for this head:
+- cargo run -q -p eatme-cli -- assets validate --json: passed
+- cargo run -q -p eatme-cli -- assets generate-gadugi --check --json: passed
+- mkdocs build --strict: passed
+- TMPDIR=/tmp ./scripts/quality-gates.sh: passed
 
-The prior non-zero wrapper exit is not treated as a blocker because direct verification passed at this exact head.
+GitHub evidence:
+- statusCheckRollup: every current-head check run complete and successful
+- mergeStateStatus: CLEAN
+- mergeable: MERGEABLE
+
+Review evidence:
+- diff scope: focused on <bounded PR purpose>
+- docs impact: strict MkDocs passed; docs claim only <bounded evidence lane>
+- PR evidence: body/comment records this exact head and command evidence
+- quality audit: three SEEK/VALIDATE/FIX cycles completed; final cycle clean
+- no manual merge: no git merge, gh pr merge, force-push, rebase, or equivalent manual merge operation was run
+
+Boundary: readiness covers only the documented exact-head evidence lane. It does not claim full UI automation, rendering correctness, grading, creative assessment, full Save completion, lesson completion, live classroom use, or manual merge completion.
 ```
 
-Post the comment with:
+`NOT_MERGE_READY` must name the blocker and the minimal next action:
 
-```bash
-gh pr comment 164 --body-file readiness-comment.txt
+```text
+NOT_MERGE_READY
+PR: #<number> (<headRefName>)
+Observed head: <headRefOid or unknown>
+Blocker: <specific failed, pending, missing, ambiguous, stale, or wrong-head gate>
+Required next action: <minimal fix or evidence step before readiness can be retried>
 ```
 
 ## Blocker handling
 
-If any gate fails, do not publish readiness. Fix only the minimal issue that
-caused the blocker, run the relevant validation again, push the fix, and repeat
-exact-head verification against the new PR head.
+If any gate fails, do not publish readiness. Emit `NOT_MERGE_READY` with the
+specific blocker. Fix only the minimal issue that caused the blocker, run the
+relevant validation again, push the fix when a repository change is required,
+and repeat exact-head verification against the new PR head.
 
 | Blocker | Minimal response |
 | --- | --- |
@@ -330,3 +488,6 @@ exact-head verification against the new PR head.
 | Stale generated adapter | Regenerate adapters from canonical sources. |
 | Asset validation failure | Fix the invalid scenario or persona asset. |
 | Unrelated changes | Remove the unrelated change from the readiness work. |
+| Missing quality-audit cycle | Run the missing SEEK/VALIDATE/FIX cycle and require a clean final cycle. |
+| Stale PR evidence | Update the PR body or comment with current-head evidence, then reconfirm the head. |
+| Missing no-op rationale | Record why no repository changes are required for the current head, or make the minimal required change. |
