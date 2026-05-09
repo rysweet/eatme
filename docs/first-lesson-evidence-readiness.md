@@ -378,8 +378,8 @@ readiness report contract.
 ### Interpret Save evidence safely
 
 Save-related evidence can show that a Save option, Save action, Save shortcut, or
-Save artifact availability was observed. It proves Save completion only when a
-distinct explicit Save-completion evidence item exists.
+Save artifact availability was observed. It can support a Save-completion claim
+only when a distinct explicit Save-completion evidence item exists.
 
 Safe wording:
 
