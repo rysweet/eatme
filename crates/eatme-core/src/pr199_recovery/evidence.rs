@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use super::state::CheckRollup;
 use super::{RecoveryError, summarize_names, summarize_paths};
 
+const MISSING_REAL_ACTION_EVIDENCE: &str = "missing_real_action_evidence";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredBlocker {
     pub code: String,
@@ -130,7 +132,7 @@ impl EvidenceSnapshot {
 
     fn refresh_original_alice_status(&mut self) {
         self.original_alice_action_evidence.status =
-            if self.has_blocker_code("missing_real_action_evidence") {
+            if self.has_blocker_code(MISSING_REAL_ACTION_EVIDENCE) {
                 "missing".into()
             } else {
                 "available".into()
@@ -172,30 +174,10 @@ pub struct ExistingEvidenceFile {
     pub default_workflow_run_id: String,
 }
 
-impl ExistingEvidenceFile {
-    pub fn matching_pr199_recovery_snapshot() -> Self {
-        Self {
-            path: PathBuf::from("docs/pr-199-merge-readiness-evidence.md"),
-            branch: "feat/issue-184-eatme-wave7-original-evidence-preservation-lane-fo".into(),
-            head_sha: "matching-pr199-head".into(),
-            check_rollup: CheckRollup::default(),
-            qa_summary: "all scoped QA passed".into(),
-            blocker_codes: vec!["missing_real_action_evidence".into()],
-            default_workflow_run_id: "default-workflow-pr199-20260509".into(),
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EvidenceUpdate {
     pub path: PathBuf,
     pub body: String,
-}
-
-impl EvidenceUpdate {
-    pub fn allowed_paths(&self) -> Vec<PathBuf> {
-        vec![self.path.clone()]
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -280,7 +262,7 @@ impl PushOrNoopDecisionGate {
     pub fn decide(delta: EvidenceDelta) -> Result<RecoveryDecision, RecoveryError> {
         if let Some(update) = delta.required_update() {
             return Ok(RecoveryDecision::Push {
-                files: update.allowed_paths(),
+                files: vec![update.path],
                 message: format!(
                     "PR #199 recovery evidence update preserving {} blockers",
                     summarize_names(&delta.current.blocker_codes)

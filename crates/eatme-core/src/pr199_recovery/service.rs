@@ -9,10 +9,11 @@ use crate::{CommandOutput, CommandRunner, CommandSpec};
 use super::state::{CheckConclusion, CheckRun, PrState, PrStateCollector, PrStateInput};
 use super::{RecoveryError, required_text};
 
+const PR199: u32 = 199;
+const PR199_JSON_FIELDS: &str = "number,headRefName,headRefOid,files,statusCheckRollup";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GitHubPrStateClientConfig {
-    pub pr_number: u32,
-    pub repo: Option<String>,
     pub attempts: usize,
     pub retry_delay: Duration,
     pub timeout: Duration,
@@ -21,8 +22,6 @@ pub struct GitHubPrStateClientConfig {
 impl Default for GitHubPrStateClientConfig {
     fn default() -> Self {
         Self {
-            pr_number: 199,
-            repo: None,
             attempts: 3,
             retry_delay: Duration::from_secs(1),
             timeout: Duration::from_secs(30),
@@ -44,7 +43,7 @@ impl<'a> GitHubPrStateClient<'a> {
         Self { runner, config }
     }
 
-    pub fn fetch_pr_state(&self) -> Result<PrState, RecoveryError> {
+    pub fn fetch_state(&self) -> Result<PrState, RecoveryError> {
         let output = self.run_gh_pr_view()?;
         if output.exit_status != Some(0) {
             return Err(RecoveryError::new(
@@ -66,21 +65,14 @@ impl<'a> GitHubPrStateClient<'a> {
         PrStateCollector::collect(response.into_input()?)
     }
 
-    pub fn fetch_pr199_state(&self) -> Result<PrState, RecoveryError> {
-        self.fetch_pr_state()
-    }
-
     fn run_gh_pr_view(&self) -> Result<CommandOutput, RecoveryError> {
-        let mut args = vec![
+        let args = vec![
             "pr".to_owned(),
             "view".to_owned(),
-            self.config.pr_number.to_string(),
+            PR199.to_string(),
             "--json".to_owned(),
-            "number,headRefName,headRefOid,files,statusCheckRollup".to_owned(),
+            PR199_JSON_FIELDS.to_owned(),
         ];
-        if let Some(repo) = &self.config.repo {
-            args.extend(["--repo".to_owned(), repo.clone()]);
-        }
 
         self.runner
             .run(

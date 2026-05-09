@@ -127,9 +127,7 @@ fn github_pr_state_client_fetches_pr199_state_with_retry_and_check_mapping() {
         stderr: String::new(),
     }]);
 
-    let state = GitHubPrStateClient::new(&runner)
-        .fetch_pr199_state()
-        .unwrap();
+    let state = GitHubPrStateClient::new(&runner).fetch_state().unwrap();
 
     assert_eq!(state.pr_number, 199);
     assert_eq!(
@@ -181,9 +179,7 @@ fn github_pr_state_client_surfaces_external_failures_without_success_fallback() 
         stderr: "GitHub API unavailable".into(),
     }]);
 
-    let error = GitHubPrStateClient::new(&runner)
-        .fetch_pr199_state()
-        .unwrap_err();
+    let error = GitHubPrStateClient::new(&runner).fetch_state().unwrap_err();
 
     assert_eq!(error.code(), "github_pr_state_fetch_failed");
     assert!(error.to_string().contains("GitHub API unavailable"));
@@ -198,9 +194,7 @@ fn github_pr_state_client_rejects_malformed_service_json() {
         stderr: String::new(),
     }]);
 
-    let error = GitHubPrStateClient::new(&runner)
-        .fetch_pr199_state()
-        .unwrap_err();
+    let error = GitHubPrStateClient::new(&runner).fetch_state().unwrap_err();
 
     assert_eq!(error.code(), "github_pr_state_json_invalid");
 }
@@ -286,7 +280,6 @@ fn merge_ready_evidence_updater_updates_only_existing_evidence_file_when_facts_c
     let update = delta.required_update().unwrap();
 
     assert_eq!(update.path, existing.path);
-    assert_eq!(update.allowed_paths(), vec![existing.path]);
     assert!(
         update
             .body
@@ -302,7 +295,7 @@ fn merge_ready_evidence_updater_updates_only_existing_evidence_file_when_facts_c
 
 #[test]
 fn merge_ready_evidence_updater_returns_no_delta_when_current_facts_match_existing_record() {
-    let existing = ExistingEvidenceFile::matching_pr199_recovery_snapshot();
+    let existing = matching_pr199_recovery_snapshot();
     let current = EvidenceSnapshot::from_existing(&existing);
 
     let delta = EvidenceDelta::from_existing_and_current(&existing, &current).unwrap();
@@ -316,7 +309,7 @@ fn merge_ready_evidence_updater_returns_no_delta_when_current_facts_match_existi
 #[test]
 fn push_or_noop_decision_gate_requires_literal_current_head_noop_justification_when_no_update_exists()
  {
-    let existing = ExistingEvidenceFile::matching_pr199_recovery_snapshot();
+    let existing = matching_pr199_recovery_snapshot();
     let current = EvidenceSnapshot::from_existing(&existing);
     let delta = EvidenceDelta::from_existing_and_current(&existing, &current).unwrap();
 
@@ -350,7 +343,7 @@ fn push_or_noop_decision_gate_requires_literal_current_head_noop_justification_w
 
 #[test]
 fn push_or_noop_decision_gate_pushes_only_focused_recovery_evidence_changes() {
-    let existing = ExistingEvidenceFile::matching_pr199_recovery_snapshot();
+    let existing = matching_pr199_recovery_snapshot();
     let changed = EvidenceSnapshot::from_existing(&existing)
         .with_head_sha("6f815a5b6cc797da1b36bd8c86b2b2dfb1471990")
         .with_default_workflow_run_id("default-workflow-pr199-20260509-rerun");
@@ -399,11 +392,18 @@ impl CommandRunner for RecordingRunner {
             .outputs
             .borrow_mut()
             .pop_front()
-            .unwrap_or(CommandOutput {
-                command: spec.shell_display(),
-                exit_status: Some(0),
-                stdout: String::new(),
-                stderr: String::new(),
-            }))
+            .expect("test runner output queue exhausted"))
+    }
+}
+
+fn matching_pr199_recovery_snapshot() -> ExistingEvidenceFile {
+    ExistingEvidenceFile {
+        path: PathBuf::from("docs/pr-199-merge-readiness-evidence.md"),
+        branch: "feat/issue-184-eatme-wave7-original-evidence-preservation-lane-fo".into(),
+        head_sha: "matching-pr199-head".into(),
+        check_rollup: CheckRollup::default(),
+        qa_summary: "all scoped QA passed".into(),
+        blocker_codes: vec!["missing_real_action_evidence".into()],
+        default_workflow_run_id: "default-workflow-pr199-20260509".into(),
     }
 }

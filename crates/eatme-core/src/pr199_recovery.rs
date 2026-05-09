@@ -10,8 +10,7 @@ mod workflow;
 
 pub use evidence::{
     AliceEvidenceBlockerPreserver, EvidenceDelta, EvidenceSnapshot, EvidenceUpdate,
-    ExistingEvidenceFile, OriginalAliceActionEvidence, PushOrNoopDecisionGate, RecoveryDecision,
-    StructuredBlocker,
+    ExistingEvidenceFile, PushOrNoopDecisionGate, RecoveryDecision, StructuredBlocker,
 };
 pub use qa::{QaCommand, QaOutcome, QaReport, ScopedQaRunner};
 pub use service::{GitHubPrStateClient, GitHubPrStateClientConfig};
