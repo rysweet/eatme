@@ -438,8 +438,10 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize(text);
     let missing = needles
         .iter()
-        .filter(|needle| !normalized_text.contains(&normalize(needle)))
-        .copied()
+        .filter_map(|needle| {
+            let normalized_needle = normalize(needle);
+            (!normalized_text.contains(&normalized_needle)).then_some(*needle)
+        })
         .collect::<Vec<_>>();
     assert!(
         missing.is_empty(),
@@ -456,11 +458,15 @@ fn assert_contains_none(label: &str, text: &str, needles: &[&str]) {
 }
 
 fn assert_contains_none_with_message(text: &str, needles: &[&str], message: &str) {
-    let normalized_text = normalize(text).to_lowercase();
+    let normalized_text = normalize_lowercase(text);
     let present = needles
         .iter()
-        .filter(|needle| normalized_text.contains(&normalize(needle).to_lowercase()))
-        .copied()
+        .filter_map(|needle| {
+            let normalized_needle = normalize_lowercase(needle);
+            normalized_text
+                .contains(&normalized_needle)
+                .then_some(*needle)
+        })
         .collect::<Vec<_>>();
     assert!(present.is_empty(), "{message}: {present:?}");
 }
@@ -627,6 +633,19 @@ fn normalize(text: &str) -> String {
             normalized.push(' ');
         }
         normalized.push_str(word);
+    }
+    normalized
+}
+
+fn normalize_lowercase(text: &str) -> String {
+    let mut normalized = String::with_capacity(text.len());
+    for word in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        for character in word.chars().flat_map(char::to_lowercase) {
+            normalized.push(character);
+        }
     }
     normalized
 }
