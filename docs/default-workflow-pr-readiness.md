@@ -18,16 +18,19 @@ Do not treat a checked-in commit SHA as current readiness evidence. Any
 documentation commit changes `HEAD`, so exact-head evidence belongs in the
 final PR handoff note or CI logs after the last commit has been pushed.
 
-Collect exact-head evidence only after syncing to the PR branch and confirming a
-clean worktree:
+Collect exact-head evidence only after syncing to PR #174's actual head and
+confirming a clean worktree:
 
 ```bash
+git fetch origin pull/174/head:pr-174-persona-gap-fill
+git switch pr-174-persona-gap-fill
 git status --short
 git rev-parse HEAD
 gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
-The final handoff must record these fields for the same commit:
+Record the starting HEAD with `git rev-parse HEAD` before making recovery
+changes. The final handoff must record these fields for the same commit:
 
 | Field | Required value |
 | --- | --- |
@@ -120,9 +123,8 @@ git rev-parse --show-toplevel
 Sync to the current PR head before collecting evidence:
 
 ```bash
-git fetch origin wave6-persona-gap-fill-1778302300
-git switch wave6-persona-gap-fill-1778302300
-git merge --ff-only origin/wave6-persona-gap-fill-1778302300
+git fetch origin pull/174/head:pr-174-persona-gap-fill
+git switch pr-174-persona-gap-fill
 ```
 
 Record the local head and compare it to GitHub:
@@ -211,6 +213,33 @@ generated adapter freshness for the exact head. It does not claim Alice UI
 automation, grading, creative assessment, save/reopen/export completion,
 deployed sharing, visual correctness, classroom success, or lesson completion.
 ```
+
+## Publishing bounded PR evidence
+
+Publish only asset-scoped evidence to PR 174 after the final commit is pushed
+and the exact-head checks above have passed:
+
+```bash
+gh pr comment 174 --body-file /path/to/pr-174-evidence.md
+```
+
+The body file must use this bounded template:
+
+```markdown
+Persona/scenario gap-fill readiness refreshed for HEAD `<commit-sha>`.
+
+Asset-scoped evidence:
+- `cargo run -q -p eatme-cli -- assets validate --json` succeeded.
+- `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` succeeded.
+- Committed changes are limited to canonical persona assets, canonical EatMe scenario assets, and generator-produced Gadugi adapters under `assets/scenarios/gadugi/*.yaml`.
+
+Scope note: this evidence covers persona/scenario asset completeness, validation success, and generated-adapter freshness only. It does not claim Alice UI automation, grading correctness, creative assessment quality, completed lessons, or full lesson-flow coverage.
+```
+
+If GitHub publishing fails because of authentication, API errors, or rate
+limiting, preserve the intended PR text unchanged outside the repository and
+record the exact `gh` failure beside it. Do not commit fallback logs or local
+publish-attempt files to the PR branch.
 
 ## Related documentation
 

@@ -1,6 +1,7 @@
 use crate::{generate_gadugi_adapters, validate_assets};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::OnceLock;
 
 const READINESS_DOC: &str = "docs/default-workflow-pr-readiness.md";
@@ -36,9 +37,7 @@ const PROHIBITED_STALE_EVIDENCE: &[&str] = &[
 ];
 static REPOSITORY_ROOT: OnceLock<PathBuf> = OnceLock::new();
 static READINESS_DOC_TEXT: OnceLock<String> = OnceLock::new();
-static FALLBACK_LOG_TEXT: OnceLock<String> = OnceLock::new();
 static NORMALIZED_READINESS_DOC_TEXT: OnceLock<String> = OnceLock::new();
-static NORMALIZED_FALLBACK_LOG_TEXT: OnceLock<String> = OnceLock::new();
 
 #[test]
 fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_values() {
@@ -163,22 +162,29 @@ fn readiness_doc_blocks_stale_dirty_failed_pending_or_out_of_scope_evidence() {
 }
 
 #[test]
-fn manual_fallback_log_cannot_be_used_as_readiness_or_review_evidence() {
-    let fallback_log = normalized_fallback_log_text();
+fn manual_fallback_log_is_not_tracked_as_readiness_or_review_evidence() {
+    let root = repository_root();
+    let output = Command::new("git")
+        .current_dir(root)
+        .args(["ls-files", "--error-unmatch", FALLBACK_LOG])
+        .output()
+        .unwrap_or_else(|error| panic!("failed to inspect tracked files with git: {error}"));
+
+    assert!(
+        !output.status.success(),
+        "{FALLBACK_LOG} must not be tracked as PR 174 readiness or review evidence"
+    );
 
     assert_normalized_contains_all(
-        "manual fallback evidence boundary",
-        fallback_log,
+        "manual fallback publish boundary",
+        normalized_readiness_doc(),
         &[
-            "This file is not PR readiness evidence.",
-            "manual fallback log must not be used to claim exact-HEAD readiness",
-            "manual fallback log must not be used to claim exact-HEAD review evidence",
+            "If GitHub publishing fails",
+            "rate limiting",
+            "preserve the intended PR text unchanged outside the repository",
+            "record the exact `gh` failure",
+            "Do not commit fallback logs or local publish-attempt files to the PR branch.",
         ],
-    );
-    assert_normalized_not_contains_any(
-        "manual fallback stale evidence",
-        fallback_log,
-        PROHIBITED_STALE_EVIDENCE,
     );
 }
 
@@ -194,21 +200,9 @@ fn readiness_doc() -> &'static str {
         .as_str()
 }
 
-fn fallback_log_text() -> &'static str {
-    FALLBACK_LOG_TEXT
-        .get_or_init(|| repo_text(FALLBACK_LOG))
-        .as_str()
-}
-
 fn normalized_readiness_doc() -> &'static str {
     NORMALIZED_READINESS_DOC_TEXT
         .get_or_init(|| normalize_whitespace(readiness_doc()))
-        .as_str()
-}
-
-fn normalized_fallback_log_text() -> &'static str {
-    NORMALIZED_FALLBACK_LOG_TEXT
-        .get_or_init(|| normalize_whitespace(fallback_log_text()))
         .as_str()
 }
 
