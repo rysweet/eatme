@@ -186,6 +186,144 @@ fn reopen_probe_rejects_original_starter_project_as_source_artifact() {
 }
 
 #[test]
+fn reopen_probe_rejects_different_project_save_artifact_as_source() {
+    let root = unique_test_dir("reopen-different-save-artifact");
+    let alice_home = root.join("alice");
+    let run_dir = root.join("runs");
+    let save_evidence_dir = run_dir.join("project-save");
+    let reopen_evidence_dir = run_dir.join("project-reopen");
+    fs::create_dir_all(alice_home.join("tools")).unwrap();
+    fs::create_dir_all(&save_evidence_dir).unwrap();
+    fs::create_dir_all(&reopen_evidence_dir).unwrap();
+    fs::write(alice_home.join(DEFAULT_PROJECT_REOPEN_HOOK), "#!/bin/sh\n").unwrap();
+    fs::write(save_evidence_dir.join("saved-project.a3p"), "saved project").unwrap();
+    fs::write(save_evidence_dir.join("other-project.a3p"), "other project").unwrap();
+    fs::write(
+        reopen_evidence_dir.join("reopened-project.a3p"),
+        "reopened project",
+    )
+    .unwrap();
+    fs::write(
+        reopen_evidence_dir.join("project-reopen.json"),
+        r#"{"reopened":true}"#,
+    )
+    .unwrap();
+    fs::write(
+        reopen_evidence_dir.join("reopened-state.json"),
+        r#"{"world":"expected learner-world state"}"#,
+    )
+    .unwrap();
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-reopen-project --json".into(),
+        exit_status: Some(0),
+        stdout: serde_json::json!({
+            "schema_version": "eatme.alice-project-reopen-result/v1",
+            "status": "reopened",
+            "source_saved_project_artifact": "project-save/other-project.a3p",
+            "reopen_selector": "scene.eatmeFirstLessonStep",
+            "reopened_project_artifact": "reopened-project.a3p",
+            "reopen_artifact": "project-reopen.json",
+            "reopened_state_artifact": "reopened-state.json",
+            "state_verification": "passed"
+        })
+        .to_string(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_project_reopen_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &save_probe_with_status("passed"),
+        ":99",
+    );
+
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_reopen());
+    assert!(
+        probe.validation_errors.iter().any(|error| error.contains(
+            "source_saved_project_artifact must match save-project saved_project_artifact"
+        )),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn reopen_probe_rejects_symlink_escape_from_reopen_evidence_dir() {
+    let root = unique_test_dir("reopen-symlink-escape");
+    let alice_home = root.join("alice");
+    let run_dir = root.join("runs");
+    let save_evidence_dir = run_dir.join("project-save");
+    let reopen_evidence_dir = run_dir.join("project-reopen");
+    fs::create_dir_all(alice_home.join("tools")).unwrap();
+    fs::create_dir_all(&save_evidence_dir).unwrap();
+    fs::create_dir_all(&reopen_evidence_dir).unwrap();
+    fs::write(alice_home.join(DEFAULT_PROJECT_REOPEN_HOOK), "#!/bin/sh\n").unwrap();
+    fs::write(save_evidence_dir.join("saved-project.a3p"), "saved project").unwrap();
+    fs::write(
+        reopen_evidence_dir.join("reopened-project.a3p"),
+        "reopened project",
+    )
+    .unwrap();
+    fs::write(
+        reopen_evidence_dir.join("project-reopen.json"),
+        r#"{"reopened":true}"#,
+    )
+    .unwrap();
+    fs::write(
+        root.join("outside-reopened-state.json"),
+        r#"{"outside":true}"#,
+    )
+    .unwrap();
+    std::os::unix::fs::symlink(
+        root.join("outside-reopened-state.json"),
+        reopen_evidence_dir.join("reopened-state.json"),
+    )
+    .unwrap();
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-reopen-project --json".into(),
+        exit_status: Some(0),
+        stdout: serde_json::json!({
+            "schema_version": "eatme.alice-project-reopen-result/v1",
+            "status": "reopened",
+            "source_saved_project_artifact": "project-save/saved-project.a3p",
+            "reopen_selector": "scene.eatmeFirstLessonStep",
+            "reopened_project_artifact": "reopened-project.a3p",
+            "reopen_artifact": "project-reopen.json",
+            "reopened_state_artifact": "reopened-state.json",
+            "state_verification": "passed"
+        })
+        .to_string(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_project_reopen_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &save_probe_with_status("passed"),
+        ":99",
+    );
+
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_reopen());
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|error| error.contains("must stay under project-reopen evidence dir")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn reopen_probe_fails_when_reopened_state_artifact_is_missing_or_empty() {
     let root = unique_test_dir("reopen-missing-state");
     let alice_home = root.join("alice");

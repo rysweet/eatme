@@ -1,6 +1,8 @@
 #![cfg_attr(not(test), allow(dead_code))]
 
-use crate::launch_artifacts::artifact_info;
+use crate::launch_path_validation::{
+    artifact_info_under, canonical_artifact_under, normal_components,
+};
 use crate::launch_save_project::{DEFAULT_SAVE_SELECTOR, UiActionSaveProjectProbe};
 use crate::launch_ui_actions::{
     UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
@@ -8,7 +10,7 @@ use crate::launch_ui_actions::{
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROJECT_REOPEN_HOOK: &str = "tools/eatme-reopen-project";
@@ -180,21 +182,28 @@ pub(crate) fn probe_project_reopen_hook(
         }
     };
 
-    let mut validation_errors = validate_reopen_hook_result(&result, run_dir);
-    let reopened_project_artifact = hook_artifact(
+    let mut validation_errors = validate_reopen_hook_result(&result, run_dir, &saved_project);
+    let reopened_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.reopened_project_artifact,
         "reopened_project_artifact",
+        "project-reopen evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let reopen_artifact = hook_artifact(&evidence_dir, &result.reopen_artifact, "reopen_artifact")
-        .map_err(|error| validation_errors.push(error))
-        .ok();
-    let reopened_state_artifact = hook_artifact(
+    let reopen_artifact = artifact_info_under(
+        &evidence_dir,
+        &result.reopen_artifact,
+        "reopen_artifact",
+        "project-reopen evidence dir",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
+    let reopened_state_artifact = artifact_info_under(
         &evidence_dir,
         &result.reopened_state_artifact,
         "reopened_state_artifact",
+        "project-reopen evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
@@ -360,7 +369,11 @@ fn failed_reopen_project_probe(
     }
 }
 
-fn validate_reopen_hook_result(result: &ProjectReopenHookResult, run_dir: &Path) -> Vec<String> {
+fn validate_reopen_hook_result(
+    result: &ProjectReopenHookResult,
+    run_dir: &Path,
+    expected_saved_project: &Path,
+) -> Vec<String> {
     let mut errors = Vec::new();
     if result.schema_version != "eatme.alice-project-reopen-result/v1" {
         errors.push(format!(
@@ -383,7 +396,12 @@ fn validate_reopen_hook_result(result: &ProjectReopenHookResult, run_dir: &Path)
             result.state_verification
         ));
     }
-    validate_source_saved_project(&result.source_saved_project_artifact, run_dir, &mut errors);
+    validate_source_saved_project(
+        &result.source_saved_project_artifact,
+        run_dir,
+        expected_saved_project,
+        &mut errors,
+    );
     if result.reopened_project_artifact.is_empty() {
         errors.push("reopened_project_artifact must not be empty".into());
     }
@@ -396,7 +414,12 @@ fn validate_reopen_hook_result(result: &ProjectReopenHookResult, run_dir: &Path)
     errors
 }
 
-fn validate_source_saved_project(source: &str, run_dir: &Path, errors: &mut Vec<String>) {
+fn validate_source_saved_project(
+    source: &str,
+    run_dir: &Path,
+    expected_saved_project: &Path,
+    errors: &mut Vec<String>,
+) {
     if source.is_empty() {
         errors.push("source_saved_project_artifact must not be empty".into());
         return;
@@ -420,11 +443,34 @@ fn validate_source_saved_project(source: &str, run_dir: &Path, errors: &mut Vec<
     }
 
     let full_path = run_dir.join(path);
-    if let Err(error) = artifact_info(&full_path) {
-        errors.push(format!(
-            "source_saved_project_artifact {} is not a readable artifact: {error:#}",
-            full_path.display()
-        ));
+    let project_save_dir = run_dir.join(EXPECTED_SOURCE_PREFIX);
+    let source_resolved = match canonical_artifact_under(
+        &project_save_dir,
+        &full_path,
+        "source_saved_project_artifact",
+        "project-save evidence dir",
+    ) {
+        Ok(path) => path,
+        Err(error) => {
+            errors.push(error);
+            return;
+        }
+    };
+    let expected_resolved = match expected_saved_project.canonicalize() {
+        Ok(path) => path,
+        Err(error) => {
+            errors.push(format!(
+                "save-project saved_project_artifact {} is not a readable artifact: {error:#}",
+                expected_saved_project.display()
+            ));
+            return;
+        }
+    };
+    if source_resolved != expected_resolved {
+        errors.push(
+            "source_saved_project_artifact must match save-project saved_project_artifact from the same run"
+                .into(),
+        );
     }
 }
 
@@ -443,34 +489,4 @@ fn saved_project_path(
         run_dir.join(path)
     };
     Ok(full_path)
-}
-
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute() || normal_components(path).is_none() {
-        return Err(format!(
-            "{field} must be a simple relative path under project-reopen evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })
-}
-
-fn normal_components(path: &Path) -> Option<Vec<String>> {
-    path.components()
-        .map(|component| match component {
-            Component::Normal(value) => value.to_str().map(ToOwned::to_owned),
-            _ => None,
-        })
-        .collect()
 }

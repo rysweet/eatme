@@ -153,6 +153,67 @@ fn project_save_hook_rejects_paths_outside_evidence_dir() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[cfg(unix)]
+#[test]
+fn project_save_hook_rejects_symlink_escape_from_evidence_dir() {
+    let root = unique_test_dir("save-hook-symlink-escape");
+    let alice_home = root.join("alice");
+    let tools = alice_home.join("tools");
+    let run_dir = root.join("runs");
+    let edit_evidence_dir = run_dir.join("procedure-edit");
+    let save_evidence_dir = run_dir.join("project-save");
+    fs::create_dir_all(&tools).unwrap();
+    fs::create_dir_all(&edit_evidence_dir).unwrap();
+    fs::create_dir_all(&save_evidence_dir).unwrap();
+    fs::write(tools.join("eatme-save-project"), "#!/bin/sh\n").unwrap();
+    fs::write(edit_evidence_dir.join("edited-project.a3p"), "edited").unwrap();
+    fs::write(root.join("outside-saved-project.a3p"), "outside").unwrap();
+    std::os::unix::fs::symlink(
+        root.join("outside-saved-project.a3p"),
+        save_evidence_dir.join("saved-project.a3p"),
+    )
+    .unwrap();
+    fs::write(
+        save_evidence_dir.join("project-save.json"),
+        r#"{"saved":true}"#,
+    )
+    .unwrap();
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-save-project --json".into(),
+        exit_status: Some(0),
+        stdout: serde_json::json!({
+            "schema_version": "eatme.alice-project-save-result/v1",
+            "status": "saved",
+            "save_selector": DEFAULT_SAVE_SELECTOR,
+            "saved_project_artifact": "saved-project.a3p",
+            "save_artifact": "project-save.json"
+        })
+        .to_string(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_project_save_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &run_world_probe_with_status("passed"),
+        ":99",
+    );
+
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_save());
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|error| error.contains("must stay under project-save evidence dir")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
 fn run_world_probe_with_status(status: &str) -> UiActionRunWorldProbe {
     UiActionRunWorldProbe {
         id: "alice-side-world-run-command-hook".into(),

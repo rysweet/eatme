@@ -82,9 +82,10 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-first-lesson-readiness
   --execute
 ```
 
-Read the resulting manifest and `ui-action-contract.json` as evidence. Treat
-`save-project` and `reopen-project` as ready only when their proof artifacts are
-present, non-empty, and accepted by validation. Treat a missing hook or missing
+Read the resulting manifest, `ui-action-contract.json`, and any `project-save/`
+or `project-reopen/` evidence as review inputs. Treat `save-project` and
+`reopen-project` as ready only when their proof artifacts are present,
+non-empty, and accepted by validation. Treat a missing hook or missing
 precondition as a bounded `blocked` result.
 
 ## Configuration
@@ -238,7 +239,8 @@ Use this checklist when reviewing save/reopen readiness:
    `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` when
    scenario assets changed.
 3. Confirm `save-project` appears only after accepted run-world proof.
-4. Confirm `reopen-project` appears only after accepted save proof.
+4. Confirm any `reopen-project` probe or evidence appears only after accepted
+   save proof.
 5. Confirm `project-save/` contains a non-empty saved project and save evidence.
 6. Confirm `project-reopen/` contains non-empty reopen evidence and
    `reopened-state.json`.
