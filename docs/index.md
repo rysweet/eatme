@@ -25,6 +25,7 @@ Eatme has three layers:
 | Keeping generated assets in sync | [Generated Asset Consistency](generated-asset-consistency.md) |
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Recovering a readiness PR | [Default Workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Recovering PR #188 | [PR #188 Recovery Readiness](pr-188-recovery-readiness.md) |
 | Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
@@ -108,6 +109,9 @@ Review the conservative first-lesson evidence boundary contract:
 
 Recover a readiness PR with exact-head evidence:
 [Default Workflow PR Readiness](default-workflow-pr-readiness.md).
+
+Recover PR #188 with bounded current-head evidence:
+[PR #188 Recovery Readiness](pr-188-recovery-readiness.md).
 
 Build the docs site:
 
