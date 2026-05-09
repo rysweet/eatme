@@ -44,13 +44,24 @@ struct LaunchSmokeProgressCounts {
 
 impl LaunchSmokeProgressCounts {
     fn from_items(items: &[LessonReadinessEvidenceProgressItem]) -> Self {
-        Self {
-            present: count_launch_smoke_state(items, "present"),
-            missing: count_launch_smoke_state(items, "missing"),
-            invalid: count_launch_smoke_state(items, "invalid"),
-            not_observed: count_launch_smoke_state(items, "not_observed"),
-            blocked: count_launch_smoke_state(items, "blocked"),
+        let mut counts = Self {
+            present: 0,
+            missing: 0,
+            invalid: 0,
+            not_observed: 0,
+            blocked: 0,
+        };
+        for item in items {
+            match item.state.as_str() {
+                "present" => counts.present += 1,
+                "missing" => counts.missing += 1,
+                "invalid" => counts.invalid += 1,
+                "not_observed" => counts.not_observed += 1,
+                "blocked" => counts.blocked += 1,
+                _ => {}
+            }
         }
+        counts
     }
 
     fn summary(&self, total_required: usize) -> String {
@@ -205,10 +216,6 @@ fn all_targets_passed(targets: &[Option<&LessonTargetEvidence>; 2]) -> bool {
             && target.failure_category.is_none()
             && target.launch_manifest_present
     })
-}
-
-fn count_launch_smoke_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
 }
 
 fn launch_smoke_next_blocker(issues: &[String]) -> Option<String> {

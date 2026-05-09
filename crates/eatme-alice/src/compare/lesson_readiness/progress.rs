@@ -132,11 +132,17 @@ pub(super) fn evidence_progress(
         |next_action| &next_action.select_project_proof_artifact,
     ));
 
-    let present = count_state(&items, "present");
-    let missing = count_state(&items, "missing");
-    let invalid = count_state(&items, "invalid");
-    let not_observed = count_state(&items, "not_observed");
-    let blocked = count_state(&items, "blocked");
+    let (mut present, mut missing, mut invalid, mut not_observed, mut blocked) = (0, 0, 0, 0, 0);
+    for item in &items {
+        match item.state.as_str() {
+            "present" => present += 1,
+            "missing" => missing += 1,
+            "invalid" => invalid += 1,
+            "not_observed" => not_observed += 1,
+            "blocked" => blocked += 1,
+            _ => {}
+        }
+    }
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
@@ -212,10 +218,6 @@ fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvi
         ),
         _ => artifact.detail.clone(),
     }
-}
-
-fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
 }
 
 pub(super) fn progress_item_id(evidence: &str) -> String {
@@ -411,12 +413,11 @@ fn pixel_boundary_progress_item(
             "desktop-run-pixel-boundary.json was not read",
         );
     };
-    match pixel_boundary.status.as_str() {
-        "missing" => progress_item(evidence, "missing", pixel_boundary.detail.clone()),
-        "invalid" => progress_item(evidence, "invalid", pixel_boundary.detail.clone()),
-        "not_observed" => progress_item(evidence, "not_observed", pixel_boundary.detail.clone()),
-        _ => progress_item(evidence, "present", pixel_boundary.detail.clone()),
-    }
+    let state = match pixel_boundary.status.as_str() {
+        s @ ("missing" | "invalid" | "not_observed") => s,
+        _ => "present",
+    };
+    progress_item(evidence, state, pixel_boundary.detail.clone())
 }
 
 fn pixel_observation_progress_item(
@@ -432,13 +433,11 @@ fn pixel_observation_progress_item(
             "desktop-run-pixel-observation.json was not read",
         );
     };
-    match pixel_observation.status.as_str() {
-        "missing" => progress_item(evidence, "missing", pixel_observation.detail.clone()),
-        "invalid" => progress_item(evidence, "invalid", pixel_observation.detail.clone()),
-        "not_observed" => progress_item(evidence, "not_observed", pixel_observation.detail.clone()),
-        "blocked" => progress_item(evidence, "blocked", pixel_observation.detail.clone()),
-        _ => progress_item(evidence, "present", pixel_observation.detail.clone()),
-    }
+    let state = match pixel_observation.status.as_str() {
+        s @ ("missing" | "invalid" | "not_observed" | "blocked") => s,
+        _ => "present",
+    };
+    progress_item(evidence, state, pixel_observation.detail.clone())
 }
 
 fn ui_action_contract_state(
