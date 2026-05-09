@@ -169,13 +169,13 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     let Ok(text) = fs::read_to_string(&artifact) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence exists but is not readable",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} exists but is not readable"),
         );
     };
     let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence exists but is not valid JSON",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} exists but is not valid JSON"),
         );
     };
     if json
@@ -185,13 +185,13 @@ pub(crate) fn check_first_lesson_next_action_evidence(
     {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence has the wrong schema_version",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} has the wrong schema_version"),
         );
     }
     let Some(status) = json.get("status").and_then(serde_json::Value::as_str) else {
         return invalid_first_lesson_next_action(
             Some(artifact),
-            "desktop first-lesson next-action evidence is missing status field",
+            format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} is missing status field"),
         );
     };
 
@@ -232,7 +232,7 @@ fn missing_first_lesson_next_action() -> DesktopFirstLessonNextActionEvidence {
 
 fn invalid_first_lesson_next_action(
     artifact: Option<PathBuf>,
-    detail: &str,
+    detail: impl Into<String>,
 ) -> DesktopFirstLessonNextActionEvidence {
     first_lesson_next_action_with_empty_proof_artifacts("invalid", artifact, detail)
 }
@@ -240,7 +240,7 @@ fn invalid_first_lesson_next_action(
 fn first_lesson_next_action_with_empty_proof_artifacts(
     status: &str,
     artifact: Option<PathBuf>,
-    detail: &str,
+    detail: impl Into<String>,
 ) -> DesktopFirstLessonNextActionEvidence {
     DesktopFirstLessonNextActionEvidence {
         status: status.into(),
@@ -382,8 +382,8 @@ fn first_lesson_next_action_detail(json: &serde_json::Value) -> String {
         .and_then(|blocker| blocker.get("reason"))
         .and_then(serde_json::Value::as_str)
         .or_else(|| json.get("reason").and_then(serde_json::Value::as_str))
-        .unwrap_or("desktop first-lesson next-action evidence was read")
-        .to_string()
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} was read"))
 }
 
 fn string_array(json: &serde_json::Value, key: &str) -> Vec<String> {
