@@ -6,6 +6,7 @@ mod asset_validation;
 mod first_lesson_evidence;
 mod gadugi_adapters;
 mod module_size_contracts;
+mod pr173_readiness_evidence;
 mod scenario_contracts;
 mod sharing_readiness_boundary;
 

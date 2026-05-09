@@ -49,11 +49,11 @@ not internal Alice implementation details.
 
 Current audit inventory:
 
-- 35 canonical scenario assets under `assets/scenarios/eatme/`
-- 36 Gadugi scenario assets under `assets/scenarios/gadugi/` (35 generated
+- 46 canonical scenario assets under `assets/scenarios/eatme/`
+- 47 Gadugi scenario assets under `assets/scenarios/gadugi/` (46 generated
   adapters and 1 hand-authored validation regression)
 - 24 personas in `assets/personas/alice-user-crew.yaml`
-- 34 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
+- 45 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
   is the baseline launch evidence scenario and names no student persona
 
 Committed student-facing scenario assets currently include:

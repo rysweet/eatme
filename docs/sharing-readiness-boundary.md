@@ -134,6 +134,23 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 These commands validate asset shape and adapter freshness. They do not upload,
 host, publish, moderate, or prove any deployed sharing service.
 
+## PR 173 exact-head readiness evidence
+
+PR 173 readiness was evaluated on branch
+`wave6-deployed-sharing-gap-1778302300`.
+
+| Evidence item | Result |
+| --- | --- |
+| exact evaluated HEAD SHA | `4c8118d40924b9e10ae7ff9edab078c69ce26680` |
+| master sync status | `origin/master` is an ancestor of the exact evaluated HEAD SHA; no rebase was required for this check. |
+| validation commands | `NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json`; `NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`; `TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh` |
+| readiness result | The listed documentation, asset, generated-adapter, and quality gates completed for this readiness boundary. |
+
+This evidence is limited to PR 173 readiness. It does not claim hosted sharing,
+deployed sharing, platform success, full UI automation, grading, creative
+assessment, Save completion, visible rendering correctness, or first-lesson
+completion.
+
 ## Scenario contract reference
 
 The sharing readiness boundary is expressed through scenario assets, not a

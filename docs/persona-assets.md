@@ -155,7 +155,7 @@ It requires persona and scenario references for:
 | Media/audio creators | `media-audio-creator` | `media-audio-cue-storyboard` |
 | Model/texture import users | `model-texture-importer` | `model-texture-import-checkpoint` |
 | Alice 2 migration users | `alice-2-migration-mentor` | `alice-2-migration-bridge` |
-| Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop` |
+| Teacher-community sharing | `teacher-community-curator` | `teacher-community-sharing-loop`, `student-artifact-package-share-evidence` |
 
 ## Persona-crew scenario coverage
 
@@ -181,7 +181,7 @@ coverage table each have generated Gadugi adapters.
 | Media/audio creation | `media-audio-cue-storyboard` |
 | Model/texture import | `model-texture-import-checkpoint` |
 | Alice 2 migration | `alice-2-migration-bridge` |
-| Teacher-community sharing | `teacher-community-sharing-loop` |
+| Teacher-community sharing | `teacher-community-sharing-loop`, `student-artifact-package-share-evidence` |
 
 ## Desktop smoke and outside-in scenario assets
 

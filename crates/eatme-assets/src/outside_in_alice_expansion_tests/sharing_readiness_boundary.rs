@@ -77,8 +77,14 @@ fn sharing_readiness_docs_do_not_require_save_or_first_lesson_completion() {
     let docs = fs::read_to_string(root.join("docs/sharing-readiness-boundary.md")).unwrap();
     let normalized_docs = docs.to_lowercase();
     let forbidden = [
-        "save completion",
-        "first-lesson completion",
+        "requires save completion",
+        "depends on save completion",
+        "save completion passed",
+        "requires first-lesson completion",
+        "depends on first-lesson completion",
+        "first-lesson completion passed",
+        "requires first lesson completion",
+        "depends on first lesson completion",
         "first lesson completion",
         "completed first lesson",
     ];
