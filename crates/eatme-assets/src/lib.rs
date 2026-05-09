@@ -18,6 +18,8 @@ mod live_studio_workshop_tests;
 mod neighborhood_data_story_tests;
 #[cfg(test)]
 mod outside_in_alice_expansion_tests;
+#[cfg(test)]
+mod pr188_recovery_readiness_tests;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;

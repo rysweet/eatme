@@ -23,6 +23,7 @@ rate limit, or no-op readiness handoff.
 - [Review and finalization evidence](#review-and-finalization-evidence)
 - [Output boundary](#output-boundary)
 - [Recovery command sequence](#recovery-command-sequence)
+- [Canonical non-claims](#canonical-non-claims)
 
 ## Scope
 
@@ -47,14 +48,16 @@ Set the saved local Node heap preference before running workflow commands:
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
 
-Use `/tmp` for the quality gate temporary directory in deep worktrees:
+Use `/tmp` for the quality gate temporary directory in deep worktrees and keep
+the saved Node heap preference in the same executable evidence command:
 
 ```bash
-TMPDIR=/tmp ./scripts/quality-gates.sh
+NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
 
-Do not wrap commands with external timeout tools. Let the repository commands
-run normally and use their own exit statuses as evidence.
+Do not wrap commands with external command-duration tools such as `timeout` or
+`gtimeout`. Let the repository commands run normally and use their own exit
+statuses as evidence.
 
 ## Usage
 
@@ -82,9 +85,7 @@ wave6-real-alice-smoke-report-1778302300
 Run the readiness checks from the same `HEAD`:
 
 ```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-
-TMPDIR=/tmp ./scripts/quality-gates.sh
+NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh
 cargo run -q -p eatme-cli -- assets validate --json
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
@@ -147,8 +148,8 @@ already clean at the repository root and all current-HEAD readiness checks
 passed.
 ```
 
-If a repair commit is required, replace the no-op sentence with a bounded change
-summary and rerun the checks against the repair commit.
+If a repair commit is required, replace the no-op sentence with a bounded change summary
+and rerun the checks against the repair commit.
 
 ## Output boundary
 
@@ -191,7 +192,7 @@ git status --short
 
 export NODE_OPTIONS=--max-old-space-size=32768
 
-TMPDIR=/tmp ./scripts/quality-gates.sh
+NODE_OPTIONS=--max-old-space-size=32768 TMPDIR=/tmp ./scripts/quality-gates.sh
 cargo run -q -p eatme-cli -- assets validate --json
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 mkdocs build --strict
@@ -202,3 +203,18 @@ git status --short
 When the final status is clean and every command exits `0`, PR #188 is ready for
 normal review handoff with bounded silver-thread/e2e launch-smoke evidence. Leave
 merge completion to the normal pull request path.
+
+## Canonical non-claims
+
+PR #188 recovery preserves the default-workflow non-claim boundary:
+
+```text
+First-lesson completion is not proven.
+Full world execution is not proven.
+Grading is not proven.
+Creative assessment is not proven.
+Full Alice UI automation is not proven.
+Visible rendering correctness is not proven.
+Save completion is not proven.
+Deployed sharing/platform success is not proven.
+```
