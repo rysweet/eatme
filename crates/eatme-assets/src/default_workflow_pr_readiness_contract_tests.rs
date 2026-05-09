@@ -9,6 +9,17 @@ const REQUIRED_VALIDATED_EVIDENCE_HEAD_COMMANDS: &[&str] = &[
     "mkdocs build --strict",
     "TMPDIR=/tmp ./scripts/quality-gates.sh",
 ];
+const REQUIRED_PUBLICATION_RECORD_FIELDS: &[&str] = &[
+    "Publication head SHA",
+    "GitHub check rollup for that exact SHA",
+    "Merge state",
+    "Review state",
+    "Owner-free decision",
+    "Scope decision",
+    "Validation decision",
+    "Finalization decision",
+    "PR evidence comment",
+];
 const UNSUPPORTED_SUCCESS_CLAIMS: &[&str] = &[
     "full alice ui automation is verified",
     "full ui automation is verified",
@@ -143,6 +154,62 @@ fn finalization_evidence_records_unmerged_pr_status_and_workflow_boundary() {
 }
 
 #[test]
+fn finalization_evidence_defines_external_publication_head_record_contract() {
+    let finalization = section(read_artifact(), "## Finalization evidence", "## Nonclaims");
+
+    assert_contains_all_normalized(
+        finalization,
+        &[
+            "External publication-head evidence record",
+            "must be recorded outside this committed artifact after push",
+            "GitHub check rollup for that exact SHA",
+            "literal no-op justification tied to the publication head, check rollup, and focused artifact-contract scope",
+            "owner-free finalization does not require owner intervention",
+        ],
+        "finalization evidence",
+    );
+
+    let missing_fields = missing_required_publication_record_fields(finalization);
+    assert!(
+        missing_fields.is_empty(),
+        "external publication-head record contract is missing required fields:\n{}",
+        missing_fields.join("\n")
+    );
+}
+
+#[test]
+fn publication_record_contract_accepts_complete_fixture() {
+    let fixture = "\
+External publication-head evidence record:
+- Publication head SHA: abc8ceb636f8970027d9ada8e36c9d54928529ae
+- GitHub check rollup for that exact SHA: 7 successful checks, 2 skipped checks, 0 failing checks, 0 pending checks.
+- Merge state: CLEAN / MERGEABLE.
+- Review state: no approval claimed; owner-free finalization.
+- Owner-free decision: no owner intervention required.
+- Scope decision: focused artifact-contract scope only.
+- Validation decision: GitHub rollup is current and sufficient.
+- Finalization decision: merge-ready or literal no-op justification.
+- PR evidence comment: URL for the external publication-head record.
+";
+
+    assert!(
+        missing_required_publication_record_fields(fixture).is_empty(),
+        "complete publication record fixture should satisfy the contract"
+    );
+}
+
+#[test]
+fn publication_record_contract_rejects_noop_without_head_checks_and_scope() {
+    let fixture = "No-op: PR looks good.";
+
+    assert_eq!(
+        missing_required_publication_record_fields(fixture),
+        REQUIRED_PUBLICATION_RECORD_FIELDS,
+        "no-op justification must be tied to publication head, check rollup, and focused scope"
+    );
+}
+
+#[test]
 fn historical_branch_ref_evidence_is_bounded_to_recorded_execution_context() {
     let historical = section(
         read_artifact(),
@@ -263,6 +330,16 @@ fn normalize_whitespace(text: &str) -> String {
     }
 
     normalized
+}
+
+fn missing_required_publication_record_fields(text: &str) -> Vec<&'static str> {
+    let normalized_text = normalize_whitespace(text);
+
+    REQUIRED_PUBLICATION_RECORD_FIELDS
+        .iter()
+        .copied()
+        .filter(|field| !normalized_text.contains(&normalize_whitespace(field)))
+        .collect()
 }
 
 fn unsupported_success_claim_lines(text: &str) -> Vec<&str> {

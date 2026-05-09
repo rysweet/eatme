@@ -255,6 +255,29 @@ review boundaries, and explicit nonclaims; it does not mean the PR is already
 approved, merged, or validated for UI automation, rendering correctness,
 grading, creative assessment, or lesson completion.
 
+### External publication-head evidence record
+
+The exact publication-head evidence must be recorded outside this committed
+artifact after push, because the act of committing this file creates a new PR
+head that this file cannot already have observed. The external record must name
+the publication head SHA and the GitHub check rollup for that exact SHA before
+calling the PR merge-ready or giving a literal no-op justification tied to the
+publication head, check rollup, and focused artifact-contract scope.
+
+Required external record fields:
+
+| Field | Required evidence |
+| --- | --- |
+| Publication head SHA | Full 40-character PR `headRefOid` observed from GitHub after push. |
+| GitHub check rollup for that exact SHA | Successful, skipped, failing, and pending check counts for the publication head. |
+| Merge state | GitHub `mergeStateStatus` and `mergeable` values for the publication head. |
+| Review state | Current `reviewDecision` and latest review observations, including any empty owner-free state. |
+| Owner-free decision | Explicit statement that owner-free finalization does not require owner intervention. |
+| Scope decision | Confirmation that finalization remains limited to the focused artifact-contract scope. |
+| Validation decision | Whether GitHub current-head evidence is sufficient or which focused local checks were rerun. |
+| Finalization decision | Merge-ready conclusion or literal no-op justification tied to the publication head, checks, and scope. |
+| PR evidence comment | URL or identifier for the external publication-head evidence record. |
+
 ## Nonclaims
 
 - No PR approval is claimed.
