@@ -3,6 +3,7 @@ use std::path::Path;
 
 mod lesson_session_helpers;
 mod original_action_evidence;
+mod project_proof_detail;
 use lesson_session_helpers::{
     assert_contract_contains, ui_action_contract_json, unique_test_dir,
     write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,

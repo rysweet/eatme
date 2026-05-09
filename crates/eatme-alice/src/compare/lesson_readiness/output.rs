@@ -6,7 +6,10 @@ use crate::compare::desktop_evidence::{
     DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
     DesktopRunPixelObservationEvidence, FirstLessonEvidenceBoundary, ProjectProofArtifactEvidence,
 };
+use project_proof_output::{not_yet_shown_detail, progress_item_does_not_prove};
 use serde::Serialize;
+
+mod project_proof_output;
 
 #[derive(Clone, Copy)]
 struct UnprovenClaim {
@@ -285,8 +288,8 @@ pub(super) fn not_yet_shown(
                 "{} is not yet shown.",
                 user_facing_evidence_label(&item.evidence)
             ),
-            detail: not_yet_shown_detail(&item.evidence, &item.state),
-            does_not_prove: Vec::new(),
+            detail: not_yet_shown_detail(&item.evidence, &item.state, &item.detail),
+            does_not_prove: progress_item_does_not_prove(&item.evidence),
         });
     }
 
@@ -441,16 +444,6 @@ fn user_facing_evidence_label(evidence: &str) -> String {
     }
 }
 
-fn not_yet_shown_detail(evidence: &str, state: &str) -> String {
-    let label = user_facing_evidence_label(evidence);
-    match state {
-        "blocked" => format!("{label} is blocked until the next evidence is shown."),
-        "invalid" => format!("{label} was shown but cannot be used yet."),
-        "not_observed" => format!("{label} is not yet observed."),
-        _ => format!("{label} is not yet shown."),
-    }
-}
-
 fn add_proof_artifact_observation(
     observations: &mut Vec<String>,
     label: &str,
@@ -482,3 +475,6 @@ fn push_unique(claims: &mut Vec<String>, claim: &str) {
         claims.push(claim.to_string());
     }
 }
+
+#[cfg(test)]
+mod tests;

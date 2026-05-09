@@ -71,6 +71,9 @@ fn write_first_lesson_readiness_result(
     )?;
     write_readiness_items(&mut writer, "Shown:", &report.shown_evidence)?;
     write_readiness_items(&mut writer, "Not yet shown:", &report.not_yet_shown)?;
+    if let Some(next_missing_proof) = &report.evidence_progress.next_missing_real_desktop_proof {
+        writeln!(writer, "- {}", terminal_plain(next_missing_proof))?;
+    }
     if let Some(desktop_next_action) = &report.desktop_next_action {
         write_desktop_next_action(&mut writer, desktop_next_action)?;
     }

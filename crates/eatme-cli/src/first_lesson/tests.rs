@@ -39,8 +39,11 @@ fn plain_output_includes_next_missing_real_desktop_proof_line() {
     let output = String::from_utf8(output).unwrap();
     assert!(output.contains("Not yet shown:"));
     assert!(output.contains("- Save option/action evidence is not yet shown."));
+    assert!(output.contains(
+        "next missing real-desktop proof: activate the detected Alice main window \
+         (activate-specific-alice-window) before claiming later lesson actions."
+    ));
     assert!(output.contains("Unproven:"));
-    assert!(!output.contains("next missing real-desktop proof"));
 }
 
 #[test]
@@ -72,7 +75,10 @@ fn plain_output_surfaces_blocked_save_project_proof_artifact_without_completion_
 
     let output = String::from_utf8(output).unwrap();
     assert!(output.contains("Save option/action evidence is not yet shown."));
-    assert!(!output.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
+    assert!(output.contains(
+        "blocked Save Project proof artifact in desktop next-action evidence: \
+         Save dialog owner does not expose a stable proof-artifact handoff yet."
+    ));
     assert!(!output.contains("Save completion evidence"));
     assert!(!output.contains("Save completed"));
     assert!(!output.contains("Save Project succeeded"));
