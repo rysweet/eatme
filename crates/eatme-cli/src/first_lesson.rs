@@ -3,7 +3,7 @@ use clap::Args;
 #[cfg(test)]
 use eatme_alice::compare::LessonReadinessEvidenceProgress;
 use eatme_alice::compare::{
-    DesktopNextActionSummary, FirstLessonReadinessSequenceReport,
+    DesktopNextActionSummary, FirstLessonReadinessSequenceReport, LessonSessionNoGoContract,
     OriginalAliceActionEvidenceReport, OriginalAliceActionEvidenceStatus, ReadinessEvidenceItem,
 };
 use std::borrow::Cow;
@@ -59,9 +59,16 @@ fn write_first_lesson_readiness_result(
 
     writeln!(
         writer,
-        "First-lesson automation scenario readiness: {}",
+        "First-lesson/grading gap report: {}",
         terminal_plain(scenario_readiness_status(report))
     )?;
+    writeln!(
+        writer,
+        "Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only."
+    )?;
+    if let Some(message) = &report.evidence_gap_message {
+        writeln!(writer, "{}", terminal_plain(message))?;
+    }
     writeln!(
         writer,
         "Desktop proof: {} ({}) - {}",
@@ -74,6 +81,7 @@ fn write_first_lesson_readiness_result(
     if let Some(next_missing_proof) = &report.evidence_progress.next_missing_real_desktop_proof {
         writeln!(writer, "- {}", terminal_plain(next_missing_proof))?;
     }
+    write_no_go_blockers(&mut writer, &report.no_go_contracts)?;
     if let Some(desktop_next_action) = &report.desktop_next_action {
         write_desktop_next_action(&mut writer, desktop_next_action)?;
     }
@@ -98,7 +106,7 @@ fn scenario_readiness_status(report: &FirstLessonReadinessSequenceReport) -> &st
 }
 
 fn terminal_plain(value: &str) -> Cow<'_, str> {
-    if value.chars().all(|ch| !ch.is_control()) {
+    if !value.chars().any(char::is_control) {
         return Cow::Borrowed(value);
     }
 
@@ -125,6 +133,25 @@ fn write_readiness_items(
     }
     for item in items {
         writeln!(writer, "- {}", terminal_plain(&item.summary))?;
+    }
+    Ok(())
+}
+
+fn write_no_go_blockers(
+    mut writer: impl Write,
+    contracts: &[LessonSessionNoGoContract],
+) -> Result<()> {
+    if contracts.is_empty() {
+        return Ok(());
+    }
+    writeln!(writer, "No-go blockers:")?;
+    for contract in contracts {
+        writeln!(
+            writer,
+            "- {}: {}",
+            terminal_plain(&contract.affordance),
+            terminal_plain(&contract.reason)
+        )?;
     }
     Ok(())
 }

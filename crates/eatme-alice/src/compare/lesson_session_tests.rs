@@ -1,6 +1,7 @@
 use super::*;
 use std::path::Path;
 
+mod gap_reporting;
 mod lesson_session_helpers;
 mod original_action_evidence;
 mod project_proof_detail;
@@ -8,6 +9,8 @@ use lesson_session_helpers::{
     assert_contract_contains, ui_action_contract_json, unique_test_dir,
     write_executable_blocked_first_lesson_manifest, write_first_lesson_manifest,
 };
+
+const EVIDENCE_GAP_MESSAGE: &str = "Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.";
 
 #[test]
 fn first_lesson_comparison_records_lesson_session_contract() {
@@ -138,11 +141,28 @@ fn lesson_session_readiness_requires_executable_target_evidence() {
 }
 
 #[test]
+fn lesson_session_readiness_reports_evidence_gap_without_completion_or_grading_claims() {
+    let root = unique_test_dir("manifest-only-readiness-evidence-gap");
+    let manifest = write_first_lesson_manifest(&root);
+
+    let report =
+        check_lesson_session_readiness(Path::new(&manifest.comparison_manifest_path)).unwrap();
+
+    assert!(!report.passed);
+    assert_eq!(report.status, "not_ready");
+    let report_json = serde_json::to_value(&report).unwrap();
+    let message = report_json["evidence_gap_message"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing evidence_gap_message in {report_json}"));
+    assert_eq!(message, EVIDENCE_GAP_MESSAGE);
+}
+
+#[test]
 fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
     let root = unique_test_dir("executable-readiness-check");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
-    assert!(report.passed, "{:?}", report.issues);
+    assert!(!report.passed);
     assert_eq!(
         (
             report.status.as_str(),
