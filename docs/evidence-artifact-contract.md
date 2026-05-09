@@ -72,7 +72,7 @@ Field contract:
 | --- | --- | --- | --- |
 | `schema_version` | string | Always | Must be `eatme.alice-desktop-first-lesson-next-action/v1`. |
 | `status` | string | Always | Must be non-empty. `present`, `missing`, `blocked`, and `invalid` are canonical values; other non-empty producer statuses are preserved without adding proof behavior. |
-| `detail` or `reason` | string | Optional | When supplied, must be non-empty, display-safe, and evidence-bound. It must not claim completion, grading, creative assessment, Save completion, or full UI automation. If omitted, readiness uses a conservative default detail. |
+| `detail` or `reason` | string | Optional | When supplied, must be non-empty, display-safe, and evidence-bound. It must not claim completion, grading, creative assessment, Save completion, full UI automation, full world execution, deployed sharing, or platform success. If omitted, readiness uses a conservative default detail. |
 | `candidate_actions` | array of strings | Optional | When supplied, must be a non-empty array of non-empty action ids or action labels. If omitted, the output list is empty. |
 | `requires_next_evidence` or `requiresNextEvidence` | array of strings | Optional | When supplied, must be a non-empty array. Each item must name concrete evidence to collect next, not a success claim. If omitted, the output list is empty. |
 | `does_not_claim` or `doesNotClaim` | array of strings | Optional | When supplied, must be a non-empty array of display-safe limitation text. Readiness output still preserves canonical non-claims even when this input field is absent. |
@@ -203,6 +203,8 @@ distinct capability-specific boundary provides evidence for that exact claim:
 - full UI automation success
 - RabbitHole whole-lesson completion
 - Save completion success
+- full world execution success
+- deployed sharing or platform success
 
 Allowed limitation wording is explicit and bounded:
 
@@ -213,6 +215,7 @@ Grading is not assessed.
 Creative assessment is not claimed.
 UI automation is not complete.
 Save completion requires distinct finish-state evidence.
+Full world execution, deployed sharing, and platform success are not claimed.
 ```
 
 ## Implementation components

@@ -34,7 +34,7 @@ being reviewed.
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
 | Starter-project wording | The canonical scenario uses plain, bounded, user-facing language. |
-| Overclaim boundary | The scenario does not claim first-lesson completion, grading, creative assessment, full UI automation, visible rendering correctness, full Save completion, or complete Alice coverage. |
+| Overclaim boundary | The scenario does not claim first-lesson completion, grading, creative assessment, full UI automation, full world execution, visible rendering correctness, full Save completion, deployed sharing/platform success, or complete Alice coverage. |
 | Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
 | Scope | No unrelated files or behavior are changed. |
 
@@ -129,8 +129,10 @@ The wording must not say or imply that the scenario proves:
 | Grading or learner-world grading | It records evidence for review; it does not grade. |
 | Creative assessment | It may name an editable change; it does not assess creativity. |
 | Full UI automation | It records bounded launch/opened-project evidence and explicit gaps. |
+| Full world execution | It records only the named evidence boundary, not complete execution of a learner world. |
 | Visible rendering correctness | Screenshot or window evidence is observation evidence only. |
 | Full Save completion | Save, reopen, and export remain readiness gaps until user-like evidence exists. |
+| Deployed sharing or platform success | Sharing and platform outcomes require distinct explicit evidence. |
 | Complete Alice coverage | The scenario covers only the stated preflight contract. |
 
 Use the generated adapter only as a consumer of this contract. Do not hand-edit
@@ -211,7 +213,7 @@ Example:
 ```text
 Default-workflow readiness recorded for PR #164 at exact head eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba.
 
-Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/visible rendering correctness/full Save completion, generated Gadugi adapter freshness, and asset validation.
+Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/full world execution/visible rendering correctness/full Save completion/deployed sharing/platform success, generated Gadugi adapter freshness, and asset validation.
 
 The prior non-zero wrapper exit is not treated as a blocker because direct verification passed at this exact head.
 ```

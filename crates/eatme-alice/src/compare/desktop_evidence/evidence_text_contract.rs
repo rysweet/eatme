@@ -261,6 +261,35 @@ fn unsupported_affirmative_claim(value: &str) -> Option<String> {
                 "save project succeeded",
             ][..],
         ),
+        (
+            "full world execution",
+            &[
+                "full world execution",
+                "world execution succeeded",
+                "world execution success",
+                "world execution is proven",
+                "world execution complete",
+            ][..],
+        ),
+        (
+            "deployed sharing",
+            &[
+                "deployed sharing",
+                "sharing deployment succeeded",
+                "sharing deployment success",
+                "sharing deployment is proven",
+                "sharing deployment complete",
+            ][..],
+        ),
+        (
+            "platform success",
+            &[
+                "platform success",
+                "platform succeeded",
+                "platform is proven",
+                "platform passed",
+            ][..],
+        ),
     ] {
         if patterns.iter().any(|pattern| value.contains(pattern))
             && !contains_limitation_wording(value)

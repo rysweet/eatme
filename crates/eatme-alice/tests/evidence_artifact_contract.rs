@@ -261,6 +261,78 @@ fn unsupported_affirmative_next_action_claims_fail_validation() {
 }
 
 #[test]
+fn unsupported_world_execution_and_sharing_next_action_claims_fail_validation() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "source":"desktop_run_render_target_attachment",
+  "candidate_actions":["desktop_save_menu_action"],
+  "blocker":{"reason":"Full world execution succeeded; deployed sharing succeeded; platform success was confirmed."},
+  "requiresNextEvidence":["desktop Save menu readiness or invocation artifact"],
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let next_action = modernized_next_action(&report_json);
+
+    assert!(
+        !report.passed,
+        "unsupported full-world-execution and sharing/platform claims must block readiness: {report_json}"
+    );
+    assert_eq!(next_action["status"], "invalid", "{next_action}");
+    assert_report_issue_contains(&report, "unsupported claim");
+    assert_report_issue_contains(&report, "full world execution");
+    assert_report_issue_contains(&report, "deployed sharing");
+    assert_report_issue_contains(&report, "platform success");
+}
+
+#[test]
+fn unsupported_world_execution_and_sharing_boundary_claims_fail_validation() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "source":"desktop_run_render_target_attachment",
+  "candidate_actions":["desktop_save_menu_action"],
+  "requiresNextEvidence":["desktop Save menu readiness or invocation artifact"],
+  "evidence_boundaries":[
+    {
+      "id":"first_lesson_completion",
+      "status":"present",
+      "source":"rabbithole",
+      "metadata_state":"observed",
+      "detail":"First-lesson completion scenario evidence is present.",
+      "claim":"The first lesson finished with full world execution, deployed sharing success, and platform success.",
+      "does_not_prove":["full Alice UI automation","creative quality"]
+    }
+  ],
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let boundary = evidence_boundary(&report_json, "first_lesson_completion");
+
+    assert!(
+        !report.passed,
+        "unsupported full-world-execution and sharing/platform boundary claims must block readiness: {report_json}"
+    );
+    assert_eq!(boundary["status"], "invalid", "{boundary}");
+    assert_report_issue_contains(&report, "unsupported claim");
+    assert_report_issue_contains(&report, "full world execution");
+    assert_report_issue_contains(&report, "deployed sharing");
+    assert_report_issue_contains(&report, "platform success");
+}
+
+#[test]
 fn restrained_limitation_wording_remains_valid() {
     let manifest_path = write_manifest(ready_desktop_fixture());
     overwrite_modernized_first_lesson_next_action(
