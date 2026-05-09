@@ -194,6 +194,36 @@ fn save_reopen_docs_describe_artifact_evidence_without_semantic_change_overclaim
     );
 }
 
+#[test]
+fn save_reopen_doc_documents_path_validation_defenses() {
+    assert_contains_all(
+        "save/reopen readiness doc",
+        SAVE_REOPEN_DOC,
+        &[
+            "Absolute path rejection",
+            "Parent traversal rejection",
+            "Symlink escape rejection",
+            "canonical_artifact_under",
+            "artifact_info_under",
+        ],
+    );
+}
+
+#[test]
+fn save_reopen_doc_documents_hook_api_contracts() {
+    assert_contains_all(
+        "save/reopen readiness doc hook API",
+        SAVE_REOPEN_DOC,
+        &[
+            "tools/eatme-save-project",
+            "tools/eatme-reopen-project",
+            "eatme.alice-project-save-result/v1",
+            "eatme.alice-project-reopen-result/v1",
+            "scene.eatmeFirstLessonStep",
+        ],
+    );
+}
+
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
     let normalized_text = normalize(text);
     let missing = needles

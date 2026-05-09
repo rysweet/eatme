@@ -57,3 +57,6 @@ pub(crate) fn normal_components(path: &Path) -> Option<Vec<String>> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests;

@@ -460,6 +460,24 @@ fn unique_test_dir(prefix: &str) -> PathBuf {
         .join(format!("{prefix}-{nonce}"))
 }
 
+#[test]
+fn reopen_preconditions_blocked_when_save_proof_absent() {
+    let no_go = probe_project_reopen_preconditions(&save_probe_with_status("blocked"));
+
+    assert_eq!(no_go.status, "blocked");
+    assert!(
+        no_go
+            .blocking_reason
+            .contains("save-project proof is required")
+    );
+    let save_precondition = no_go
+        .preconditions
+        .iter()
+        .find(|p| p.id == "save-project")
+        .expect("save-project precondition must exist");
+    assert!(!save_precondition.passed);
+}
+
 #[allow(dead_code)]
 fn _assert_relative_to_project_reopen_dir(path: &Path) {
     assert!(

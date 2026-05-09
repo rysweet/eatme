@@ -198,6 +198,38 @@ fn assert_issue_contains(issues: &[String], expected: &str) {
     );
 }
 
+#[test]
+fn accepts_save_project_no_go_probe_after_run_world_proof() {
+    let mut issues = Vec::new();
+    let mut contract = contract_after_run_without_save_no_go();
+    contract["action_precondition_probes"] = serde_json::json!([{
+        "id": "project-save-precondition",
+        "action_id": "save-project",
+        "status": "blocked",
+        "decision": "no_go",
+        "missing_affordance": {
+            "id": "deterministic-alice-project-save-affordance",
+            "kind": "backend_or_ui_affordance",
+            "required_capability": "Given an edited Alice project, save the project and return proof that the saved .a3p is readable",
+            "missing_contract": "No Alice-side command at tools/eatme-save-project currently returns project-save proof",
+            "next_implementation": "Add save-project command hook with named save control"
+        },
+        "preconditions": [
+            {"id": "run-world", "passed": true},
+            {"id": "deterministic-alice-project-save-affordance", "passed": false}
+        ]
+    }]);
+
+    inspect_ui_action_contract("modernized", &contract, &mut issues);
+
+    assert!(
+        !issues
+            .iter()
+            .any(|issue| issue.contains("save-project proof or a no-go precondition")),
+        "save-project no-go after run-world should satisfy the inspector: {issues:?}"
+    );
+}
+
 fn assert_issues_avoid_unsupported_claims(issues: &[String]) {
     let joined = issues.join("\n").to_ascii_lowercase();
     for unsupported_claim in [

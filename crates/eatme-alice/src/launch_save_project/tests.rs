@@ -325,6 +325,160 @@ fn artifact(path: &str) -> ArtifactInfo {
     }
 }
 
+#[test]
+fn project_save_preconditions_reflect_run_world_state_and_missing_save_affordance() {
+    let blocked = probe_project_save_preconditions(&run_world_probe_with_status("blocked"));
+    assert_eq!(blocked.id, "project-save-precondition");
+    assert_eq!(blocked.status, "blocked");
+    assert!(
+        blocked
+            .blocking_reason
+            .contains("run-world proof is required")
+    );
+    assert!(
+        !blocked
+            .preconditions
+            .iter()
+            .find(|p| p.id == "run-world")
+            .unwrap()
+            .passed
+    );
+
+    let ready = probe_project_save_preconditions(&run_world_probe_with_status("passed"));
+    assert!(
+        ready
+            .blocking_reason
+            .contains("missing deterministic-alice-project-save-affordance")
+    );
+    assert!(
+        ready
+            .preconditions
+            .iter()
+            .find(|p| p.id == "run-world")
+            .unwrap()
+            .passed
+    );
+    assert!(
+        !ready
+            .preconditions
+            .iter()
+            .find(|p| p.id == "deterministic-alice-project-save-affordance")
+            .unwrap()
+            .passed
+    );
+}
+
+#[test]
+fn project_save_hook_fails_on_non_zero_exit_status() {
+    let (root, alice_home, run_dir, runner) = save_hook_test_scaffold("save-exit-fail");
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-save-project --json".into(),
+        exit_status: Some(1),
+        stdout: String::new(),
+        stderr: "hook crashed".into(),
+    });
+    let probe = probe_project_save_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &run_world_probe_with_status("passed"),
+        ":99",
+    );
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_save());
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|e| e.contains("exited unsuccessfully")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn project_save_hook_fails_on_malformed_json_stdout() {
+    let (root, alice_home, run_dir, runner) = save_hook_test_scaffold("save-bad-json");
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-save-project --json".into(),
+        exit_status: Some(0),
+        stdout: "not valid json".into(),
+        stderr: String::new(),
+    });
+    let probe = probe_project_save_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &run_world_probe_with_status("passed"),
+        ":99",
+    );
+    assert_eq!(probe.status, "failed");
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|e| e.contains("not valid save JSON")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn project_save_hook_fails_on_wrong_schema_version() {
+    let (root, alice_home, run_dir, runner) = save_hook_test_scaffold("save-bad-schema");
+    let save_evidence_dir = run_dir.join("project-save");
+    fs::create_dir_all(&save_evidence_dir).unwrap();
+    fs::write(save_evidence_dir.join("saved-project.a3p"), "saved").unwrap();
+    fs::write(
+        save_evidence_dir.join("project-save.json"),
+        r#"{"saved":true}"#,
+    )
+    .unwrap();
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-save-project --json".into(),
+        exit_status: Some(0),
+        stdout: serde_json::json!({
+            "schema_version": "wrong/v1",
+            "status": "saved",
+            "save_selector": DEFAULT_SAVE_SELECTOR,
+            "saved_project_artifact": "saved-project.a3p",
+            "save_artifact": "project-save.json"
+        })
+        .to_string(),
+        stderr: String::new(),
+    });
+    let probe = probe_project_save_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &run_world_probe_with_status("passed"),
+        ":99",
+    );
+    assert_eq!(probe.status, "failed");
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|e| e.contains("schema_version must be")),
+        "{:?}",
+        probe.validation_errors
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+fn save_hook_test_scaffold(name: &str) -> (PathBuf, PathBuf, PathBuf, FakeCommandRunner) {
+    let root = unique_test_dir(name);
+    let alice_home = root.join("alice");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(alice_home.join("tools")).unwrap();
+    fs::create_dir_all(run_dir.join("procedure-edit")).unwrap();
+    fs::write(alice_home.join("tools/eatme-save-project"), "#!/bin/sh\n").unwrap();
+    fs::write(run_dir.join("procedure-edit/edited-project.a3p"), "edited").unwrap();
+    (root, alice_home, run_dir, FakeCommandRunner::default())
+}
+
 fn unique_test_dir(prefix: &str) -> PathBuf {
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
