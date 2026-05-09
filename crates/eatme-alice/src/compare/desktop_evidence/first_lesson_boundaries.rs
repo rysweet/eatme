@@ -6,6 +6,8 @@ use super::first_lesson_next_action::ProjectProofArtifactInfo;
 use super::resolve_run_dir_artifact_path_under_root;
 
 const DEFAULT_BOUNDARY_SOURCE: &str = "automation_scenario";
+const CREATIVE_ASSESSMENT_BOUNDARY_LIMIT: &str = "The report can surface available evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, judge quality, or mark the lesson complete.";
+const MISSING_CREATIVE_ASSESSMENT_BOUNDARY_DETAIL: &str = "Creative assessment scenario evidence is missing. The report can surface available evidence and suggest next steps for the learner's creative work in this scenario, but it does not grade creativity, judge quality, or mark the lesson complete.";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct FirstLessonEvidenceBoundary {
@@ -119,10 +121,10 @@ fn boundary_specs() -> &'static [BoundarySpec] {
         BoundarySpec {
             id: "creative_assessment",
             label: "Creative assessment scenario evidence",
-            missing_detail: "Creative assessment scenario evidence is missing.",
+            missing_detail: MISSING_CREATIVE_ASSESSMENT_BOUNDARY_DETAIL,
             metadata_noun: "Creative assessment scenario metadata",
             evidence_noun: "creative assessment scenario evidence",
-            present_claim: "The creative assessment boundary has auditable scenario evidence.",
+            present_claim: CREATIVE_ASSESSMENT_BOUNDARY_LIMIT,
             does_not_prove: &["instructor judgment", "first-lesson completion"],
         },
         BoundarySpec {
