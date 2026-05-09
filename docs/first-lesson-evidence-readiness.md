@@ -218,6 +218,10 @@ First-lesson completion is not proven.
 Legacy `limitations` remains for compatibility. It may be a broader or superset
 list for older consumers, but it must include these six claims exactly enough for
 automation to preserve them. New consumers should read `unproven_claims` first.
+The canonical non-claims are produced by readiness output even when a
+next-action artifact omits its optional `does_not_claim`/`doesNotClaim` input.
+If that input is present, it is validated and merged into the desktop
+next-action non-claims instead of replacing the canonical list.
 
 Save wording has one extra rule: Save action, Save option, Save shortcut, and
 Save proof-artifact availability may be shown, but Save completion remains
@@ -305,12 +309,12 @@ appropriate for the failure mode.
 | --- | --- | --- |
 | `status` | string | RabbitHole next-action state, such as `present` or `blocked`. |
 | `summary` | string | Safe user-facing summary. |
-| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole. |
-| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next. |
+| `candidate_actions` | array of strings | Candidate next actions reported by RabbitHole; empty when the optional artifact input is absent. |
+| `requires_next_evidence` | array of strings | Evidence RabbitHole says must be collected next; empty when the optional artifact input is absent. |
 | `observations` | array of strings | Plain observations from the next-action evidence. |
-| `does_not_prove` | array of strings | Non-claims preserved for the desktop next-action section. |
+| `does_not_prove` | array of strings | Canonical non-claims plus any validated optional `does_not_claim`/`doesNotClaim` input values preserved for the desktop next-action section. |
 
-Example:
+Example excerpt:
 
 ```json
 {
