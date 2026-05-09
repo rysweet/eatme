@@ -272,3 +272,118 @@ must keep `unproven_claims` visible and must not reinterpret launch-smoke
 evidence as first-lesson completion, assessment, rendering correctness, Save
 completion, full world execution, Full Alice UI automation, or deployed
 sharing/platform success.
+
+## Scope
+
+This page also preserves the PR #175 publication-head evidence contract that was
+already on `master` when this recovery branch was brought current.
+
+| Field | Observed value |
+| --- | --- |
+| Validated evidence head | `a951f34a0a187adfa24cfe0555ca00da6a04197d` |
+| Artifact publication head | not embedded in this committed artifact; committing a documentation refinement changes the PR head. |
+
+The validated evidence head is the PR head whose metadata and check rollup were
+captured for PR #175. The Artifact publication head is intentionally not
+embedded in this committed artifact, because committing a documentation
+refinement changes the PR head. This page therefore does not claim that its own
+eventual publication commit has checked itself.
+
+## Readiness evidence
+
+### Local Git observations
+
+The local Git evidence for PR #175 was captured before this refinement changed
+the artifact/test files. It is a pre-refinement observation for the validated
+evidence head and not a claim about the post-edit worktree or the eventual
+publication head.
+
+This refinement intentionally changes only the readiness artifact and the
+contract tests that guard it:
+
+```text
+docs/default-workflow-pr-readiness.md
+crates/eatme-assets/src/default_workflow_pr_readiness_contract_tests.rs
+```
+
+### GitHub PR #175 observations
+
+PR #175 metadata was recorded as GitHub metadata for the validated evidence
+head. Those observations are evidence for that head only and do not approve,
+merge, or broaden this recovery branch.
+
+### Validated evidence-head executable evidence
+
+Validated evidence-head commands record `NODE_OPTIONS=--max-old-space-size=32768`
+and use no timeout wrapper.
+
+```bash
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+mkdocs build --strict
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+These commands are executable evidence for the recorded PR #175 validated
+evidence head only. They do not prove manual real Alice desktop launch, full UI
+automation, visible rendering correctness, grading, creative assessment, Save
+completion, or lesson completion.
+
+### Historical same-head outside-in testing evidence
+
+Historical `uvx` checks used a branch ref as resolved at execution time, not an
+immutable SHA-pinned install reference. Any same-head claim depends on the
+recorded execution context, not on the mutable branch name alone.
+
+## Review evidence
+
+Review evidence keeps PR metadata, local Git observations, and executable
+validation results separate. Skipped, not-measured, no-execute, and historical
+states remain nonclaims instead of success evidence.
+
+## Finalization evidence
+
+PR #175 remains unmerged. No manual merge was performed. The PR #175 record is
+workflow readiness/review/finalization evidence, not proof of approval or broad
+product readiness.
+
+Finalization status: `merge-ready-after-publication-head-checks` for the PR #175
+evidence-contract recovery. The post-push publication head/check rollup recorded
+outside this file is required before using it as final merge evidence.
+
+### External publication-head evidence record
+
+The exact publication-head evidence must be recorded outside this committed
+artifact after push. A final no-op or merge-ready statement must be a literal
+no-op justification tied to the publication head, check rollup, and focused
+artifact-contract scope. Owner-free finalization does not require owner
+intervention.
+
+Required external record fields:
+
+| Field | Required evidence |
+| --- | --- |
+| Publication head SHA | Full 40-character PR `headRefOid` observed from GitHub after push. |
+| GitHub check rollup for that exact SHA | Successful, skipped, failing, and pending check counts for the publication head. |
+| Merge state | GitHub `mergeStateStatus` and `mergeable` values for the publication head. |
+| Review state | Current `reviewDecision` and latest review observations, including any empty owner-free state. |
+| Owner-free decision | Explicit statement that owner-free finalization does not require owner intervention. |
+| Scope decision | Confirmation that finalization remains limited to the focused artifact-contract scope. |
+| Validation decision | Whether GitHub current-head evidence is sufficient or which focused local checks were rerun. |
+| Finalization decision | Merge-ready conclusion or literal no-op justification tied to the publication head, checks, and scope. |
+| PR evidence comment | URL or identifier for the external publication-head evidence record. |
+
+## Nonclaims
+
+- No PR approval is claimed.
+- No manual merge is claimed.
+- No blanket CI success is claimed beyond the listed evidence-head or
+  publication-head check rollup.
+- No real Alice desktop execution is claimed.
+- No full Alice UI automation is claimed.
+- No full first-lesson readiness is claimed.
+- No first-lesson completion is claimed.
+- No Save completion is claimed.
+- No visible rendering correctness is claimed.
+- No grading or creative assessment is claimed.
+- No skipped check is counted as a successful check.
