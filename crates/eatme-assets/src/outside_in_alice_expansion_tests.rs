@@ -8,7 +8,7 @@ mod gadugi_adapters;
 mod module_size_contracts;
 mod scenario_contracts;
 
-const EXPECTED_SCENARIO_ASSET_COUNT: usize = 93;
+const EXPECTED_SCENARIO_ASSET_COUNT: usize = 95;
 
 struct TargetScenario {
     id: &'static str,

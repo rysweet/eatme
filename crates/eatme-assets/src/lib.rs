@@ -25,6 +25,8 @@ mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
 #[cfg(test)]
+mod save_reopen_export_evidence_handoff_tests;
+#[cfg(test)]
 mod student_reflection_artifact_tests;
 mod validation;
 
@@ -113,7 +115,7 @@ mod tests {
         assert!(report.passed, "{:?}", report.errors);
         assert_eq!(report.instructor_count, 11);
         assert_eq!(report.student_count, 13);
-        assert_eq!(report.core_scenario_count, 25);
+        assert_eq!(report.core_scenario_count, 26);
         assert_eq!(report.creative_scenario_count, 12);
     }
 
@@ -122,7 +124,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 93);
+        assert_eq!(report.scenario_asset_count, 95);
     }
 
     #[test]
