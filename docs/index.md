@@ -31,6 +31,7 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
+| Understanding the launch-smoke readiness mapper | [Launch-Smoke Readiness Mapping](launch-smoke-readiness-mapping.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
