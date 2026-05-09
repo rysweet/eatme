@@ -8,8 +8,8 @@ cargo run -q -p eatme-cli -- <command>
 
 Commands that accept `--json` print JSON when the flag is present. Without
 `--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
-`Desktop proof`, optional `Original Alice action evidence`, `Shown`,
-`Not yet shown`, optional `Desktop next action`, and `Unproven`.
+`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`,
+optional `Original Alice action evidence`, and `Unproven`.
 
 ## Command overview
 
