@@ -23,6 +23,14 @@ fn head_verification_requires_local_branch_and_sha_to_match_pr_head() {
         "matching local branch/SHA and PR head must pass head verification"
     );
 
+    let empty_head = ReadinessInput {
+        head_ref_oid: String::new(),
+        ..passing_review()
+    };
+    let result = HeadVerification::validate(&empty_head).unwrap_err();
+    assert_eq!(result.marker(), "NOT_MERGE_READY");
+    assert!(result.blocker().contains("headRefOid is empty"));
+
     let wrong_branch = ReadinessInput {
         local_branch: "master".into(),
         ..passing_review()

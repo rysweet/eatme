@@ -8,11 +8,11 @@ use serde::Deserialize;
 
 use super::{
     CheckConclusion, CheckRunEvidence, CheckStatus, CommandEvidence, DocsImpactReview,
-    PREvidenceReview, QualityAuditCycle, ReadinessInput,
+    QualityAuditCycle, ReadinessInput,
 };
-use errors::classify_gh_failure;
+use evidence::{contains_ascii_case_insensitive, pr_evidence_from_texts};
 
-mod errors;
+mod evidence;
 
 const DEFAULT_GH_BINARY: &str = "gh";
 
@@ -244,7 +244,7 @@ impl GhCliReadinessClient {
         }
     }
 
-    fn gh_json(&self, args: &[String]) -> Result<String, ExternalServiceError> {
+    fn gh_json(&self, args: &[&str]) -> Result<String, ExternalServiceError> {
         let output = Command::new(&self.gh_binary)
             .args(args)
             .output()
@@ -277,15 +277,14 @@ impl Default for GhCliReadinessClient {
 
 impl GitHubReadinessClient for GhCliReadinessClient {
     fn pull_request(&self, pr_number: u64) -> Result<GitHubPullRequest, ExternalServiceError> {
-        let args = vec![
-            "pr".into(),
-            "view".into(),
-            pr_number.to_string(),
-            "--json".into(),
-            "headRefName,headRefOid,mergeStateStatus,mergeable,isCrossRepository,body,comments"
-                .into(),
-        ];
-        let output = self.gh_json(&args)?;
+        let pr_number = pr_number.to_string();
+        let output = self.gh_json(&[
+            "pr",
+            "view",
+            pr_number.as_str(),
+            "--json",
+            "headRefName,headRefOid,mergeStateStatus,mergeable,isCrossRepository,body,comments",
+        ])?;
         let response: GhPullRequestResponse = serde_json::from_str(&output).map_err(|error| {
             ExternalServiceError::new(
                 ExternalServiceErrorKind::ParseFailed,
@@ -324,23 +323,22 @@ impl GitHubReadinessClient for GhCliReadinessClient {
     }
 
     fn check_runs(&self, pr_number: u64) -> Result<Vec<GitHubCheckRun>, ExternalServiceError> {
-        let args = vec![
-            "pr".into(),
-            "checks".into(),
-            pr_number.to_string(),
-            "--json".into(),
-            "name,state,bucket".into(),
-        ];
-        let output = self.gh_json(&args)?;
-        let required_args = vec![
-            "pr".into(),
-            "checks".into(),
-            pr_number.to_string(),
-            "--required".into(),
-            "--json".into(),
-            "name,state,bucket".into(),
-        ];
-        let required_output = self.gh_json(&required_args)?;
+        let pr_number = pr_number.to_string();
+        let output = self.gh_json(&[
+            "pr",
+            "checks",
+            pr_number.as_str(),
+            "--json",
+            "name,state,bucket",
+        ])?;
+        let required_output = self.gh_json(&[
+            "pr",
+            "checks",
+            pr_number.as_str(),
+            "--required",
+            "--json",
+            "name,state,bucket",
+        ])?;
         let response: Vec<GhCheckResponse> = serde_json::from_str(&output).map_err(|error| {
             ExternalServiceError::new(
                 ExternalServiceErrorKind::ParseFailed,
@@ -354,10 +352,10 @@ impl GitHubReadinessClient for GhCliReadinessClient {
                     format!("failed to parse gh pr checks --required response: {error}"),
                 )
             })?;
-        let required_names: HashSet<String> = required_response
+        let required_names = required_response
             .into_iter()
             .map(|check| check.name)
-            .collect();
+            .collect::<HashSet<_>>();
 
         Ok(response
             .into_iter()
@@ -400,95 +398,100 @@ struct GhCheckResponse {
     bucket: Option<String>,
 }
 
-fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvidenceReview {
-    let evidence_text = pull_request
-        .evidence_texts
-        .iter()
-        .filter(|text| text.trusted)
-        .find(|text| text.body.contains(&pull_request.head_ref_oid))
-        .or_else(|| pull_request.evidence_texts.iter().find(|text| text.trusted));
-
-    let Some(evidence_text) = evidence_text else {
-        return empty_pr_evidence();
-    };
-
-    let lower = evidence_text.body.to_lowercase();
-    PREvidenceReview {
-        location: evidence_text.location.clone(),
-        trusted_provenance: true,
-        head_sha: if evidence_text.body.contains(&pull_request.head_ref_oid) {
-            pull_request.head_ref_oid.clone()
-        } else {
-            String::new()
-        },
-        recorded_commands: super::REQUIRED_COMMANDS
-            .iter()
-            .filter(|command| evidence_text.body.contains(**command))
-            .map(|command| (*command).into())
-            .collect(),
-        records_github_checks: lower.contains("github") && lower.contains("check"),
-        records_diff_scope: lower.contains("diff") && lower.contains("scope"),
-        records_docs_impact: lower.contains("docs") && lower.contains("impact"),
-        records_quality_audit: lower.contains("quality audit"),
-        records_no_manual_merge: lower.contains("no manual merge"),
-        updated_during_review: false,
-        reconfirmed_head_sha: None,
-    }
-}
-
-fn empty_pr_evidence() -> PREvidenceReview {
-    PREvidenceReview {
-        location: "missing".into(),
-        trusted_provenance: false,
-        head_sha: String::new(),
-        recorded_commands: Vec::new(),
-        records_github_checks: false,
-        records_diff_scope: false,
-        records_docs_impact: false,
-        records_quality_audit: false,
-        records_no_manual_merge: false,
-        updated_during_review: false,
-        reconfirmed_head_sha: None,
-    }
-}
-
 fn map_check_status(state: Option<&str>) -> CheckStatus {
-    match normalize(state).as_deref() {
-        Some(
-            "COMPLETED" | "SUCCESS" | "FAILURE" | "CANCELLED" | "SKIPPED" | "TIMED_OUT"
-            | "TIMEDOUT" | "NEUTRAL",
-        ) => CheckStatus::Completed,
-        Some("IN_PROGRESS") | Some("ACTION_REQUIRED") => CheckStatus::InProgress,
-        Some("QUEUED") | Some("REQUESTED") | Some("WAITING") => CheckStatus::Queued,
-        _ => CheckStatus::Pending,
+    if normalized_is_any(
+        state,
+        &[
+            "COMPLETED",
+            "SUCCESS",
+            "FAILURE",
+            "CANCELLED",
+            "SKIPPED",
+            "TIMED_OUT",
+            "TIMEDOUT",
+            "NEUTRAL",
+        ],
+    ) {
+        CheckStatus::Completed
+    } else if normalized_is_any(state, &["IN_PROGRESS", "ACTION_REQUIRED"]) {
+        CheckStatus::InProgress
+    } else if normalized_is_any(state, &["QUEUED", "REQUESTED", "WAITING"]) {
+        CheckStatus::Queued
+    } else {
+        CheckStatus::Pending
     }
 }
 
 fn map_check_conclusion(state: Option<&str>, bucket: Option<&str>) -> CheckConclusion {
-    match normalize(state).as_deref() {
-        Some("SUCCESS") => CheckConclusion::Success,
-        Some("FAILURE") => CheckConclusion::Failure,
-        Some("CANCELLED") => CheckConclusion::Cancelled,
-        Some("SKIPPED") => CheckConclusion::Skipped,
-        Some("TIMED_OUT") | Some("TIMEDOUT") => CheckConclusion::TimedOut,
-        Some("NEUTRAL") => CheckConclusion::Neutral,
-        _ => match normalize(bucket).as_deref() {
-            Some("PASS") => CheckConclusion::Success,
-            Some("FAIL") => CheckConclusion::Failure,
-            Some("CANCEL") => CheckConclusion::Cancelled,
-            Some("SKIPPING") | Some("SKIP") => CheckConclusion::Skipped,
-            _ => CheckConclusion::Unknown,
-        },
+    if normalized_is_any(state, &["SUCCESS"]) {
+        CheckConclusion::Success
+    } else if normalized_is_any(state, &["FAILURE"]) {
+        CheckConclusion::Failure
+    } else if normalized_is_any(state, &["CANCELLED"]) {
+        CheckConclusion::Cancelled
+    } else if normalized_is_any(state, &["SKIPPED"]) {
+        CheckConclusion::Skipped
+    } else if normalized_is_any(state, &["TIMED_OUT", "TIMEDOUT"]) {
+        CheckConclusion::TimedOut
+    } else if normalized_is_any(state, &["NEUTRAL"]) {
+        CheckConclusion::Neutral
+    } else if normalized_is_any(bucket, &["PASS"]) {
+        CheckConclusion::Success
+    } else if normalized_is_any(bucket, &["FAIL"]) {
+        CheckConclusion::Failure
+    } else if normalized_is_any(bucket, &["CANCEL"]) {
+        CheckConclusion::Cancelled
+    } else if normalized_is_any(bucket, &["SKIPPING", "SKIP"]) {
+        CheckConclusion::Skipped
+    } else {
+        CheckConclusion::Unknown
     }
 }
 
 fn is_trusted_comment_association(author_association: Option<&str>) -> bool {
-    matches!(
-        normalize(author_association).as_deref(),
-        Some("OWNER" | "MEMBER" | "COLLABORATOR")
-    )
+    normalized_is_any(author_association, &["OWNER", "MEMBER", "COLLABORATOR"])
 }
 
-fn normalize(value: Option<&str>) -> Option<String> {
-    value.map(|value| value.trim().replace('-', "_").to_uppercase())
+fn normalized_is_any(value: Option<&str>, expected_values: &[&str]) -> bool {
+    let Some(value) = value else {
+        return false;
+    };
+    expected_values
+        .iter()
+        .any(|expected| normalized_eq(value, expected))
+}
+
+fn normalized_eq(value: &str, expected: &str) -> bool {
+    value
+        .trim()
+        .bytes()
+        .map(normalized_ascii_byte)
+        .eq(expected.bytes().map(normalized_ascii_byte))
+}
+
+fn normalized_ascii_byte(byte: u8) -> u8 {
+    match byte {
+        b'a'..=b'z' => byte.to_ascii_uppercase(),
+        b'-' => b'_',
+        _ => byte,
+    }
+}
+
+fn classify_gh_failure(stderr: &str) -> ExternalServiceError {
+    let kind = if contains_ascii_case_insensitive(stderr, "rate limit") {
+        ExternalServiceErrorKind::RateLimited
+    } else if contains_ascii_case_insensitive(stderr, "timeout")
+        || contains_ascii_case_insensitive(stderr, "timed out")
+    {
+        ExternalServiceErrorKind::Timeout
+    } else if stderr.contains("502")
+        || stderr.contains("503")
+        || stderr.contains("504")
+        || contains_ascii_case_insensitive(stderr, "temporarily unavailable")
+    {
+        ExternalServiceErrorKind::TemporarilyUnavailable
+    } else {
+        ExternalServiceErrorKind::CommandFailed
+    };
+    ExternalServiceError::new(kind, stderr)
 }

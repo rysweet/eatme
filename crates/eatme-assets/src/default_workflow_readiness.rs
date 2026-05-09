@@ -120,6 +120,13 @@ pub struct HeadVerification;
 
 impl HeadVerification {
     pub fn validate(input: &ReadinessInput) -> Result<(), ReadinessArtifact> {
+        if input.head_ref_oid.trim().is_empty() {
+            return Err(ReadinessArtifact::blocked(
+                input,
+                "PR headRefOid is empty",
+                "fetch live PR metadata again before recording readiness evidence",
+            ));
+        }
         if input.local_branch != input.head_ref_name {
             return Err(ReadinessArtifact::blocked(
                 input,
