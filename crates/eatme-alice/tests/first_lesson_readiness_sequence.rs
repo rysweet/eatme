@@ -365,7 +365,7 @@ fn first_lesson_readiness_missing_next_action_artifact_names_missing_proof_artif
 
 #[test]
 fn first_lesson_readiness_reports_first_unavailable_desktop_proof_artifact() {
-    for (next_action_json, expected_save_state, expected_select_state, expected_first, later) in [
+    for (next_action_json, save_state, select_state, first_detail, later_detail) in [
         (
             r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"blocked","blocker":{"reason":"Save dialog owner does not expose a stable proof-artifact handoff yet.","codes":["save_project_artifact_handoff_not_bound"]}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
             "blocked",
@@ -397,51 +397,49 @@ fn first_lesson_readiness_reports_first_unavailable_desktop_proof_artifact() {
         });
         overwrite_modernized_first_lesson_next_action(&manifest_path, next_action_json);
         let report = eatme_alice::check_lesson_session_readiness(&manifest_path).unwrap();
-        let item_index = |evidence: &str| {
-            report
-                .evidence_progress
-                .items
-                .iter()
-                .position(|item| item.evidence == evidence)
-                .unwrap_or_else(|| panic!("{evidence} progress item"))
-        };
-        let save_index = item_index("Save Project proof artifact");
-        let select_index = item_index("Select Project proof artifact");
-        assert!(
-            save_index < select_index,
-            "Save Project proof artifact should be checked before Select Project proof artifact"
-        );
+        let mut save_index = None;
+        let mut select_index = None;
+        for (index, item) in report.evidence_progress.items.iter().enumerate() {
+            match item.evidence.as_str() {
+                "Save Project proof artifact" => save_index = Some(index),
+                "Select Project proof artifact" => select_index = Some(index),
+                _ => {}
+            }
+            if save_index.is_some() && select_index.is_some() {
+                break;
+            }
+        }
+        let save_index = save_index.expect("Save Project proof artifact progress item");
+        let select_index = select_index.expect("Select Project proof artifact progress item");
+        assert!(save_index < select_index);
         let save_item = &report.evidence_progress.items[save_index];
         let select_item = &report.evidence_progress.items[select_index];
-        assert_eq!(save_item.state, expected_save_state);
-        assert_eq!(select_item.state, expected_select_state);
-        let next_proof = report
-            .evidence_progress
-            .next_missing_real_desktop_proof
-            .as_deref()
-            .expect("expected first unavailable desktop proof artifact");
-        let expected_next_proof = format!("next missing real-desktop proof: {}", save_item.detail);
-        assert_eq!(next_proof, expected_next_proof);
-        let progress_json = serde_json::to_value(&report.evidence_progress).unwrap();
-        assert_eq!(
-            progress_json["items"][save_index]["state"].as_str(),
-            Some(expected_save_state)
-        );
-        assert_eq!(
-            progress_json["next_missing_real_desktop_proof"].as_str(),
-            Some(expected_next_proof.as_str())
-        );
-        assert!(save_item.detail.contains(expected_first));
+        assert_eq!(save_item.state, save_state);
+        assert_eq!(select_item.state, select_state);
+        assert!(save_item.detail.contains(first_detail));
         assert!(save_item.detail.contains("desktop next-action evidence"));
         assert!(
             !save_item
                 .detail
                 .contains("run-window-evidence/desktop-first-lesson-next-action.json")
         );
+        let next_proof = report
+            .evidence_progress
+            .next_missing_real_desktop_proof
+            .as_deref()
+            .expect("expected first unavailable desktop proof artifact");
+        let next_proof_detail = next_proof
+            .strip_prefix("next missing real-desktop proof: ")
+            .expect("next proof should include the real-desktop proof prefix");
+        assert_eq!(next_proof_detail, save_item.detail);
         assert!(
-            !next_proof.contains(later),
+            !next_proof.contains(later_detail),
             "later unavailable proof artifacts must not be surfaced before the first one"
         );
+        let progress_json = serde_json::to_value(&report.evidence_progress).unwrap();
+        assert_eq!(progress_json["items"][save_index]["state"], save_state);
+        assert_eq!(progress_json["items"][select_index]["state"], select_state);
+        assert_eq!(progress_json["next_missing_real_desktop_proof"], next_proof);
         let report_text = serde_json::to_string(&report).unwrap().to_ascii_lowercase();
         assert_no_unsupported_readiness_claims(&report_text);
     }
