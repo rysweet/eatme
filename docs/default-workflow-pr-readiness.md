@@ -95,7 +95,7 @@ current branch head being reviewed.
 | Current checkout | The worktree is on the intended branch, the current `HEAD` is recorded, and the final validation worktree is clean. |
 | PR association | GitHub reports that the PR head branch is the same branch being recovered. |
 | Preserved recovery patch | When recovery depends on a saved uncommitted patch, the patch is readable, inspected directly, and compared with the current branch before any no-op or readiness decision. |
-| GitHub checks | Required checks are green for the PR head SHA. |
+| GitHub checks | Required checks report explicit success for the PR head SHA; skipped required checks are blockers, not green evidence. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
 | Asset validation | Persona and scenario assets validate successfully when the PR touches or documents asset behavior, or when GitHub evidence for that surface is stale, missing, red, or ambiguous. |
@@ -235,16 +235,17 @@ PR_HEAD_SHA="$(gh pr view "${PR_NUMBER}" --json headRefOid --jq .headRefOid)"
    example, a version value in `pyproject.toml` is only an observation until the
    preserved patch itself shows that the value was part of the recovered change.
 
-5. Validate persona and scenario assets when the PR touches or documents asset
-   behavior, or when GitHub check evidence for assets is stale, missing, red, or
-   ambiguous:
+5. Validate persona and canonical scenario assets when the PR touches or
+   documents source asset behavior, or when GitHub check evidence for assets is
+   stale, missing, red, or ambiguous. Generated Gadugi adapters are not
+   canonical scenario source assets and do not satisfy this gate by themselves:
 
    ```bash
    cargo run -q -p eatme-cli -- assets validate --json
    ```
 
 6. Check generated Gadugi adapter freshness when canonical scenario assets or
-   generated adapters are in scope:
+   generated adapter paths under `assets/scenarios/gadugi/` are in scope:
 
    ```bash
    cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
@@ -520,8 +521,9 @@ Blockers:
 ```
 
 Do not downgrade a missing gate into a warning. Green Actions alone are not
-enough, and a skipped manual or deploy-only job is non-evidence rather than
-readiness proof unless branch protection requires that job.
+enough. A skipped optional manual or deploy-only job is non-evidence rather than
+readiness proof, and a skipped required job is a blocker because required checks
+pass only on explicit success.
 
 ## No-op justification
 

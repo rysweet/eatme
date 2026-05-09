@@ -8,6 +8,8 @@ use crate::default_workflow_pr_readiness::{
 const HEAD_SHA: &str = "5ab1cca881959b3aac063af7c5973e7f75c35c46";
 const OLD_SHA: &str = "1111111111111111111111111111111111111111";
 
+mod review_feedback;
+
 #[test]
 fn pr_head_resolver_uses_live_head_ref_oid_as_the_authoritative_sha() {
     let metadata = PrHeadMetadata::from_gh_view_json(
@@ -266,11 +268,20 @@ fn clean_finalization_evidence() -> FinalizationEvidence {
 }
 
 fn check(name: &str, head_sha: &str, conclusion: CheckConclusion) -> CheckRunEvidence {
+    check_with_required(name, head_sha, conclusion, true)
+}
+
+fn check_with_required(
+    name: &str,
+    head_sha: &str,
+    conclusion: CheckConclusion,
+    required: bool,
+) -> CheckRunEvidence {
     CheckRunEvidence {
         name: name.into(),
         head_sha: head_sha.into(),
         conclusion,
-        required: true,
+        required,
         workflow_name: Some("CI".into()),
         details_url: Some(format!(
             "https://github.com/rysweet/eatme/actions/runs/{name}"

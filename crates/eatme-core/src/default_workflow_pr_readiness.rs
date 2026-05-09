@@ -79,7 +79,7 @@ impl FinalizationEvidence {
             final_pr_head_sha: raw.final_pr_head_sha,
             mergeability: Mergeability {
                 merge_state_status: raw.merge_state_status,
-                mergeable: raw.mergeable,
+                mergeable: normalize_mergeable(raw.mergeable),
             },
             checks: CheckRollupEvidence::for_head(raw.pr_head_sha, checks),
             supplemental_validations,
@@ -210,15 +210,38 @@ impl ScopeSurface {
     fn from_path(path: &str) -> Self {
         if path.starts_with("docs/") {
             Self::Documentation
+        } else if is_generated_gadugi_adapter_path(path) {
+            Self::GeneratedGadugiAdapter
         } else if path.contains("/scenarios/") || path.starts_with("assets/scenarios/") {
             Self::ScenarioAsset
-        } else if path.contains("gadugi") {
-            Self::GeneratedGadugiAdapter
         } else if path.contains("default_workflow_pr_readiness") {
             Self::ReadinessGuardTest
         } else {
             Self::Unrelated
         }
+    }
+}
+
+fn is_generated_gadugi_adapter_path(path: &str) -> bool {
+    path == "assets/scenarios/gadugi" || path.starts_with("assets/scenarios/gadugi/")
+}
+
+fn normalize_mergeable(value: Option<serde_json::Value>) -> String {
+    match value {
+        Some(serde_json::Value::Bool(true)) => "MERGEABLE".into(),
+        Some(serde_json::Value::Bool(false)) => "NOT_MERGEABLE".into(),
+        Some(serde_json::Value::String(value)) => normalize_mergeable_string(&value),
+        Some(serde_json::Value::Null) | None => "UNKNOWN".into(),
+        Some(value) => value.to_string(),
+    }
+}
+
+fn normalize_mergeable_string(value: &str) -> String {
+    match value.trim() {
+        "" => "UNKNOWN".into(),
+        value if value.eq_ignore_ascii_case("true") => "MERGEABLE".into(),
+        value if value.eq_ignore_ascii_case("false") => "NOT_MERGEABLE".into(),
+        value => value.to_ascii_uppercase(),
     }
 }
 
@@ -320,6 +343,12 @@ pub fn evaluate_finalization(evidence: FinalizationEvidence) -> FinalizationDeci
         blockers.push(format!(
             "mergeStateStatus is {} instead of CLEAN",
             evidence.mergeability.merge_state_status
+        ));
+    }
+    if evidence.mergeability.mergeable != "MERGEABLE" {
+        blockers.push(format!(
+            "mergeable is {} instead of MERGEABLE",
+            evidence.mergeability.mergeable
         ));
     }
     if let Err(error) = evidence.checks.require_green_current_checks() {

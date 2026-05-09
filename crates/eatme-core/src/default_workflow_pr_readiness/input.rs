@@ -1,5 +1,6 @@
 use super::CheckRunEvidence;
 use serde::Deserialize;
+use serde_json::Value;
 
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct GhPrMetadataInput {
@@ -28,7 +29,7 @@ pub(crate) struct OfflineEvidenceInput {
     pub(crate) final_pr_head_sha: String,
     pub(crate) worktree_clean: bool,
     pub(crate) merge_state_status: String,
-    pub(crate) mergeable: String,
+    pub(crate) mergeable: Option<Value>,
     pub(crate) checks: Vec<CheckRunEvidence>,
     pub(crate) validated_gates: Vec<String>,
     pub(crate) changed_files: Vec<String>,

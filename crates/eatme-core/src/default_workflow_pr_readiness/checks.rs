@@ -55,7 +55,9 @@ impl CheckRollupEvidence {
                     ));
                 }
                 match check.conclusion {
-                    CheckConclusion::Success | CheckConclusion::Skipped => None,
+                    CheckConclusion::Success => None,
+                    CheckConclusion::Skipped if !check.required => None,
+                    CheckConclusion::Skipped => Some(format!("{} was skipped", check.name)),
                     CheckConclusion::Failure => Some(format!("{} failed", check.name)),
                     CheckConclusion::Pending => Some(format!("{} is pending", check.name)),
                     CheckConclusion::Cancelled => Some(format!("{} was cancelled", check.name)),
@@ -125,7 +127,8 @@ pub fn required_supplemental_validations(
                 push_unique(&mut required, SupplementalValidation::MkdocsStrict)
             }
             ScopeSurface::ScenarioAsset => {
-                push_unique(&mut required, SupplementalValidation::AssetValidation)
+                push_unique(&mut required, SupplementalValidation::AssetValidation);
+                push_unique(&mut required, SupplementalValidation::GadugiFreshness);
             }
             ScopeSurface::GeneratedGadugiAdapter => {
                 push_unique(&mut required, SupplementalValidation::GadugiFreshness)
