@@ -12,21 +12,21 @@ resource_basis:
   - name: Real Alice launch smoke scenario
     url: assets/scenarios/eatme/real-alice-launch-smoke.yaml
     use: >-
-      Use manifest, log, window, and screenshot evidence as a classroom readiness
-      input, not as proof of student learning.
-  - name: First Lessons Real UI Actions Contract
+      Use run summary, log, window, and screenshot evidence as a classroom
+      readiness input, not as proof of student learning.
+  - name: First Lessons Real UI Actions Evidence
     url: assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
     use: >-
-      Use the action contract to name expected Alice actions and the current
+      Use first-action evidence to name expected Alice actions and the current
       ui_action_automation_unimplemented boundary honestly.
 purpose: >-
   Help an instructor turn real Alice launch evidence into a student-facing
-  classroom handoff. The instructor-facing output names what the manifest, log,
-  window list, screenshot, and action contract can prove; what still needs human
-  observation; and how students should record one Alice action, the visible
-  result, and one next revision. This is not full user interface automation, not
-  automated creative assessment, not learner-world grading, not complete Alice
-  coverage, and not a deployed service.
+  classroom handoff. The instructor-facing output names what the run summary,
+  log, window list, screenshot, and first-action evidence can prove; what still
+  needs human observation; and how students should record one Alice action, the
+  visible result, and one next revision. This is not full user interface
+  automation, not automated creative assessment, not learner-world grading, not
+  complete Alice coverage, and not a deployed service.
 personas:
   instructors: [classroom-orchestrator, debug-coach]
   students: [curious-novice, reflective-debugger]
@@ -54,16 +54,16 @@ agentic_test_prompt: >-
   Act as an instructor acceptance agent preparing a classroom handoff after eatme
   has collected real Alice launch evidence. Produce a real Alice evidence handoff
   card, instructor readiness note, and student action prompt grounded in the
-  listed resources and this scenario. Name which evidence comes from the manifest,
-  log, window list, screenshot, and ui-action-contract.json. Separate environment
-  readiness from student project behavior. Ask students to record one Alice action,
-  the visible result after running, and one next revision. State explicitly that
-  this is not full user interface automation, not automated creative assessment,
-  not learner-world grading, not complete Alice coverage, and not a deployed
-  service.
+  listed resources and this scenario. Name which evidence comes from the run
+  summary, log, window list, screenshot, and ui-action-contract.json. Separate
+  environment readiness from student project behavior. Ask students to record one
+  Alice action, the visible result after running, and one next revision. State
+  explicitly that this is not full user interface automation, not automated
+  creative assessment, not learner-world grading, not complete Alice coverage,
+  and not a deployed service.
 acceptance_criteria:
   - given: >-
-      an instructor has manifest, log, window-list, screenshot, and action-contract
+      an instructor has run summary, log, window-list, screenshot, and first-action
       evidence from a real Alice launch check
     when: >-
       the classroom handoff is prepared
@@ -71,7 +71,7 @@ acceptance_criteria:
       the handoff names what each evidence item can prove and what still requires
       human observation
   - given: >-
-      Alice launches but deterministic action automation is not implemented
+      Alice launches but repeatable action automation is not implemented
     when: >-
       students begin first classroom work
     then: >-
@@ -85,7 +85,7 @@ acceptance_criteria:
       the note separates environment readiness signals from student project
       behavior and keeps debugging learner-owned
 acceptance_probes:
-  - Handoff card names manifest, log, window-list, screenshot, and ui-action-contract.json as evidence inputs.
+  - Handoff card names run summary, log, window-list, screenshot, and ui-action-contract.json as evidence inputs.
   - Readiness note separates environment launch evidence from student project behavior.
   - Student action prompt asks for one Alice action, visible run result, and one next revision.
   - Output says this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
@@ -93,7 +93,7 @@ rubric:
   - criterion: Evidence boundary
     evidence:
       - Output says launch evidence supports readiness, not proof of student learning.
-      - Action-contract evidence is described as current boundary evidence, not automated action success.
+      - First-action evidence is described as current boundary evidence, not automated action success.
   - criterion: Classroom handoff clarity
     evidence:
       - Instructor note names what to inspect before class and what to observe during student work.

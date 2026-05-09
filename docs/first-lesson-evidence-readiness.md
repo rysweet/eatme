@@ -1,15 +1,27 @@
 # First-lesson evidence readiness
 
-This document describes the first-lesson readiness report built for original
-Alice and RabbitHole. The report says what the first-lesson automation scenarios
-have shown, what is not yet shown, and which claims remain explicitly unproven.
-It consumes existing comparison, launch, desktop, and editable scenario evidence;
-it does not generate new proof.
+This document describes the first-lesson readiness report for original and
+modernized Alice. The report says what the first-lesson scenarios have shown,
+what is not yet shown, and which claims remain explicitly unproven. It consumes
+existing comparison, launch, desktop, and editable scenario evidence; it does
+not generate new proof.
 
 The Rust API and JSON output preserve legacy fields such as
 `evidence_progress`, `evidence_boundaries`, `issues`, and `limitations` for
 existing consumers while adding the user-facing report shape described here. The
 plain CLI renders the user-facing sections directly.
+
+Use this page after [Lesson Session Readiness](lesson-session-readiness.md) when
+you need to interpret the
+[`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml)
+readiness result. The safe reading order is:
+
+1. `Desktop proof` tells you whether modernized desktop proof was found.
+2. `Shown` lists only evidence the run actually supports.
+3. `Not yet shown` lists evidence that is missing, unsafe, incomplete, or
+   blocked.
+4. `Desktop next action`, when present, describes the next bounded desktop step.
+5. `Unproven` lists claims that must stay out of summaries and PR text.
 
 The report is intentionally conservative. A launch, action declaration,
 Save shortcut, artifact path, screenshot, or desktop observation can support only
@@ -82,7 +94,7 @@ from the same surfaces already used by the readiness system:
 
 | Evidence source | How it is consumed | What it can show |
 | --- | --- | --- |
-| Editable scenario asset | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` remains the editable source for boundary expectations and non-claims. | The scenario owns the first-lesson evidence contract. |
+| Editable scenario asset | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` remains the editable source for boundary expectations and non-claims. | The scenario owns the first-lesson evidence rules. |
 | Comparison manifest | The manifest selected by `--manifest`, or the manifest just written by `alice run-first-lesson-readiness`. | The run, scenario id, baseline target, modernized/RabbitHole target, execution state, and embedded launch evidence. |
 | Target launch/action evidence | Target-local launch manifests and `ui-action-contract.json`, resolved under the comparison evidence root. | Launch/action observations for original Alice and RabbitHole. |
 | RabbitHole desktop evidence | Modernized target desktop evidence, including Run-window, desktop execution, visible screenshot, and project proof-artifact states. | RabbitHole observations for the next bounded first-lesson action. |
@@ -93,9 +105,15 @@ traversal, symlink escapes, unreadable files, malformed JSON, wrong schema
 versions, empty artifacts, and artifact references outside the comparison
 evidence root are not shown as evidence.
 
-Generated Gadugi adapters remain generated artifacts. Change scenario intent in
-the editable YAML under `assets/scenarios/eatme/`, then regenerate adapters
-rather than hand-editing generated files.
+Generated runner files remain derived from the editable scenario. Change
+scenario intent in the editable YAML under `assets/scenarios/eatme/`, then
+refresh generated files rather than hand-editing them.
+
+Terminology note: `ui-action-contract.json`, `no_go_contracts`,
+`desktop_proof_contract`, and `contract_check` are machine-facing compatibility
+names. Human summaries should describe the same feature as first-lesson
+readiness evidence, first-action evidence, desktop proof, and not-yet-shown or
+blocked states.
 
 ## Plain report contract
 

@@ -1,28 +1,28 @@
 # Scenario authoring
 
-Eatme scenarios are the source of truth for Alice mission intent. Authors edit
-canonical YAML in `assets/scenarios/eatme/`, validate it, and then refresh the
-generated Gadugi adapters.
+Eatme scenarios are the editable source for Alice mission intent. Authors edit
+YAML in `assets/scenarios/eatme/`, validate it, and then refresh the generated
+runner files.
 
 ## Authoring rules
 
-1. Edit canonical eatme scenarios first.
+1. Edit eatme scenarios first.
 2. Keep scenario ids stable and filename-aligned.
 3. Describe visible learner or harness evidence, not private implementation
    details.
 4. State unsupported behavior explicitly instead of allowing silent skips.
 5. Validate assets before committing.
-6. Regenerate or check Gadugi adapters after scenario changes.
+6. Regenerate or check generated runner files after scenario changes.
 
-## Canonical locations
+## Asset locations
 
-Canonical eatme scenarios:
+Editable eatme scenarios:
 
 ```text
 assets/scenarios/eatme/
 ```
 
-Generated Gadugi adapters:
+Generated runner files:
 
 ```text
 assets/scenarios/gadugi/
@@ -38,7 +38,7 @@ assets/personas/
 
 | Category | Purpose |
 | --- | --- |
-| `real-alice-launch-smoke` | Baseline deterministic Alice desktop smoke |
+| `real-alice-launch-smoke` | Baseline repeatable Alice desktop smoke |
 | Alice lesson smoke scenarios | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
 | Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
@@ -121,13 +121,13 @@ cargo run -q -p eatme-cli -- assets validate \
   --json
 ```
 
-Check generated adapters:
+Check generated runner files:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
-If the check fails because adapters are stale, regenerate them:
+If the check fails because generated files are stale, regenerate them:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --json
@@ -135,16 +135,16 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --json
 
 See [Generated Asset Consistency](generated-asset-consistency.md) for the
 `scenario_asset_count` source of truth and the add, remove, and rename workflow
-for generated adapters. When removing or renaming a canonical scenario, delete
-the old generated Gadugi adapter too; check mode compares expected targets but
-does not prune orphaned files.
+for generated files. When removing or renaming an editable scenario, delete the
+old generated Gadugi file too; check mode compares expected targets but does not
+prune orphaned files.
 
 ## Evidence language
 
 Good scenario evidence is observable:
 
-- manifest identifies the scenario id
-- deterministic launch assertions pass
+- run summary identifies the scenario id
+- repeatable launch assertions pass
 - screenshot artifact is non-empty
 - log artifact exists and has a digest
 - learner predicts a visible behavior before running
@@ -154,20 +154,30 @@ Good scenario evidence is observable:
 Avoid brittle evidence:
 
 - exact UI coordinates
-- private class names unless the CLI manifest owns them
+- private class names unless the CLI run summary owns them
 - screenshots judged only for visual polish
 - one-path-only instructions that prevent learner choice
 - silent fallback behavior when prerequisites are missing
 
-## Outside-in evidence wording for Alice lesson scenarios
+## Technical terms versus reader wording
 
-When writing retcon documentation or scenario prose for real Alice lesson scenarios,
-describe the finished evidence boundary exactly:
+Some editable scenarios and generated files intentionally retain technical names
+such as `kind: alice_real_ui_action_contract`, `ui-action-contract.json`,
+`adapter`, `schema_version`, and `manifest`. Use those names when referring to
+exact fields, files, command output, or compatibility contracts. In reader-facing
+guides, translate the same boundary to plain wording such as first-lesson
+readiness evidence, first-action evidence, generated runner files, and run
+summary evidence.
+
+## Plain evidence wording for Alice lesson scenarios
+
+When writing reader-facing documentation or scenario prose for real Alice lesson
+scenarios, describe the finished evidence boundary exactly:
 
 | Claim | Acceptable wording |
 | --- | --- |
 | Launch smoke | "records scenario-labeled launch manifest, log, window, screenshot, and assertion evidence" |
-| Student action path | "records an action contract for first object placement, procedure/code edit, run-world, and save-project automation" |
+| Student action path | "records first-action evidence for first object placement, procedure/code edit, run-world, and save-project boundaries when each boundary can be proven" |
 | Instructor remix | "produces teacher plan, student handout, exit ticket, review prompts, and remix notes" |
 | Boundary | "not full UI automation, not creative assessment, and not learner-world grading" |
 
@@ -175,5 +185,5 @@ Do not write that the launch smoke completes a lesson, clicks through the Alice
 UI, evaluates a creative project, or grades a learner's world unless a separate
 scenario owns that evidence and validation path.
 
-For the instructor/student readiness state machine, JSON fields, and no-go
-contract wording, see [Lesson Session Readiness](lesson-session-readiness.md).
+For the instructor/student readiness states, JSON fields, and unsupported-action
+wording, see [Lesson Session Readiness](lesson-session-readiness.md).

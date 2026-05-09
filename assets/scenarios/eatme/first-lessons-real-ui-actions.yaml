@@ -1,6 +1,6 @@
 schema_version: eatme.scenario/v1
 id: first-lessons-real-ui-actions
-title: First Lessons Real UI Actions Contract
+title: First Lessons Real UI Actions Evidence
 kind: alice_real_ui_action_contract
 owner: eatme
 resource_basis:
@@ -9,24 +9,20 @@ resource_basis:
   - name: Alice 3 starter project flow
     url: https://www.alice.org/get-alice/alice-3/
 purpose: >-
-  Move the first Alice lesson checks beyond manifest-only smoke by launching the
-  real Alice desktop for original Alice and RabbitHole / modernized Alice,
-  verifying a specific Alice window, executing safe window
-  activation plus save-shortcut dispatch probes, consuming object-placement proof
-  when Alice exposes it, consuming edit proof when Alice exposes it, and
-  dispatching Alice's documented Run shortcut after edit proof exists. The
-  contract still requires explicit evidence for object placement,
-  procedure/code editing, world run, project save, and a captured contract
-  artifact. Until deterministic desktop manipulation beyond safe window
-  activation, shortcut dispatch, and backend proof hooks is wired,
-  the harness must fail loudly with a preflight/action contract instead of
-  reporting a silent pass.
-  This instructor-editable asset records reusable preflight launch/action-contract
-  readiness evidence only for setup, launch support, handoff artifacts, and
-  classroom support preparation. It is not full UI automation, not creative
-  assessment, not learner-world grading, not production readiness, not lesson
-  completion, not complete end-to-end lesson execution, and not broad Alice
-  compatibility.
+  Move the first Alice lesson checks beyond launch-only smoke by launching real
+  Alice for original and modernized Alice, confirming a specific Alice window,
+  recording safe window activation plus save-shortcut dispatch probes, and using
+  object-placement, edit, and Run evidence when Alice exposes it. The run still
+  requires explicit evidence for object placement, procedure/code editing, world
+  run, project save, and a captured first-action evidence file. Until repeatable
+  desktop action proof beyond safe window activation, shortcut dispatch, and
+  backend proof hooks is wired, the harness must fail loudly with preflight
+  action evidence instead of reporting a silent pass. This instructor-editable
+  asset records reusable preflight launch/action readiness evidence only for
+  setup, launch support, handoff artifacts, and classroom support preparation.
+  It is not full UI automation, not creative assessment, not learner-world
+  grading, not production readiness, not lesson completion, not complete
+  end-to-end lesson execution, and not broad Alice compatibility.
 launcher:
   command: alice launch-smoke
   scenario: first-lessons-real-ui-actions
@@ -75,37 +71,37 @@ smoke_ready:
 acceptance_criteria:
   - given: Alice launch smoke dependencies are available
     when: the first-lessons-real-ui-actions scenario is launched through eatme
-    then: the manifest identifies scenario_id first-lessons-real-ui-actions
+    then: the run summary identifies scenario id first-lessons-real-ui-actions
   - given: Alice reaches a desktop session under Xvfb
     when: the harness inspects window evidence from wmctrl or xwininfo
-    then: manifest assertions include specific_alice_window_detected passed=true for an Alice Stage IDE window
+    then: run assertions include specific_alice_window_detected passed=true for an Alice Stage IDE window
   - given: a specific Alice window id is present in wmctrl or xwininfo output
     when: the harness runs the first safe UI action probe
-    then: manifest assertions include activate_alice_window_ui_action passed=true for wmctrl or xdotool focus against that window id
+    then: run assertions include activate_alice_window_ui_action passed=true for wmctrl or xdotool focus against that window id
   - given: Alice window activation succeeds
     when: the harness dispatches Ctrl+S to the detected Alice window with xdotool
-    then: manifest assertions include save_project_desktop_shortcut_dispatch passed=true while treating it as input dispatch only, not saved project proof
+    then: run assertions include save_project_desktop_shortcut_dispatch passed=true while treating it as input dispatch only, not saved project proof
   - given: Alice window activation succeeds but no stable object placement affordance exists
     when: the harness reaches the next first-lesson action boundary
-    then: manifest assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id deterministic-alice-object-gallery-placement-affordance
+    then: run assertions include place_object_precondition_no_go_probe and ui-action-contract.json records a no_go decision for place-object with missing_affordance.id repeatable-alice-object-gallery-placement-affordance
   - given: object placement proof exists but no stable procedure/code editing affordance exists
     when: the harness reaches the edit procedure/code-block boundary
-    then: manifest assertions include edit_procedure_precondition_no_go_probe and ui-action-contract.json records a no_go decision for edit-procedure-or-code-block with missing_affordance.id deterministic-alice-procedure-edit-affordance
+    then: run assertions include edit_procedure_precondition_no_go_probe and ui-action-contract.json records a no_go decision for edit-procedure-or-code-block with missing_affordance.id repeatable-alice-procedure-edit-affordance
   - given: procedure/code editing proof exists but no stable world-run affordance exists
     when: the harness reaches the world-run boundary
-    then: manifest assertions include run_world_precondition_no_go_probe and ui-action-contract.json records a no_go decision for run-world with missing_affordance.id deterministic-alice-world-run-affordance
+    then: run assertions include run_world_precondition_no_go_probe and ui-action-contract.json records a no_go decision for run-world with missing_affordance.id repeatable-alice-world-run-affordance
   - given: procedure/code editing proof exists and Alice window activation succeeded
     when: the harness dispatches the documented Run shortcut Ctrl+F5 to the detected Alice window with xdotool
-    then: manifest assertions include run_world_desktop_shortcut_dispatch passed=true while treating it as input dispatch only, not world execution proof
+    then: run assertions include run_world_desktop_shortcut_dispatch passed=true while treating it as input dispatch only, not world execution proof
   - given: documented Run shortcut dispatch succeeds
     when: the harness inspects windows after Ctrl+F5
-    then: manifest assertions include run_world_desktop_window_observed, passing only when an Alice Run window is visible and otherwise recording the observed blocker
-  - given: deterministic Alice desktop manipulation is not fully wired yet
+    then: run assertions include run_world_desktop_window_observed, passing only when an Alice Run window is visible and otherwise recording the observed blocker
+  - given: repeatable Alice desktop manipulation is not fully wired yet
     when: add/place object, edit procedure/code block, run world, or save project evidence cannot be produced
-    then: the manifest fails loudly with ui_action_automation_unimplemented when object placement is missing, or ui_action_remaining_steps_unimplemented after object placement proof exists, and writes ui-action-contract.json
+    then: the run fails loudly with ui_action_automation_unimplemented when object placement is missing, or ui_action_remaining_steps_unimplemented after object placement proof exists, and writes ui-action-contract.json
   - given: reviewers use this scenario as first-lesson evidence
-    when: they inspect the manifest, Alice log, window list, startup screenshot, and ui-action-contract.json
-    then: they treat the result as bounded original Alice versus RabbitHole / modernized Alice setup, launch, handoff, and classroom-support readiness evidence only, not full UI automation, not creative assessment, not learner-world grading, not complete end-to-end lesson execution, and not broad Alice compatibility
+    when: they inspect the run summary, Alice log, window list, startup screenshot, and ui-action-contract.json
+    then: they treat the result as bounded original Alice versus modernized Alice setup, launch, handoff, and classroom-support readiness evidence only, not full UI automation, not creative assessment, not learner-world grading, not complete end-to-end lesson execution, and not broad Alice compatibility
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json

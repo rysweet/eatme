@@ -1,14 +1,21 @@
 # Alice lesson and desktop preflight scenarios
 
-Eatme desktop scenarios are editable, scenario-labeled contracts for student
-outside-in Alice flows. Every scenario routes through the existing real Alice launch
-smoke harness. A scenario does not introduce its own launcher; it passes a scenario
-id to the same packaging, Xvfb, Java process, screenshot, log, and manifest path
-used by the baseline launch smoke, then records that id in the run manifest.
+Eatme desktop scenarios are editable, scenario-labeled descriptions of Alice
+lesson and preflight evidence. Every scenario routes through the existing real
+Alice launch-smoke harness. A scenario does not introduce its own launcher; it
+passes a scenario id to the same packaging, Xvfb, Java process, screenshot, log,
+and run-summary path used by the baseline launch smoke, then records that id in
+the run summary.
+
+Use this page after [Alice Integration](alice-integration.md) to choose a
+scenario and understand what its launch evidence can prove. For the student
+first-lesson path, continue to
+[Lesson Session Readiness](lesson-session-readiness.md) and
+[First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 ## Committed desktop scenario roster
 
-| Scenario | Role | Runtime contract |
+| Scenario | Role | What it proves |
 | --- | --- | --- |
 | `building-a-scene-first-world` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
 | `code-editor-first-run` | Alice.org lesson smoke | Launch Alice and record scenario-labeled manifest evidence. |
@@ -24,19 +31,20 @@ used by the baseline launch smoke, then records that id in the run manifest.
 | `arrays-collection-choreography` | Student data/state smoke | Gate array/list/index review on real launch evidence. |
 | `mythic-choice-event-tree` | Student interactive narrative smoke | Gate choice, event, branch, and peer-playtest review on real launch evidence. |
 | `vr-camera-perspective-tour` | Student camera/VR smoke | Gate audience viewpoint and non-VR fallback review on real launch evidence. |
-| `first-lessons-real-ui-actions` | First-lesson automation scenarios | Launch Alice, detect the Alice window, record first-lesson scenario evidence boundaries, and fail explicitly until deterministic desktop evidence exists. |
-| `modified-class-portability` | Class portability contract | Validate the export/import evidence contract and route the scenario through launch-smoke before agents judge class portability. |
+| `first-lessons-real-ui-actions` | First-lesson readiness path | Launch Alice, detect the Alice window, record first-lesson evidence boundaries, and fail explicitly until repeatable desktop evidence exists. |
+| `modified-class-portability` | Class portability evidence | Validate the export/import evidence requirements and route the scenario through launch-smoke before agents judge class portability. |
 
 These scenarios are based on Alice.org lesson/tutorial resource families, Alice
 desktop QA journeys, and editable student creative scenarios. They prove that the
 desktop harness can reach a smoke-ready Alice session for resource-grounded paths
 before agentic instructor/student evaluation is trusted. The UI action and class
-portability scenarios intentionally add evidence contracts around the launch smoke
-instead of pretending the launch smoke already performs those user actions.
+portability scenarios intentionally add explicit evidence requirements around
+the launch smoke instead of pretending the launch smoke already performs those
+user actions.
 
 The outside-in Alice QA expansion commits these additional desktop scenarios:
 
-| Scenario | Role | Runtime contract |
+| Scenario | Role | What it proves |
 | --- | --- | --- |
 | `setup-support-lab-readiness` | IT/setup support smoke | Gate install, Java, graphics, storage, account, and fallback readiness on real launch evidence. |
 | `alice-2-migration-bridge` | Alice 2 migration smoke | Gate Alice 2 to Alice 3 lesson mapping on real launch evidence and visible student outcomes. |
@@ -45,15 +53,15 @@ The outside-in Alice QA expansion commits these additional desktop scenarios:
 
 ## What the desktop scenarios verify
 
-Most scenarios are manifest-only, scenario-labeled launch smokes. They verify smoke
-readiness from deterministic harness evidence:
+Most scenarios are launch-only, scenario-labeled launch smokes. They verify
+smoke readiness from repeatable harness evidence:
 
 - Alice was launched through the existing `eatme-alice` launch smoke path.
-- The manifest identifies `scenario_id` as the selected desktop scenario, such as
+- The run summary identifies `scenario_id` as the selected desktop scenario, such as
   `hour-of-code-studio-kickoff`, `building-a-scene-first-world`,
   `code-editor-first-run`, or one of the expanded Alice.org-grounded lesson ids,
   including the score/timer game scenario and starter-project preflight.
-- The deterministic launch assertions pass: dependencies, X display, Alice
+- The repeatable launch assertions pass: dependencies, X display, Alice
   process startup, startup screenshot, and fatal-log scan.
 - The starter-project preflight expects the launch command to include bundled
   `africa.a3p`, giving the next open/save/export pass a real opened-project
@@ -75,11 +83,11 @@ launch path and captured manifest/log/window/screenshot evidence. It is not full
 UI automation, not creative assessment, and not learner-world grading.
 
 The `first-lessons-real-ui-actions` scenario is different: it is the executable
-automation scenario for first-lesson readiness progress evidence and
-first-lesson evidence boundaries. It launches Alice, verifies an Alice Stage IDE
-window from window-manager evidence, records the first-lesson scenario evidence
-contract, and reports readiness progress entries including Save Project and
-Select Project proof-artifact states. Boundary reporting names Select Project,
+scenario for first-lesson readiness progress and first-lesson evidence
+boundaries. It launches Alice, verifies an Alice Stage IDE window from desktop
+evidence, records the first-lesson evidence rules, and reports readiness
+progress entries including Save Project and Select Project proof-artifact
+states. Boundary reporting names Select Project,
 procedure/edit, Save, visible rendering, grading, creative assessment, and
 first-lesson completion independently. Missing declarations remain visible as
 `missing`; malformed or unsafe evidence is `invalid`; a producer that ran
@@ -90,6 +98,13 @@ Present boundary evidence is boundary-specific only. It does not prove full
 Alice UI automation, visible rendering correctness, bounded Save completion,
 grading, creative assessment, learner-world grading, or first-lesson completion
 unless the matching evidence boundary is present.
+
+The editable YAML and generated runner intentionally keep technical names such
+as `alice_real_ui_action_contract`, `ui-action-contract.json`, and
+action-contract fields because those are the current machine-facing artifact and
+compatibility names. Reader-facing summaries should describe that same feature
+as first-lesson readiness or first-action evidence unless they are naming an
+exact file or JSON field.
 
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
@@ -113,7 +128,7 @@ notes, import review, fallback artifact, or student reflection required by the
 YAML contract.
 
 Instructor lesson-material evidence is handled separately by
-`instructor-lesson-materials-remix`. That agentic-flow asset verifies
+`instructor-lesson-materials-remix`. That classroom asset verifies
 scenario-labeled prompts, acceptance probes, teacher plan, student handout, exit
 ticket, and instructor review/remix language without claiming automated creative
 grading or learner-world assessment.
@@ -126,15 +141,17 @@ and explicit instructor/student deliverables.
 
 | Need | Scenario | What to collect |
 | --- | --- | --- |
-| Prove the harness can launch real Alice for a named scenario | `real-alice-launch-smoke` or any `alice_lesson_smoke` id | `manifest.json`, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
-| Prove the student first-lesson scenario has bounded automation scenario evidence | `first-lessons-real-ui-actions` | Launch manifest, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing RabbitHole evidence stays visible as `missing`. |
+| Prove the harness can launch real Alice for a named scenario | [`real-alice-launch-smoke`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/real-alice-launch-smoke.yaml) or any `alice_lesson_smoke` id | Run summary, `alice.log`, `window-list.txt` when available, startup screenshot, and passing launch assertions. |
+| Prove the student first-lesson scenario has bounded action evidence | [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Launch summary, Alice window evidence, screenshot/log artifacts, readiness progress evidence, and explicit boundary states for Select Project, procedure/edit, Save, visible rendering, grading, creative assessment, and first-lesson completion. Missing modernized Alice evidence stays visible as `missing`. |
 | Prove instructor lesson materials are represented as reviewable assets | `instructor-lesson-materials-remix` | Teacher plan, student handout, exit ticket, instructor review prompts, remix notes, and acceptance probes. |
+| Prepare the classroom handoff from evidence to student work | [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Handoff card, readiness note, and student action prompt that state what launch/action evidence proves and what still needs classroom observation. |
+| Discuss student outcomes without automated grading claims | [`instructor-student-outcomes-rubric`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml) | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide. |
 
 The evidence levels are intentionally separate:
 
 1. Launch evidence proves Alice started for the selected scenario id.
-2. Action-contract evidence records the first UI actions that future automation
-   must perform deterministically.
+2. First-action evidence records the first UI actions that future automation
+   must perform repeatably.
 3. Project proof-artifact evidence records Save Project and Select Project
    artifact availability or blockers without claiming UI success.
 4. Mission evidence is the human or agent-reviewed classroom output, such as a
@@ -167,8 +184,8 @@ compatibility, bounded Save completion, or finished lesson execution.
 
 ### Student first-lesson recipe
 
-Run the action-contract scenario when the student scenario requires evidence for the
-first real Alice action path:
+Run the first-lesson readiness scenario when the student scenario requires
+evidence for the first real Alice action path:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
@@ -207,7 +224,7 @@ evidence` instead of exposing `run-window-evidence/desktop-first-lesson-next-act
 as a user-facing blocker.
 
 The explicit `ui_action_automation_unimplemented` failure is honest evidence
-that the action contract exists but deterministic UI automation is not yet
+that the first-action evidence exists but repeatable UI automation is not yet
 claiming a full lesson pass. For object placement, inspect both
 `action_precondition_probes[].missing_affordance` and
 `candidate_affordance_probes[]` in `ui-action-contract.json`. The candidate
@@ -228,14 +245,14 @@ is only evidence availability. Emitted artifact paths are evidence-root-relative
 summaries, artifact contents are never read or emitted, and blockers are
 preserved as normalized summaries.
 
-For the complete boundary contract, see
+For the complete evidence guide, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
 
 ### Instructor remix recipe
 
 Use `instructor-lesson-materials-remix` when the evidence is a classroom packet
-rather than desktop automation. Validate the canonical asset and adapter before
-using the prompts:
+rather than desktop automation. Validate the editable scenario and generated
+runner before using the prompts:
 
 ```bash
 cargo run -q -p eatme-cli -- assets validate \
@@ -441,11 +458,11 @@ eatme alice launch-smoke \
   [--offline-package]
 ```
 
-### Real UI action contract
+### First-lesson readiness evidence
 
-Use the action contract scenario when the intended evidence is a declared
-first-action contract toward user-visible Alice behavior rather than
-manifest-only startup:
+Use the first-lesson readiness scenario when the intended evidence is a declared
+first-action path toward user-visible Alice behavior rather than manifest-only
+startup:
 
 ```bash
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
@@ -461,16 +478,16 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 
 When required executable evidence is missing, incomplete, or blocked, this
 command exits non-zero after writing a manifest and `ui-action-contract.json`.
-Treat that explicit failure as the contract, not as passing coverage. These
-automation scenarios provide preflight launch/action-contract readiness evidence
+Treat that explicit failure as the evidence boundary, not as passing coverage.
+These automation scenarios provide preflight launch/action readiness evidence
 only for setup, launch support, handoff artifacts, and classroom support
 preparation. They are not full Alice UI automation, not creative assessment, not
 learner-world grading, not production readiness, not lesson completion, not
 complete end-to-end lesson execution, and not broad Alice compatibility.
 
-#### Instructor-editable readiness evidence wording
+#### Instructor-editable readiness wording
 
-The canonical source for the first-lesson action-contract wording is:
+The editable source for the first-lesson readiness wording is:
 
 ```text
 assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
@@ -481,40 +498,35 @@ exactly one existing text field in that YAML asset. Prefer `purpose` for the
 small wording update because it is the summary that explains what the scenario
 proves before a reviewer inspects acceptance criteria, steps, or artifacts.
 
-The finished wording describes preflight launch/action-contract readiness
+The finished wording describes preflight launch/action readiness
 evidence for setup, launch support, handoff artifacts, and classroom-support
 preparation. It keeps these boundaries intact:
 
 | Boundary | Required wording behavior |
 | --- | --- |
-| Evidence claim | Say "readiness evidence", "launch/action-contract evidence", or "preflight evidence". |
+| Evidence claim | Say "readiness evidence", "launch/action evidence", or "preflight evidence". |
 | Scenario identity | Keep `id: first-lessons-real-ui-actions` and the same scenario inventory. |
-| Generated adapters | Do not hand-edit `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml`; regenerate or check it from the canonical asset. |
+| Generated runner files | Do not hand-edit `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml`; regenerate or check it from the editable scenario. |
 | Non-claims | Keep the exact limits: "not full UI automation", "not creative assessment", "not learner-world grading", "not production readiness", "not lesson completion", "not complete end-to-end lesson execution", and "not broad Alice compatibility". |
 
 Example complete `purpose` wording:
 
 ```yaml
 purpose: >-
-  Compare first Alice lesson automation scenarios beyond manifest-only smoke by
-  launching the real Alice desktop for original Alice and RabbitHole /
-  modernized Alice, verifying a specific Alice window, executing safe window
-  activation plus save-shortcut dispatch probes, consuming object-placement proof
-  when Alice exposes it, consuming edit proof when Alice exposes it, and
-  dispatching Alice's documented Run shortcut after edit proof exists. The
-  contract requires explicit evidence for object placement, procedure/code
-  editing, world run, project save, and a captured contract artifact. When
-  deterministic desktop manipulation beyond safe window activation, shortcut
-  dispatch, and backend proof hooks is missing, the harness fails loudly with a
-  preflight/action contract instead of reporting a silent pass. This is
-  preflight launch/action-contract readiness evidence only for setup, launch
+  Compare first Alice lesson readiness beyond launch-only smoke by launching
+  real Alice for original and modernized Alice, confirming the Alice window is
+  available, and recording first-action evidence for object placement,
+  procedure/code editing, running the world, and saving the project when each
+  action can be proven. When an action cannot yet be proven repeatably, the run
+  fails loudly and reports what is not yet shown instead of claiming success.
+  This is preflight launch/action readiness evidence only for setup, launch
   support, handoff artifacts, and classroom support preparation. It is not full
   Alice UI automation, not creative assessment, not learner-world grading, not
   production readiness, not lesson completion, not complete end-to-end lesson
   execution, and not broad Alice compatibility.
 ```
 
-After a wording edit, validate the canonical asset and check generated adapter
+After a wording edit, validate the editable scenario and check generated file
 freshness:
 
 ```bash

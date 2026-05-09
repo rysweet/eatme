@@ -1,51 +1,69 @@
 # Lesson session readiness
 
-Lesson session readiness is the executable evidence contract for
-instructor/student Alice lesson sessions. Its CLI readiness path is scoped to the
-student first-lesson action contract, while instructor scenarios provide
-canonical classroom handoff, remix, and rubric assets that remain validated
-through asset and adapter checks. The contract connects four surfaces:
+Lesson session readiness is the reader path for deciding whether an Alice
+first-lesson run has enough evidence to continue. It keeps the student
+first-lesson path separate from instructor lesson materials: student readiness
+is checked by the CLI, while instructor handoff, remix, and rubric scenarios
+stay validated as editable classroom assets. The path connects four surfaces:
 
 | Surface | Purpose |
 | --- | --- |
-| Canonical scenario assets | Describe instructor/student intent, evidence, boundaries, and unsupported-action policies. |
-| Generated Gadugi adapters | Keep external runners aligned with canonical scenario assets. |
-| Alice comparison manifests | Record baseline and modernized launch and automation scenario evidence for the same lesson scenario. |
-| Readiness reports | Normalize the result as `ready`, `not_ready`, or `blocked` for humans, CI, and adapters. |
+| Scenario files | Describe instructor/student intent, required evidence, boundaries, and unsupported actions. |
+| Generated runner files | Keep external runners aligned with the editable scenarios. |
+| Alice run reports | Record original and modernized launch and action evidence for the same lesson scenario. |
+| Readiness reports | State the result as `ready`, `not_ready`, or `blocked` for humans, CI, and automation. |
 
-The readiness contract is deliberately outside-in. It reports required assets,
-manifests, first-lesson automation scenario evidence, and not-yet-shown states
-in machine-readable and user-facing forms. It does not implement missing Alice
-desktop affordances, does not automate a complete lesson, does not perform
-creative assessment, and does not grade student worlds.
+The readiness path is deliberately outside-in. It reports required scenario
+files, run reports, first-lesson evidence, and not-yet-shown states in both
+plain output and JSON. It does not add missing Alice desktop behavior, automate a
+complete lesson, perform creative assessment, or grade student worlds.
 
-For the conservative original Alice and RabbitHole boundary contract for Select
-Project, procedure/edit, Save option/action evidence, visible rendering, grading,
-creative assessment, and first-lesson completion, see
+For the plain evidence guide covering Select Project, procedure/edit, Save
+option/action evidence, visible rendering, grading, creative assessment, and
+first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
 defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
-`Desktop next action`, and `Unproven` output, plus additive JSON
-`shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
-`unproven_claims` fields while preserving legacy progress and boundary fields.
+`Desktop next action`, and `Unproven` sections, plus matching JSON fields for
+automation consumers.
+
+## Reader path
+
+Use this order when you need the silver-thread first-lesson path:
+
+1. Validate the editable scenario files.
+2. Check that generated runner files are fresh.
+3. Produce or inspect the comparison run for `first-lessons-real-ui-actions`.
+4. Run `alice check-lesson-readiness` against that comparison.
+5. Read `Shown`, `Not yet shown`, and `Unproven` before deciding whether to
+   continue.
+
+Stop at the first `not_ready` or `blocked` result. A readiness report is a
+decision about the next bounded first-lesson action, not a claim that the full
+lesson is complete.
 
 ## Scenario map
 
 Use these canonical scenarios for instructor/student lesson-session evidence:
 
-| Scenario | Role | Evidence contract |
+| Scenario | Role | What it contributes |
 | --- | --- | --- |
-| `first-lessons-real-ui-actions` | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress evidence, first-lesson automation scenario evidence boundaries, and plain not-yet-shown states for missing desktop affordances. |
-| `instructor-lesson-materials-remix` | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
-| `instructor-student-launch-evidence-handoff` | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
-| `instructor-student-outcomes-rubric` | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
+| [`first-lessons-real-ui-actions`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/first-lessons-real-ui-actions.yaml) | Student | Real Alice launch, Alice window evidence, first object/edit/run/save expectations, readiness progress, first-lesson evidence boundaries, and plain not-yet-shown states for missing desktop actions. |
+| [`instructor-lesson-materials-remix`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-lesson-materials-remix.yaml) | Instructor | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources without launching Alice or grading learner worlds. |
+| [`instructor-student-launch-evidence-handoff`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml) | Instructor | Handoff card, readiness note, and student action prompt that explain what launch/action evidence proves and what still requires classroom observation. |
+| [`instructor-student-outcomes-rubric`](https://github.com/rysweet/eatme/blob/main/assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml) | Instructor | Student-visible outcomes rubric, feedback frame, revision next step, and project discussion guide without claiming automated creative assessment. |
 
 The `alice check-lesson-readiness` and `alice run-first-lesson-readiness`
-commands bind to `first-lessons-real-ui-actions`. Instructor scenarios are
-canonical lesson-session evidence assets, not separate executable readiness
-targets unless a harness owns that behavior.
+commands bind to `first-lessons-real-ui-actions`. Instructor scenarios remain
+validated classroom assets unless a harness explicitly adds executable
+readiness behavior for them.
 
-Instructor and teacher mean the same role in this contract unless a scenario
+Instructor and teacher mean the same role in this guide unless a scenario
 explicitly distinguishes them.
+
+Technical names remain intentional where they match files, JSON fields, and
+existing command output. In prose for instructors, students, and PR readers,
+prefer first-lesson readiness evidence or first-action evidence unless you are
+naming an exact file or legacy API field.
 
 ## First-lesson next action readiness
 
@@ -56,11 +74,11 @@ continuing to the next first-lesson action. It reports `ready`, `not_ready`, or
 The required evidence check separates repository-local readiness evidence from
 RabbitHole-produced desktop evidence:
 
-| Evidence class | Accepted source | What it proves |
+| Evidence group | Accepted source | What it proves |
 | --- | --- | --- |
-| Canonical scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and unsupported-action policy are part of the validated eatme asset set. |
-| Generated adapter evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Adapter freshness proves the generated Gadugi scenario matches the current canonical scenario. RabbitHole-specific wording reaches adapters only after the canonical scenario is updated and adapters are regenerated. |
-| Repository readiness evidence | Asset validation, generated-adapter freshness checks, comparison manifests, launch manifests, launch assertions, first-lesson readiness progress evidence, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
+| Editable scenario evidence | `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | The first-lesson boundary, required artifacts, non-claims, and unsupported-action policy are part of the validated eatme asset set. |
+| Generated runner evidence | `assets/scenarios/gadugi/first-lessons-real-ui-actions.yaml` | Fresh generated files match the current editable scenario. RabbitHole-specific wording reaches generated runners only after the editable scenario is updated and generated files are refreshed. |
+| Repository readiness evidence | Asset validation, generated-file freshness checks, comparison manifests, launch manifests, launch assertions, first-lesson readiness progress evidence, and the modernized visible desktop screenshot check | The repository can describe, launch, resolve, and normalize first-lesson readiness evidence without claiming the lesson was completed. |
 | RabbitHole desktop evidence | Baseline and modernized target evidence in `comparison-manifest.json`, with RabbitHole-specific assertions on the modernized target | RabbitHole produced the required desktop signals for the next first-lesson action boundary. |
 
 Repository readiness evidence is necessary, but it cannot replace RabbitHole
@@ -227,7 +245,7 @@ includes the baseline target; omitting it is `not_ready`.
 
 ## Usage
 
-### Validate the canonical assets
+### Validate the editable scenarios
 
 Run asset validation before trusting instructor/student readiness evidence:
 
@@ -244,26 +262,26 @@ cargo run -q -p eatme-cli -- assets validate \
 ```
 
 Passing validation reports `"passed": true`. A failure is a blocking readiness
-problem; do not treat generated adapters, comparison manifests, or classroom
-outputs as current until the canonical asset validates.
+problem; do not treat generated runner files, comparison manifests, or classroom
+outputs as current until the editable scenario validates.
 
-### Check generated Gadugi adapter freshness
+### Check generated runner freshness
 
-Generated Gadugi adapters must match canonical scenario assets:
+Generated runner files must match editable scenario assets:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 Use check mode in CI and before opening a PR. If check mode reports stale or
-missing adapters, regenerate from the canonical assets:
+missing generated files, regenerate from the editable scenarios:
 
 ```bash
 cargo run -q -p eatme-cli -- assets generate-gadugi --json
 ```
 
-Do not hand-edit generated adapters to change scenario intent. Edit the
-canonical file under `assets/scenarios/eatme/` and regenerate.
+Do not hand-edit generated runner files to change scenario intent. Edit the
+source file under `assets/scenarios/eatme/` and regenerate.
 
 ### Check a comparison manifest
 

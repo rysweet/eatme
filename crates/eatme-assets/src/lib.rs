@@ -21,6 +21,8 @@ mod outside_in_alice_expansion_tests;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
+#[cfg(test)]
+mod scenario_links_silver_thread_tests;
 mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
