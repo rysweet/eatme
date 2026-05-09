@@ -1,7 +1,3 @@
-use std::fs;
-use std::path::Path;
-use std::sync::OnceLock;
-
 const SCENARIO_MAP_HEADING: &str = "## Scenario map";
 const SCENARIO_MAP_HEADER: &str = "| Scenario | Role | Evidence contract |";
 const SCENARIO_MAP_DIVIDER: &str = "| --- | --- | --- |";
@@ -9,9 +5,8 @@ const MATRIX_HEADING: &str = "## Scenario-to-gap matrix";
 const REQUIRED_HEADER: &str =
     "| Scenario | What the user is trying to do | Remaining gap | Evidence still needed |";
 const REQUIRED_DIVIDER: &str = "| --- | --- | --- | --- |";
-const PR193_FINALIZATION_RECORD_HEADING: &str = "## PR #193 finalization record";
+const PR193_FINALIZATION_BOUNDARY_HEADING: &str = "## PR #193 finalization evidence boundary";
 const PR193_FINALIZATION_TEMPLATE_HEADING: &str = "## PR #193 finalization template";
-const PR193_BRANCH: &str = "feat/issue-176-eatme-wave7-gap-matrix-lane-follow-default-workflo";
 
 const REQUIRED_SCENARIO_IDS: [&str; 6] = [
     "first-lessons-real-ui-actions",
@@ -42,6 +37,13 @@ const PROHIBITED_MATRIX_LANGUAGE: [&str; 10] = [
     "creative assessment",
     "automated creative assessment",
     "assess creativity",
+];
+
+const PR193_REQUIRED_COMMANDS: [&str; 4] = [
+    "cargo run -q -p eatme-cli -- assets validate --json",
+    "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+    "mkdocs build --strict",
+    "TMPDIR=/tmp ./scripts/quality-gates.sh",
 ];
 
 #[test]
@@ -151,11 +153,11 @@ fn lesson_session_readiness_matrix_has_simple_rows_with_missing_proof_and_eviden
             "matrix rows must not contain empty cells: {row:?}"
         );
         assert!(
-            contains_any(row[2], &["does not yet show", "not yet shown"]),
+            contains_any_normalized(row[2], &["does not yet show", "not yet shown"]),
             "remaining gap must be framed as missing user-visible proof: {row:?}"
         );
         assert!(
-            contains_any(row[3], &["showing", "shows", "show ", "notes", "samples"]),
+            contains_any_normalized(row[3], &["showing", "shows", "show ", "notes", "samples"]),
             "evidence still needed must describe visible evidence: {row:?}"
         );
     }
@@ -174,12 +176,12 @@ fn lesson_session_readiness_matrix_avoids_overclaiming_completion_or_assessment(
 }
 
 #[test]
-fn default_workflow_pr193_uses_a_finalization_record_not_a_template() {
+fn default_workflow_pr193_uses_a_finalization_boundary_not_a_template() {
     let doc = default_workflow_readiness_doc();
 
     assert!(
-        doc.contains(PR193_FINALIZATION_RECORD_HEADING),
-        "PR #193 readiness evidence must be recorded as a finalization record"
+        doc.contains(PR193_FINALIZATION_BOUNDARY_HEADING),
+        "PR #193 readiness docs must define a finalization evidence boundary"
     );
     assert!(
         !doc.contains(PR193_FINALIZATION_TEMPLATE_HEADING),
@@ -188,106 +190,98 @@ fn default_workflow_pr193_uses_a_finalization_record_not_a_template() {
 }
 
 #[test]
-fn default_workflow_pr193_record_contains_concrete_exact_head_evidence() {
-    let section = pr193_finalization_section(default_workflow_readiness_doc());
+fn default_workflow_pr193_boundary_requires_external_exact_head_evidence() {
+    let doc = default_workflow_readiness_doc();
+    let section = pr193_finalization_section(doc);
 
     assert_all_present(
         section,
         &[
-            PR193_BRANCH,
+            "readiness contract",
+            "Do not record a specific PR #193 `headRefOid`",
+            "committed exact-head evidence here would become self-stale",
+            "After the final commit is pushed",
             "headRefOid",
-            "state: OPEN",
-            "mergeStateStatus: CLEAN",
-            "mergeable: MERGEABLE",
-            "Documentation Site",
-            "Quality Gates",
-            "GitGuardian Security Checks",
+            "outside the repository commit",
+            "PR body, PR comment, or status summary",
+            "Do not treat uncommitted local documentation edits as evidence for a PR head",
+            "externally recorded exact head",
         ],
-        "PR #193 finalization record",
-    );
-    assert!(
-        contains_full_hex_sha(section),
-        "PR #193 finalization record must cite the exact evaluated head SHA"
+        "PR #193 finalization evidence boundary",
     );
     assert_all_absent(
         section,
         &[
+            "Evaluated `headRefOid`",
+            "| Evidence time |",
+            "Observed result",
+            "Passed with exit 0 for the evaluated head",
+            "Succeeded with exit 0 for the evaluated head",
+            "this exact-head evidence snapshot",
             "<headRefOid",
             "<YYYY-MM-DDTHH:MM:SSZ>",
             "<observed result",
             "placeholder",
             "template",
-            "after the documentation refinement is pushed",
         ],
-        "PR #193 finalization record",
+        "PR #193 finalization evidence boundary",
+    );
+    assert!(
+        !contains_40_char_hex_sha(section),
+        "PR #193 committed readiness section must not hardcode a transient head SHA"
+    );
+    assert!(
+        contains_any_normalized(
+            doc,
+            &["do not treat uncommitted local documentation edits as evidence for a pr head"],
+        ),
+        "default-workflow readiness docs must preserve the uncommitted-local-evidence warning"
     );
 }
 
 #[test]
-fn default_workflow_pr193_record_lists_executable_command_outcomes() {
+fn default_workflow_pr193_boundary_lists_executable_command_gates() {
     let section = pr193_finalization_section(default_workflow_readiness_doc());
 
-    assert_command_row_has_concrete_success(
-        section,
-        "cargo run -q -p eatme-cli -- assets validate --json",
-    );
-    assert_command_row_has_concrete_success(
-        section,
-        "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
-    );
-    assert_command_row_has_concrete_success(section, "mkdocs build --strict");
-    assert_command_row_has_concrete_success(section, "TMPDIR=/tmp ./scripts/quality-gates.sh");
+    for command in PR193_REQUIRED_COMMANDS {
+        assert_command_row_has_required_result(section, command);
+    }
 }
 
 #[test]
-fn default_workflow_pr193_record_names_no_op_or_change_scope_and_no_manual_merge() {
+fn default_workflow_pr193_boundary_names_change_scope_and_no_manual_merge() {
     let section = pr193_finalization_section(default_workflow_readiness_doc());
 
     assert!(
-        contains_any(
+        contains_any_normalized(
             section,
             &[
-                "No repository changes were required",
-                "Repository changes were limited to",
-                "no-op finalization",
+                "bounded change scope",
+                "the allowed readiness conclusion for pr #193 is narrow",
             ],
         ),
-        "PR #193 finalization record must state either the no-op reason or the bounded change scope"
+        "PR #193 finalization boundary must require a bounded change scope"
     );
     assert!(
-        contains_any(
+        contains_any_normalized(
             section,
             &[
                 "without manually merging",
-                "No manual merge was performed",
-                "Do not manually merge",
+                "no manual merge was performed",
+                "no-manual-merge",
+                "do not manually merge",
             ],
         ),
-        "PR #193 finalization record must explicitly preserve the no-manual-merge boundary"
+        "PR #193 finalization boundary must explicitly preserve the no-manual-merge boundary"
     );
 }
 
 fn readiness_doc() -> &'static str {
-    static DOC: OnceLock<String> = OnceLock::new();
-
-    DOC.get_or_init(|| {
-        fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/lesson-session-readiness.md"),
-        )
-        .expect("read lesson-session-readiness.md")
-    })
+    include_str!("../../../docs/lesson-session-readiness.md")
 }
 
 fn default_workflow_readiness_doc() -> &'static str {
-    static DOC: OnceLock<String> = OnceLock::new();
-
-    DOC.get_or_init(|| {
-        fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../docs/default-workflow-pr-readiness.md"),
-        )
-        .expect("read default-workflow-pr-readiness.md")
-    })
+    include_str!("../../../docs/default-workflow-pr-readiness.md")
 }
 
 fn matrix_section(doc: &str) -> &str {
@@ -299,7 +293,7 @@ fn scenario_map_section(doc: &str) -> &str {
 }
 
 fn pr193_finalization_section(doc: &str) -> &str {
-    section(doc, PR193_FINALIZATION_RECORD_HEADING)
+    section(doc, PR193_FINALIZATION_BOUNDARY_HEADING)
 }
 
 fn section<'a>(doc: &'a str, heading: &str) -> &'a str {
@@ -350,32 +344,35 @@ fn assert_all_absent(text: &str, phrases: &[&str], label: &str) {
     }
 }
 
-fn assert_command_row_has_concrete_success(section: &str, command: &str) {
+fn assert_command_row_has_required_result(section: &str, command: &str) {
     let row = section
         .lines()
         .find(|line| line.contains(command))
-        .unwrap_or_else(|| panic!("PR #193 finalization record is missing command: {command}"));
+        .unwrap_or_else(|| panic!("PR #193 finalization boundary is missing command: {command}"));
 
     assert!(
         !row.contains('<') && !row.contains('>'),
-        "command outcome must not be a placeholder: {row}"
+        "command gate must not be a placeholder: {row}"
     );
     assert!(
-        contains_any(row, &["passed", "succeeded", "success", "exit 0"]),
-        "command outcome must record concrete current-head success: {row}"
+        contains_any_normalized(
+            row,
+            &["required result", "passed", "succeeds", "successfully"]
+        ),
+        "command gate must describe the required final-head result: {row}"
     );
 }
 
-fn contains_any(text: &str, phrases: &[&str]) -> bool {
-    let normalized_text = normalize(text);
-    phrases
-        .iter()
-        .any(|phrase| normalized_text.contains(&normalize(phrase)))
+fn contains_40_char_hex_sha(text: &str) -> bool {
+    text.split(|ch: char| !ch.is_ascii_hexdigit())
+        .any(|token| token.len() == 40)
 }
 
-fn contains_full_hex_sha(text: &str) -> bool {
-    text.split(|character: char| !character.is_ascii_hexdigit())
-        .any(|token| token.len() == 40)
+fn contains_any_normalized(text: &str, normalized_phrases: &[&str]) -> bool {
+    let normalized_text = normalize(text);
+    normalized_phrases
+        .iter()
+        .any(|phrase| normalized_text.contains(phrase))
 }
 
 fn normalize(text: &str) -> String {

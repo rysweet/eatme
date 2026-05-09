@@ -19,7 +19,7 @@ readiness comment only after every gate passes.
 - [Starter-project evidence boundary](#starter-project-evidence-boundary)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
 - [Silver-thread/e2e gap-matrix readiness](#silver-threade2e-gap-matrix-readiness)
-- [PR #193 finalization record](#pr-193-finalization-record)
+- [PR #193 finalization evidence boundary](#pr-193-finalization-evidence-boundary)
 - [PR #164 readiness example](#pr-164-readiness-example)
 - [No-op finalization record](#no-op-finalization-record)
 - [Readiness comment](#readiness-comment)
@@ -200,57 +200,41 @@ Do not treat uncommitted local documentation edits as evidence for a PR head.
 Commit and push the docs first, then gather fresh command and GitHub evidence for
 the new `headRefOid`.
 
-## PR #193 finalization record
+## PR #193 finalization evidence boundary
 
-For PR #193, the exact accepted `headRefOid` evaluated for this recovery lane is:
+PR #193 uses this committed section only as a readiness contract. Do not record a
+specific PR #193 `headRefOid`, evidence timestamp, or "passed for this head"
+claim inside this file: the commit that changes this file also changes the PR
+head, so committed exact-head evidence here would become self-stale.
 
-```text
-ea24aa0b3781e6b50c58136229e4751b2be4eec6
+After the final commit is pushed, gather fresh exact-head evidence with:
+
+```bash
+gh pr view 193 --json number,url,state,headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
-The evaluated branch is:
+Record the resulting `headRefOid`, command outcomes, GitHub check state, bounded
+change scope, and no-manual-merge decision outside the repository commit, such as
+in the PR body, PR comment, or status summary. Do not treat uncommitted local
+documentation edits as evidence for a PR head.
 
-```text
-feat/issue-176-eatme-wave7-gap-matrix-lane-follow-default-workflo
-```
+The external PR #193 evidence must include these command outcomes for the final
+pushed head:
 
-Evidence was recorded at:
+| Command | Required result |
+| --- | --- |
+| `cargo run -q -p eatme-cli -- assets validate --json` | JSON report has `passed: true` and no errors. |
+| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | JSON report has `passed: true` and no changed generated adapters. |
+| `mkdocs build --strict` | Strict documentation build succeeds. |
+| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Repository quality gate exits successfully. |
 
-```text
-2026-05-09T10:44:06Z
-```
-
-Repository changes were limited to
-`docs/default-workflow-pr-readiness.md` and
-`crates/eatme-assets/src/lesson_session_readiness_doc_tests.rs`; they add the
-workflow finalization evidence and the doc-test guardrails for this bounded
-silver-thread/e2e readiness lane.
-
-| Command | Required result | Observed result |
-| --- | --- | --- |
-| `cargo run -q -p eatme-cli -- assets validate --json` | JSON report has `passed: true` and no errors. | Passed with exit 0 for the evaluated head. |
-| `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json` | JSON report has `passed: true` and no changed generated adapters. | Passed with exit 0 for the evaluated head. |
-| `mkdocs build --strict` | Strict documentation build succeeds. | Succeeded with exit 0 for the evaluated head. |
-| `TMPDIR=/tmp ./scripts/quality-gates.sh` | Repository quality gate exits successfully. | Passed with exit 0 for the evaluated head. |
-
-`gh pr view 193 --json number,url,state,headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup`
-reported PR #193 as `state: OPEN` on the same branch and exact `headRefOid`,
-with `mergeStateStatus: CLEAN` and `mergeable: MERGEABLE`.
-
-The GitHub check state for that same head included completed successful required
-checks from Documentation Site (`Build MkDocs site`), Quality Gates (`detect
-changed files`, `fmt, clippy, module size`, `tests`, `coverage`, and the
-aggregate `fmt, clippy, tests, module size, coverage`), and GitGuardian Security
-Checks (`GitGuardian Security Checks`). Skipped deploy and manual smoke jobs are
-not evidence for runtime Alice UI behavior.
-
-The allowed readiness conclusion for PR #193 is narrow: this head supports the
-lesson-session silver-thread/e2e gap-matrix documentation lane, with asset
-validation, generated adapter freshness, strict docs build, repository quality
-gates, and GitHub checks tied to the exact head above. It does not claim full UI
-automation, rendering correctness, grading, creative assessment, Save
-completion, lesson completion, live classroom use, or manual merge completion.
-No manual merge was performed.
+The allowed readiness conclusion for PR #193 is narrow: the final pushed head may
+support only the lesson-session silver-thread/e2e gap-matrix documentation lane,
+with asset validation, generated adapter freshness, strict docs build,
+repository quality gates, and GitHub checks tied to the externally recorded exact
+head. It does not claim full UI automation, rendering correctness, grading,
+creative assessment, Save completion, lesson completion, live classroom use,
+manual merge completion, or any evidence from uncommitted local files.
 
 ## PR #164 readiness example
 
