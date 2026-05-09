@@ -9,6 +9,7 @@ mod module_size_contracts;
 mod pr173_readiness_evidence;
 mod scenario_contracts;
 mod sharing_readiness_boundary;
+mod workflow_readiness_evidence;
 
 const EXPECTED_SCENARIO_ASSET_COUNT: usize = 93;
 
@@ -67,16 +68,11 @@ const FIRST_LESSON_REQUIRED_SMOKE_READY_EVIDENCE: &[&str] = &[
     "explicit_failure_when_ui_actions_are_not_automated",
 ];
 
-const PR173_PUBLISHED_HEAD_SHA: &str = "5565fae102197b162b50eaa23ebad705eb416d0a";
-const PR173_EVALUATED_LOCAL_HEAD_SHA: &str = "a081711d4f6eefe1485516c1bac0f8e877de53dd";
-const PR173_EVALUATED_WORKTREE_STATE: &str = "dirty worktree with uncommitted changes";
-const PR173_HISTORICAL_VALIDATION_SHA: &str = "7757f298bbdf220b37882c912abb05cae2277bd8";
-
 const PR173_RECOVERY_VALIDATION_COMMANDS: &[&str] = &[
-    "NODE_OPTIONS=--max-old-space-size=32768 mkdocs build --strict",
-    "NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets validate --json",
-    "NODE_OPTIONS=--max-old-space-size=32768 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
-    "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
+    "mkdocs build --strict",
+    "cargo run -q -p eatme-cli -- assets validate --json",
+    "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+    "TMPDIR=/tmp ./scripts/quality-gates.sh",
 ];
 
 const SHARING_SUCCESS_CLAIM_PATTERNS: &[&str] = &[
@@ -122,6 +118,10 @@ fn read_eatme_scenario(path: &Path) -> EatmeScenarioAsset {
 
 fn sharing_readiness_boundary_doc() -> &'static str {
     include_str!("../../../docs/sharing-readiness-boundary.md")
+}
+
+fn default_workflow_pr_readiness_doc() -> &'static str {
+    include_str!("../../../docs/default-workflow-pr-readiness.md")
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {

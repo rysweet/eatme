@@ -1,79 +1,152 @@
 # Default-workflow PR readiness
 
-Default-workflow PR readiness is the exact-head gate used when a pull request
-needs a clear final readiness decision and the wrapper workflow did not produce
-useful output.
+Default-workflow PR readiness is the exact-head recovery gate used when a pull
+request needs a clear readiness, review, or finalization decision and an outer
+workflow did not produce useful output.
 
-This page specifies the readiness behavior the workflow should enforce: verify
-the exact PR head, inspect GitHub metadata for that same head, preserve the
-bounded starter-project evidence contract, require fresh generated Gadugi
-adapters when scenario assets are involved, and publish a narrowly scoped
-readiness comment only after every gate passes.
+The workflow verifies the current checkout, validates the repository evidence
+that applies to the PR, checks GitHub metadata for the same branch head, and
+then records either a bounded readiness decision or a bounded no-op
+justification. It does not merge the PR.
 
 ## Contents
 
 - [Readiness contract](#readiness-contract)
+- [Evidence record template](#evidence-record-template)
 - [Generic readiness procedure](#generic-readiness-procedure)
 - [Configuration](#configuration)
 - [GitHub metadata fields](#github-metadata-fields)
-- [Starter-project evidence boundary](#starter-project-evidence-boundary)
+- [Sharing-readiness recovery profile](#sharing-readiness-recovery-profile)
 - [Generated Gadugi adapter freshness](#generated-gadugi-adapter-freshness)
-- [PR #164 readiness example](#pr-164-readiness-example)
+- [No-op justification](#no-op-justification)
 - [Readiness comment](#readiness-comment)
 - [Blocker handling](#blocker-handling)
 
 ## Readiness contract
 
-A PR is default-workflow ready only when every gate passes for the exact commit
-being reviewed.
+A PR is default-workflow ready only when every required gate passes for the
+current branch head being reviewed.
 
 | Gate | Required result |
 | --- | --- |
-| Exact head | The PR head SHA equals the requested SHA. A mismatch blocks readiness. |
-| GitHub checks | Required checks are green for that same SHA. |
+| Current checkout | The worktree is on the intended branch and the current `HEAD` is recorded. |
+| PR association | GitHub reports that the PR head branch is the same branch being recovered. |
+| GitHub checks | Required checks are green for the PR head SHA. |
 | Merge state | `mergeStateStatus` is `CLEAN`. |
 | Mergeability | `mergeable` is `MERGEABLE`. |
-| Starter-project wording | The canonical scenario uses plain, bounded, user-facing language. |
-| Overclaim boundary | The scenario does not claim first-lesson completion, grading, creative assessment, full UI automation, visible rendering correctness, full Save completion, or complete Alice coverage. |
-| Gadugi adapters | Generated adapters are fresh whenever canonical scenario assets are affected. |
-| Scope | No unrelated files or behavior are changed. |
+| Asset validation | Persona and scenario assets validate successfully when the PR touches or documents asset behavior. |
+| Gadugi freshness | Generated adapters are fresh when canonical scenario assets are involved. |
+| Documentation build | `mkdocs build --strict` succeeds when documentation changes or readiness docs are part of the PR. |
+| Quality gate | `./scripts/quality-gates.sh` succeeds when full repository readiness is required. |
+| Claim boundary | The final statement names only the evidence that was executed for the current head. |
+| Scope | Repository changes are limited to the minimal files needed to satisfy the evidence. |
 
-A previous wrapper failure is not a blocker when direct verification proves the
-same head, green checks, clean mergeability, bounded wording, and fresh
-generated adapters.
+A wrapper failure, rate-limit exit, or owner exit is not itself a blocker when
+direct current-head verification passes and the final claim stays inside the
+executed evidence boundary.
+
+## Evidence record template
+
+The workflow records evidence as a small, inspectable record. The record is a
+review artifact, not a source file that must be committed.
+
+| Field | Meaning |
+| --- | --- |
+| `repository` | Repository owner and name, such as `rysweet/eatme`. |
+| `branch` | Local branch under review. |
+| `head_sha` | Current local `HEAD` SHA from `git rev-parse HEAD`. |
+| `worktree_status` | `git status --short --branch` result summarized as clean or dirty. |
+| `pr_number` | Pull request number being recovered. |
+| `pr_head_branch` | GitHub PR head branch from `headRefName`. |
+| `pr_head_sha` | GitHub PR head SHA from `headRefOid`. |
+| `checks` | Required check states for `pr_head_sha`. |
+| `merge_state` | `mergeStateStatus` and `mergeable`. |
+| `asset_validation` | Result of `assets validate --json`, when applicable. |
+| `gadugi_freshness` | Result of `assets generate-gadugi --check --json`, when applicable. |
+| `docs_build` | Result of `mkdocs build --strict`, when applicable. |
+| `quality_gate` | Result of `TMPDIR=/tmp ./scripts/quality-gates.sh`, when full readiness is required. |
+| `workflow_readiness_evidence` | Current-head workflow readiness summary tying the executed gates to the evaluated branch and SHA. |
+| `review_evidence` | Review-relevant PR metadata, check rollup, and bounded claim review used to decide whether readiness can be posted. |
+| `finalization_evidence` | Finalization-relevant state showing whether the workflow may record readiness, no-op acceptance, or a blocker without claiming merge completion. |
+| `decision` | `ready`, `blocked`, or `no-op accepted`. |
+| `bounded_claim` | Short statement of what the executed evidence proves and what it does not prove. |
 
 ## Generic readiness procedure
 
-Run the gate in this order:
+Run the gate from the repository root.
 
-1. Verify the PR head equals the exact requested SHA.
-2. Verify GitHub checks are green for that same SHA.
-3. Verify `mergeStateStatus=CLEAN` and `mergeable=MERGEABLE`.
-4. Inspect the starter-project preflight scenario wording if the PR touches that
-   evidence contract.
-5. Run the generated Gadugi adapter freshness check if any canonical scenario
-   asset is affected.
-6. Validate assets.
-7. Publish the readiness comment only when every required gate passed.
+1. Confirm the branch, local `HEAD`, and worktree state:
+
+   ```bash
+   git --no-pager status --short --branch
+   git --no-pager rev-parse --abbrev-ref HEAD
+   git --no-pager rev-parse HEAD
+   ```
+
+2. Query the PR metadata for the PR being recovered:
+
+   ```bash
+   gh pr view 173 \
+     --json number,title,headRefName,headRefOid,baseRefName,mergeStateStatus,mergeable,statusCheckRollup,reviewDecision,state,url
+   ```
+
+3. Validate persona and scenario assets:
+
+   ```bash
+   cargo run -q -p eatme-cli -- assets validate --json
+   ```
+
+4. Check generated Gadugi adapter freshness:
+
+   ```bash
+   cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+   ```
+
+5. Build the documentation site in strict mode:
+
+   ```bash
+   mkdocs build --strict
+   ```
+
+6. Run the repository quality gate when full readiness is required:
+
+   ```bash
+   TMPDIR=/tmp ./scripts/quality-gates.sh
+   ```
+
+7. Inspect the relevant documentation, scenario assets, generated adapters, and
+   guard tests for overbroad claims.
+
+8. If all gates pass and no stale claims are found, record a no-op justification.
+   If a gate fails because a document, scenario, adapter, or guard test is stale,
+   make the smallest targeted change and rerun the affected gates plus the full
+   quality gate.
+
+Do not wrap these commands in shell `timeout` helpers. Long-running commands
+should finish naturally or fail with their own diagnostics.
 
 ## Configuration
 
-Run commands from the repository root.
-
-If running Node-based workflow wrappers, set the repository's large-heap Node
-option before invoking the wrapper:
+Use the repository's saved Node heap preference when Node-based wrappers or
+repository workflows are involved:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
 
 The Rust asset validation and Gadugi generator commands do not require Node, but
-the environment variable is safe to keep exported for repository-wide workflow
-commands.
+keeping the variable exported is safe for repository-wide workflow runs.
 
-For GitHub checks, use authenticated `gh` access to the repository that owns the
-PR. Do not place tokens, secrets, local credential paths, environment dumps, or
-raw command output in readiness comments.
+Use a short temporary directory root for deep worktrees when running the quality
+gate:
+
+```bash
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
+Use authenticated `gh` access only for read-only PR metadata checks and comments.
+Do not place tokens, secrets, local credential paths, environment dumps, or raw
+credential output in readiness records or PR comments.
 
 ## GitHub metadata fields
 
@@ -81,60 +154,46 @@ The readiness gate consumes these `gh pr view` fields:
 
 | Field | Required value |
 | --- | --- |
-| `headRefOid` | Exact requested SHA |
-| `mergeStateStatus` | `CLEAN` |
-| `mergeable` | `MERGEABLE` |
-| `statusCheckRollup` | Required checks green for `headRefOid` |
-
-Fetch the PR head, merge state, mergeability, and check summary:
-
-```bash
-gh pr view 164 \
-  --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
-```
+| `headRefName` | The PR branch being recovered. |
+| `headRefOid` | The PR head SHA that GitHub checks and mergeability describe. |
+| `mergeStateStatus` | `CLEAN`. |
+| `mergeable` | `MERGEABLE`. |
+| `statusCheckRollup` | Required checks green for `headRefOid`. |
+| `reviewDecision` | Review state used as review/finalization context, not as a replacement for executable evidence. |
+| `state` | The PR remains open unless a separate merge workflow closes it. |
 
 `statusCheckRollup` is green only when every required check for `headRefOid` has
 completed successfully. A required check blocks readiness when it is pending,
-queued, in progress, requested, failing, errored, timed out, skipped when the
-branch protection requires it to run, cancelled, missing, or reported for a
-different head.
+queued, in progress, requested, failing, errored, timed out, skipped when branch
+protection requires it to run, cancelled, missing, or reported for a different
+head.
 
-If the head changes during review, stop and restart the readiness verification
-for the newly requested SHA.
+If the local `HEAD` differs from `headRefOid`, the recovery record must say which
+state was evaluated. Do not describe local validation as proof for the published
+PR head unless the SHAs match or the checked files are intentionally uncommitted
+documentation being prepared for that head.
 
-## Starter-project evidence boundary
+## Sharing-readiness recovery profile
 
-Review the canonical source scenario when starter-project preflight wording is
-part of the PR:
+Use this profile for PRs that recover classroom sharing readiness, including PR
+`#173` on branch `wave6-deployed-sharing-gap-1778302300`.
 
-```text
-assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
-```
-
-The wording must stay plain and bounded. It may say that the scenario records
-real Alice launch/opened-project evidence for the bundled starter project, an
-editable starter-world change note, an attempted run or observation, and
-readiness-gap notes.
-
-When older wording or generated output uses the phrase "action evidence," read it
-only as bounded launch/opened-project evidence. It does not mean user-like UI
-automation, save/reopen/export completion, learner-world grading, or creative
-assessment.
-
-The wording must not say or imply that the scenario proves:
-
-| Unsupported claim | Required boundary |
+| Surface | Required boundary |
 | --- | --- |
-| First-lesson completion | It is starter-project preflight evidence only. |
-| Grading or learner-world grading | It records evidence for review; it does not grade. |
-| Creative assessment | It may name an editable change; it does not assess creativity. |
-| Full UI automation | It records bounded launch/opened-project evidence and explicit gaps. |
-| Visible rendering correctness | Screenshot or window evidence is observation evidence only. |
-| Full Save completion | Save, reopen, and export remain readiness gaps until user-like evidence exists. |
-| Complete Alice coverage | The scenario covers only the stated preflight contract. |
+| `docs/sharing-readiness-boundary.md` | Describes classroom review handoffs, not hosted sharing or deployment. |
+| `docs/default-workflow-pr-readiness.md` | Describes current-head evidence collection, no-op justification, and bounded finalization. |
+| `assets/scenarios/eatme/student-artifact-package-share-evidence.yaml` | Student packet contract for artifact reference, student change, visible run result, attribution or context, next revision, and review boundary. |
+| `assets/scenarios/eatme/teacher-community-sharing-loop.yaml` | Teacher-facing share card, classroom handoff note, accessibility notes, attribution, student evidence expectations, and remix feedback. |
+| `assets/scenarios/eatme/first-lessons-real-ui-actions.yaml` | Real Alice action contract; not a full UI automation pass. |
+| `assets/scenarios/gadugi/*.yaml` | Generated adapters must preserve source scenario boundaries and stay fresh. |
+| Rust guard tests | Enforce the sharing-readiness boundary and generated adapter linkage. |
 
-Use the generated adapter only as a consumer of this contract. Do not hand-edit
-generated Gadugi YAML to change mission intent.
+The final PR #173 statement may say that current-head evidence supports bounded
+classroom sharing-readiness review artifacts only when the gates above pass. It
+must not claim hosted sharing, deployed sharing, platform success, full UI
+automation, rendering correctness, grading correctness, creative assessment, Save
+completion, lesson completion, production readiness, deployment success, merge
+completion, or manual merge.
 
 ## Generated Gadugi adapter freshness
 
@@ -155,85 +214,94 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 Commit the canonical scenario change and regenerated adapter change together.
 When no scenario asset or generated adapter target is affected, adapter freshness
-is not part of the readiness decision.
+still may be run as current-head evidence, but it should not be described as
+proof of behavior outside the generated asset contract.
 
-Validate committed scenario and persona assets:
+## No-op justification
 
-```bash
-cargo run -q -p eatme-cli -- assets validate --json
-```
+A workflow-accepted no-op justification is accepted when current-head evidence,
+review evidence, and finalization evidence prove that no repository changes were
+required.
 
-The validation gate passes only when the JSON report has `passed: true` and no
-blocking errors.
+The justification should include:
 
-## PR #164 readiness example
+| Item | Required content |
+| --- | --- |
+| Branch and head | Local branch and `HEAD` SHA. |
+| Worktree state | Clean state, or a narrow explanation of documentation-only changes being finalized. |
+| PR metadata | PR number, head branch, head SHA, merge state, mergeability, and check summary. |
+| Executed gates | Commands that passed for the evaluated state. |
+| Claim boundary | The exact readiness claim and explicit non-claims. |
+| No-op reason | Why docs, assets, generated adapters, and tests already satisfy the contract. |
 
-This subsection is a concrete example for the PR #164 finalization gate. Do not
-reuse its PR number or SHA for future readiness decisions.
-
-For PR #164, the exact accepted head is:
+Example no-op wording:
 
 ```text
-eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba
+Default-workflow no-op recovery accepted for PR #173 at current branch head
+${HEAD_SHA}. Current-head evidence passed for asset validation, generated Gadugi
+freshness, strict documentation build, quality gates, review evidence, and PR
+metadata review.
+
+No repository changes were required because the committed sharing-readiness docs,
+scenario assets, generated adapters, and guard tests already preserve the
+classroom review handoff boundary. Finalization evidence records that no manual
+merge was performed.
+
+This records bounded silver-thread/e2e sharing-readiness evidence only. It does
+not claim hosted sharing, deployed sharing, platform success, full UI
+automation, rendering correctness, grading correctness, creative assessment,
+Save completion, lesson completion, production readiness, deployment success, or
+merge completion.
 ```
-
-The GitHub metadata gate passes only when `gh pr view 164 --json
-headRefOid,mergeStateStatus,mergeable,statusCheckRollup` reports:
-
-```json
-{
-  "headRefOid": "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
-  "mergeStateStatus": "CLEAN",
-  "mergeable": "MERGEABLE"
-}
-```
-
-Because PR #164 changes starter-project scenario wording and generated Gadugi
-output, these gates are mandatory for that PR:
-
-```bash
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-cargo run -q -p eatme-cli -- assets validate --json
-```
-
-The readiness decision for PR #164 is valid only if those commands pass, the
-GitHub checks are green for
-`eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba`, and the scenario wording stays
-within the starter-project evidence boundary above.
 
 ## Readiness comment
 
-Publish readiness only after all required gates pass for the exact head. The
+Publish readiness only after all required gates pass for the evaluated head. The
 comment should name the head and avoid broader product-readiness claims.
 
-Example:
+Create a comment body from the evidence record:
 
-```text
-Default-workflow readiness recorded for PR #164 at exact head eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba.
+```bash
+HEAD_SHA="$(git rev-parse HEAD)"
+cat > readiness-comment.txt <<EOF
+Default-workflow recovery recorded for PR #173 at current branch head ${HEAD_SHA}.
 
-Verified gates: exact PR head, green GitHub checks for that head, mergeStateStatus=CLEAN, mergeable=MERGEABLE, bounded starter-project preflight wording, no unsupported claims for first-lesson completion/grading/creative assessment/full UI automation/visible rendering correctness/full Save completion, generated Gadugi adapter freshness, and asset validation.
+Verified current-head gates: asset validation, generated Gadugi freshness,
+strict documentation build, quality gates, PR metadata review, and bounded
+sharing-readiness claim review.
 
-The prior non-zero wrapper exit is not treated as a blocker because direct verification passed at this exact head.
+The recovery supports classroom sharing handoff readiness only. It does not
+claim hosted sharing, deployed sharing, platform success, full UI automation,
+rendering correctness, grading correctness, creative assessment, Save
+completion, lesson completion, production readiness, deployment success, merge
+completion, or manual merge.
+EOF
 ```
 
 Post the comment with:
 
 ```bash
-gh pr comment 164 --body-file readiness-comment.txt
+gh pr comment 173 --body-file readiness-comment.txt
 ```
+
+Do not post readiness when any gate is failing, pending, stale, or tied to a
+different head without an explicit state separation.
 
 ## Blocker handling
 
 If any gate fails, do not publish readiness. Fix only the minimal issue that
-caused the blocker, run the relevant validation again, push the fix, and repeat
-exact-head verification against the new PR head.
+caused the blocker, run the relevant validation again, and repeat current-head
+verification.
 
 | Blocker | Minimal response |
 | --- | --- |
-| Head mismatch | Stop readiness for the old SHA and verify the requested new head. |
+| Wrong branch | Switch to the PR branch worktree or stop recovery for the current checkout. |
+| Local/PR head mismatch | State the mismatch and verify the intended head before making readiness claims. |
 | Failing, pending, cancelled, missing, or wrong-head checks | Fix the failing check, wait for completion, or rerun the missing check before readiness. |
 | Dirty merge state | Resolve only the mergeability issue. |
-| Overclaiming scenario language | Edit the canonical scenario wording and regenerate adapters if affected. |
+| Overclaiming docs or scenario language | Edit the canonical documentation or scenario wording and rerun affected gates. |
 | Stale generated adapter | Regenerate adapters from canonical sources. |
 | Asset validation failure | Fix the invalid scenario or persona asset. |
+| Documentation build failure | Fix the broken doc, navigation, link, or MkDocs configuration. |
+| Quality gate failure | Fix the failing repository gate without bypassing it. |
 | Unrelated changes | Remove the unrelated change from the readiness work. |
