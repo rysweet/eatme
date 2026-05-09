@@ -16,6 +16,7 @@ use std::fs;
 use std::path::Path;
 
 mod assertions;
+mod contract_evidence;
 mod desktop_proof;
 mod no_go;
 mod output;
@@ -24,6 +25,9 @@ pub use assertions::LessonActionAssertionEvidence;
 use assertions::{
     action_assertions, assertion_passed, missing_launch_assertions, require_passed_assertion,
 };
+pub use contract_evidence::{ContractDiagnostic, ContractEvidenceItem};
+pub(crate) use contract_evidence::{error_diagnostic, evidence_item};
+use contract_evidence::{readiness_contract_evidence, readiness_diagnostics};
 pub use desktop_proof::DesktopProofContract;
 use desktop_proof::desktop_proof_contract;
 pub use no_go::LessonSessionNoGoContract;
@@ -91,6 +95,8 @@ pub struct LessonSessionReadinessReport {
     pub contract_check: LessonSessionContractCheck,
     pub execute_requested: Option<bool>,
     pub target_evidence: Vec<LessonTargetEvidence>,
+    pub diagnostics: Vec<ContractDiagnostic>,
+    pub contract_evidence: Vec<ContractEvidenceItem>,
     pub issues: Vec<String>,
     pub limitations: Vec<String>,
 }
@@ -181,6 +187,9 @@ pub fn check_lesson_session_readiness(
     let not_yet_shown = not_yet_shown(&evidence_progress, &evidence_boundaries);
     let desktop_next_action = desktop_next_action_summary(&target_evidence);
     let unproven_claims = unproven_claims();
+    let diagnostics = readiness_diagnostics(execute_requested, &target_evidence, &issues);
+    let contract_evidence =
+        readiness_contract_evidence(execute_requested, &target_evidence, &readiness_status);
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
@@ -204,6 +213,8 @@ pub fn check_lesson_session_readiness(
         contract_check,
         execute_requested,
         target_evidence,
+        diagnostics,
+        contract_evidence,
         issues,
         limitations: limitations(),
     })

@@ -93,6 +93,15 @@ traversal, symlink escapes, unreadable files, malformed JSON, wrong schema
 versions, empty artifacts, and artifact references outside the comparison
 evidence root are not shown as evidence.
 
+The formal executable validation surface is the readiness report itself.
+`contract_evidence[]` represents required contract evidence; missing, invalid,
+unsafe, not-observed, blocked-without-structure, or stale required entries remain
+visible and produce structured `diagnostics[]`.
+`alice check-lesson-readiness` and `alice run-first-lesson-readiness` should
+print a safe report and exit non-zero when required contract evidence fails. A
+report may still exit zero with `status: "blocked"` only when the blocker is
+explicit, structured, and attached to the bounded claim that is not yet shown.
+
 Generated Gadugi adapters remain generated artifacts. Change scenario intent in
 the editable YAML under `assets/scenarios/eatme/`, then regenerate adapters
 rather than hand-editing generated files.
@@ -250,6 +259,8 @@ Top-level fields:
 | `role_readiness` | array | Role-specific readiness envelopes. |
 | `lesson_session_readiness` | object | Backward-compatible student readiness envelope. |
 | `contract_check` | object | Result from `alice check-lesson-session`. |
+| `contract_evidence` | array | Required executable evidence checklist. Each item has `id`, `state`, `required`, and `summary`; required entries must be `present` or explicitly `blocked` with a structured blocker to avoid `passed: false`. |
+| `diagnostics` | array | Structured contract diagnostics with `code`, `severity`, `field`, optional `expected`, and `message`. Any `error` diagnostic explains why the command exits non-zero. |
 | `execute_requested` | boolean or null | Whether the comparison manifest was produced with execution enabled. |
 | `issues` | array of strings | Blocking structural problems for automation and debug consumers. |
 | `limitations` | array of strings | Backward-compatible non-claims. May remain a legacy/superset list, but must include the six canonical `unproven_claims`. |

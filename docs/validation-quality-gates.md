@@ -63,6 +63,38 @@ stay at or below 500 lines.
 For the split outside-in Alice expansion contract tests, see
 [Outside-in Alice Test Modules](outside-in-alice-test-modules.md).
 
+## Lesson readiness contract gates
+
+When a change touches Alice lesson-session readiness, first-lesson readiness,
+readiness CLI behavior, or the scenario assets that feed those reports, run the
+existing focused checks before the full quality gate:
+
+```bash
+cargo test -p eatme-cli --test alice_first_lesson_readiness
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+The formal readiness contract must also add focused contract tests:
+
+```bash
+cargo test -p eatme-alice --test lesson_session_contract
+cargo test -p eatme-alice --test lesson_readiness_contract
+```
+
+Those checks prove the documented readiness/spec contract is executable:
+missing or partial `lesson_session_contract` evidence fails,
+incomplete first-lesson readiness evidence fails, explicit unsupported-action
+blockers stay visible without becoming automation proof, and readiness CLI
+commands return non-zero for `passed: false` while preserving safe plain and JSON
+output shapes when a report can be constructed.
+
+For the final repository gate in deep worktrees, keep temporary sockets short:
+
+```bash
+TMPDIR=/tmp ./scripts/quality-gates.sh
+```
+
 ## Real Alice launch gate
 
 Real Alice execution is not implicit. Lesson-labeled launch smokes require:

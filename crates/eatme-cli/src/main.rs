@@ -2,9 +2,9 @@ use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
     AliceComparisonOptions, FIRST_LESSON_SCENARIO_ID, FirstLessonReadinessOptions,
-    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies,
-    check_lesson_session_contract, check_lesson_session_readiness, discover_alice, package_alice,
-    run_first_lesson_readiness_sequence, run_launch_smoke, run_launch_smoke_comparison,
+    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies, discover_alice,
+    package_alice, run_first_lesson_readiness_sequence, run_launch_smoke,
+    run_launch_smoke_comparison,
 };
 use eatme_core::RealCommandRunner;
 use std::env;
@@ -13,6 +13,8 @@ use std::path::{Path, PathBuf};
 
 mod first_lesson;
 use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
+mod lesson_contract;
+use lesson_contract::{print_lesson_readiness_check, print_lesson_session_check};
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -257,18 +259,10 @@ fn main() -> Result<()> {
                 print_result(args.json, &manifest)?;
             }
             AliceCommand::CheckLessonSession(args) => {
-                let report = check_lesson_session_contract(&args.manifest)?;
-                print_result(args.json, &report)?;
-                if !report.passed {
-                    bail!("lesson session contract check failed");
-                }
+                print_lesson_session_check(&args.manifest, args.json)?;
             }
             AliceCommand::CheckLessonReadiness(args) => {
-                let report = check_lesson_session_readiness(&args.manifest)?;
-                print_result(args.json, &report)?;
-                if !report.passed {
-                    bail!("lesson session readiness check failed");
-                }
+                print_lesson_readiness_check(&args.manifest, args.json)?;
             }
             AliceCommand::RunFirstLessonReadiness(args) => {
                 if args.execute {

@@ -157,7 +157,8 @@ fn next_actionable_blocker_line(progress: &LessonReadinessEvidenceProgress) -> O
 mod tests {
     use super::*;
     use eatme_alice::compare::{
-        DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgressItem,
+        ContractDiagnostic, ContractEvidenceItem, DesktopProofContract,
+        FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgressItem,
         LessonSessionContractCheck, LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
         ReadinessEvidenceItem,
     };
@@ -358,10 +359,14 @@ mod tests {
                 session_kind: Some("first_lesson_action_contract".into()),
                 automation_status: Some("blocked".into()),
                 passed: false,
+                diagnostics: Vec::new(),
+                contract_evidence: Vec::new(),
                 issues: Vec::new(),
             },
             execute_requested: Some(true),
             target_evidence: Vec::new(),
+            diagnostics: Vec::new(),
+            contract_evidence: Vec::new(),
             issues: Vec::new(),
             limitations: Vec::new(),
         };
@@ -386,6 +391,8 @@ mod tests {
             required_evidence: Vec::new(),
             no_go_contracts: Vec::new(),
             role_readiness: Vec::new(),
+            diagnostics: diagnostics_fixture(),
+            contract_evidence: contract_evidence_fixture(),
             target_statuses: BTreeMap::new(),
             issues: Vec::new(),
             limitations: Vec::new(),
@@ -415,6 +422,14 @@ mod tests {
         .into_iter()
         .map(str::to_string)
         .collect()
+    }
+
+    fn diagnostics_fixture() -> Vec<ContractDiagnostic> {
+        Vec::new()
+    }
+
+    fn contract_evidence_fixture() -> Vec<ContractEvidenceItem> {
+        Vec::new()
     }
 
     fn present_boundary(id: &str) -> FirstLessonEvidenceBoundary {

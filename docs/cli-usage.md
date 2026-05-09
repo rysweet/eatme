@@ -26,6 +26,23 @@ Commands that accept `--json` print JSON when the flag is present. Without
 | `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
 
+## Readiness command exit status
+
+Readiness commands are intended to be executable contract checks, not report-only
+commands. The formal contract implementation must print a safe plain or JSON
+report when it can construct one, then use the process exit status for
+automation:
+
+| Command | Success exit | Failure exit |
+| --- | --- | --- |
+| `alice check-lesson-session` | `passed: true` and no blocking contract diagnostics. | Missing, malformed, mismatched, or incomplete `lesson_session_contract`. |
+| `alice check-lesson-readiness` | `passed: true`; `status` may be `ready` or structurally valid `blocked`. | Missing, unsafe, malformed, inconsistent, manifest-only, or non-executed readiness evidence, except for explicit structured blockers. |
+| `alice run-first-lesson-readiness` | The generated comparison manifest and nested readiness report both pass the same checks. | The comparison run cannot produce the required manifest/evidence or the nested readiness report has `passed: false`. |
+
+Use JSON fields such as `passed`, `status`, `readiness_status`, `issues`,
+`diagnostics[]`, and `contract_evidence[]` for scripts. Do not scrape plain text
+or treat a `blocked` readiness status as proof of full Alice UI automation.
+
 ## Validate assets
 
 Validate every committed asset:
