@@ -24,6 +24,9 @@ or opened-project preflight does not prove save/reopen readiness by itself.
 - [Evidence directories](#evidence-directories)
 - [Integration boundary](#integration-boundary)
 - [Hook API](#hook-api)
+- [Path validation](#path-validation)
+- [Rust API](#rust-api)
+- [Contract tests](#contract-tests)
 - [Readiness states](#readiness-states)
 - [Review checklist](#review-checklist)
 - [PR review evidence](#pr-review-evidence)
@@ -237,6 +240,145 @@ Validation rules:
 Absolute paths, parent traversal, symlink escapes, empty files, malformed JSON,
 wrong schema versions, and artifacts outside the expected run evidence
 directories are not accepted as proof.
+
+## Path validation
+
+The `launch_path_validation` module defends every artifact resolution against
+path traversal, symlink escape, and absolute-path injection. All save and reopen
+artifact paths pass through this validation before they are accepted as proof.
+
+| Defense | Implementation |
+| --- | --- |
+| Absolute path rejection | `normal_components` rejects any path whose components include root, prefix, or current/parent-directory markers. Only `Component::Normal` values are accepted. |
+| Parent traversal rejection | A path containing `..` produces a `None` from `normal_components` and is rejected before file I/O occurs. |
+| Symlink escape rejection | `canonical_artifact_under` calls `canonicalize()` on both the root directory and the artifact path, then checks that the canonical artifact starts with the canonical root. A symlink that escapes the evidence directory fails this check. |
+| Non-readable artifact rejection | `artifact_info_under` combines the containment check with `artifact_info` to confirm the file exists, is readable, and is non-empty. |
+
+The two primary entry points are:
+
+```rust
+pub(crate) fn artifact_info_under(
+    root_dir: &Path,
+    relative_path: &str,
+    field: &str,
+    root_label: &str,
+) -> Result<ArtifactInfo, String>
+
+pub(crate) fn canonical_artifact_under(
+    root_dir: &Path,
+    artifact_path: &Path,
+    field: &str,
+    root_label: &str,
+) -> Result<PathBuf, String>
+```
+
+`artifact_info_under` is the standard path for save and reopen artifact
+validation: it validates containment, reads the artifact, and returns size and
+path metadata. `canonical_artifact_under` is used by the reopen probe to verify
+that `source_saved_project_artifact` resolves to the same canonical file as the
+save probe's `saved_project_artifact`.
+
+## Rust API
+
+The save/reopen harness exposes two probe types for evidence consumers. Both
+are constructed by the corresponding `probe_project_*_hook` functions, which
+invoke the Alice-side hook, parse its JSON output, validate every artifact, and
+return a typed probe.
+
+### UiActionSaveProjectProbe
+
+Constructed by `probe_project_save_hook`. Fields:
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `id` | `String` | Always `alice-side-project-save-command-hook`. |
+| `action_id` | `String` | Always `save-project`. |
+| `status` | `String` | `passed`, `blocked`, or `failed`. |
+| `detail` | `String` | Human-readable status explanation. |
+| `save_selector` | `String` | Always `scene.eatmeFirstLessonStep`. |
+| `candidate_hook_path` | `String` | Resolved path to the save hook in the Alice checkout. |
+| `command` | `Option<String>` | Full command line when the hook ran. |
+| `exit_status` | `Option<i32>` | Exit code when the hook ran. |
+| `stdout` | `String` | Hook stdout (expected JSON on success). |
+| `stderr` | `String` | Hook stderr. |
+| `saved_project_artifact` | `Option<ArtifactInfo>` | Validated saved `.a3p` artifact info under `project-save/`. |
+| `save_artifact` | `Option<ArtifactInfo>` | Validated save evidence JSON artifact info under `project-save/`. |
+| `validation_errors` | `Vec<String>` | All validation failures, empty when `status` is `passed`. |
+| `missing_affordance` | `Option<UiActionMissingAffordance>` | Present when `status` is `blocked` due to a missing hook or precondition. |
+
+The `proves_save()` method returns `true` only when `status` is `passed`, both
+artifact fields are `Some`, and `validation_errors` is empty.
+
+### UiActionReopenProjectProbe
+
+Constructed by `probe_project_reopen_hook`. Fields:
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `id` | `String` | Always `alice-side-project-reopen-command-hook`. |
+| `action_id` | `String` | Always `reopen-project`. |
+| `status` | `String` | `passed`, `blocked`, or `failed`. |
+| `detail` | `String` | Human-readable status explanation. |
+| `reopen_selector` | `String` | Always `scene.eatmeFirstLessonStep`. |
+| `candidate_hook_path` | `String` | Resolved path to the reopen hook in the Alice checkout. |
+| `command` | `Option<String>` | Full command line when the hook ran. |
+| `exit_status` | `Option<i32>` | Exit code when the hook ran. |
+| `stdout` | `String` | Hook stdout (expected JSON on success). |
+| `stderr` | `String` | Hook stderr. |
+| `source_saved_project_artifact` | `String` | Relative path starting with `project-save/` that must resolve to the same canonical artifact the save probe produced. |
+| `reopened_project_artifact` | `Option<ArtifactInfo>` | Validated reopened `.a3p` artifact info under `project-reopen/`. |
+| `reopen_artifact` | `Option<ArtifactInfo>` | Validated reopen evidence JSON artifact info under `project-reopen/`. |
+| `reopened_state_artifact` | `Option<ArtifactInfo>` | Validated reopened-state JSON artifact info under `project-reopen/`. |
+| `validation_errors` | `Vec<String>` | All validation failures, empty when `status` is `passed`. |
+| `missing_affordance` | `Option<UiActionMissingAffordance>` | Present when `status` is `blocked` due to a missing hook or precondition. |
+
+The `proves_reopen()` method returns `true` only when `status` is `passed`,
+`source_saved_project_artifact` is non-empty, all three artifact fields are
+`Some`, and `validation_errors` is empty.
+
+### UI action contract integration
+
+Save proof can appear in `ui-action-contract.json` through the action contract
+inspector in `compare/ui_action_contract/save.rs`. The inspector checks for:
+
+- A `project-save-precondition` no-go probe with `run-world` passed and
+  `deterministic-alice-project-save-affordance` not passed.
+- A `alice-side-project-save-command-hook` candidate affordance probe with
+  `status: passed`, a valid `save_selector`, non-empty artifacts, and no
+  validation errors.
+
+Reopen proof is not inferred from `ui-action-contract.json`. It requires an
+explicit `reopen-project` probe in the `project-reopen/` evidence directory.
+
+## Contract tests
+
+The save/reopen contract tests are in `crates/eatme-alice/src/` and verify the
+full save→reopen flow using `FakeCommandRunner` without real Alice execution.
+
+| File | Tests | Boundary |
+| --- | --- | --- |
+| `launch_save_project/tests.rs` | Save hook invocation, JSON parsing, artifact validation, precondition gating, and blocked/failed state construction. | Save proof only; does not test reopen. |
+| `launch_save_reopen_contract_tests.rs` | End-to-end save→reopen flow: reopen blocks until save proof exists, reopen passes only with the saved artifact reopened and state verified, reopen rejects the bundled starter project, reopen rejects different saved artifacts, reopen rejects symlink escapes, reopen fails when reopened-state artifact is missing or empty. | Full save→reopen chain including cross-probe dependency. |
+| `compare/ui_action_contract/tests.rs` | UI action contract inspection: save-project no-go probe after run-world proof, save-project candidate with validation errors rejected as unproven. | Action contract boundary for save proof only. |
+
+Run the save/reopen contract tests directly:
+
+```bash
+cargo test -p eatme-alice launch_save
+cargo test -p eatme-alice launch_save_reopen_contract
+```
+
+Run the action contract tests:
+
+```bash
+cargo test -p eatme-alice ui_action_contract
+```
+
+Run all `eatme-alice` tests:
+
+```bash
+cargo test -p eatme-alice
+```
 
 ## Readiness states
 

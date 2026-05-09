@@ -411,3 +411,48 @@ terminal text.
 For retcon or specification documentation, document only fields and artifacts
 that the scenario contract owns. Do not describe launch smoke as full UI
 automation, creative assessment, or learner-world grading.
+
+## Save/reopen evidence in first-lesson readiness
+
+When Alice hooks are available, the first-lesson readiness sequence includes
+save and reopen probes after run-world proof is accepted. The sequence is:
+
+1. Run-world proof is established through the Alice launch and procedure-edit
+   flow.
+2. `tools/eatme-save-project` is invoked to save the edited project under
+   `project-save/`.
+3. `tools/eatme-reopen-project` is invoked to reopen the saved artifact under
+   `project-reopen/`.
+4. Save and reopen evidence appears in the readiness report alongside the
+   existing launch, action-contract, and first-lesson evidence.
+
+The save/reopen probes are gated: save requires run-world proof, reopen requires
+accepted save proof. When a hook is missing or a precondition is not met, the
+probe reports `blocked` and the readiness report shows the boundary explicitly.
+
+Save proof may appear in `ui-action-contract.json`. Reopen proof appears only in
+the `project-reopen/` evidence directory and is never inferred from save proof
+alone. For the full hook API, artifact layout, and validation rules, see
+[Save/reopen Readiness](save-reopen-readiness.md).
+
+## Cache isolation
+
+When eatme is installed through `uvx` or `pip`, the Python CLI wrapper
+(`src/eatme_uvx/cli.py`) uses a SHA-256 hash of the source root to isolate the
+Cargo target directory. This prevents target-dir conflicts when multiple
+worktrees, clones, or `uvx`-installed copies of the repository build
+concurrently.
+
+The isolated target directory is:
+
+```text
+${XDG_CACHE_HOME:-~/.cache}/eatme-uvx/targets/<sha256-prefix-16>/
+```
+
+The hash uses the first 16 hex characters of `sha256(str(source_root))`. Each
+distinct source root gets its own target directory so incremental builds do not
+interfere across worktrees.
+
+The `CARGO_TARGET_DIR` environment variable is set automatically when not already
+present. To override the default isolation, set `CARGO_TARGET_DIR` explicitly
+before invoking the wrapper.
