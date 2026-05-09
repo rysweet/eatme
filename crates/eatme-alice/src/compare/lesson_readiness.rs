@@ -18,6 +18,7 @@ use std::path::Path;
 mod assertions;
 mod desktop_proof;
 mod no_go;
+mod original_action_evidence;
 mod output;
 mod progress;
 pub use assertions::LessonActionAssertionEvidence;
@@ -28,6 +29,10 @@ pub use desktop_proof::DesktopProofContract;
 use desktop_proof::desktop_proof_contract;
 pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
+use original_action_evidence::original_alice_action_evidence;
+pub use original_action_evidence::{
+    OriginalAliceActionEvidenceReport, OriginalAliceActionEvidenceStatus,
+};
 pub use output::{
     DesktopNextActionSummary, LessonSessionReadinessEnvelope, LessonTargetEvidence,
     LessonTargetEvidenceBlocker, ReadinessEvidenceItem,
@@ -65,6 +70,7 @@ const REQUIRED_MODERNIZED_DESKTOP_ASSERTIONS: &[&str] = &[
     "run_world_desktop_toolbar_window_observed",
     "run_world_desktop_execution_observed",
 ];
+const MISSING_REAL_ACTION_EVIDENCE_CODE: &str = "missing_real_action_evidence";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LessonSessionReadinessReport {
@@ -81,6 +87,7 @@ pub struct LessonSessionReadinessReport {
     pub not_yet_shown: Vec<ReadinessEvidenceItem>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub desktop_next_action: Option<DesktopNextActionSummary>,
+    pub original_alice_action_evidence: OriginalAliceActionEvidenceReport,
     pub unproven_claims: Vec<String>,
     pub evidence_progress: LessonReadinessEvidenceProgress,
     pub evidence_boundaries: Vec<FirstLessonEvidenceBoundary>,
@@ -180,6 +187,7 @@ pub fn check_lesson_session_readiness(
     let shown_evidence = shown_evidence(&evidence_progress, &evidence_boundaries);
     let not_yet_shown = not_yet_shown(&evidence_progress, &evidence_boundaries);
     let desktop_next_action = desktop_next_action_summary(&target_evidence);
+    let original_alice_action_evidence = original_alice_action_evidence(&target_evidence);
     let unproven_claims = unproven_claims();
     Ok(LessonSessionReadinessReport {
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
@@ -194,6 +202,7 @@ pub fn check_lesson_session_readiness(
         shown_evidence,
         not_yet_shown,
         desktop_next_action,
+        original_alice_action_evidence,
         unproven_claims,
         evidence_progress,
         evidence_boundaries,
@@ -381,6 +390,7 @@ fn inspect_target_evidence(
                                 check_first_lesson_next_action_evidence(&evidence_root, &resolved);
                             issues.extend(first_lesson_next_action.issue_when_invalid());
                             issues.extend(first_lesson_next_action.boundary_issues());
+                            issues.extend(first_lesson_next_action.proof_artifact_issues());
                             desktop_first_lesson_next_action = Some(first_lesson_next_action);
                             issues.extend(
                                 check_visible_desktop_evidence(&evidence_root, &resolved)
@@ -446,7 +456,7 @@ fn required_action_evidence_blockers(
                 None => "Required original Alice action evidence is missing from automation scenarios.",
             };
             Some(LessonTargetEvidenceBlocker {
-                code: "missing_real_action_evidence",
+                code: MISSING_REAL_ACTION_EVIDENCE_CODE,
                 action: (*action_id).to_string(),
                 reason: reason.into(),
             })

@@ -28,9 +28,11 @@ Eatme has three layers:
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
+| Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Reviewing save/reopen readiness evidence | [Save/reopen Readiness](save-reopen-readiness.md) |
 | Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
+| Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -109,8 +111,14 @@ Review the conservative first-lesson evidence boundary contract:
 Review the save/reopen artifact and reopened-state evidence boundary:
 [Save/reopen Readiness](save-reopen-readiness.md).
 
+Audit the readiness artifact shape and wording contract:
+[Evidence Artifact Contract](evidence-artifact-contract.md).
+
 Record exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+
+Recover PR #199 merge-readiness evidence after the manual-fallback violation:
+[PR #199 Recovery Workflow](pr-199-recovery-workflow.md).
 
 Build the docs site:
 

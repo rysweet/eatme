@@ -251,6 +251,55 @@ fn project_proof_artifacts_require_readable_files_before_reporting_present() {
 }
 
 #[test]
+fn unknown_project_proof_artifact_status_fails_closed_even_with_readable_file() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[
+            "place_object_ui_action",
+            "edit_procedure_ui_action",
+            "run_world_ui_action",
+            "save_project_ui_action",
+        ],
+    });
+    write_modernized_run_window_evidence_file(
+        &manifest_path,
+        "save-project-proof.json",
+        r#"{"proof":"save-project"}"#,
+    );
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"ready","artifact":{"path":"run-window-evidence/save-project-proof.json","size_bytes":24,"sha256":"sha256-save-project-proof"}},"select_project_proof_artifact":{"status":"missing"},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let next_action = &report_json["target_evidence"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|target| target["role"] == "modernized")
+        .unwrap()["desktop_first_lesson_next_action"];
+    let save_item = progress_item(&report_json, "save_project_proof_artifact");
+
+    assert!(
+        !report.passed,
+        "unknown proof artifact status must block readiness: {report_json}"
+    );
+    assert_eq!(
+        next_action["save_project_proof_artifact"]["status"],
+        "invalid"
+    );
+    assert_eq!(save_item["state"], "invalid");
+    assert_contains(&report.issues, "Save Project proof artifact status");
+    assert_detail_contains(save_item, "unsupported");
+}
+
+#[test]
 fn missing_save_and_select_project_proof_artifacts_are_visible_in_shared_progress() {
     let manifest_path = write_manifest(DesktopFixture {
         run_frame_present: true,
