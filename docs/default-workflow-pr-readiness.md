@@ -622,6 +622,11 @@ real Alice launch/opened-project evidence for the bundled starter project, an
 editable starter-world change note, an attempted run or observation, and
 readiness-gap notes.
 
+The source contract for this boundary is split across:
+
+- `docs/default-workflow-pr-readiness.md`
+- `docs/starter-project-preflight-evidence.md`
+
 When older wording or generated output uses the phrase "action evidence," read it
 only as bounded launch/opened-project evidence. It does not mean user-like UI
 automation, save/reopen/export completion, learner-world grading, or creative
