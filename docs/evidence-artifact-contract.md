@@ -179,18 +179,15 @@ lorem ipsum readiness text
 example invented classroom event
 ```
 
-Artifact text must also reject unsupported affirmative claims unless a distinct
-capability-specific boundary provides evidence for that exact claim:
+Artifact text must also reject unsupported affirmative claim categories unless a
+distinct capability-specific boundary provides evidence for that exact claim:
 
-```text
-The first lesson is complete.
-The project was graded.
-Creative assessment passed.
-Full UI automation succeeded.
-The saved world received a grade.
-RabbitHole completed the whole first lesson.
-Save completed successfully.
-```
+- affirmative first-lesson completion
+- project grading or saved-world grading
+- successful creative assessment
+- full UI automation success
+- RabbitHole whole-lesson completion
+- Save completion success
 
 Allowed limitation wording is explicit and bounded:
 

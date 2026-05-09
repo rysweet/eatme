@@ -397,12 +397,10 @@ Save option evidence is shown as an observed option/action only.
 Save completion is not yet proven.
 ```
 
-Unsafe wording:
+Unsafe wording categories:
 
-```text
-The project was saved successfully.
-The first lesson was completed.
-```
+- saved-project success
+- first-lesson completion
 
 ### Review a creative-assessment gap safely
 
@@ -414,11 +412,9 @@ reviewer needs.
 
 Do not translate a creative-assessment gap into:
 
-```text
-The learner's world was graded.
-The creative work is good or bad.
-The first lesson is complete.
-```
+- learner-world grading
+- creative-quality judgment
+- first-lesson completion
 
 ### Keep evidence assets editable
 
