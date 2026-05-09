@@ -127,13 +127,7 @@ pub(super) fn desktop_next_action_non_claims(extra_claims: &[String]) -> Vec<Str
         .map(|claim| claim.non_claim.to_string())
         .collect();
     for claim in extra_claims {
-        push_unique(&mut claims, claim);
+        super::push_unique(&mut claims, claim);
     }
     claims
-}
-
-fn push_unique(claims: &mut Vec<String>, claim: &str) {
-    if !claims.iter().any(|existing| existing == claim) {
-        claims.push(claim.to_string());
-    }
 }

@@ -6,12 +6,10 @@ use crate::compare::desktop_evidence::{
     DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
     DesktopRunPixelObservationEvidence, FirstLessonEvidenceBoundary, ProjectProofArtifactEvidence,
 };
-use project_proof_output::{not_yet_shown_detail, progress_item_does_not_prove};
 use serde::Serialize;
 
 mod claims;
 mod launch_smoke;
-mod project_proof_output;
 pub(super) use claims::{
     launch_smoke_limitations, launch_smoke_unproven_claims, limitations, unproven_claims,
 };
@@ -437,6 +435,35 @@ fn add_proof_artifact_observation(
 
 fn plain_status(status: &str) -> String {
     status.replace('_', " ")
+}
+
+fn not_yet_shown_detail(evidence: &str, state: &str, progress_detail: &str) -> String {
+    if matches!(
+        evidence,
+        "Save Project proof artifact" | "Select Project proof artifact"
+    ) && !progress_detail.trim().is_empty()
+    {
+        return progress_detail.to_string();
+    }
+
+    let label = user_facing_evidence_label(evidence);
+    match state {
+        "blocked" => format!("{label} is blocked until the next evidence is shown."),
+        "invalid" => format!("{label} was shown but cannot be used yet."),
+        "not_observed" => format!("{label} is not yet observed."),
+        _ => format!("{label} is not yet shown."),
+    }
+}
+
+fn progress_item_does_not_prove(evidence: &str) -> Vec<String> {
+    match evidence {
+        "Save Project proof artifact" => vec![
+            claims::save_completion_non_claim().into(),
+            claims::first_lesson_completion_non_claim().into(),
+        ],
+        "Select Project proof artifact" => vec![claims::first_lesson_completion_non_claim().into()],
+        _ => Vec::new(),
+    }
 }
 
 fn push_unique(claims: &mut Vec<String>, claim: &str) {
