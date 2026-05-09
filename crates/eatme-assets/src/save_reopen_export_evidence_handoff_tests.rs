@@ -54,37 +54,13 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
     let path = scenario_path(&root, "eatme");
     let text = fs::read_to_string(&path).unwrap();
     let scenario = read_eatme_scenario(&path);
-    let personas = scenario
-        .personas
-        .as_ref()
-        .expect("save/reopen/export handoff scenario must define personas");
-    let resources = scenario
-        .resource_basis
-        .iter()
-        .map(|resource| format!("{}\n{}\n{}", resource.name, resource.url, resource.use_note))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let expected_outputs = scenario
-        .agentic_flow
-        .as_ref()
-        .expect("save/reopen/export handoff scenario must define agentic_flow")
-        .expected_outputs
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>();
 
     assert_eq!(scenario.id, SCENARIO_ID);
     assert_eq!(scenario.kind, "instructor_agentic_flow");
-    for persona in REQUIRED_PERSONAS {
-        assert!(
-            personas.instructors.iter().any(|p| p == persona)
-                || personas.students.iter().any(|p| p == persona),
-            "scenario must include persona {persona}"
-        );
-    }
+    assert_required_personas(&scenario);
     assert_contains_all(
         "save/reopen/export handoff resource bridge",
-        &resources,
+        &resource_text(&scenario),
         &[
             "Starter project open/save/export preflight",
             "Student artifact package share evidence",
@@ -103,15 +79,10 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
     );
     assert_contains_all(
         "save/reopen/export handoff outputs",
-        &expected_outputs.join("\n"),
+        &expected_output_text(&scenario),
         REQUIRED_OUTPUTS,
     );
-    for artifact in REQUIRED_OUTPUTS {
-        assert!(
-            scenario.artifacts.contains_key(*artifact),
-            "scenario must define artifacts.{artifact}"
-        );
-    }
+    assert_required_artifacts(&scenario);
 }
 
 #[test]
@@ -199,29 +170,10 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
     let path = scenario_path(&root, "eatme");
     let text = fs::read_to_string(&path).unwrap();
     let scenario = read_eatme_scenario(&path);
-    let acceptance_boundary = scenario
-        .acceptance_criteria
-        .iter()
-        .map(|criterion| {
-            format!(
-                "{}\n{}\n{}",
-                criterion.given, criterion.when, criterion.then
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    let boundary_text = [
-        scenario.purpose.as_str(),
-        scenario.agentic_test_prompt.as_str(),
-        acceptance_boundary.as_str(),
-        scenario.unsupported_policy.as_str(),
-        &scenario.avoid.join("\n"),
-    ]
-    .join("\n");
 
     assert_contains_all(
         "save/reopen/export handoff unsupported policy",
-        &boundary_text,
+        &unsupported_boundary_text(&scenario),
         &[
             "fail visibly and report the missing evidence",
             "Do not replace instructor judgment",
@@ -235,21 +187,20 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
             "proof of student learning",
         ],
     );
-    for blocked in [
-        "student completed",
-        "students completed",
-        "student mastered",
-        "students mastered",
-        "certified student",
-        "certified learner",
-        "fully finished",
-        "proves learning outcomes",
-    ] {
-        assert!(
-            !normalize_whitespace(&text.to_lowercase()).contains(blocked),
-            "scenario must not include unsupported completion or grading claim {blocked:?}"
-        );
-    }
+    assert_not_contains_lowercase(
+        "scenario",
+        &text,
+        &[
+            "student completed",
+            "students completed",
+            "student mastered",
+            "students mastered",
+            "certified student",
+            "certified learner",
+            "fully finished",
+            "proves learning outcomes",
+        ],
+    );
 }
 
 #[test]
@@ -257,27 +208,116 @@ fn scenario_wording_requests_handoff_evidence_without_claiming_actions_were_comp
     let root = repository_root();
     let path = scenario_path(&root, "eatme");
     let scenario = read_eatme_scenario(&path);
-    let purpose = normalize_whitespace(&scenario.purpose.to_lowercase());
+    let agentic_flow = scenario
+        .agentic_flow
+        .as_ref()
+        .expect("save/reopen/export handoff scenario must define agentic_flow");
+    let bounded_action_text = normalize_whitespace(
+        [
+            scenario.purpose.as_str(),
+            agentic_flow.instructor_goal.as_str(),
+        ]
+        .join("\n")
+        .to_lowercase()
+        .as_str(),
+    );
 
     assert_contains_all(
-        "save/reopen/export purpose bounded action language",
-        &purpose,
+        "save/reopen/export bounded action language",
+        &bounded_action_text,
         &[
             "asks the student",
-            "record",
             "observable",
             "evidence collection and human review",
+            "evidence references",
         ],
     );
-    for overclaim in [
-        "the flow confirms",
-        "checks that the saved project reopens",
-        "prepares an exported evidence package",
-        "records how the evidence is handed",
-    ] {
+    assert_not_contains_lowercase(
+        "scenario bounded action wording",
+        &bounded_action_text,
+        &[
+            "the flow confirms",
+            "checks that the saved project reopens",
+            "checks that the saved work reopens",
+            "prepares an exported evidence package",
+            "prepares export/share evidence",
+            "records how the evidence is handed",
+        ],
+    );
+}
+
+fn assert_required_personas(scenario: &EatmeScenarioAsset) {
+    let personas = scenario
+        .personas
+        .as_ref()
+        .expect("save/reopen/export handoff scenario must define personas");
+
+    for persona in REQUIRED_PERSONAS {
         assert!(
-            !purpose.contains(overclaim),
-            "scenario purpose must ask for evidence rather than claim completed action: {overclaim:?}"
+            personas.instructors.iter().any(|p| p == persona)
+                || personas.students.iter().any(|p| p == persona),
+            "scenario must include persona {persona}"
+        );
+    }
+}
+
+fn resource_text(scenario: &EatmeScenarioAsset) -> String {
+    scenario
+        .resource_basis
+        .iter()
+        .map(|resource| format!("{}\n{}\n{}", resource.name, resource.url, resource.use_note))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn expected_output_text(scenario: &EatmeScenarioAsset) -> String {
+    scenario
+        .agentic_flow
+        .as_ref()
+        .expect("save/reopen/export handoff scenario must define agentic_flow")
+        .expected_outputs
+        .join("\n")
+}
+
+fn assert_required_artifacts(scenario: &EatmeScenarioAsset) {
+    for artifact in REQUIRED_OUTPUTS {
+        assert!(
+            scenario.artifacts.contains_key(*artifact),
+            "scenario must define artifacts.{artifact}"
+        );
+    }
+}
+
+fn unsupported_boundary_text(scenario: &EatmeScenarioAsset) -> String {
+    let acceptance_boundary = scenario
+        .acceptance_criteria
+        .iter()
+        .map(|criterion| {
+            format!(
+                "{}\n{}\n{}",
+                criterion.given, criterion.when, criterion.then
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    [
+        scenario.purpose.as_str(),
+        scenario.agentic_test_prompt.as_str(),
+        acceptance_boundary.as_str(),
+        scenario.unsupported_policy.as_str(),
+        &scenario.avoid.join("\n"),
+    ]
+    .join("\n")
+}
+
+fn assert_not_contains_lowercase(label: &str, text: &str, blocked: &[&str]) {
+    let normalized_text = normalize_whitespace(&text.to_lowercase());
+
+    for blocked in blocked {
+        assert!(
+            !normalized_text.contains(blocked),
+            "{label} must not include unsupported claim {blocked:?}"
         );
     }
 }

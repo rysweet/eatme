@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[test]
 fn repository_has_no_local_hook_artifact_directory() {
@@ -24,13 +25,14 @@ fn repository_owned_files_do_not_reference_local_hook_runtime_artifacts() {
     ];
     let mut violations = Vec::new();
 
-    for path in repository_files(&root) {
+    for path in tracked_repository_files(&root) {
         if is_allowed_policy_document(&root, &path) {
             continue;
         }
-        let Ok(contents) = fs::read_to_string(&path) else {
-            continue;
-        };
+        let bytes = fs::read(&path).unwrap_or_else(|error| {
+            panic!("failed to read repository file {}: {error}", path.display())
+        });
+        let contents = String::from_utf8_lossy(&bytes);
 
         for marker in &blocked_markers {
             if contents.contains(marker) {
@@ -50,7 +52,29 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn repository_files(root: &Path) -> Vec<PathBuf> {
+fn tracked_repository_files(root: &Path) -> Vec<PathBuf> {
+    let output = Command::new("git")
+        .current_dir(root)
+        .args(["ls-files", "-z"])
+        .output()
+        .unwrap_or_else(|error| panic!("failed to list tracked repository files: {error}"));
+    assert!(
+        output.status.success(),
+        "failed to list tracked repository files: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let mut files = output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|path| !path.is_empty())
+        .map(|path| root.join(String::from_utf8_lossy(path).as_ref()))
+        .collect::<Vec<_>>();
+    files.sort();
+    files
+}
+
+fn files_under(root: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     collect_repository_files(root, &mut files);
     files.sort();
@@ -62,9 +86,8 @@ fn collect_repository_files(path: &Path, files: &mut Vec<PathBuf>) {
         return;
     }
 
-    let Ok(metadata) = fs::metadata(path) else {
-        return;
-    };
+    let metadata = fs::metadata(path)
+        .unwrap_or_else(|error| panic!("failed to inspect {}: {error}", path.display()));
 
     if metadata.is_file() {
         files.push(path.to_path_buf());
@@ -81,7 +104,9 @@ fn collect_repository_files(path: &Path, files: &mut Vec<PathBuf>) {
             path.display()
         )
     }) {
-        collect_repository_files(&entry.unwrap().path(), files);
+        let entry = entry
+            .unwrap_or_else(|error| panic!("failed to read entry in {}: {error}", path.display()));
+        collect_repository_files(&entry.path(), files);
     }
 }
 
@@ -103,7 +128,7 @@ fn list_files(path: &Path) -> Vec<String> {
         return Vec::new();
     }
 
-    repository_files(path)
+    files_under(path)
         .into_iter()
         .map(|file| file.display().to_string())
         .collect()

@@ -40,9 +40,9 @@ agentic_flow:
   instructor_goal: >-
     Prepare a plain instructor/student handoff that starts from opened
     starter-project evidence, asks the student to save with a clear name and
-    location, checks that the saved work reopens, prepares export/share evidence,
-    and passes the evidence to a human reviewer or next workflow without
-    claiming automated grading or proof of learning.
+    location, asks for observable reopen confirmation, asks for export/share
+    evidence references, and routes the evidence to a human reviewer or next
+    workflow without claiming automated grading or proof of learning.
   prompt_source: assets/scenarios/eatme/instructor-student-save-reopen-export-evidence-handoff.yaml#agentic_test_prompt
   non_coder_editable:
     - resource_basis
