@@ -98,8 +98,11 @@ class QualityGateTargetDirTests(unittest.TestCase):
             env = os.environ.copy()
             env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
             env["TMPDIR"] = str(temp_path / "tmp")
+            env["HOME"] = str(temp_path / "home")
+            Path(env["HOME"]).mkdir()
             env.pop("CARGO_TARGET_DIR", None)
             env.pop("EATME_CARGO_TARGET_DIR", None)
+            env.pop("XDG_CACHE_HOME", None)
             env.update(env_overrides)
 
             subprocess.run(
@@ -130,11 +133,29 @@ class QualityGateTargetDirTests(unittest.TestCase):
         self.assertGreaterEqual(len(calls), 4)
         self.assertTrue(all(cargo_target == "/cache/cargo" for _, cargo_target, _ in calls))
 
-    def test_cargo_target_dir_is_unset_when_no_override_is_configured(self) -> None:
-        calls = self.run_quality_gates({})
+    def test_xdg_cache_home_shared_target_is_used_when_no_override_is_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as cache_home:
+            calls = self.run_quality_gates({"XDG_CACHE_HOME": cache_home})
 
         self.assertGreaterEqual(len(calls), 4)
-        self.assertTrue(all(cargo_target == "" for _, cargo_target, _ in calls))
+        self.assertTrue(
+            all(
+                cargo_target == f"{cache_home}/eatme/cargo-target"
+                for _, cargo_target, _ in calls
+            )
+        )
+
+    def test_home_cache_shared_target_is_used_when_xdg_cache_home_is_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as home_dir:
+            calls = self.run_quality_gates({"XDG_CACHE_HOME": "", "HOME": home_dir})
+
+        self.assertGreaterEqual(len(calls), 4)
+        self.assertTrue(
+            all(
+                cargo_target == f"{home_dir}/.cache/eatme/cargo-target"
+                for _, cargo_target, _ in calls
+            )
+        )
 
 
 if __name__ == "__main__":

@@ -78,12 +78,15 @@ full `target/` directory under every checkout. Eatme uses this precedence:
 
 1. `EATME_CARGO_TARGET_DIR`
 2. `CARGO_TARGET_DIR`
-3. Cargo's normal per-worktree `target/` directory
+3. `$XDG_CACHE_HOME/eatme/cargo-target`, or `~/.cache/eatme/cargo-target` when
+   `XDG_CACHE_HOME` is not set or is empty
+4. The checkout-local `.cargo-target` directory only when neither cache-home
+   variable is available
 
-`scripts/quality-gates.sh` only exports `CARGO_TARGET_DIR` when
-`EATME_CARGO_TARGET_DIR` is set. Existing `CARGO_TARGET_DIR` users keep standard
-Cargo behavior, and developers who do not configure either variable get the
-portable Cargo default.
+`scripts/quality-gates.sh` exports the selected path as `CARGO_TARGET_DIR`.
+Existing `CARGO_TARGET_DIR` users keep standard Cargo behavior, and developers
+who do not configure either variable still get a shared cache across worktrees
+without hard-coding a host-specific path.
 
 Configure a shared cache with a path that belongs to the current user and is on
 a volume with enough free space:
@@ -121,8 +124,8 @@ For `uvx`, the target-dir selection is:
    `XDG_CACHE_HOME` is not set or is empty
 
 CI remains portable. The GitHub Actions quality-gates workflow uses GitHub's
-cache action and the runner-local `target/` directory; it does not require
-local-only paths such as `/data`.
+cache action and direct Cargo commands with the runner-local `target/`
+directory; it does not require local-only paths such as `/data`.
 
 The module-size gate enforces the repository convention that Rust source modules
 stay at or below 500 lines.

@@ -9,6 +9,15 @@ mkdir -p "$TMPDIR"
 
 if [[ -n "${EATME_CARGO_TARGET_DIR:-}" ]]; then
   export CARGO_TARGET_DIR="$EATME_CARGO_TARGET_DIR"
+elif [[ -z "${CARGO_TARGET_DIR:-}" ]]; then
+  if [[ -n "${XDG_CACHE_HOME:-}" ]]; then
+    export CARGO_TARGET_DIR="$XDG_CACHE_HOME/eatme/cargo-target"
+  elif [[ -n "${HOME:-}" ]]; then
+    export CARGO_TARGET_DIR="$HOME/.cache/eatme/cargo-target"
+  else
+    export CARGO_TARGET_DIR="$ROOT/.cargo-target"
+  fi
+  mkdir -p "$CARGO_TARGET_DIR"
 fi
 
 MODULE_MAX_LINES="${MODULE_MAX_LINES:-500}"

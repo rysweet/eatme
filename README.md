@@ -162,8 +162,10 @@ The Rust quality gate script runs formatting, clippy, tests, module-size checks,
 and coverage. Real Alice desktop execution is explicit and environment-gated.
 
 Rust `dev` and `test` builds use line-table debug information by default to
-avoid writing full debug artifacts in every worktree. For parallel local or
-agent worktrees, point eatme at a private shared target cache:
+avoid writing full debug artifacts in every worktree. The local quality gate
+uses a private shared target cache at `$XDG_CACHE_HOME/eatme/cargo-target` or
+`$HOME/.cache/eatme/cargo-target` by default. For agents or larger local
+volumes, override that location explicitly:
 
 ```bash
 export EATME_CARGO_TARGET_DIR="$HOME/.cache/eatme/cargo-target"
@@ -171,10 +173,10 @@ scripts/quality-gates.sh
 ```
 
 `EATME_CARGO_TARGET_DIR` takes precedence over `CARGO_TARGET_DIR`; when neither
-is set, Cargo uses the checkout-local `target/` directory. The `uvx` launcher
-uses the same precedence before falling back to its own cache target directory. See
-[validation quality gates](docs/validation-quality-gates.md) for examples, CI
-behavior, and cache safety guidance.
+is set, the quality gate chooses the portable shared cache above. The `uvx`
+launcher uses the same precedence before falling back to its own cache target
+directory. See [validation quality gates](docs/validation-quality-gates.md) for
+examples, CI behavior, and cache safety guidance.
 
 ## Documentation site
 
