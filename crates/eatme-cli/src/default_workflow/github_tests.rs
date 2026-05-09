@@ -14,7 +14,6 @@ fn collects_github_metadata_checks_diff_and_local_state() {
         output("HEAD", 0),
         output(" M docs/default-workflow-pr-readiness.md", 0),
         output("docs/default-workflow-pr-readiness.md", 0),
-        output(run_list_json(), 0),
     ]);
 
     let report = collect_github_evidence(
@@ -38,11 +37,12 @@ fn collects_github_metadata_checks_diff_and_local_state() {
     assert_eq!(report.checks[0].name, "quality-gates");
     assert_eq!(report.checks[0].status, "COMPLETED");
     assert_eq!(report.checks[0].conclusion.as_deref(), Some("SUCCESS"));
+    let commands = runner.commands();
+    assert!(commands.iter().all(|command| command.attempts == 3));
     assert!(
-        runner
-            .commands()
+        commands
             .iter()
-            .all(|command| command.attempts == 3)
+            .all(|command| !command.display.starts_with("gh run list"))
     );
 }
 
@@ -56,7 +56,6 @@ fn checkout_option_fetches_then_switches_to_exact_head() {
         output("HEAD", 0),
         output("", 0),
         output("docs/default-workflow-pr-readiness.md", 0),
-        output(run_list_json(), 0),
     ]);
 
     collect_github_evidence(
@@ -81,6 +80,110 @@ fn checkout_option_fetches_then_switches_to_exact_head() {
 }
 
 #[test]
+fn checkout_option_still_falls_back_to_workflow_runs_when_status_rollup_is_empty() {
+    let runner = RecordingRunner::new([
+        output(pr_view_without_status_rollup_json(), 0),
+        output("", 0),
+        output("", 0),
+        output(HEAD_SHA, 0),
+        output("HEAD", 0),
+        output("", 0),
+        output("docs/default-workflow-pr-readiness.md", 0),
+        output(run_list_json(), 0),
+    ]);
+
+    let report = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: true,
+        },
+        &runner,
+    )
+    .unwrap();
+
+    assert_eq!(report.checks[0].name, "quality-gates");
+    let commands = runner.commands();
+    assert_eq!(commands.len(), 8);
+    assert_eq!(
+        commands[2].display,
+        format!("git switch --detach {HEAD_SHA}")
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| command.display.starts_with("gh run list"))
+    );
+}
+
+#[test]
+fn falls_back_to_workflow_runs_when_status_rollup_is_empty() {
+    let runner = RecordingRunner::new([
+        output(pr_view_without_status_rollup_json(), 0),
+        output("", 0),
+        output(HEAD_SHA, 0),
+        output("HEAD", 0),
+        output("", 0),
+        output("docs/default-workflow-pr-readiness.md", 0),
+        output(run_list_json(), 0),
+    ]);
+
+    let report = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap();
+
+    assert_eq!(report.checks[0].name, "quality-gates");
+    assert_eq!(report.checks[0].status, "COMPLETED");
+    assert_eq!(report.checks[0].conclusion.as_deref(), Some("SUCCESS"));
+    assert!(
+        runner
+            .commands()
+            .iter()
+            .any(|command| command.display.starts_with("gh run list"))
+    );
+}
+
+#[test]
+fn falls_back_to_workflow_runs_when_status_rollup_is_not_complete_evidence() {
+    let runner = RecordingRunner::new([
+        output(
+            &pr_view_with_status_rollup(r#"[{"unknownShape": true}]"#),
+            0,
+        ),
+        output("", 0),
+        output(HEAD_SHA, 0),
+        output("HEAD", 0),
+        output("", 0),
+        output("docs/default-workflow-pr-readiness.md", 0),
+        output(run_list_json(), 0),
+    ]);
+
+    let report = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap();
+
+    assert_eq!(report.checks[0].name, "quality-gates");
+    assert!(
+        runner
+            .commands()
+            .iter()
+            .any(|command| command.display.starts_with("gh run list"))
+    );
+}
+
+#[test]
 fn external_failures_include_command_context() {
     let runner = RecordingRunner::new([output("{}", 1).with_stderr("network unavailable")]);
 
@@ -100,13 +203,137 @@ fn external_failures_include_command_context() {
 }
 
 #[test]
+fn rejects_invalid_remote_name_before_running_commands() {
+    let runner = RecordingRunner::new([]);
+
+    let error = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "--upload-pack=sh",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("invalid git remote name"));
+    assert!(runner.commands().is_empty());
+}
+
+#[test]
+fn rejects_invalid_pr_head_sha_before_git_fetch() {
+    let runner = RecordingRunner::new([output(&pr_view_with_head("not-a-sha"), 0)]);
+
+    let error = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("GitHub PR headRefOid"));
+    assert_eq!(runner.commands().len(), 1);
+}
+
+#[test]
+fn rejects_invalid_pr_branch_name_before_git_fetch() {
+    let runner = RecordingRunner::new([output(&pr_view_with_branch("--bad-branch"), 0)]);
+
+    let error = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("invalid GitHub branch name"));
+    assert_eq!(runner.commands().len(), 1);
+}
+
+#[test]
+fn rejects_invalid_workflow_run_head_sha() {
+    let runner = RecordingRunner::new([
+        output(pr_view_without_status_rollup_json(), 0),
+        output("", 0),
+        output(HEAD_SHA, 0),
+        output("HEAD", 0),
+        output("", 0),
+        output("docs/default-workflow-pr-readiness.md", 0),
+        output(invalid_run_list_json(), 0),
+    ]);
+
+    let error = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("GitHub workflow run headSha"));
+}
+
+#[test]
+fn rejects_invalid_status_rollup_head_sha() {
+    let runner = RecordingRunner::new([
+        output(
+            &pr_view_with_status_rollup(
+                r#"[{
+                "name": "quality-gates",
+                "headSha": "not-a-sha",
+                "status": "COMPLETED",
+                "conclusion": "SUCCESS"
+            }]"#,
+            ),
+            0,
+        ),
+        output("", 0),
+        output(HEAD_SHA, 0),
+        output("HEAD", 0),
+        output("", 0),
+        output("docs/default-workflow-pr-readiness.md", 0),
+    ]);
+
+    let error = collect_github_evidence(
+        &GithubEvidenceOptions {
+            pr_number: 203,
+            remote: "origin",
+            checkout: false,
+        },
+        &runner,
+    )
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("GitHub status rollup headSha"));
+    assert!(
+        runner
+            .commands()
+            .iter()
+            .all(|command| !command.display.starts_with("gh run list"))
+    );
+}
+
+#[test]
 fn maps_status_context_state_to_completed_successful_check() {
     let item = serde_json::json!({
         "context": "branch-protection",
         "state": "SUCCESS"
     });
 
-    let check = check_from_rollup_item(&item, HEAD_SHA).unwrap();
+    let check = check_from_rollup_item(&item, HEAD_SHA).unwrap().unwrap();
 
     assert_eq!(check.name, "branch-protection");
     assert_eq!(check.status, "COMPLETED");
@@ -133,10 +360,78 @@ fn pr_view_json() -> &'static str {
     }"#
 }
 
+fn pr_view_without_status_rollup_json() -> &'static str {
+    r#"{
+        "state": "OPEN",
+        "isDraft": false,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "headRefOid": "fe0fcb4c5d4c73fa4022f774857d75ebb2624c6d",
+        "headRefName": "feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul",
+        "body": "Exact-head evidence recorded.",
+        "statusCheckRollup": []
+    }"#
+}
+
+fn pr_view_with_head(head: &str) -> String {
+    format!(
+        r#"{{
+        "state": "OPEN",
+        "isDraft": false,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "headRefOid": "{head}",
+        "headRefName": "feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul",
+        "body": "Exact-head evidence recorded.",
+        "statusCheckRollup": []
+    }}"#
+    )
+}
+
+fn pr_view_with_branch(branch: &str) -> String {
+    format!(
+        r#"{{
+        "state": "OPEN",
+        "isDraft": false,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "headRefOid": "fe0fcb4c5d4c73fa4022f774857d75ebb2624c6d",
+        "headRefName": "{branch}",
+        "body": "Exact-head evidence recorded.",
+        "statusCheckRollup": []
+    }}"#
+    )
+}
+
+fn pr_view_with_status_rollup(status_check_rollup: &str) -> String {
+    format!(
+        r#"{{
+        "state": "OPEN",
+        "isDraft": false,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
+        "headRefOid": "fe0fcb4c5d4c73fa4022f774857d75ebb2624c6d",
+        "headRefName": "feat/issue-177-eatme-wave7-formalspec-contract-lane-follow-defaul",
+        "body": "Exact-head evidence recorded.",
+        "statusCheckRollup": {status_check_rollup}
+    }}"#
+    )
+}
+
 fn run_list_json() -> &'static str {
     r#"[{
         "databaseId": 123,
         "headSha": "fe0fcb4c5d4c73fa4022f774857d75ebb2624c6d",
+        "status": "completed",
+        "conclusion": "success",
+        "workflowName": "quality-gates"
+    }]"#
+}
+
+fn invalid_run_list_json() -> &'static str {
+    r#"[{
+        "databaseId": 123,
+        "headSha": "not-a-sha",
         "status": "completed",
         "conclusion": "success",
         "workflowName": "quality-gates"

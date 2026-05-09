@@ -21,7 +21,10 @@ pub(crate) fn collect_github_evidence(
     options: &GithubEvidenceOptions<'_>,
     runner: &impl CommandRunner,
 ) -> Result<GithubEvidenceReport> {
-    let mut calls = Vec::new();
+    validate_pr_number(options.pr_number)?;
+    validate_remote_name(options.remote)?;
+
+    let mut calls = Vec::with_capacity(8);
     let pr_output = run_external(
         runner,
         "github",
@@ -36,6 +39,8 @@ pub(crate) fn collect_github_evidence(
         &mut calls,
     )?;
     let pr_view = parse_json::<GhPrView>(&pr_output, "GitHub PR metadata")?;
+    validate_object_id("GitHub PR headRefOid", &pr_view.head_ref_oid)?;
+    validate_branch_name(&pr_view.head_ref_name)?;
 
     run_external(
         runner,
@@ -70,8 +75,10 @@ pub(crate) fn collect_github_evidence(
     let checkout_mode = checkout_mode(runner, &mut calls)?;
     let repository_changes = repository_changes(runner, &mut calls)?;
     let diff_files = pr_diff_files(runner, options.pr_number, &mut calls)?;
-    let run_checks = workflow_run_checks(runner, &pr_view.head_ref_name, &mut calls)?;
-    let checks = checks_from_status_rollup(&pr_view).unwrap_or(run_checks);
+    let checks = match checks_from_status_rollup(&pr_view)? {
+        Some(checks) => checks,
+        None => workflow_run_checks(runner, &pr_view.head_ref_name, &mut calls)?,
+    };
 
     Ok(GithubEvidenceReport {
         schema_version: EVIDENCE_SCHEMA_VERSION.to_string(),
@@ -188,6 +195,8 @@ fn workflow_run_checks(
     branch: &str,
     calls: &mut Vec<ExternalServiceCall>,
 ) -> Result<Vec<CheckEvidence>> {
+    validate_branch_name(branch)?;
+
     let output = run_external(
         runner,
         "github",
@@ -202,34 +211,46 @@ fn workflow_run_checks(
         calls,
     )?;
     let runs = parse_json::<Vec<GhWorkflowRun>>(&output, "GitHub workflow run list")?;
-    Ok(runs
-        .into_iter()
-        .map(|run| CheckEvidence {
-            name: run.workflow_name,
-            head_sha: run.head_sha,
-            status: normalize_status(&run.status),
-            conclusion: run.conclusion.map(|value| normalize_status(&value)),
-            required: true,
+    runs.into_iter()
+        .map(|run| {
+            validate_object_id("GitHub workflow run headSha", &run.head_sha)?;
+            Ok(CheckEvidence {
+                name: run.workflow_name,
+                head_sha: run.head_sha,
+                status: normalize_status(&run.status),
+                conclusion: run.conclusion.map(|value| normalize_status(&value)),
+                required: true,
+            })
         })
-        .collect())
+        .collect()
 }
 
-fn checks_from_status_rollup(pr: &GhPrView) -> Option<Vec<CheckEvidence>> {
-    let checks: Vec<CheckEvidence> = pr
-        .status_check_rollup
-        .iter()
-        .filter_map(|item| check_from_rollup_item(item, &pr.head_ref_oid))
-        .collect();
-    (!checks.is_empty()).then_some(checks)
+fn checks_from_status_rollup(pr: &GhPrView) -> Result<Option<Vec<CheckEvidence>>> {
+    if pr.status_check_rollup.is_empty() {
+        return Ok(None);
+    }
+
+    let mut checks = Vec::with_capacity(pr.status_check_rollup.len());
+    for item in &pr.status_check_rollup {
+        match check_from_rollup_item(item, &pr.head_ref_oid)? {
+            Some(check) => checks.push(check),
+            None => return Ok(None),
+        }
+    }
+
+    Ok(Some(checks))
 }
 
-fn check_from_rollup_item(item: &Value, head_ref_oid: &str) -> Option<CheckEvidence> {
-    let name = item
+fn check_from_rollup_item(item: &Value, head_ref_oid: &str) -> Result<Option<CheckEvidence>> {
+    let Some(name) = item
         .get("name")
         .or_else(|| item.get("context"))
-        .or_else(|| item.get("workflowName"))?
-        .as_str()?
-        .to_string();
+        .or_else(|| item.get("workflowName"))
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+    else {
+        return Ok(None);
+    };
     let status = if let Some(status) = item.get("status").and_then(Value::as_str) {
         normalize_status(status)
     } else if let Some(state) = item.get("state").and_then(Value::as_str) {
@@ -246,19 +267,21 @@ fn check_from_rollup_item(item: &Value, head_ref_oid: &str) -> Option<CheckEvide
                 .and_then(Value::as_str)
                 .and_then(conclusion_from_status_context_state)
         });
-    let head_sha = item
-        .get("headSha")
-        .and_then(Value::as_str)
-        .unwrap_or(head_ref_oid)
-        .to_string();
+    let head_sha = match item.get("headSha").and_then(Value::as_str) {
+        Some(head_sha) => {
+            validate_object_id("GitHub status rollup headSha", head_sha)?;
+            head_sha.to_string()
+        }
+        None => head_ref_oid.to_string(),
+    };
 
-    Some(CheckEvidence {
+    Ok(Some(CheckEvidence {
         name,
         head_sha,
         status,
         conclusion,
         required: true,
-    })
+    }))
 }
 
 fn normalize_status(value: &str) -> String {
@@ -295,6 +318,65 @@ fn non_empty_lines(stdout: &str) -> Vec<String> {
         .filter(|line| !line.is_empty())
         .map(ToOwned::to_owned)
         .collect()
+}
+
+fn validate_pr_number(pr_number: u64) -> Result<()> {
+    if pr_number == 0 {
+        bail!("PR number must be greater than zero");
+    }
+    Ok(())
+}
+
+fn validate_remote_name(remote: &str) -> Result<()> {
+    let valid = !remote.is_empty()
+        && remote.len() <= 100
+        && !remote.starts_with('-')
+        && !remote.starts_with('.')
+        && !remote.ends_with('.')
+        && !remote.contains("..")
+        && remote
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'));
+
+    if !valid {
+        bail!(
+            "invalid git remote name; expected a configured remote name using ASCII letters, digits, '.', '_' or '-'"
+        );
+    }
+    Ok(())
+}
+
+fn validate_object_id(label: &str, oid: &str) -> Result<()> {
+    if matches!(oid.len(), 40 | 64) && oid.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Ok(());
+    }
+
+    bail!("{label} must be a 40- or 64-character hexadecimal object ID");
+}
+
+fn validate_branch_name(branch: &str) -> Result<()> {
+    let valid = !branch.is_empty()
+        && branch.len() <= 255
+        && !branch.starts_with('-')
+        && !branch.starts_with('/')
+        && !branch.ends_with('/')
+        && !branch.ends_with('.')
+        && !branch.contains("..")
+        && !branch.contains("//")
+        && !branch.contains("@{")
+        && !branch.split('/').any(|component| {
+            component.is_empty() || component.starts_with('.') || component.ends_with(".lock")
+        })
+        && branch
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'/' | b'.' | b'_' | b'-'));
+
+    if !valid {
+        bail!(
+            "invalid GitHub branch name from PR metadata; expected a safe ref name using ASCII letters, digits, '/', '.', '_' or '-'"
+        );
+    }
+    Ok(())
 }
 
 #[derive(Debug, Deserialize)]
