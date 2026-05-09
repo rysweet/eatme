@@ -337,11 +337,13 @@ export completion, or broad product readiness.
 If the finalization changes no files, replace `Files modified` with:
 
 ```text
-No-op justification: Evidence-only recovery for PR #<number>. The exact PR head was
-refreshed, the fetched PR ref matched GitHub `headRefOid`, the committed
-save/reopen docs and tests already described the bounded evidence contract, and
-no stale, missing, or overbroad documentation, asset, generated output, or source
-artifact was found. No files were changed.
+No-op justification: Evidence-only recovery for PR #<number>. The exact PR head
+<exact-head-sha> was verified against branch <branch-name>, the fetched PR ref
+matched GitHub `headRefOid`, current check status was reviewed for that same
+head, and the committed save/reopen docs and tests already expressed the bounded
+starter/save-reopen readiness boundary. No files were changed because no stale,
+missing, or overbroad documentation, asset, generated output, or source artifact
+was found.
 ```
 
 ## Non-claims

@@ -20,6 +20,13 @@ const FORBIDDEN_OVERCLAIMS: &[&str] = &[
     "assesses creativity",
 ];
 
+const NO_OP_RECOVERY_REQUIRED_WORDING: &[&str] = &[
+    "No-op justification:",
+    "exact PR head",
+    "current check status",
+    "starter/save-reopen readiness boundary",
+];
+
 #[test]
 fn readiness_docs_use_plain_public_wording_for_save_reopen_boundaries() {
     let save_reopen = read_doc("save-reopen-readiness.md");
@@ -115,17 +122,18 @@ fn recovery_evidence_requires_files_modified_or_explicit_no_op_with_limitations(
 
 #[test]
 fn no_op_recovery_justification_is_tied_to_current_head_checks_and_starter_save_reopen_scope() {
+    let save_reopen = read_doc("save-reopen-readiness.md");
     let default_workflow = read_doc("default-workflow-pr-readiness.md");
 
     assert_contains_all(
+        "save/reopen no-op recovery template",
+        &save_reopen,
+        NO_OP_RECOVERY_REQUIRED_WORDING,
+    );
+    assert_contains_all(
         "default-workflow no-op recovery template",
         &default_workflow,
-        &[
-            "No-op justification:",
-            "exact PR head",
-            "current check status",
-            "starter/save-reopen readiness boundary",
-        ],
+        NO_OP_RECOVERY_REQUIRED_WORDING,
     );
 }
 
