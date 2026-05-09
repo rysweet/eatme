@@ -14,8 +14,12 @@ fn collect_yaml_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
         return Ok(());
     }
     for entry in fs::read_dir(root).with_context(|| format!("reading {}", root.display()))? {
-        let path = entry?.path();
-        if path.is_dir() {
+        let entry = entry?;
+        let file_type = entry
+            .file_type()
+            .with_context(|| format!("reading file type for {}", entry.path().display()))?;
+        let path = entry.path();
+        if file_type.is_dir() {
             collect_yaml_paths(&path, paths)?;
         } else if path
             .extension()
