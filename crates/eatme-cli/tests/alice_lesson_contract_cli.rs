@@ -92,6 +92,86 @@ fn check_lesson_readiness_cli_json_reports_malformed_manifest_diagnostic() {
     assert_eq!(diagnostic["field"], "manifest");
 }
 
+#[test]
+fn check_lesson_session_cli_without_json_prints_plain_report() {
+    let root = scratch_root("lesson-session-contract-cli-plain");
+    let manifest_path = root.join("comparison-manifest.json");
+    fs::write(
+        &manifest_path,
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema_version": "eatme.alice-comparison/v1",
+            "scenario_id": "first-lessons-real-ui-actions"
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let output = Command::new(eatme_bin())
+        .args([
+            "alice",
+            "check-lesson-session",
+            "--manifest",
+            manifest_path.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    assert!(
+        serde_json::from_slice::<serde_json::Value>(&output.stdout).is_err(),
+        "plain report should not be JSON: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Lesson session contract check: failed"));
+    assert!(stdout.contains("Diagnostics:"));
+    assert!(stdout.contains("missing_lesson_session_contract"));
+}
+
+#[test]
+fn check_lesson_readiness_cli_without_json_prints_plain_report() {
+    let root = scratch_root("lesson-readiness-contract-cli-plain");
+    let manifest_path = write_complete_first_lesson_contract_manifest(&root, false);
+
+    let output = Command::new(eatme_bin())
+        .args([
+            "alice",
+            "check-lesson-readiness",
+            "--manifest",
+            manifest_path.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    assert!(
+        serde_json::from_slice::<serde_json::Value>(&output.stdout).is_err(),
+        "plain report should not be JSON: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Lesson readiness check: not_ready (failed)"));
+    assert!(stdout.contains("Shown:"));
+    assert!(stdout.contains("Not yet shown:"));
+    assert!(stdout.contains("execution_not_requested"));
+}
+
+#[test]
+fn check_lesson_session_cli_json_reports_unreadable_manifest_diagnostic() {
+    assert_unreadable_manifest_json_diagnostic(
+        "lesson-session-contract-cli-unreadable",
+        "check-lesson-session",
+    );
+}
+
+#[test]
+fn check_lesson_readiness_cli_json_reports_unreadable_manifest_diagnostic() {
+    assert_unreadable_manifest_json_diagnostic(
+        "lesson-readiness-contract-cli-unreadable",
+        "check-lesson-readiness",
+    );
+}
+
 fn write_complete_first_lesson_contract_manifest(root: &Path, execute_requested: bool) -> PathBuf {
     fs::create_dir_all(root).unwrap();
     let manifest_path = root.join("comparison-manifest.json");
@@ -136,6 +216,31 @@ fn write_complete_first_lesson_contract_manifest(root: &Path, execute_requested:
     )
     .unwrap();
     manifest_path
+}
+
+fn assert_unreadable_manifest_json_diagnostic(scratch_name: &str, command_name: &str) {
+    let root = scratch_root(scratch_name);
+    let manifest_path = root.join("missing-comparison-manifest.json");
+
+    let output = Command::new(eatme_bin())
+        .args([
+            "alice",
+            command_name,
+            "--manifest",
+            manifest_path.to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert_exit_code(&output, 1);
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("unreadable manifest diagnostic is JSON");
+    assert_eq!(report["passed"], false);
+    let diagnostic = diagnostic_with_code(&report, "unreadable_comparison_manifest");
+    assert_eq!(diagnostic["severity"], "error");
+    assert_eq!(diagnostic["field"], "manifest");
+    assert_contract_evidence_state(&report, "comparison_manifest", "missing");
 }
 
 fn diagnostic_with_code<'a>(report: &'a serde_json::Value, code: &str) -> &'a serde_json::Value {
