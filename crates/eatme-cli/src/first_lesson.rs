@@ -69,6 +69,7 @@ fn write_first_lesson_readiness_result(
     )?;
     write_readiness_items(&mut writer, "Shown:", &report.shown_evidence)?;
     write_readiness_items(&mut writer, "Not yet shown:", &report.not_yet_shown)?;
+    write_next_desktop_proof(&mut writer, report)?;
     if let Some(desktop_next_action) = &report.desktop_next_action {
         write_desktop_next_action(&mut writer, desktop_next_action)?;
     }
@@ -116,6 +117,21 @@ fn write_readiness_items(
     for item in items {
         writeln!(writer, "- {}", terminal_plain(&item.summary))?;
     }
+    Ok(())
+}
+
+fn write_next_desktop_proof(
+    mut writer: impl Write,
+    report: &FirstLessonReadinessSequenceReport,
+) -> Result<()> {
+    let Some(next_proof) = &report.evidence_progress.next_missing_real_desktop_proof else {
+        return Ok(());
+    };
+    let detail = next_proof
+        .strip_prefix("next missing real-desktop proof: ")
+        .unwrap_or(next_proof);
+    writeln!(writer, "Next desktop proof:")?;
+    writeln!(writer, "- {}", terminal_plain(detail))?;
     Ok(())
 }
 
@@ -195,6 +211,10 @@ mod tests {
         let output = String::from_utf8(output).unwrap();
         assert!(output.contains("Not yet shown:"));
         assert!(output.contains("- Save option/action evidence is not yet shown."));
+        assert!(output.contains("Next desktop proof:"));
+        assert!(output.contains(
+            "- activate the detected Alice main window (activate-specific-alice-window) before claiming later lesson actions."
+        ));
         assert!(output.contains("Unproven:"));
         assert!(!output.contains("next missing real-desktop proof"));
     }
@@ -228,6 +248,10 @@ mod tests {
 
         let output = String::from_utf8(output).unwrap();
         assert!(output.contains("Save option/action evidence is not yet shown."));
+        assert!(output.contains("Next desktop proof:"));
+        assert!(output.contains(
+            "- blocked Save Project proof artifact in desktop next-action evidence: Save dialog owner does not expose a stable proof-artifact handoff yet."
+        ));
         assert!(!output.contains("run-window-evidence/desktop-first-lesson-next-action.json"));
         assert!(!output.contains("Save completion evidence"));
         assert!(!output.contains("Save completed"));
