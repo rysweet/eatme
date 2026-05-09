@@ -1,53 +1,29 @@
 # Default-workflow PR readiness
 
-This page records the default-workflow readiness contract for the recovered PR
-174 save/reopen/export evidence handoff work. It is repository readiness
-evidence only: it ties a branch, exact head command, merge source, canonical
-scenario assets, generated Gadugi adapters, external GitHub service state,
-validation commands, and clean working-tree requirement to one bounded handoff.
+This page is the bounded readiness checklist for recovered PR 174. It is not
+Alice classroom evidence and it is not proof that a user completed a
+save/reopen/export journey.
 
-## Exact-head record
+## Exact-head inputs
 
-PR: 174
-Branch: wave6-persona-gap-fill-1778302300
-Exact HEAD command: git rev-parse HEAD
-Merge source: origin/master
-Working tree command: git status --short
-Working tree: clean handoff requires no output from the working tree command
-External service command: gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+| Field | Value |
+| --- | --- |
+| PR | PR: 174 |
+| Branch | Branch: wave6-persona-gap-fill-1778302300 |
+| Merge source | Merge source: origin/master |
+| Exact head | Exact HEAD command: git rev-parse HEAD |
+| Working tree | Working tree command: git status --short |
+| External service | External service command: gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup |
 
-Run every command from the repository root reported by:
+Run commands from the repository root reported by:
 
 ```bash
 git rev-parse --show-toplevel
 ```
 
 Use that repository root for linked worktree recovery checks, not the session directory.
-This prevents a no-op guard from reading a non-Git path and treating
-missing changes as proof that no implementation was needed.
-
-## External service gate
-
-Local validation is not enough to call the PR ready. Check GitHub for the same
-PR before publishing handoff evidence:
-
-```bash
-gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
-```
-
-The external service gate passes only when GitHub reports:
-
-| Field | Required value |
-| --- | --- |
-| `headRefOid` | The same commit returned by `git rev-parse HEAD`. |
-| `mergeStateStatus` | `CLEAN`. |
-| `mergeable` | `MERGEABLE`. |
-| `statusCheckRollup` | Required checks completed successfully for `headRefOid`. |
-
-If GitHub reports a different `headRefOid`, `DIRTY`, `CONFLICTING`, pending
-checks, failed checks, missing required checks, or checks for another commit,
-block readiness even when local commands pass. Push or update the branch first,
-then rerun the repository and external service gates against the new exact head.
+This prevents a no-op guard from reading a non-Git path and treating missing
+changes as proof that no implementation was needed.
 
 ## Scenario and adapter boundary
 
@@ -58,7 +34,7 @@ assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml
 assets/scenarios/eatme/student-artifact-package-share-evidence.yaml
 ```
 
-Generated Gadugi adapters must be regenerated from those canonical assets:
+Generated Gadugi adapters must come from those canonical assets:
 
 ```text
 assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml
@@ -67,7 +43,7 @@ assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml
 
 Use `student-artifact-package-share-evidence` for the student artifact sharing
 packet boundary. Do not substitute the separate
-`instructor-student-save-reopen-export-evidence-handoff` scenario for this
+`instructor-student-save-reopen-export-evidence-handoff` scenario for this PR
 readiness example.
 
 ## Required default-workflow commands
@@ -84,10 +60,36 @@ gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh
 ```
 
-If a command or the external service gate fails, record the failure plainly and
-do not call the PR ready. Regenerate adapters with `cargo run -q -p eatme-cli --
-assets generate-gadugi --json` only from canonical EatMe scenario assets, then
-rerun check mode.
+If generated adapter check mode fails, regenerate adapters only from the
+canonical EatMe scenario assets:
+
+```bash
+cargo run -q -p eatme-cli -- assets generate-gadugi --json
+```
+
+Then rerun check mode and the remaining commands.
+
+## External service gate
+
+Local validation is not enough to call the PR ready. Check GitHub before
+publishing handoff evidence:
+
+```bash
+gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+```
+
+The external service gate passes only when GitHub reports:
+
+| Field | Required value |
+| --- | --- |
+| `headRefOid` | The same commit returned by `git rev-parse HEAD`. |
+| `mergeStateStatus` | `CLEAN`. |
+| `mergeable` | `MERGEABLE`. |
+| `statusCheckRollup` | Required checks completed successfully for `headRefOid`. |
+
+If GitHub reports a different `headRefOid`, `DIRTY`, `CONFLICTING`, pending
+checks, failed checks, missing required checks, or checks for another commit,
+block readiness even when local commands pass.
 
 ## Claim boundary
 
@@ -112,8 +114,8 @@ validation succeeded, or that the PR is ready for handoff.
 
 ## Handoff note shape
 
-Use this shape in the PR description or review comment after the commands above
-pass for the exact head and the working tree command prints no output:
+After all commands pass, GitHub reports the same head, and `git status --short`
+prints no output, use this plain note shape:
 
 ```text
 Default-workflow PR readiness

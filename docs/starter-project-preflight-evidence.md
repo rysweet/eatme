@@ -95,8 +95,8 @@ next documented handoff is
 [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
 
 When this scenario is part of a recovered PR, use
-[Default-workflow PR Readiness](default-workflow-pr-readiness.md) as the planned
-repository readiness contract. That readiness record belongs to the exact
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md) as the
+repository readiness checklist. That readiness record belongs to the exact
 repository `HEAD`; it is not a substitute for Alice classroom evidence and does
 not expand what this preflight scenario proves.
 

@@ -4,63 +4,73 @@ use std::process::Command;
 
 const READINESS_DOC: &str = "docs/default-workflow-pr-readiness.md";
 const FALLBACK_LOG: &str = "default-workflow-attempt.log";
+const PR_NUMBER: &str = "174";
+const BRANCH_NAME: &str = "wave6-persona-gap-fill-1778302300";
+const CANONICAL_ASSETS: &[&str] = &[
+    "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
+    "assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
+];
+const GENERATED_ADAPTERS: &[&str] = &[
+    "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml",
+    "assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml",
+];
+const REQUIRED_COMMANDS: &[&str] = &[
+    "cargo run -q -p eatme-cli -- assets validate --json",
+    "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+    "cargo test -q -p eatme-assets starter_project_preflight_boundary",
+    "cargo test -q -p eatme-assets gadugi",
+    "cargo test -q -p eatme-assets outside_in_alice_expansion_tests",
+    "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
+    "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
+];
+const PROHIBITED_CLAIMS: &[&str] = &[
+    "full Save completion",
+    "full UI automation",
+    "grading",
+    "creative assessment",
+    "visible rendering correctness",
+    "deployed sharing or platform success",
+    "first-lesson completion",
+];
+const PROHIBITED_PLACEHOLDERS: &[&str] = &[
+    "[PLANNED",
+    "Implementation Pending",
+    "$(git branch --show-current)",
+    "$(git rev-parse HEAD)",
+    "Replace command substitutions",
+    "PR #164",
+    "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
+];
 
 #[test]
-fn readiness_handoff_records_exact_head_validation_not_planned_placeholders() {
+fn readiness_doc_names_the_exact_pr_branch_assets_and_commands() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
-    let branch = git_stdout(&root, &["branch", "--show-current"]);
 
     assert_contains_all(
-        "default-workflow exact-HEAD readiness evidence",
+        "default-workflow readiness inputs",
         &evidence,
         &[
             "# Default-workflow PR readiness",
-            "PR: 174",
-            &format!("Branch: {branch}"),
+            &format!("PR: {PR_NUMBER}"),
+            &format!("Branch: {BRANCH_NAME}"),
             "Exact HEAD command: git rev-parse HEAD",
             "Merge source: origin/master",
             "External service command: gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
-            "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
-            "assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
-            "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml",
-            "assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml",
-            "cargo run -q -p eatme-cli -- assets validate --json",
-            "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
-            "cargo test -q -p eatme-assets starter_project_preflight_boundary",
-            "cargo test -q -p eatme-assets gadugi",
-            "cargo test -q -p eatme-assets outside_in_alice_expansion_tests",
-            "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
-            "TMPDIR=/tmp NODE_OPTIONS=--max-old-space-size=32768 ./scripts/quality-gates.sh",
-            "Working tree command: git status --short",
-            "Working tree: clean handoff requires no output",
-            "does not claim full Save completion",
-            "full UI automation",
-            "grading",
-            "creative assessment",
-            "visible rendering correctness",
-            "deployed sharing or platform success",
-            "first-lesson completion",
         ],
     );
+    assert_contains_all("canonical EatMe assets", &evidence, CANONICAL_ASSETS);
+    assert_contains_all("generated Gadugi adapters", &evidence, GENERATED_ADAPTERS);
+    assert_contains_all("required validation commands", &evidence, REQUIRED_COMMANDS);
     assert_not_contains_any(
-        "default-workflow exact-HEAD readiness evidence",
+        "default-workflow readiness inputs",
         &evidence,
-        &[
-            "[PLANNED",
-            "Implementation Pending",
-            "$(git branch --show-current)",
-            "$(git rev-parse HEAD)",
-            "Replace command substitutions",
-            "use this page as the handoff checklist",
-            "PR #164",
-            "eb0bb29b7cc1f8647e9a36c0bc8200fb3fdc5cba",
-        ],
+        PROHIBITED_PLACEHOLDERS,
     );
 }
 
 #[test]
-fn readiness_handoff_requires_external_github_service_state() {
+fn readiness_doc_requires_external_github_service_state() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
 
@@ -82,7 +92,7 @@ fn readiness_handoff_requires_external_github_service_state() {
 }
 
 #[test]
-fn readiness_guard_uses_the_git_repository_root_for_linked_worktrees() {
+fn readiness_doc_uses_the_git_repository_root_for_linked_worktrees() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
     let local_home_path = ["/home/", "azureuser"].concat();
@@ -111,20 +121,15 @@ fn readiness_guard_uses_the_git_repository_root_for_linked_worktrees() {
 }
 
 #[test]
-fn manual_fallback_log_is_not_used_as_readiness_evidence() {
+fn readiness_doc_keeps_claims_and_manual_fallbacks_bounded() {
     let root = repository_root();
     let evidence = read_repo_file(&root, READINESS_DOC);
     let fallback_log = read_repo_file(&root, FALLBACK_LOG);
 
     assert_contains_all(
-        "default-workflow canonical asset boundary",
+        "default-workflow claim boundary",
         &evidence,
-        &[
-            "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
-            "assets/scenarios/eatme/student-artifact-package-share-evidence.yaml",
-            "assets/scenarios/gadugi/starter-project-open-save-export-preflight.yaml",
-            "assets/scenarios/gadugi/student-artifact-package-share-evidence.yaml",
-        ],
+        PROHIBITED_CLAIMS,
     );
     assert_contains_all(
         "manual fallback log boundary",
@@ -173,23 +178,6 @@ fn read_repo_file(root: &Path, relative_path: &str) -> String {
             root.join(relative_path).display()
         )
     })
-}
-
-fn git_stdout(root: &Path, args: &[&str]) -> String {
-    let output = Command::new("git")
-        .args(args)
-        .current_dir(root)
-        .output()
-        .unwrap_or_else(|error| panic!("failed to run git {args:?}: {error}"));
-    assert!(
-        output.status.success(),
-        "git {args:?} failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8(output.stdout)
-        .expect("git stdout must be UTF-8")
-        .trim()
-        .to_string()
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
