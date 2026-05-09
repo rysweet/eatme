@@ -7,6 +7,7 @@ mod first_lesson_evidence;
 mod gadugi_adapters;
 mod module_size_contracts;
 mod scenario_contracts;
+mod sharing_readiness_boundary;
 
 const EXPECTED_SCENARIO_ASSET_COUNT: usize = 93;
 

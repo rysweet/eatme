@@ -81,6 +81,7 @@ acceptance_probes:
   - Classroom handoff note tells the next teacher what to prepare, what learners produce, what support signals to watch, and what can be adapted.
   - Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
   - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
+  - Readiness impact says the teacher gets a classroom/review handoff and remix feedback package, not proof that deployed sharing works.
   - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not hosted sharing, not deployed sharing, not platform success, and not a deployed community platform.
 rubric:
   - criterion: Share card usefulness
