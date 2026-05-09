@@ -81,6 +81,7 @@ Alice launch path without overstating what the launch smoke proves.
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
 | `first-lessons-real-ui-actions` | Instructors, students, and reviewers | First-lesson readiness evidence for original Alice and RabbitHole; the report summarizes shown evidence, optional desktop next-action evidence, not-yet-shown states, and explicit unproven claims. |
+| `instructor-student-save-reopen-export-evidence-handoff` | Instructors, students, and reviewers | Save/reopen handoff card, export evidence package checklist, and instructor review boundary note; bridges starter-project preflight to a shareable evidence package without launching Alice or claiming automated review. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission

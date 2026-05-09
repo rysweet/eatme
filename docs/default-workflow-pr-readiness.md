@@ -328,7 +328,7 @@ publish-attempt files to the PR branch.
 Starter-project preflight evidence is bounded setup evidence for opening the
 bundled starter project and recording reviewable launch artifacts. It is not PR
 readiness, mergeability, production suitability, complete lesson execution,
-full Alice UI automation, visible rendering correctness, Save/reopen/export
+full Alice UI automation, visible rendering correctness, save/reopen/export
 completion, grading, creative assessment, or complete Alice coverage.
 
 The source contract for this boundary is split across:
@@ -360,6 +360,8 @@ preflight evidence documentation.
 
 ## Related documentation
 
+- [Starter Project Preflight Evidence](starter-project-preflight-evidence.md)
+- [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md)
 - [Persona Assets](persona-assets.md)
 - [Scenario Authoring](scenario-authoring.md)
 - [Gadugi Adapters](gadugi-adapters.md)
