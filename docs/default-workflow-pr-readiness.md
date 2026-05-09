@@ -26,7 +26,7 @@ git fetch origin pull/174/head:pr-174-persona-gap-fill
 git switch pr-174-persona-gap-fill
 git status --short
 git rev-parse HEAD
-gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
 Record the starting HEAD with `git rev-parse HEAD` before making recovery
@@ -35,7 +35,8 @@ changes. The final handoff must record these fields for the same commit:
 | Field | Required value |
 | --- | --- |
 | PR | `174` |
-| Branch | `wave6-persona-gap-fill-1778302300` |
+| PR `headRefName` | `wave6-persona-gap-fill-1778302300`. |
+| Local evidence branch | The branch used to inspect the PR head, such as `pr-174-persona-gap-fill`, may differ from `headRefName`. |
 | Local HEAD | The final commit SHA from `git rev-parse HEAD`. |
 | PR `headRefOid` | The same SHA as Local HEAD. |
 | GitHub merge state | `CLEAN`. |
@@ -71,6 +72,28 @@ The review gate passes only when:
 
 Do not use stale review comments, skipped checks, or local-only validation as
 review evidence for a moved branch.
+
+## Finalization evidence
+
+Do not manually merge PR 174 or perform equivalent merge actions.
+Do not use shell-level timeout wrapper commands.
+
+Finalization evidence must be based on checks actually run at the exact current
+head. Collect readiness, review, and finalization evidence together after the
+last repository change and before publishing the final handoff:
+
+```bash
+git status --short
+git rev-parse HEAD
+cargo run -q -p eatme-cli -- assets validate --json
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+cargo test -q -p eatme-assets default_workflow_pr_readiness_tests
+gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,reviewDecision,reviews,comments,statusCheckRollup
+```
+
+The finalization gate passes only when the worktree is clean, local `HEAD`
+matches PR `headRefOid`, the repository-local checks above pass for that same
+commit, and GitHub reports no failed or pending checks for that same head.
 
 ## Source-of-truth assets
 
@@ -131,13 +154,14 @@ Record the local head and compare it to GitHub:
 
 ```bash
 HEAD="$(git rev-parse HEAD)"
-gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup
+gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup
 ```
 
 The GitHub gate passes only when:
 
 | Field | Required value |
 | --- | --- |
+| `headRefName` | `wave6-persona-gap-fill-1778302300`. This is the PR branch name, not necessarily the local evidence branch created by `git fetch`. |
 | `headRefOid` | Same value as `git rev-parse HEAD`. |
 | `mergeStateStatus` | `CLEAN`. |
 | `mergeable` | `MERGEABLE`. |
@@ -189,13 +213,18 @@ Unsupported review claims:
 
 Use this template after exact-head evidence is refreshed at the final PR head.
 Generate the file list with `git diff --name-only <merge-base>...HEAD` and
-paste the command output into the placeholder:
+paste that exact output under `Files modified:` before publishing a
+change-bearing handoff. Documentation and test-source changes are allowed only
+when they directly support the persona/scenario recovery contract and are listed
+explicitly in this file list.
 
 ```text
 PR 174 persona/scenario gap-fill readiness
 
-Branch: wave6-persona-gap-fill-1778302300
+PR branch: wave6-persona-gap-fill-1778302300
+Local evidence branch: <git branch --show-current>
 HEAD: <git rev-parse HEAD>
+PR headRefName: <gh pr view 174 --json headRefName>
 PR headRefOid: <gh pr view 174 --json headRefOid>
 Merge state: CLEAN
 Mergeable: MERGEABLE
@@ -216,11 +245,49 @@ Repository-local checks:
 - cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 Files modified:
-<paste `git diff --name-only <merge-base>...HEAD` output here>
+Run `git diff --name-only <merge-base>...HEAD` after the final commit and paste
+the exact output here. Do not write `None` in this change-bearing template.
+```
 
-If implementation review proves no additional files are required, include an
-accepted no-op justification instead of a file list only after the workflow
-accepts the no-op rationale before publishing readiness.
+Use the no-op template only when implementation review finds no missing
+persona/scenario asset, generated adapter, test, or directly linked
+documentation work. The no-op path is invalid if `git status --short` is dirty,
+if exact-head evidence has not been refreshed, or if the workflow has not
+accepted the no-op rationale.
+
+```text
+PR 174 persona/scenario gap-fill readiness
+
+PR branch: wave6-persona-gap-fill-1778302300
+Local evidence branch: <git branch --show-current>
+HEAD: <git rev-parse HEAD>
+PR headRefName: <gh pr view 174 --json headRefName>
+PR headRefOid: <gh pr view 174 --json headRefOid>
+Merge state: CLEAN
+Mergeable: MERGEABLE
+Worktree: clean
+Check rollup: no failed or pending checks for the same head; skipped checks are
+out of scope and are not used as Alice UI, grading, creative assessment, or
+lesson-completion evidence.
+
+Files modified: None
+
+No-op justification:
+At HEAD `<git rev-parse HEAD>`, workflow readiness accepted no repository
+changes because the exact-head checks below passed for PR 174's current
+`headRefOid`, the worktree was clean before evidence collection, and the
+bounded persona/scenario asset scope did not require additional implementation
+or documentation files:
+- `cargo run -q -p eatme-cli -- assets validate --json`
+- `cargo run -q -p eatme-cli -- assets generate-gadugi --check --json`
+- `cargo test -q -p eatme-assets default_workflow_pr_readiness_tests`
+- `gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,reviewDecision,reviews,comments,statusCheckRollup`
+
+Do not use this no-op justification when the worktree is dirty, the PR
+`headRefOid` differs from local `HEAD`, required checks are failed or pending,
+or the implementation review finds a missing file in the persona/scenario
+silver-thread scope. Do not cite deleted, zero-test, or otherwise empty test
+filters as no-op evidence.
 
 Boundary: this evidence supports editable persona/scenario asset readiness and
 generated adapter freshness for the exact head. It does not claim Alice UI

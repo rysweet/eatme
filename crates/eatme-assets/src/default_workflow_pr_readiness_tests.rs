@@ -49,12 +49,17 @@ fn exact_head_readiness_contract_uses_fresh_handoff_evidence_not_checked_in_sha_
         &[
             "# PR 174 persona/scenario gap-fill readiness",
             "Do not treat a checked-in commit SHA as current readiness evidence",
+            "git fetch origin pull/174/head:",
+            "PR #174's actual head",
             "final PR handoff note or CI logs after the last commit has been pushed",
             "git status --short",
             "git rev-parse HEAD",
-            "gh pr view 174 --json headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
+            "starting HEAD",
+            "gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,statusCheckRollup",
             &format!("| PR | `{PR_NUMBER}` |"),
-            &format!("| Branch | `{BRANCH_NAME}` |"),
+            &format!("| PR `headRefName` | `{BRANCH_NAME}`. |"),
+            "| Local evidence branch |",
+            "may differ from `headRefName`",
             "| Local HEAD | The final commit SHA from `git rev-parse HEAD`. |",
             "| PR `headRefOid` | The same SHA as Local HEAD. |",
             "| GitHub merge state | `CLEAN`. |",
@@ -89,6 +94,24 @@ fn review_evidence_contract_is_tied_to_the_same_exact_pr_head() {
             "`comments`",
             "same exact head",
             "Do not use stale review comments, skipped checks, or local-only validation as review evidence for a moved branch.",
+        ],
+    );
+}
+
+#[test]
+fn finalization_evidence_contract_forbids_manual_merge_and_shell_timeout_wrappers() {
+    let evidence = normalized_readiness_doc();
+
+    assert_normalized_contains_all(
+        "default-workflow finalization guardrails",
+        evidence,
+        &[
+            "## Finalization evidence",
+            "Do not manually merge PR 174 or perform equivalent merge actions.",
+            "Do not use shell-level timeout wrapper commands.",
+            "Finalization evidence must be based on checks actually run at the exact current head.",
+            "gh pr view 174 --json headRefName,headRefOid,mergeStateStatus,mergeable,reviewDecision,reviews,comments,statusCheckRollup",
+            "readiness, review, and finalization evidence",
         ],
     );
 }
@@ -171,9 +194,42 @@ fn final_handoff_satisfies_workflow_no_op_guard_with_files_or_accepted_rationale
         &[
             "Files modified:",
             "git diff --name-only <merge-base>...HEAD",
-            "If implementation review proves no additional files are required",
-            "include an accepted no-op justification",
-            "workflow accepts the no-op rationale before publishing readiness",
+            "Documentation and test-source changes are allowed only",
+            "Do not write `None` in this change-bearing template.",
+            "Use the no-op template only when implementation review finds no missing",
+            "Files modified: None",
+            "No-op justification:",
+            "cargo test -q -p eatme-assets default_workflow_pr_readiness_tests",
+            "Do not cite deleted, zero-test, or otherwise empty test filters as no-op evidence.",
+        ],
+    );
+    assert_normalized_not_contains_any(
+        "default-workflow handoff template",
+        evidence,
+        &[
+            "paste the command output into the",
+            "cargo test -q -p eatme-assets pr174_publish_recovery_tests",
+        ],
+    );
+}
+
+#[test]
+fn publish_evidence_template_is_bounded_to_asset_scope_and_exact_head() {
+    let evidence = normalized_readiness_doc();
+
+    assert_normalized_contains_all(
+        "bounded PR publish evidence template",
+        evidence,
+        &[
+            "gh pr comment 174 --body-file",
+            "Persona/scenario gap-fill readiness refreshed for HEAD",
+            "Asset-scoped evidence:",
+            "cargo run -q -p eatme-cli -- assets validate --json",
+            "cargo run -q -p eatme-cli -- assets generate-gadugi --check --json",
+            "Asset changes are limited to canonical persona assets, canonical EatMe scenario assets, and generator-produced Gadugi adapters under `assets/scenarios/gadugi/*.yaml`.",
+            "Files modified are listed in the final handoff from `git diff --name-only <merge-base>...HEAD`",
+            "Scope note:",
+            "does not claim Alice UI automation, grading correctness, creative assessment quality, completed lessons, or full lesson-flow coverage",
         ],
     );
 }

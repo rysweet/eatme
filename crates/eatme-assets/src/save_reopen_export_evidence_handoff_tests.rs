@@ -2,6 +2,7 @@ use crate::generate_gadugi_adapter_yaml;
 use crate::schema::{CrewAsset, EatmeScenarioAsset};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 const SCENARIO_ID: &str = "instructor-student-save-reopen-export-evidence-handoff";
 const REQUIRED_PERSONAS: &[&str] = &[
@@ -47,13 +48,18 @@ const REQUIRED_ADAPTER_TEXT: &[&str] = &[
     "not full Alice coverage",
     "not proof of student learning",
 ];
+static REPOSITORY_ROOT: OnceLock<PathBuf> = OnceLock::new();
+static SCENARIO_TEXT: OnceLock<String> = OnceLock::new();
+static NORMALIZED_LOWER_SCENARIO_TEXT: OnceLock<String> = OnceLock::new();
+static SCENARIO_ASSET: OnceLock<EatmeScenarioAsset> = OnceLock::new();
+static GENERATED_ADAPTER: OnceLock<String> = OnceLock::new();
+static COMMITTED_ADAPTER: OnceLock<String> = OnceLock::new();
+static PERSONA_CREW: OnceLock<CrewAsset> = OnceLock::new();
 
 #[test]
 fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
-    let root = repository_root();
-    let path = scenario_path(&root, "eatme");
-    let text = fs::read_to_string(&path).unwrap();
-    let scenario = read_eatme_scenario(&path);
+    let text = scenario_text();
+    let scenario = eatme_scenario();
     let personas = scenario
         .personas
         .as_ref()
@@ -94,11 +100,11 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
     );
     assert_contains_all(
         "save/reopen/export handoff scenario",
-        &text,
+        text,
         REQUIRED_HANDOFF_TEXT,
     );
     assert!(
-        !normalize_whitespace(&text.to_lowercase()).contains("inspectable action evidence"),
+        !normalized_lower_scenario_text().contains("inspectable action evidence"),
         "scenario must describe preflight as setup evidence, not action evidence"
     );
     assert_contains_all(
@@ -116,26 +122,23 @@ fn save_reopen_export_handoff_scenario_fills_the_preflight_to_evidence_gap() {
 
 #[test]
 fn generated_adapter_preserves_save_reopen_export_handoff_contract() {
-    let root = repository_root();
-    let source_path = scenario_path(&root, "eatme");
-    let committed_path = scenario_path(&root, "gadugi");
-    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-    let committed = fs::read_to_string(&committed_path).unwrap();
+    let generated = generated_adapter();
+    let committed = committed_adapter();
 
     assert_eq!(
         committed,
         generated,
         "{} must be regenerated from the editable save/reopen/export handoff scenario",
-        committed_path.display()
+        scenario_path("gadugi").display()
     );
     assert_contains_all(
         "generated save/reopen/export handoff adapter",
-        &generated,
+        generated,
         REQUIRED_ADAPTER_TEXT,
     );
     assert_contains_all(
         "generated save/reopen/export handoff adapter outputs",
-        &generated,
+        generated,
         REQUIRED_OUTPUTS,
     );
     assert!(
@@ -152,9 +155,7 @@ fn generated_adapter_preserves_save_reopen_export_handoff_contract() {
 
 #[test]
 fn persona_coverage_discovers_handoff_without_broadening_the_persona_scope() {
-    let root = repository_root();
-    let text = fs::read_to_string(root.join("assets/personas/alice-user-crew.yaml")).unwrap();
-    let crew: CrewAsset = serde_yaml::from_str(&text).unwrap();
+    let crew = persona_crew();
     let scenario = crew
         .core_scenarios_from_existing_alice_resources
         .iter()
@@ -195,10 +196,7 @@ fn persona_coverage_discovers_handoff_without_broadening_the_persona_scope() {
 
 #[test]
 fn unsupported_policy_blocks_grading_and_completion_overclaims() {
-    let root = repository_root();
-    let path = scenario_path(&root, "eatme");
-    let text = fs::read_to_string(&path).unwrap();
-    let scenario = read_eatme_scenario(&path);
+    let scenario = eatme_scenario();
     let acceptance_boundary = scenario
         .acceptance_criteria
         .iter()
@@ -246,7 +244,7 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
         "proves learning outcomes",
     ] {
         assert!(
-            !normalize_whitespace(&text.to_lowercase()).contains(blocked),
+            !normalized_lower_scenario_text().contains(blocked),
             "scenario must not include unsupported completion or grading claim {blocked:?}"
         );
     }
@@ -254,9 +252,7 @@ fn unsupported_policy_blocks_grading_and_completion_overclaims() {
 
 #[test]
 fn scenario_wording_requests_handoff_evidence_without_claiming_actions_were_completed() {
-    let root = repository_root();
-    let path = scenario_path(&root, "eatme");
-    let scenario = read_eatme_scenario(&path);
+    let scenario = eatme_scenario();
     let purpose = normalize_whitespace(&scenario.purpose.to_lowercase());
 
     assert_contains_all(
@@ -282,19 +278,57 @@ fn scenario_wording_requests_handoff_evidence_without_claiming_actions_were_comp
     }
 }
 
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+fn repository_root() -> &'static Path {
+    REPOSITORY_ROOT
+        .get_or_init(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .as_path()
 }
 
-fn scenario_path(root: &Path, scenario_collection: &str) -> PathBuf {
-    root.join("assets/scenarios")
+fn scenario_path(scenario_collection: &str) -> PathBuf {
+    repository_root()
+        .join("assets/scenarios")
         .join(scenario_collection)
         .join(format!("{SCENARIO_ID}.yaml"))
 }
 
-fn read_eatme_scenario(path: &Path) -> EatmeScenarioAsset {
-    let content = fs::read_to_string(path).unwrap();
-    serde_yaml::from_str(&content).unwrap()
+fn scenario_text() -> &'static str {
+    SCENARIO_TEXT
+        .get_or_init(|| fs::read_to_string(scenario_path("eatme")).unwrap())
+        .as_str()
+}
+
+fn normalized_lower_scenario_text() -> &'static str {
+    NORMALIZED_LOWER_SCENARIO_TEXT
+        .get_or_init(|| normalize_whitespace(&scenario_text().to_lowercase()))
+        .as_str()
+}
+
+fn eatme_scenario() -> &'static EatmeScenarioAsset {
+    SCENARIO_ASSET.get_or_init(|| serde_yaml::from_str(scenario_text()).unwrap())
+}
+
+fn generated_adapter() -> &'static str {
+    GENERATED_ADAPTER
+        .get_or_init(|| {
+            let source_path = scenario_path("eatme");
+            generate_gadugi_adapter_yaml(repository_root(), &source_path).unwrap()
+        })
+        .as_str()
+}
+
+fn committed_adapter() -> &'static str {
+    COMMITTED_ADAPTER
+        .get_or_init(|| fs::read_to_string(scenario_path("gadugi")).unwrap())
+        .as_str()
+}
+
+fn persona_crew() -> &'static CrewAsset {
+    PERSONA_CREW.get_or_init(|| {
+        let text =
+            fs::read_to_string(repository_root().join("assets/personas/alice-user-crew.yaml"))
+                .unwrap();
+        serde_yaml::from_str(&text).unwrap()
+    })
 }
 
 fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
@@ -311,5 +345,12 @@ fn assert_contains_all(label: &str, text: &str, needles: &[&str]) {
 }
 
 fn normalize_whitespace(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
+    let mut normalized = String::with_capacity(text.len());
+    for word in text.split_whitespace() {
+        if !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        normalized.push_str(word);
+    }
+    normalized
 }
