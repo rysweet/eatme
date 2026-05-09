@@ -125,7 +125,7 @@ fn invalid_first_lesson_next_action_artifact_is_reported_explicitly() {
     assert!(!report.passed);
     assert_contains(
         &report.issues,
-        "desktop first-lesson next-action evidence is missing status field",
+        "desktop next-action evidence is missing status field",
     );
     let modernized = report
         .target_evidence
