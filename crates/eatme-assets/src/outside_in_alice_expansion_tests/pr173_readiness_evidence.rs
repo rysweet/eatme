@@ -116,8 +116,8 @@ fn pr173_recovery_validation_commands_are_explicitly_not_rerun_for_current_head(
     let missing = PR173_RECOVERY_VALIDATION_COMMANDS
         .iter()
         .filter(|command| {
-            !validation_status(evidence, command)
-                .is_some_and(|status| status == "**not run in this recovery step**")
+            validation_status(evidence, command)
+                .is_none_or(|status| status != "**not run in this recovery step**")
         })
         .copied()
         .collect::<Vec<_>>();
