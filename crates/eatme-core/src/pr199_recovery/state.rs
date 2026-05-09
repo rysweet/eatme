@@ -1,7 +1,7 @@
 use crate::pr199_recovery::evidence::{
     AliceActionEvidence, AliceEvidenceKind, AliceEvidenceTarget, Pr199RecoveryEvidence,
 };
-use crate::pr199_recovery::qa::{self, REQUIRED_QA_COMMANDS};
+use crate::pr199_recovery::qa;
 use crate::pr199_recovery::service::Pr199Metadata;
 use crate::pr199_recovery::workflow;
 use anyhow::Result;
@@ -33,8 +33,6 @@ pub struct Pr199QaReport {
     pub required_commands: [&'static str; 5],
     pub observed_commands: Vec<String>,
     pub required_commands_passed: bool,
-    #[serde(skip)]
-    pub blockers: Vec<ReadinessBlocker>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -91,8 +89,8 @@ pub fn evaluate(evidence: Pr199RecoveryEvidence) -> Result<Pr199RecoveryReport> 
     let (alice_report, alice_blockers) = evaluate_alice_actions(&evidence.alice_actions);
     blockers.extend(alice_blockers);
 
-    let qa_report = qa::evaluate_qa(&evidence.qa_commands);
-    blockers.extend(qa_report.blockers.clone());
+    let (qa_report, qa_blockers) = qa::evaluate_qa(&evidence.qa_commands);
+    blockers.extend(qa_blockers);
 
     let pr_metadata = Pr199Metadata::from_optional_value(evidence.pr_metadata)?;
     if pr_metadata.number != 199 {
@@ -118,12 +116,7 @@ pub fn evaluate(evidence: Pr199RecoveryEvidence) -> Result<Pr199RecoveryReport> 
         status,
         workflow: workflow_report,
         alice: alice_report,
-        qa: Pr199QaReport {
-            required_commands: REQUIRED_QA_COMMANDS,
-            observed_commands: qa_report.observed_commands,
-            required_commands_passed: qa_report.required_commands_passed,
-            blockers: Vec::new(),
-        },
+        qa: qa_report,
         pr_metadata,
         blockers,
     })
@@ -176,17 +169,8 @@ fn missing_real_action_blocker(action: &str, target: &str) -> ReadinessBlocker {
         "missing_real_action_evidence",
         format!("alice.{target}.actions.{action}"),
         format!(
-            "{target_title} Alice {action} action evidence is missing and must remain blocked until real evidence exists.",
-            target_title = target_title(target),
+            "Original Alice {action} action evidence is missing and must remain blocked until real evidence exists.",
         ),
     )
     .with_action(action, target)
-}
-
-fn target_title(target: &str) -> String {
-    let mut chars = target.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-        None => String::new(),
-    }
 }

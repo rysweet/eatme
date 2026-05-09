@@ -38,7 +38,7 @@ impl QaCommandProof {
     }
 }
 
-pub fn evaluate_qa(proofs: &[QaCommandProof]) -> Pr199QaReport {
+pub fn evaluate_qa(proofs: &[QaCommandProof]) -> (Pr199QaReport, Vec<ReadinessBlocker>) {
     let current_worktree = current_worktree();
     let mut blockers = Vec::new();
     let observed_commands = proofs
@@ -94,12 +94,13 @@ pub fn evaluate_qa(proofs: &[QaCommandProof]) -> Pr199QaReport {
         ));
     }
 
-    Pr199QaReport {
+    let report = Pr199QaReport {
         required_commands: REQUIRED_QA_COMMANDS,
         observed_commands,
         required_commands_passed: blockers.is_empty(),
-        blockers,
-    }
+    };
+
+    (report, blockers)
 }
 
 fn all_required_commands_passed_in_worktree(
