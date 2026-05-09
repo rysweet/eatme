@@ -204,6 +204,27 @@ fn lesson_session_readiness_consumes_ui_action_contract_artifacts() {
 }
 
 #[test]
+fn lesson_session_readiness_reports_creative_assessment_gap_plainly() {
+    let root = unique_test_dir("creative-assessment-gap-readiness-check");
+    let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let creative_boundary = report_json["evidence_boundaries"]
+        .as_array()
+        .unwrap_or_else(|| panic!("report should expose evidence_boundaries[]: {report_json}"))
+        .iter()
+        .find(|boundary| boundary["id"] == "creative_assessment")
+        .unwrap_or_else(|| panic!("missing creative_assessment boundary: {report_json}"));
+    let boundary_text = serde_json::to_string(creative_boundary).unwrap();
+
+    assert!(boundary_text.contains("surface evidence"));
+    assert!(boundary_text.contains("suggest next steps"));
+    assert!(boundary_text.contains("does not grade creativity"));
+    assert!(boundary_text.contains("does not judge quality"));
+    assert!(boundary_text.contains("does not mark the lesson complete"));
+}
+
+#[test]
 fn lesson_session_readiness_preserves_original_alice_action_evidence_blocker() {
     let root = unique_test_dir("original-alice-action-evidence-blocker");
     let manifest_path = write_executable_blocked_first_lesson_manifest(&root, false);
