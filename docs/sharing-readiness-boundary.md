@@ -43,7 +43,7 @@ The packet is complete when it contains:
 
 | Packet item | Required content |
 | --- | --- |
-| Artifact reference | The Alice world, exported file, screenshot, or classroom artifact being discussed. |
+| Artifact reference | The Alice world, screenshot, classroom artifact, or exported file if one is already available. |
 | Student change | One student-owned change to scene, code, camera, audio, data, interaction, or timing. |
 | Visible run result | What another person can observe after the world or artifact is run or viewed. |
 | Context or attribution | Classroom context, source attribution, peer role, or resource note needed for fair review. |
@@ -79,8 +79,8 @@ A reviewer can use this short loop for a classroom conversation:
 5. Ask for one next revision.
 6. Record feedback without treating the packet as a deployed sharing result.
 
-The review is complete when the next revision is clear. It is not blocked by the
-absence of a hosted gallery entry or publishing workflow.
+The handoff loop is complete when the next revision is clear. It is not blocked
+by the absence of a hosted gallery entry or publishing workflow.
 
 ## Teacher-community handoff
 
@@ -115,9 +115,9 @@ ranking, moderation queue, public gallery, or platform distribution step.
 
 ## Configuration
 
-No deployment or platform configuration is required for sharing readiness. The
-normal local validation preference still applies for agentic or Gadugi-heavy
-runs:
+No deployment or platform configuration is required for sharing readiness.
+`NODE_OPTIONS` is optional local runtime tuning for memory-heavy agentic or
+Gadugi runs; omit it unless local validation needs the extra heap:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
