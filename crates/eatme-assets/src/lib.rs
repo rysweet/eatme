@@ -13,6 +13,8 @@ mod default_workflow_pr_readiness_tests;
 #[cfg(test)]
 mod design_process_story_or_game_tests;
 mod discovery;
+#[cfg(test)]
+mod documentation_cross_link_tests;
 mod gadugi;
 #[cfg(test)]
 mod live_studio_workshop_tests;
