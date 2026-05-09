@@ -106,7 +106,8 @@ fn target_scenarios_use_required_personas_and_real_alice_gate_without_ci_auto_ru
 }
 
 #[test]
-fn starter_project_preflight_contract_names_real_action_evidence_without_overclaiming() {
+fn starter_project_preflight_contract_names_bounded_starter_project_evidence_without_overclaiming()
+{
     let root = repository_root();
     let contract = fs::read_to_string(scenario_path(
         &root,
@@ -119,10 +120,10 @@ fn starter_project_preflight_contract_names_real_action_evidence_without_overcla
         "starter-project-open-save-export-preflight contract",
         &contract,
         &[
-            "real Alice action evidence",
+            "bounded real Alice starter-project evidence",
             "opened starter project",
             "manifest/log/window/screenshot evidence",
-            "inspectable action evidence",
+            "inspectable readiness artifacts",
             "not full UI automation",
             "not creative assessment",
             "not learner-world grading",

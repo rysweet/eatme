@@ -72,12 +72,12 @@ acceptance_criteria:
   - given: an instructor or student needs one plain readiness handoff
     when: this automation scenario writes the starter-project readiness report
     then: the report summarizes launch evidence, the editable starter-world change note, the attempted run or observation, and the remaining save/reopen/export/readiness gaps without claiming first-lesson completion
-  - given: open/save/export QA still needs user-like interaction evidence
+  - given: open/save/export QA still needs user-like journey evidence
     when: instructor/student agents plan the next save, reopen, or export pass
     then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
   - given: reviewers need bounded starter-project evidence
     when: they inspect this scenario's artifacts
-    then: they must treat the result as real Alice action evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
+    then: they must treat the result as bounded real Alice starter-project evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable readiness notes, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
@@ -149,10 +149,10 @@ unsupported_policy: >-
   If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
   EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
   substitute mocked open/save/export evidence. This automation scenario records
-  real Alice action evidence for the opened starter project with an editable
+  bounded real Alice starter-project evidence for the opened starter project with an editable
   starter-world change note, a bounded run or observation attempt, manifest/log/window/screenshot
   evidence, a plain starter-project readiness report, readiness gap notes, and
-  inspectable action evidence only; it is not
+  inspectable readiness artifacts only; it is not
   full UI automation, not visible rendering correctness proof, not first-lesson
   completion, not grading, not creative assessment, not learner-world grading,
   not full Save completion, and not complete Alice coverage.

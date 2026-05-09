@@ -262,14 +262,12 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
 }
 
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
+    if scenario.id == "starter-project-open-save-export-preflight" {
+        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
+    }
+
     let text =
         format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
-    if text.contains("real alice action evidence")
-        && text.contains("opened starter project")
-        && text.contains("not complete alice coverage")
-    {
-        return " This automation scenario keeps honest limits: real Alice action evidence for the opened starter project with manifest/log/window/screenshot evidence and inspectable action evidence only; not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage.";
-    }
     if text.contains("not full ui automation")
         && text.contains("not creative assessment")
         && text.contains("not learner-world grading")

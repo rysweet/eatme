@@ -197,23 +197,21 @@ fn generated_first_lesson_adapters_preserve_honest_boundary_language() {
 }
 
 #[test]
-fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundaries() {
+fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_boundaries() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml";
     let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
     let normalized = generated.split_whitespace().collect::<Vec<_>>().join(" ");
 
     for required in [
-        "real Alice action evidence",
         "opened starter project",
         "manifest/log/window/screenshot evidence",
-        "inspectable action evidence",
+        "bounded starter-world and readiness-gap artifacts",
+        "eatme launch-smoke evidence without claiming save/reopen/export coverage",
         "not full UI automation",
         "not creative assessment",
         "not learner-world grading",
         "not complete Alice coverage",
-        "records bounded starter-world and readiness-gap artifacts",
-        "eatme launch-smoke evidence without claiming save/reopen/export coverage",
         "starter-world-change-note.txt",
         "run-observe-readiness-gaps.txt",
         "not visible rendering correctness proof",
@@ -230,6 +228,7 @@ fn generated_starter_project_preflight_adapter_preserves_action_evidence_boundar
         format!("{}{}", "lesson-", "path"),
         "source boundary".into(),
         "manifest-level evidence only".into(),
+        "action evidence".into(),
     ] {
         assert!(
             !normalized.to_lowercase().contains(&blocked),

@@ -25,6 +25,8 @@ mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
 #[cfg(test)]
+mod starter_project_preflight_boundary_tests;
+#[cfg(test)]
 mod student_reflection_artifact_tests;
 mod validation;
 
