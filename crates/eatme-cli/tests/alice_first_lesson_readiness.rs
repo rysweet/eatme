@@ -77,8 +77,10 @@ targets:
     );
     let save_item = progress_item(&report, "save_project_proof_artifact");
     let select_item = progress_item(&report, "select_project_proof_artifact");
+    let screenshot_item = progress_item(&report, "screenshot_log_and_window_artifacts");
     assert_eq!(save_item["state"], "missing");
     assert_eq!(select_item["state"], "missing");
+    assert_eq!(screenshot_item["state"], "missing");
     assert_eq!(save_item["evidence"], "Save Project proof artifact");
     assert_eq!(select_item["evidence"], "Select Project proof artifact");
     assert_json_detail_contains(save_item, "desktop next-action evidence");
@@ -128,7 +130,10 @@ targets:
 
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("First-lesson automation scenario readiness: not ready"));
+    assert!(stdout.contains("First-lesson/grading gap report: not ready"));
+    assert!(stdout.contains(
+        "Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only."
+    ));
     assert!(stdout.contains(
         "Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof"
     ));
@@ -138,6 +143,8 @@ targets:
     assert!(stdout.contains("- Procedure/edit is not yet shown."));
     assert!(stdout.contains("- Save option/action evidence is not yet shown."));
     assert!(stdout.contains("- Visible rendering is not yet shown."));
+    assert!(stdout.contains("- Screenshot, log, and window evidence is not yet shown."));
+    assert!(!stdout.contains("- Screenshot, log, and window evidence is shown."));
     assert!(stdout.contains("Unproven:"));
     assert!(stdout.contains("- Full Alice UI automation is not proven."));
     assert!(stdout.contains("- Visible rendering correctness is not proven."));
@@ -182,7 +189,10 @@ targets:
 
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("First-lesson automation scenario readiness: not ready"));
+    assert!(stdout.contains("First-lesson/grading gap report: not ready"));
+    assert!(stdout.contains(
+        "Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only."
+    ));
     assert!(stdout.contains("Shown:"));
     assert!(stdout.contains("Not yet shown:"));
     assert!(stdout.contains("- Select Project is not yet shown."));

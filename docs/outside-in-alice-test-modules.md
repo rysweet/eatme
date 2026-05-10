@@ -196,3 +196,30 @@ Before merging a change that touches these tests:
 
 Use `./scripts/quality-gates.sh` when a single command should run the repository
 Rust quality gate.
+
+## Save/reopen contract tests in eatme-alice
+
+The save/reopen persistence contract tests live in `crates/eatme-alice/src/`
+instead of the `eatme-assets` expansion test tree because they test harness
+behavior (hook invocation, artifact validation, probe construction) rather than
+asset contracts.
+
+| File | Responsibility |
+| --- | --- |
+| `crates/eatme-alice/src/launch_save_project.rs` | Save-project hook invocation, JSON validation, and `UiActionSaveProjectProbe` construction. |
+| `crates/eatme-alice/src/launch_save_project/tests.rs` | Save-project hook contract tests using `FakeCommandRunner`. |
+| `crates/eatme-alice/src/launch_reopen_project.rs` | Reopen-project hook invocation, source artifact validation, and `UiActionReopenProjectProbe` construction. |
+| `crates/eatme-alice/src/launch_path_validation.rs` | Path containment and symlink-escape defense for artifact resolution. |
+| `crates/eatme-alice/src/launch_save_reopen_contract_tests.rs` | Cross-cutting save→reopen flow contract tests. |
+| `crates/eatme-alice/src/compare/ui_action_contract/save.rs` | Save-project action probes in `ui-action-contract.json` inspection. |
+
+Run the save/reopen contract tests:
+
+```bash
+cargo test -p eatme-alice launch_save
+cargo test -p eatme-alice launch_save_reopen_contract
+cargo test -p eatme-alice ui_action_contract
+```
+
+For the evidence boundary, hook API, and validation rules, see
+[Save/reopen Readiness](save-reopen-readiness.md).

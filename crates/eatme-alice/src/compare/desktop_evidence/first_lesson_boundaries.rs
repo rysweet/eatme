@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -37,13 +38,18 @@ pub fn first_lesson_evidence_boundaries(
     canonical_evidence_root: &Path,
     run_dir: &Path,
 ) -> Vec<FirstLessonEvidenceBoundary> {
+    let boundary_values = json
+        .get("evidence_boundaries")
+        .or_else(|| json.get("evidenceBoundaries"))
+        .and_then(serde_json::Value::as_array);
+    let boundaries_by_id = indexed_boundaries(boundary_values.map(Vec::as_slice));
+
     boundary_specs()
         .iter()
         .map(|spec| {
-            json.get("evidence_boundaries")
-                .or_else(|| json.get("evidenceBoundaries"))
-                .and_then(serde_json::Value::as_array)
-                .and_then(|boundaries| boundary_value(boundaries, spec.id))
+            boundaries_by_id
+                .get(spec.id)
+                .copied()
                 .map(|value| normalize_boundary(spec, value, canonical_evidence_root, run_dir))
                 .unwrap_or_else(|| missing_boundary(spec))
         })
@@ -340,7 +346,7 @@ fn boundary_contract_issue(spec: &BoundarySpec, value: &serde_json::Value) -> Op
 
 fn missing_claim(spec: &BoundarySpec) -> String {
     format!(
-        "{} is not proven; automation scenarios must collect explicit evidence before this can be reported as present.",
+        "{} is not proven; gap reports must collect explicit scenario evidence before this can be reported as present.",
         spec.label
     )
 }
@@ -443,13 +449,14 @@ fn merged_does_not_prove(spec: &BoundarySpec, value: &serde_json::Value) -> Vec<
     claims
 }
 
-fn boundary_value<'a>(
-    boundaries: &'a [serde_json::Value],
-    id: &str,
-) -> Option<&'a serde_json::Value> {
+fn indexed_boundaries(
+    boundaries: Option<&[serde_json::Value]>,
+) -> BTreeMap<&str, &serde_json::Value> {
     boundaries
-        .iter()
-        .find(|boundary| boundary.get("id").and_then(serde_json::Value::as_str) == Some(id))
+        .into_iter()
+        .flatten()
+        .filter_map(|b| Some((b.get("id")?.as_str()?, b)))
+        .collect()
 }
 
 fn reportable_artifact_path(
@@ -472,7 +479,6 @@ fn reportable_artifact_path(
         .ok()
         .map(|path| path.to_string_lossy().replace('\\', "/"))
 }
-
 fn string_array(json: &serde_json::Value, key: &str) -> Vec<String> {
     json.get(key)
         .and_then(serde_json::Value::as_array)
