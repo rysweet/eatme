@@ -23,7 +23,7 @@ fn blocked_first_lesson_next_action_artifact_reports_missing_ui_action_targets()
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
-    assert!(report.passed, "{:?}", report.issues);
+    assert!(!report.passed);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
     let modernized = report
         .target_evidence
@@ -77,7 +77,7 @@ fn missing_first_lesson_next_action_artifact_is_reported_without_replacing_pixel
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
-    assert!(report.passed, "{:?}", report.issues);
+    assert!(!report.passed);
     let modernized = report
         .target_evidence
         .iter()
@@ -332,6 +332,40 @@ fn missing_save_and_select_project_proof_artifacts_are_visible_in_shared_progres
     assert_detail_contains(select_item, "Select Project proof artifact is missing");
     assert_no_project_proof_success_claims(save_item);
     assert_no_project_proof_success_claims(select_item);
+}
+
+#[test]
+fn unsupported_project_proof_artifact_status_fails_closed() {
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Blocked,
+        hook_actions_passed: &[],
+    });
+    write_modernized_run_window_evidence_file(
+        &manifest_path,
+        "save-project-proof.json",
+        r#"{"proof":"save-project"}"#,
+    );
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-first-lesson-next-action/v1","status":"blocked","source":"desktop_run_render_target_attachment","save_project_proof_artifact":{"status":"complete","artifact":{"path":"run-window-evidence/save-project-proof.json"}},"select_project_proof_artifact":{"status":"present","artifact":{"path":"run-window-evidence/save-project-proof.json"}},"doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let save_item = progress_item(&report_json, "save_project_proof_artifact");
+    let select_item = progress_item(&report_json, "select_project_proof_artifact");
+
+    assert!(!report.passed);
+    assert_eq!(save_item["state"], "invalid");
+    assert_eq!(select_item["state"], "present");
+    assert_detail_contains(save_item, "is unsupported");
+    assert_detail_contains(save_item, "\"complete\"");
+    assert_no_project_proof_success_claims(save_item);
 }
 
 #[test]

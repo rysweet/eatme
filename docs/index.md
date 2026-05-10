@@ -29,12 +29,15 @@ Eatme has three layers:
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
+| Maintaining first-lesson readiness module boundaries | [Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
 | Preparing save/reopen/export evidence handoff | [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md) |
+| Reviewing save/reopen readiness evidence | [Save/reopen Readiness](save-reopen-readiness.md) |
 | Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Recovering a failed PR publish step | [PR Publish-Failure Recovery](pr-publish-recovery.md) |
 | Reviewing local hook artifact path evidence | [Local Hook Artifacts](local-hook-artifacts.md) |
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
+| Reviewing PR #160 gap-reporting recovery readiness | [PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -116,9 +119,14 @@ shareable evidence:
 [Save, Reopen, and Export Evidence Handoff](save-reopen-export-evidence-handoff.md).
 That guide documents the expected handoff outputs, configuration fields,
 consumer contract, and a classroom example package.
+Review the save/reopen artifact and reopened-state evidence boundary:
+[Save/reopen Readiness](save-reopen-readiness.md).
 
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
+
+Keep first-lesson readiness helper logic in focused Rust submodules:
+[Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md).
 
 Record exact-head pull request readiness:
 [Default-workflow PR Readiness](default-workflow-pr-readiness.md).
@@ -131,6 +139,9 @@ Review local hook artifact path evidence:
 
 Recover PR #199 merge-readiness evidence after the manual-fallback violation:
 [PR #199 Recovery Workflow](pr-199-recovery-workflow.md).
+
+Review PR #160 gap-reporting recovery readiness:
+[PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md).
 
 Build the docs site:
 

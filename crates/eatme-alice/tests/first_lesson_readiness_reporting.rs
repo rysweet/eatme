@@ -1,11 +1,18 @@
 use eatme_alice::check_lesson_session_readiness;
 
+#[path = "first_lesson_readiness_reporting/support.rs"]
+mod readiness_reporting_support;
 #[path = "first_lesson_desktop_evidence/support.rs"]
 #[allow(dead_code)]
 mod support;
+use readiness_reporting_support::{
+    complete_desktop_evidence_manifest, overwrite_ui_action_contracts, ready_ui_action_contract,
+    rewrite_target_failure_categories, write_complete_next_action_evidence,
+};
 use support::{
     DesktopFixture, FirstLessonNextActionFixture, PixelObservationFixture,
-    overwrite_modernized_first_lesson_next_action, write_manifest,
+    overwrite_modernized_first_lesson_next_action, overwrite_modernized_pixel_observation,
+    write_manifest,
 };
 
 #[test]
@@ -127,6 +134,161 @@ fn desktop_next_action_summary_is_conditional_and_observational() {
         "desktop_next_action should expose observations without implying completion: {desktop}"
     );
     assert_no_unsupported_success_claims(&present_json);
+}
+
+#[test]
+fn no_go_contracts_block_readiness_even_when_failure_category_is_null() {
+    let manifest_path = complete_desktop_evidence_manifest();
+    rewrite_target_failure_categories(&manifest_path, serde_json::Value::Null, "passed");
+    write_complete_next_action_evidence(&manifest_path, "blocked");
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+
+    assert!(
+        !report.no_go_contracts.is_empty(),
+        "fixture must expose unsupported-action no-go contracts: {report_json}"
+    );
+    assert!(
+        report.issues.is_empty(),
+        "failure_category:null plus explicit no-go contracts should be a blocker, not an incomplete evidence issue: {:?}",
+        report.issues
+    );
+    assert!(!report.passed);
+    assert_eq!(report.readiness_status, "blocked_until_ui_automation");
+    assert_eq!(report.status, "blocked");
+    assert_eq!(
+        report.blocked_reason.as_deref(),
+        Some("blocked_until_ui_automation")
+    );
+    assert!(
+        report.evidence_gap_message.is_some(),
+        "blocked no-go contracts must keep the evidence gap visible"
+    );
+    assert_eq!(
+        report.lesson_session_readiness.no_go_contracts.len(),
+        report.no_go_contracts.len()
+    );
+    assert_no_unsupported_success_claims(&report_json);
+}
+
+#[test]
+fn complete_evidence_with_null_failure_category_and_no_no_go_contracts_is_ready() {
+    let manifest_path = complete_desktop_evidence_manifest();
+    rewrite_target_failure_categories(&manifest_path, serde_json::Value::Null, "passed");
+    write_complete_next_action_evidence(&manifest_path, "ready");
+    overwrite_ui_action_contracts(&manifest_path, ready_ui_action_contract());
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+
+    assert!(
+        report.issues.is_empty(),
+        "complete evidence with failure_category:null should not produce readiness issues: {:?}",
+        report.issues
+    );
+    assert!(
+        report.no_go_contracts.is_empty(),
+        "ready evidence must not carry unsupported-action no-go contracts: {report_json}"
+    );
+    assert!(report.passed);
+    assert_eq!(report.readiness_status, "ready");
+    assert_eq!(report.status, "ready");
+    assert_eq!(report.blocked_reason, None);
+    assert_eq!(report.evidence_gap_message, None);
+    assert_eq!(report.evidence_progress.missing, 0);
+    assert_eq!(report.evidence_progress.invalid, 0);
+    assert_eq!(report.evidence_progress.not_observed, 0);
+    assert_eq!(report.evidence_progress.blocked, 0);
+    assert!(report.not_yet_shown.is_empty());
+    assert_eq!(report.lesson_session_readiness.status, "ready");
+    assert_no_unsupported_success_claims(&report_json);
+}
+
+#[test]
+fn incomplete_progress_gap_fails_closed_even_without_issues_or_no_go_contracts() {
+    let manifest_path = complete_desktop_evidence_manifest();
+    rewrite_target_failure_categories(&manifest_path, serde_json::Value::Null, "passed");
+    write_complete_next_action_evidence(&manifest_path, "ready");
+    overwrite_ui_action_contracts(&manifest_path, ready_ui_action_contract());
+    overwrite_modernized_pixel_observation(
+        &manifest_path,
+        r#"{"schema_version":"eatme.alice-desktop-run-pixel-observation/v1","status":"not_observed","reason":"Run target was present, but no visible pixel sample was observed."}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+
+    assert!(
+        report.issues.is_empty(),
+        "fixture isolates progress-gap handling from issue-based failures: {:?}",
+        report.issues
+    );
+    assert!(
+        report.no_go_contracts.is_empty(),
+        "fixture isolates progress-gap handling from no-go blockers: {report_json}"
+    );
+    assert!(!report.passed);
+    assert_eq!(report.readiness_status, "incomplete");
+    assert_eq!(report.status, "not_ready");
+    assert!(
+        report.evidence_gap_message.is_some(),
+        "not-observed evidence must keep the gap explicit"
+    );
+    assert_eq!(report.evidence_progress.not_observed, 1);
+    assert_eq!(report.lesson_session_readiness.status, "not_ready");
+    assert_no_unsupported_success_claims(&report_json);
+}
+
+#[test]
+fn unsupported_desktop_next_action_status_is_invalid_evidence() {
+    let manifest_path = complete_desktop_evidence_manifest();
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"complete",
+  "source":"desktop_run_render_target_attachment",
+  "candidate_actions":["save-project"],
+  "doesNotClaim":["full Alice UI automation","Save completion","grading","creative assessment","first-lesson completion"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let modernized = report
+        .target_evidence
+        .iter()
+        .find(|target| target.role == "modernized")
+        .expect("modernized target evidence");
+    let next_action = modernized
+        .desktop_first_lesson_next_action
+        .as_ref()
+        .expect("desktop next-action evidence");
+
+    assert_eq!(next_action.status, "invalid");
+    assert!(
+        next_action
+            .detail
+            .contains("unsupported desktop next-action status"),
+        "invalid status should explain the unsupported status: {}",
+        next_action.detail
+    );
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.contains("unsupported desktop next-action status")),
+        "unsupported status must be surfaced as a readiness issue: {:?}",
+        report.issues
+    );
+    assert!(!report.passed);
+    assert_eq!(report.status, "not_ready");
+    assert!(
+        report.desktop_next_action.is_none(),
+        "invalid desktop next-action evidence must not produce a desktop_next_action observation: {report_json}"
+    );
+    assert_no_unsupported_success_claims(&report_json);
 }
 
 fn readiness_items<'a>(report_json: &'a serde_json::Value, field: &str) -> &'a [serde_json::Value] {

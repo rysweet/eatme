@@ -1,11 +1,13 @@
 use super::*;
 use eatme_alice::compare::{
     DesktopProofContract, FirstLessonEvidenceBoundary, LessonReadinessEvidenceProgress,
-    LessonReadinessEvidenceProgressItem, LessonSessionContractCheck,
+    LessonReadinessEvidenceProgressItem, LessonSessionContractCheck, LessonSessionNoGoContract,
     LessonSessionReadinessEnvelope, LessonSessionReadinessReport,
     OriginalAliceActionEvidenceReport, ReadinessEvidenceItem,
 };
 use std::collections::BTreeMap;
+
+const EVIDENCE_GAP_MESSAGE: &str = "Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.";
 
 #[test]
 fn plain_output_omits_legacy_next_actionable_blocker_line() {
@@ -58,8 +60,11 @@ fn plain_output_uses_canonical_blocked_readiness_status() {
     write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
 
     let output = String::from_utf8(output).unwrap();
-    assert!(output.contains("First-lesson automation scenario readiness: blocked"));
-    assert!(!output.contains("First-lesson automation scenario readiness: ready"));
+    assert!(output.contains("First-lesson/grading gap report: blocked"));
+    assert!(output.contains(
+        "Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only."
+    ));
+    assert!(!output.contains("First-lesson/grading gap report: ready"));
 }
 
 #[test]
@@ -139,6 +144,69 @@ fn plain_output_escapes_control_characters_from_report_data() {
     );
     assert!(output.contains("\\u{1b}"));
     assert!(output.contains("\\nInjected"));
+}
+
+#[test]
+fn plain_output_surfaces_evidence_gap_without_completion_or_grading_claims() {
+    let report = sequence_report(progress_with_blocker(None));
+
+    let mut output = Vec::new();
+    write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+    let output = String::from_utf8(output).unwrap();
+    let gap_line = output
+        .lines()
+        .find(|line| line.starts_with("Evidence gap:"))
+        .unwrap_or_else(|| panic!("missing evidence gap line in output:\n{output}"));
+    assert_eq!(gap_line, EVIDENCE_GAP_MESSAGE);
+    assert_no_completion_or_grading_claims(gap_line);
+}
+
+#[test]
+fn plain_output_lists_no_go_blockers_without_success_claims() {
+    let mut report = sequence_report(progress_with_blocker(Some("no-go evidence")));
+    report.no_go_contracts = vec![no_go_contract_fixture()];
+    report.readiness_report.no_go_contracts = report.no_go_contracts.clone();
+    report
+        .readiness_report
+        .lesson_session_readiness
+        .no_go_contracts = report.no_go_contracts.clone();
+
+    let mut output = Vec::new();
+    write_first_lesson_readiness_result(&mut output, false, &report).unwrap();
+
+    let output = String::from_utf8(output).unwrap();
+    assert!(
+        output.contains("No-go blockers:"),
+        "plain output must make unsupported-action no-go contracts visible:\n{output}"
+    );
+    assert!(
+        output.contains(
+            "- project_save: Evidence gap: required evidence is missing or incomplete for project save; cannot report this action as supported."
+        ),
+        "plain output must render no-go affordance and reason:\n{output}"
+    );
+    assert!(!output.contains("no_go"));
+    assert!(!output.contains("missing_affordance_id"));
+    assert_no_completion_or_grading_claims(&output);
+}
+
+#[test]
+fn json_output_exposes_matching_sequence_and_readiness_evidence_gap() {
+    let report = sequence_report(progress_with_blocker(None));
+
+    let report_json = serde_json::to_value(&report).unwrap();
+
+    assert_eq!(
+        report_json["evidence_gap_message"].as_str(),
+        Some(EVIDENCE_GAP_MESSAGE),
+        "sequence report should expose evidence_gap_message: {report_json}"
+    );
+    assert_eq!(
+        report_json["readiness_report"]["evidence_gap_message"].as_str(),
+        Some(EVIDENCE_GAP_MESSAGE),
+        "embedded readiness report should expose the same evidence_gap_message: {report_json}"
+    );
 }
 
 #[test]
@@ -224,6 +292,7 @@ fn sequence_report(
         readiness_status: "blocked_until_ui_automation".into(),
         blocked_reason: Some("blocked_until_ui_automation".into()),
         human_summary: "blocked".into(),
+        evidence_gap_message: Some(EVIDENCE_GAP_MESSAGE.into()),
         desktop_proof_contract: desktop_proof_contract(),
         shown_evidence: Vec::new(),
         not_yet_shown: not_yet_shown_fixture(),
@@ -261,6 +330,7 @@ fn sequence_report(
         readiness_status: "blocked_until_ui_automation".into(),
         blocked_reason: Some("blocked_until_ui_automation".into()),
         human_summary: "blocked".into(),
+        evidence_gap_message: Some(EVIDENCE_GAP_MESSAGE.into()),
         desktop_proof_contract: desktop_proof_contract(),
         shown_evidence: Vec::new(),
         not_yet_shown: not_yet_shown_fixture(),
@@ -350,5 +420,37 @@ fn desktop_proof_contract() -> DesktopProofContract {
         detail: "desktop proof is not verified".into(),
         target_role: "modernized".into(),
         artifact: None,
+    }
+}
+
+fn no_go_contract_fixture() -> LessonSessionNoGoContract {
+    LessonSessionNoGoContract {
+        target_role: "modernized".into(),
+        affordance: "project_save".into(),
+        decision: "no_go".into(),
+        reason: "Evidence gap: required evidence is missing or incomplete for project save; cannot report this action as supported.".into(),
+        missing_affordance_id: Some("deterministic-alice-project-save-affordance".into()),
+    }
+}
+
+fn assert_no_completion_or_grading_claims(text: &str) {
+    for unsupported_claim in [
+        "lesson completed",
+        "first lesson completed",
+        "first-lesson completed",
+        "completion confirmed",
+        "readiness confirmed",
+        "graded",
+        "grade:",
+        "score:",
+        "scored",
+        "certified",
+        "creative assessment complete",
+        "creative assessment passed",
+    ] {
+        assert!(
+            !text.contains(unsupported_claim),
+            "evidence gap message must not claim {unsupported_claim:?}: {text}"
+        );
     }
 }

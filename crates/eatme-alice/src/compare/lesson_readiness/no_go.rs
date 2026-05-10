@@ -44,12 +44,8 @@ fn collect_precondition_no_go_contracts(
             .and_then(|affordance| affordance.get("id"))
             .and_then(serde_json::Value::as_str)
             .map(str::to_string);
-        let reason = probe
-            .get("blocking_reason")
-            .or_else(|| probe.get("required_evidence"))
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("missing deterministic desktop affordance")
-            .to_string();
+        let reason =
+            evidence_gap_reason(affordance_name(action_id, missing_affordance_id.as_deref()));
         upsert_no_go_contract(contracts, role, action_id, missing_affordance_id, reason);
     }
 }
@@ -84,13 +80,17 @@ fn collect_required_action_no_go_contracts(
             .get("missing_affordance_id")
             .and_then(serde_json::Value::as_str)
             .map(str::to_string);
-        let reason = action
-            .get("required_evidence")
-            .and_then(serde_json::Value::as_str)
-            .map(|evidence| format!("missing deterministic desktop affordance for {evidence}"))
-            .unwrap_or_else(|| "missing deterministic desktop affordance".into());
+        let reason =
+            evidence_gap_reason(affordance_name(action_id, missing_affordance_id.as_deref()));
         upsert_no_go_contract(contracts, role, action_id, missing_affordance_id, reason);
     }
+}
+
+fn evidence_gap_reason(affordance: &str) -> String {
+    let affordance = affordance.replace('_', " ");
+    format!(
+        "Evidence gap: required evidence is missing or incomplete for {affordance}; cannot report this action as supported."
+    )
 }
 
 fn upsert_no_go_contract(
