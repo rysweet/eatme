@@ -21,9 +21,12 @@ pub(super) fn inspect_ui_action_contract(
             "{role} ui-action-contract.json has unsupported schema_version"
         ));
     }
-    if contract.get("status").and_then(serde_json::Value::as_str) != Some("blocked") {
+    if !matches!(
+        contract.get("status").and_then(serde_json::Value::as_str),
+        Some("blocked" | "ready")
+    ) {
         issues.push(format!(
-            "{role} ui-action-contract.json status must remain blocked until UI actions are automated"
+            "{role} ui-action-contract.json status must be blocked or ready"
         ));
     }
     if contract
