@@ -26,6 +26,7 @@ nav:
   - Live Studio Workshop Evidence Contract: live-studio-workshop-evidence.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md
+  - Student Lesson E2E Tests: student-lesson-e2e-tests.md
   - GitHub Pages: github-pages.md
   - Existing Guides:
       - Persona Assets: persona-assets.md
