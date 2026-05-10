@@ -75,7 +75,10 @@ targets:
     .unwrap();
 
     // Contract envelope fields the student CLI depends on
-    assert!(!report.schema_version.is_empty(), "schema_version must be set");
+    assert!(
+        !report.schema_version.is_empty(),
+        "schema_version must be set"
+    );
     assert_eq!(report.scenario_id, "first-lessons-real-ui-actions");
     assert_eq!(report.run_id, "student-lesson-e2e-sequence");
     assert!(report.execute_requested, "execute_requested must be true");
@@ -170,7 +173,10 @@ fn check_lesson_session_readiness_validates_student_desktop_fixture() {
     let report = eatme_alice::check_lesson_session_readiness(&manifest_path).unwrap();
 
     // Schema version and desktop proof contract are student-visible envelope fields
-    assert!(!report.schema_version.is_empty(), "schema_version must be set");
+    assert!(
+        !report.schema_version.is_empty(),
+        "schema_version must be set"
+    );
     assert!(
         !report.desktop_proof_contract.status.is_empty(),
         "desktop_proof_contract.status must be non-empty"
@@ -290,10 +296,7 @@ fn readiness_boundaries_disallow_completion_grading_creative_assessment() {
     let boundaries = report_json["evidence_boundaries"]
         .as_array()
         .expect("evidence_boundaries must be an array");
-    let boundary_ids: Vec<&str> = boundaries
-        .iter()
-        .filter_map(|b| b["id"].as_str())
-        .collect();
+    let boundary_ids: Vec<&str> = boundaries.iter().filter_map(|b| b["id"].as_str()).collect();
     for id in &REQUIRED_BOUNDARY_IDS {
         assert!(
             boundary_ids.contains(id),
