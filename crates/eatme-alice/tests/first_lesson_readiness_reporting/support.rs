@@ -146,7 +146,8 @@ pub(super) fn ready_ui_action_contract() -> serde_json::Value {
                 "save_selector": "scene.eatmeFirstLessonStep",
                 "candidate_hook_path": "/alice/tools/eatme-save-project",
                 "saved_project_artifact": {"size_bytes": 1},
-                "save_artifact": {"size_bytes": 1}
+                "save_artifact": {"size_bytes": 1},
+                "validation_errors": []
             }
         ],
         "required_actions": [
