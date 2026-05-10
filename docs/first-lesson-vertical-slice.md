@@ -175,8 +175,8 @@ evidence for the vertical slice. The `failure_category` field is in the
     "log_captured": true
   },
   "executed_action_probes": [
-    { "action_id": "verify-specific-alice-window", "status": "passed", "detail": "..." },
-    { "action_id": "activate-specific-alice-window", "status": "passed", "detail": "..." }
+    { "id": "verify-specific-alice-window", "status": "passed", "detail": "..." },
+    { "id": "activate-specific-alice-window", "status": "passed", "detail": "..." }
   ],
   "action_precondition_probes": [
     {
@@ -207,19 +207,20 @@ evidence for the vertical slice. The `failure_category` field is in the
 | `status` | string | Always `blocked` while any required action is unproven. |
 | `blocking_reason` | string | Human-readable explanation of what is missing. |
 | `preflight_evidence` | object | Booleans for window detection, visual capture, and log capture. |
-| `executed_action_probes` | array | Probes for actions that were executed (window verification, activation, shortcut dispatch). Each has `action_id`, `status`, and `detail`. |
-| `action_precondition_probes` | array | No-go probes for actions whose preconditions are unmet. Each has `action_id`, `decision` (`no_go`), and `missing_affordance`. |
+| `executed_action_probes` | array | Probes for actions that were executed (window verification, activation, shortcut dispatch). Each has `id`, `status`, `detail`, `window_id`, `command`, `exit_status`, `stdout`, and `stderr`. The `status` field is `"passed"` when the probe succeeded or `"blocked"` when it failed. |
+| `action_precondition_probes` | array | No-go probes for actions whose preconditions are unmet. Each has `id` (probe id), `action_id` (action being tested), `status` (`"blocked"`), `decision` (`"no_go"`), `blocking_reason`, `required_evidence`, `missing_affordance`, and `preconditions`. |
 | `action_precondition_probes[].missing_affordance.id` | string | Machine-readable affordance identifier. |
 | `candidate_affordance_probes` | array | Probes for backend hooks that proved an action (object placement, edit, run, save). |
 | `required_actions` | array | Full roster of required actions with `id`, `decision` (`no_go` or `ready`), `required_evidence`, and `contract_required` backend specification. |
 
 The `assert_step_evidence` helper in the test interprets this structure to
 derive the per-step `go` / `passed` / `no_go` / `blocked` decisions described
-in the [per-step evidence model](#per-step-evidence-model). It checks
-`executed_action_probes` for `go` status, `candidate_affordance_probes` for
-`passed` status, `action_precondition_probes` for `no_go`, and infers
-`blocked` for steps that appear only in `required_actions` with `no_go` and
-no corresponding probe.
+in the [per-step evidence model](#per-step-evidence-model). It maps
+`executed_action_probes` entries with `status: "passed"` to the `go` decision,
+`candidate_affordance_probes` entries to the `passed` decision,
+`action_precondition_probes` entries to `no_go`, and infers `blocked` for steps
+that appear only in `required_actions` with `decision: "no_go"` and no
+corresponding probe.
 
 The manifest `failure_category` (not in this JSON) is
 `ui_action_automation_unimplemented` when `place-object` is the frontier, or
@@ -260,7 +261,7 @@ consumes existing crate APIs.
 | --- | --- | --- |
 | `scenario` | `first-lessons-real-ui-actions` | Exercises the first-lesson UI-action pipeline. |
 | `run_id` | `vertical-slice-fake` | Identifies the evidence directory. |
-| `runs_dir` | `target/test-work/vertical-slice/runs` | Isolated under `target/` with nonce-based subdirectory. |
+| `runs_dir` | `fixture.root.join("runs")` | Nonce-based under `target/test-work/launch-smoke/` via `TestFixture`. |
 | `timeout_seconds` | `120` | Fake tools complete quickly; the timeout is a safety bound. |
 | `json` | `true` | Machine-readable output for assertion parsing. |
 | `no_memory` | `true` | No persistent memory side effects. |
@@ -292,11 +293,13 @@ cargo test -p eatme-alice --test first_lesson_vertical_slice \
   -- fake_toolchain_vertical_slice_reports --nocapture
 ```
 
-After the test passes, inspect the no-go probes in the generated contract:
+After the test passes, inspect the no-go probes in the generated contract.
+Because `TestFixture` uses nonce-based paths, locate the contract first:
 
 ```bash
-cat target/test-work/vertical-slice/runs/first-lessons-real-ui-actions/vertical-slice-fake/ui-action-contract.json \
-  | jq '.action_precondition_probes[] | {action_id, decision}'
+CONTRACT=$(find target/test-work/launch-smoke -name ui-action-contract.json \
+  -path '*/first-lessons-real-ui-actions/vertical-slice-fake/*' | head -1)
+cat "$CONTRACT" | jq '.action_precondition_probes[] | {action_id, decision}'
 ```
 
 Expected output (only the no-go frontier appears):
@@ -308,8 +311,7 @@ Expected output (only the no-go frontier appears):
 Inspect the required actions roster:
 
 ```bash
-cat target/test-work/vertical-slice/runs/first-lessons-real-ui-actions/vertical-slice-fake/ui-action-contract.json \
-  | jq '.required_actions[] | {id, decision}'
+cat "$CONTRACT" | jq '.required_actions[] | {id, decision}'
 ```
 
 Expected output:
@@ -333,8 +335,9 @@ cargo test -p eatme-alice --test first_lesson_vertical_slice \
 Inspect the shifted frontier in the manifest and contract:
 
 ```bash
-cat target/test-work/vertical-slice/runs/first-lessons-real-ui-actions/vertical-slice-fake-advanced/manifest.json \
-  | jq '.failure_category'
+MANIFEST=$(find target/test-work/launch-smoke -name manifest.json \
+  -path '*/first-lessons-real-ui-actions/vertical-slice-fake-advanced/*' | head -1)
+cat "$MANIFEST" | jq '.failure_category'
 ```
 
 Expected output:
@@ -344,8 +347,9 @@ Expected output:
 ```
 
 ```bash
-cat target/test-work/vertical-slice/runs/first-lessons-real-ui-actions/vertical-slice-fake-advanced/ui-action-contract.json \
-  | jq '.action_precondition_probes[] | {action_id, decision}'
+ADV_CONTRACT=$(find target/test-work/launch-smoke -name ui-action-contract.json \
+  -path '*/first-lessons-real-ui-actions/vertical-slice-fake-advanced/*' | head -1)
+cat "$ADV_CONTRACT" | jq '.action_precondition_probes[] | {action_id, decision}'
 ```
 
 Expected output (frontier has shifted to edit):
@@ -367,7 +371,7 @@ Inspect per-step evidence:
 
 ```bash
 cat target/test-work/vertical-slice-real/runs/first-lessons-real-ui-actions/vertical-slice-real/ui-action-contract.json \
-  | jq '{executed: [.executed_action_probes[] | .action_id], no_go: [.action_precondition_probes[] | .action_id]}'
+  | jq '{executed: [.executed_action_probes[] | .id], no_go: [.action_precondition_probes[] | .action_id]}'
 ```
 
 ### Verify screenshot captured during real-Alice run
@@ -403,8 +407,9 @@ manifest `failure_category` for an earlier failure (note: `failure_category` is
 in the manifest, not in the contract JSON):
 
 ```bash
-cat target/test-work/vertical-slice/runs/first-lessons-real-ui-actions/vertical-slice-fake/manifest.json \
-  | jq '.failure_category'
+MANIFEST=$(find target/test-work/launch-smoke -name manifest.json \
+  -path '*/first-lessons-real-ui-actions/vertical-slice-fake/*' | head -1)
+cat "$MANIFEST" | jq '.failure_category'
 ```
 
 ### Real-Alice test skips unexpectedly
