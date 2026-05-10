@@ -1,4 +1,4 @@
-use crate::launch_artifacts::artifact_info;
+use crate::launch_path_validation::artifact_info_under;
 use crate::launch_run_world::UiActionRunWorldProbe;
 use crate::launch_ui_actions::{
     UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
@@ -6,7 +6,7 @@ use crate::launch_ui_actions::{
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROJECT_SAVE_HOOK: &str = "tools/eatme-save-project";
@@ -166,16 +166,22 @@ pub(crate) fn probe_project_save_hook(
     };
 
     let mut validation_errors = validate_save_hook_result(&result);
-    let saved_project_artifact = hook_artifact(
+    let saved_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.saved_project_artifact,
         "saved_project_artifact",
+        "project-save evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let save_artifact = hook_artifact(&evidence_dir, &result.save_artifact, "save_artifact")
-        .map_err(|error| validation_errors.push(error))
-        .ok();
+    let save_artifact = artifact_info_under(
+        &evidence_dir,
+        &result.save_artifact,
+        "save_artifact",
+        "project-save evidence dir",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
     if saved_project_artifact
         .as_ref()
         .map(|artifact| artifact.size_bytes == 0)
@@ -344,31 +350,6 @@ fn validate_save_hook_result(result: &ProjectSaveHookResult) -> Vec<String> {
         errors.push("save_artifact must not be empty".into());
     }
     errors
-}
-
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!(
-            "{field} must be a simple relative path under project-save evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })
 }
 
 #[cfg(test)]

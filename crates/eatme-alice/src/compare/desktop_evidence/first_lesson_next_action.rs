@@ -138,6 +138,12 @@ pub(crate) fn check_first_lesson_next_action_evidence(
             format!("{DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} status must not be empty"),
         );
     }
+    if !matches!(status, "ready" | "blocked") {
+        return invalid_first_lesson_next_action(
+            Some(artifact),
+            format!("unsupported desktop next-action status {status:?}"),
+        );
+    }
     if let Some(reason) = next_action_contract_issue(&json) {
         return invalid_first_lesson_next_action(
             Some(artifact),

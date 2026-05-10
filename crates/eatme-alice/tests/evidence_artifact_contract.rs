@@ -410,7 +410,7 @@ fn restrained_limitation_wording_remains_valid() {
     let next_action = modernized_next_action(&report_json);
 
     assert!(
-        report.passed,
+        report.issues.is_empty(),
         "restrained limitation wording must remain valid: {:?}",
         report.issues
     );

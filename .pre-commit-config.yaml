@@ -6,3 +6,15 @@ repos:
         entry: env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE TMPDIR=/tmp ./scripts/quality-gates.sh
         language: system
         pass_filenames: false
+      - id: cargo-fmt
+        name: cargo fmt --check
+        entry: cargo fmt --check
+        language: system
+        pass_filenames: false
+        types: [rust]
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        language: system
+        pass_filenames: false
+        types: [rust]

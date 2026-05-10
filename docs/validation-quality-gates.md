@@ -120,3 +120,5 @@ directory or report a clean no-op from the wrong path.
 
 For run/observe readiness wording and the related adapter contract, see
 [Run/Observe Readiness Evidence](run-observe-readiness.md).
+| Save/reopen contract code | `cargo test -p eatme-alice`; asset validation; docs build when evidence boundary wording changes |
+| Path validation | `cargo test -p eatme-alice launch_path`; verify symlink and traversal rejection tests pass |

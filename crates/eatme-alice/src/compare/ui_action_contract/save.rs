@@ -43,5 +43,9 @@ pub(super) fn has_passed_save_project_candidate_affordance_probe(
                 .get("saved_project_artifact")
                 .is_some_and(non_empty_artifact)
             && probe.get("save_artifact").is_some_and(non_empty_artifact)
+            && probe
+                .get("validation_errors")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(Vec::is_empty)
     })
 }

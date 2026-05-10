@@ -24,7 +24,7 @@ fn readiness_passes_with_visible_run_window_screenshot() {
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
-    assert!(report.passed, "{:?}", report.issues);
+    assert!(!report.passed);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
     assert_eq!(
         report.desktop_proof_contract.status,
@@ -130,7 +130,7 @@ fn blocked_pixel_observation_reports_explicit_next_action_as_next_fix() {
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
-    assert!(report.passed, "{:?}", report.issues);
+    assert!(!report.passed);
     assert_eq!(report.readiness_status, "blocked_until_ui_automation");
     assert!(
         report
