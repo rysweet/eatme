@@ -47,10 +47,7 @@ impl ReadinessArtifact {
     }
 
     fn ready(input: &ReadinessInput) -> Self {
-        let required_checks = check_names(input, |check| check.required);
-        let optional_skipped_checks = check_names(input, |check| {
-            !check.required && check.conclusion == CheckConclusion::Skipped
-        });
+        let (required_checks, optional_skipped_checks) = partition_check_names(input);
         let text = format!(
             "MERGE_READY_EVIDENCE\n\
              PR: #{} ({})\n\
@@ -403,8 +400,12 @@ fn is_focused_readiness_path(path: &str) -> bool {
 }
 
 fn contains_overclaim(claim: &str) -> bool {
-    let claim = claim.to_lowercase();
-    OVERCLAIMS.iter().any(|overclaim| claim.contains(overclaim))
+    OVERCLAIMS.iter().any(|overclaim| {
+        claim
+            .as_bytes()
+            .windows(overclaim.len())
+            .any(|window| window.eq_ignore_ascii_case(overclaim.as_bytes()))
+    })
 }
 
 fn display_or_unknown(value: &str) -> &str {
@@ -415,16 +416,22 @@ fn display_or_unknown(value: &str) -> &str {
     }
 }
 
-fn check_names(input: &ReadinessInput, include: impl Fn(&CheckRunEvidence) -> bool) -> String {
-    let names = input
-        .check_runs
-        .iter()
-        .filter(|check| include(check))
-        .map(|check| check.name.as_str())
-        .collect::<Vec<_>>();
-    if names.is_empty() {
-        "none".into()
-    } else {
-        names.join(", ")
+fn partition_check_names(input: &ReadinessInput) -> (String, String) {
+    let mut required: Vec<&str> = Vec::new();
+    let mut optional_skipped: Vec<&str> = Vec::new();
+    for check in &input.check_runs {
+        if check.required {
+            required.push(&check.name);
+        } else if check.conclusion == CheckConclusion::Skipped {
+            optional_skipped.push(&check.name);
+        }
     }
+    let join = |names: Vec<&str>| -> String {
+        if names.is_empty() {
+            "none".into()
+        } else {
+            names.join(", ")
+        }
+    };
+    (join(required), join(optional_skipped))
 }

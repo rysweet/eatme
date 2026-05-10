@@ -323,22 +323,27 @@ impl GitHubReadinessClient for GhCliReadinessClient {
     }
 
     fn check_runs(&self, pr_number: u64) -> Result<Vec<GitHubCheckRun>, ExternalServiceError> {
-        let pr_number = pr_number.to_string();
-        let output = self.gh_json(&[
-            "pr",
-            "checks",
-            pr_number.as_str(),
-            "--json",
-            "name,state,bucket",
-        ])?;
-        let required_output = self.gh_json(&[
-            "pr",
-            "checks",
-            pr_number.as_str(),
-            "--required",
-            "--json",
-            "name,state,bucket",
-        ])?;
+        let pr = pr_number.to_string();
+        let check_args = ["pr", "checks", "", "--json", "name,state,bucket"];
+        let (output, required_output) = thread::scope(|s| {
+            let all = s.spawn(|| {
+                let mut args = check_args.to_vec();
+                args[2] = &pr;
+                self.gh_json(&args)
+            });
+            let req = s.spawn(|| {
+                let mut args = check_args.to_vec();
+                args[2] = &pr;
+                args.insert(3, "--required");
+                self.gh_json(&args)
+            });
+            (
+                all.join().expect("check-runs thread"),
+                req.join().expect("check-runs thread"),
+            )
+        });
+        let output = output?;
+        let required_output = required_output?;
         let response: Vec<GhCheckResponse> = serde_json::from_str(&output).map_err(|error| {
             ExternalServiceError::new(
                 ExternalServiceErrorKind::ParseFailed,
@@ -399,19 +404,17 @@ struct GhCheckResponse {
 }
 
 fn map_check_status(state: Option<&str>) -> CheckStatus {
-    if normalized_is_any(
-        state,
-        &[
-            "COMPLETED",
-            "SUCCESS",
-            "FAILURE",
-            "CANCELLED",
-            "SKIPPED",
-            "TIMED_OUT",
-            "TIMEDOUT",
-            "NEUTRAL",
-        ],
-    ) {
+    const COMPLETED: &[&str] = &[
+        "COMPLETED",
+        "SUCCESS",
+        "FAILURE",
+        "CANCELLED",
+        "SKIPPED",
+        "TIMED_OUT",
+        "TIMEDOUT",
+        "NEUTRAL",
+    ];
+    if normalized_is_any(state, COMPLETED) {
         CheckStatus::Completed
     } else if normalized_is_any(state, &["IN_PROGRESS", "ACTION_REQUIRED"]) {
         CheckStatus::InProgress

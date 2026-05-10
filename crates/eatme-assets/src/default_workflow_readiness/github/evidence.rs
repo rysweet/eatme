@@ -27,6 +27,8 @@ pub(super) fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvid
         return empty_pr_evidence();
     };
 
+    let body_lower = evidence_text.body.to_ascii_lowercase();
+
     PREvidenceReview {
         location: evidence_text.location.clone(),
         trusted_provenance: true,
@@ -40,20 +42,11 @@ pub(super) fn pr_evidence_from_texts(pull_request: &GitHubPullRequest) -> PREvid
             .filter(|command| evidence_text.body.contains(**command))
             .map(|command| (*command).into())
             .collect(),
-        records_github_checks: contains_ascii_case_insensitive(&evidence_text.body, "github")
-            && contains_ascii_case_insensitive(&evidence_text.body, "check"),
-        records_diff_scope: contains_ascii_case_insensitive(&evidence_text.body, "diff")
-            && contains_ascii_case_insensitive(&evidence_text.body, "scope"),
-        records_docs_impact: contains_ascii_case_insensitive(&evidence_text.body, "docs")
-            && contains_ascii_case_insensitive(&evidence_text.body, "impact"),
-        records_quality_audit: contains_ascii_case_insensitive(
-            &evidence_text.body,
-            "quality audit",
-        ),
-        records_no_manual_merge: contains_ascii_case_insensitive(
-            &evidence_text.body,
-            "no manual merge",
-        ),
+        records_github_checks: body_lower.contains("github") && body_lower.contains("check"),
+        records_diff_scope: body_lower.contains("diff") && body_lower.contains("scope"),
+        records_docs_impact: body_lower.contains("docs") && body_lower.contains("impact"),
+        records_quality_audit: body_lower.contains("quality audit"),
+        records_no_manual_merge: body_lower.contains("no manual merge"),
         updated_during_review: false,
         reconfirmed_head_sha: None,
     }
