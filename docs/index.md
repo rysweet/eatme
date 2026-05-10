@@ -33,8 +33,12 @@ Eatme has three layers:
 | Reviewing bounded baseline launch-smoke readiness | [Real Alice Launch-Smoke Readiness](real-alice-launch-smoke-readiness.md) |
 | Understanding the launch-smoke readiness mapper | [Launch-Smoke Readiness Mapping](launch-smoke-readiness-mapping.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
+| Maintaining first-lesson readiness module boundaries | [Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Reviewing save/reopen readiness evidence | [Save/reopen Readiness](save-reopen-readiness.md) |
+| Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
+| Reviewing PR #160 gap-reporting recovery readiness | [PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
@@ -115,12 +119,23 @@ Recover a readiness PR with exact-head evidence:
 
 Recover PR #188 with bounded current-head evidence:
 [PR #188 Recovery Readiness](pr-188-recovery-readiness.md).
+Review the save/reopen artifact and reopened-state evidence boundary:
+[Save/reopen Readiness](save-reopen-readiness.md).
 
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
 
+Keep first-lesson readiness helper logic in focused Rust submodules:
+[Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md).
+
+Record exact-head pull request readiness:
+[Default-workflow PR Readiness](default-workflow-pr-readiness.md).
+
 Recover PR #199 merge-readiness evidence after the manual-fallback violation:
 [PR #199 Recovery Workflow](pr-199-recovery-workflow.md).
+
+Review PR #160 gap-reporting recovery readiness:
+[PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md).
 
 Build the docs site:
 

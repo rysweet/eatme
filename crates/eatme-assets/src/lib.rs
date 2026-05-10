@@ -24,9 +24,12 @@ mod neighborhood_data_story_tests;
 mod outside_in_alice_expansion_tests;
 #[cfg(test)]
 mod pr188_recovery_readiness_tests;
+mod pr160_recovery_readiness_tests;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
+#[cfg(test)]
+mod save_reopen_readiness_docs_tests;
 mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;

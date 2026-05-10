@@ -1,11 +1,6 @@
 use super::{
     LessonSessionContractCheck,
-    desktop_evidence::{
-        FirstLessonEvidenceBoundary, check_first_lesson_next_action_evidence,
-        check_pixel_boundary_evidence, check_pixel_observation_evidence,
-        check_visible_desktop_evidence, comparison_evidence_root, first_lesson_evidence_boundaries,
-        resolve_artifact_path,
-    },
+    desktop_evidence::{FirstLessonEvidenceBoundary, resolve_artifact_path},
     first_lesson::FIRST_LESSON_SCENARIO_ID,
     lesson_session::check_lesson_session_contract_in_manifest,
     ui_action_contract::{action_ids, inspect_ui_action_contract},
@@ -14,6 +9,8 @@ use anyhow::{Context, Result};
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
+use std::{collections::BTreeSet, fs, path::Path};
+
 mod assertions;
 mod desktop_proof;
 mod launch_smoke;
@@ -28,6 +25,9 @@ use assertions::{
 pub use desktop_proof::DesktopProofContract;
 use desktop_proof::desktop_proof_contract;
 use launch_smoke::check_launch_smoke_readiness;
+use desktop_proof::{
+    desktop_proof_contract, inspect_desktop_proof_evidence, readiness_evidence_boundaries,
+};
 pub use no_go::LessonSessionNoGoContract;
 use no_go::ui_action_no_go_contracts;
 use original_action_evidence::original_alice_action_evidence;
@@ -39,8 +39,8 @@ pub use output::{
     LessonTargetEvidenceBlocker, ReadinessEvidenceItem,
 };
 use output::{
-    build_readiness_output, desktop_next_action_summary, limitations, not_yet_shown,
-    shown_evidence, unproven_claims,
+    build_readiness_output, desktop_next_action_summary, evidence_gap_message, limitations,
+    not_yet_shown, required_evidence, shown_evidence, unproven_claims,
 };
 use progress::evidence_progress;
 pub use progress::{LessonReadinessEvidenceProgress, LessonReadinessEvidenceProgressItem};
@@ -81,6 +81,7 @@ pub struct LessonSessionReadinessReport {
     pub readiness_status: String,
     pub blocked_reason: Option<String>,
     pub human_summary: String,
+    pub evidence_gap_message: Option<String>,
     pub desktop_proof_contract: DesktopProofContract,
     pub shown_evidence: Vec<ReadinessEvidenceItem>,
     pub not_yet_shown: Vec<ReadinessEvidenceItem>,
@@ -162,36 +163,42 @@ pub fn check_lesson_session_readiness(
         }
     }
 
-    let readiness_status = if !issues.is_empty() {
-        "incomplete"
-    } else if target_evidence.iter().any(|target| {
-        target
-            .failure_category
-            .as_deref()
-            .is_some_and(is_ui_action_blocked_category)
-    }) {
-        "blocked_until_ui_automation"
-    } else {
-        "ready"
-    }
-    .to_string();
     let no_go_contracts = target_evidence
         .iter()
         .flat_map(|target| target.no_go_contracts.iter().cloned())
         .collect::<Vec<_>>();
+    let required_evidence = required_evidence();
+    let evidence_boundaries =
+        readiness_evidence_boundaries(manifest_path, &target_evidence, &mut issues);
+    let evidence_progress = evidence_progress(&required_evidence, &target_evidence, &issues);
+    let readiness_status = readiness_status(
+        !issues.is_empty(),
+        !no_go_contracts.is_empty()
+            || target_evidence.iter().any(|target| {
+                target
+                    .failure_category
+                    .as_deref()
+                    .is_some_and(is_ui_action_blocked_category)
+            }),
+        &evidence_progress,
+    )
+    .to_string();
     let readiness_output = build_readiness_output(
         scenario_id.as_deref(),
         &readiness_status,
         !issues.is_empty(),
         no_go_contracts,
+        required_evidence,
         FIRST_LESSON_SCENARIO_ID,
     );
-    let evidence_progress = evidence_progress(
-        &readiness_output.required_evidence,
-        &target_evidence,
-        &issues,
+    let evidence_gap_message = evidence_gap_message(
+        !issues.is_empty(),
+        evidence_progress.missing,
+        evidence_progress.invalid,
+        evidence_progress.not_observed,
+        evidence_progress.blocked,
+        !readiness_output.no_go_contracts.is_empty(),
     );
-    let evidence_boundaries = readiness_evidence_boundaries(manifest_path, &target_evidence);
     let desktop_proof_contract =
         desktop_proof_contract(execute_requested, &target_evidence, &issues);
     let shown_evidence = shown_evidence(&evidence_progress, &evidence_boundaries);
@@ -203,11 +210,12 @@ pub fn check_lesson_session_readiness(
         schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
         manifest_path: manifest_path.display().to_string(),
         scenario_id,
-        passed: issues.is_empty(),
+        passed: readiness_status == "ready",
         status: readiness_output.status,
         readiness_status,
         blocked_reason: readiness_output.blocked_reason,
         human_summary: readiness_output.human_summary,
+        evidence_gap_message,
         desktop_proof_contract,
         shown_evidence,
         not_yet_shown,
@@ -228,24 +236,20 @@ pub fn check_lesson_session_readiness(
     })
 }
 
-fn readiness_evidence_boundaries(
-    manifest_path: &Path,
-    target_evidence: &[LessonTargetEvidence],
-) -> Vec<FirstLessonEvidenceBoundary> {
-    if let Some(boundaries) = target_evidence
-        .iter()
-        .find(|target| target.role == "modernized")
-        .and_then(|target| target.desktop_first_lesson_next_action.as_ref())
-        .map(|next_action| next_action.evidence_boundaries.clone())
-    {
-        return boundaries;
+fn readiness_status(
+    has_issues: bool,
+    has_blockers: bool,
+    progress: &LessonReadinessEvidenceProgress,
+) -> &'static str {
+    if has_issues {
+        "incomplete"
+    } else if has_blockers || progress.blocked > 0 {
+        "blocked_until_ui_automation"
+    } else if progress.missing > 0 || progress.invalid > 0 || progress.not_observed > 0 {
+        "incomplete"
+    } else {
+        "ready"
     }
-
-    let evidence_root = comparison_evidence_root(manifest_path);
-    let canonical_root = evidence_root
-        .canonicalize()
-        .unwrap_or_else(|_| evidence_root.clone());
-    first_lesson_evidence_boundaries(&serde_json::Value::Null, &canonical_root, &evidence_root)
 }
 
 fn inspect_target_evidence(
@@ -297,21 +301,20 @@ fn inspect_target_evidence(
             "{role} launch_manifest scenario_id must be {FIRST_LESSON_SCENARIO_ID:?}"
         ));
     }
-    if !failure_category
-        .as_deref()
-        .is_some_and(is_ui_action_blocked_category)
+    if let Some(category) = failure_category.as_deref()
+        && !is_ui_action_blocked_category(category)
     {
         issues.push(format!(
-            "{role} target must be blocked only by a known UI action category until deterministic UI actions exist"
+            "{role} target has unsupported failure_category {category:?}"
         ));
     }
-    if !launch_manifest
+    if let Some(category) = launch_manifest
         .get("failure_category")
         .and_then(serde_json::Value::as_str)
-        .is_some_and(is_ui_action_blocked_category)
+        && !is_ui_action_blocked_category(category)
     {
         issues.push(format!(
-            "{role} launch_manifest failure_category must be a known UI action blocker"
+            "{role} launch_manifest has unsupported failure_category {category:?}"
         ));
     }
 
@@ -376,9 +379,13 @@ fn inspect_target_evidence(
                         inspect_ui_action_contract(role, &contract, issues);
                         no_go_contracts = ui_action_no_go_contracts(role, &contract);
                         required_actions = action_ids(&contract);
+                        let required_action_ids = required_actions
+                            .iter()
+                            .map(String::as_str)
+                            .collect::<BTreeSet<_>>();
                         missing_required_actions = REQUIRED_UI_ACTION_IDS
                             .iter()
-                            .filter(|id| !required_actions.iter().any(|action| action == **id))
+                            .filter(|id| !required_action_ids.contains(*id))
                             .map(|value| (*value).to_string())
                             .collect();
                         for action in &missing_required_actions {
@@ -387,25 +394,13 @@ fn inspect_target_evidence(
                             ));
                         }
                         if role == "modernized" {
-                            let evidence_root = comparison_evidence_root(manifest_path);
-                            let pixel_boundary =
-                                check_pixel_boundary_evidence(&evidence_root, &resolved);
-                            issues.extend(pixel_boundary.issue_when_missing_or_invalid());
-                            desktop_run_pixel_boundary = Some(pixel_boundary);
-                            let pixel_observation =
-                                check_pixel_observation_evidence(&evidence_root, &resolved);
-                            issues.extend(pixel_observation.issue_when_missing_or_invalid());
-                            desktop_run_pixel_observation = Some(pixel_observation);
-                            let first_lesson_next_action =
-                                check_first_lesson_next_action_evidence(&evidence_root, &resolved);
-                            issues.extend(first_lesson_next_action.issue_when_invalid());
-                            issues.extend(first_lesson_next_action.boundary_issues());
-                            issues.extend(first_lesson_next_action.proof_artifact_issues());
-                            desktop_first_lesson_next_action = Some(first_lesson_next_action);
-                            issues.extend(
-                                check_visible_desktop_evidence(&evidence_root, &resolved)
-                                    .issue_when_missing(),
-                            );
+                            let desktop_evidence =
+                                inspect_desktop_proof_evidence(manifest_path, &resolved, issues);
+                            desktop_run_pixel_boundary = Some(desktop_evidence.run_pixel_boundary);
+                            desktop_run_pixel_observation =
+                                Some(desktop_evidence.run_pixel_observation);
+                            desktop_first_lesson_next_action =
+                                Some(desktop_evidence.first_lesson_next_action);
                         }
                     }
                     Err(error) => issues.push(format!(
@@ -454,16 +449,26 @@ fn required_action_evidence_blockers(
         return Vec::new();
     }
 
+    let seen_actions = action_assertions
+        .iter()
+        .map(|action| action.action_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let passed_actions = action_assertions
+        .iter()
+        .filter(|action| action.passed)
+        .map(|action| action.action_id.as_str())
+        .collect::<BTreeSet<_>>();
+
     REQUIRED_UI_ACTION_IDS
         .iter()
         .filter_map(|action_id| {
-            let action = action_assertions
-                .iter()
-                .find(|action| action.action_id == *action_id);
-            let reason = match action {
-                Some(action) if action.passed => return None,
-                Some(_) => "Required original Alice action evidence from automation scenarios did not pass.",
-                None => "Required original Alice action evidence is missing from automation scenarios.",
+            if passed_actions.contains(action_id) {
+                return None;
+            }
+            let reason = if seen_actions.contains(action_id) {
+                "Required original Alice action evidence from automation scenarios did not pass."
+            } else {
+                "Required original Alice action evidence is missing from automation scenarios."
             };
             Some(LessonTargetEvidenceBlocker {
                 code: MISSING_REAL_ACTION_EVIDENCE_CODE,

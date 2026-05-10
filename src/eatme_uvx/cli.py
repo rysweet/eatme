@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -17,7 +18,7 @@ def main() -> int:
         return 127
 
     env = os.environ.copy()
-    env.setdefault("CARGO_TARGET_DIR", str(_target_dir()))
+    env.setdefault("CARGO_TARGET_DIR", str(_target_dir(source_root)))
     command = [
         "cargo",
         "run",
@@ -36,9 +37,10 @@ def main() -> int:
         return 127
 
 
-def _target_dir() -> Path:
+def _target_dir(source_root: Path) -> Path:
     cache_home = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    target_dir = cache_home / "eatme-uvx" / "target"
+    source_key = hashlib.sha256(str(source_root).encode()).hexdigest()[:16]
+    target_dir = cache_home / "eatme-uvx" / "targets" / source_key
     target_dir.mkdir(parents=True, exist_ok=True)
     return target_dir
 
