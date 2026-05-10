@@ -17,6 +17,7 @@ nav:
   - Validation and Quality Gates: validation-quality-gates.md
   - Outside-in Alice Test Modules: outside-in-alice-test-modules.md
   - Alice Integration: alice-integration.md
+  - Deterministic Real-Alice Smoke Test: deterministic-real-alice-smoke-test.md
   - Lesson Session Readiness: lesson-session-readiness.md
   - First-Lesson Evidence Readiness: first-lesson-evidence-readiness.md
   - Evidence Artifact Contract: evidence-artifact-contract.md

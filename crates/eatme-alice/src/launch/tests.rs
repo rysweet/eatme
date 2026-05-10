@@ -1,4 +1,6 @@
 use super::*;
+use eatme_core::{ArtifactInfo, AssertionResult, LaunchSmokeManifest};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -53,6 +55,102 @@ fn relative_runs_dir_resolves_to_absolute_launch_evidence_path() {
 #[test]
 fn run_id_cannot_escape_launch_evidence_directory() {
     assert!(launch_run_dir(PathBuf::from("runs").as_path(), "scenario", "../bad").is_err());
+}
+
+#[test]
+fn manifest_schema_round_trip() {
+    let mut assertions = BTreeMap::new();
+    assertions.insert(
+        "dependencies_available".into(),
+        AssertionResult::pass("all present"),
+    );
+    assertions.insert(
+        "display_responsive".into(),
+        AssertionResult::pass(":99 responds"),
+    );
+    assertions.insert(
+        "process_started".into(),
+        AssertionResult::pass("Alice stayed alive"),
+    );
+    assertions.insert(
+        "startup_screenshot".into(),
+        AssertionResult::pass("screenshot captured"),
+    );
+    assertions.insert(
+        "no_fatal_logs".into(),
+        AssertionResult::pass("no fatal patterns"),
+    );
+    assertions.insert(
+        "real_alice_execution_evidence".into(),
+        AssertionResult::pass("all evidence captured"),
+    );
+
+    let manifest = LaunchSmokeManifest {
+        schema_version: "1".into(),
+        scenario_id: "real-alice-launch-smoke".into(),
+        run_id: "round-trip-test".into(),
+        alice_home: "/fake/alice".into(),
+        alice_git_commit: "abc123".into(),
+        eatme_git_commit: "def456".into(),
+        java_version: "openjdk 21".into(),
+        maven_version: "Apache Maven 3.9.0".into(),
+        dependency_checks: BTreeMap::from([("java".into(), true), ("mvn".into(), true)]),
+        build_command: "mvn package -o".into(),
+        build_exit_status: Some(0),
+        launch_command: "java -cp ... org.alice.stageide.EntryPoint".into(),
+        display: ":99".into(),
+        xvfb_pid: Some(1234),
+        alice_pid: Some(5678),
+        timeout_seconds: 90,
+        window_list: Some(ArtifactInfo {
+            path: "window-list.txt".into(),
+            size_bytes: 128,
+            sha256: "aabbcc".into(),
+        }),
+        window_list_error: None,
+        screenshot: Some(ArtifactInfo {
+            path: "screenshots/startup.png".into(),
+            size_bytes: 4096,
+            sha256: "ddeeff".into(),
+        }),
+        screenshot_error: None,
+        ui_action_contract: None,
+        log: Some(ArtifactInfo {
+            path: "alice.log".into(),
+            size_bytes: 256,
+            sha256: "112233".into(),
+        }),
+        log_error: None,
+        fatal_log_scan: vec![],
+        assertions,
+        failure_category: None,
+    };
+
+    let json = serde_json::to_string_pretty(&manifest).expect("serialize manifest");
+    let round_tripped: LaunchSmokeManifest =
+        serde_json::from_str(&json).expect("deserialize manifest");
+
+    assert_eq!(round_tripped.schema_version, manifest.schema_version);
+    assert_eq!(round_tripped.scenario_id, manifest.scenario_id);
+    assert_eq!(round_tripped.run_id, manifest.run_id);
+    assert_eq!(round_tripped.alice_home, manifest.alice_home);
+    assert_eq!(round_tripped.alice_pid, manifest.alice_pid);
+    assert_eq!(round_tripped.xvfb_pid, manifest.xvfb_pid);
+    assert_eq!(round_tripped.timeout_seconds, manifest.timeout_seconds);
+    assert_eq!(round_tripped.assertions.len(), manifest.assertions.len());
+    assert!(round_tripped.failure_category.is_none());
+    for (key, original) in &manifest.assertions {
+        let restored = round_tripped
+            .assertions
+            .get(key)
+            .unwrap_or_else(|| panic!("missing assertion key {key}"));
+        assert_eq!(restored.passed, original.passed, "mismatch on {key}");
+        assert_eq!(restored.detail, original.detail, "detail mismatch on {key}");
+    }
+    assert_eq!(
+        round_tripped.screenshot.as_ref().map(|s| &s.sha256),
+        manifest.screenshot.as_ref().map(|s| &s.sha256),
+    );
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {

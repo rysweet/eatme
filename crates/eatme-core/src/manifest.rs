@@ -1,7 +1,7 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AssertionResult {
     pub passed: bool,
     pub detail: String,
@@ -23,14 +23,14 @@ impl AssertionResult {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ArtifactInfo {
     pub path: String,
     pub size_bytes: u64,
     pub sha256: String,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LaunchSmokeManifest {
     pub schema_version: String,
     pub scenario_id: String,
