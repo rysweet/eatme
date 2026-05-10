@@ -22,6 +22,7 @@ nav:
   - Evidence Artifact Contract: evidence-artifact-contract.md
   - Lesson Readiness Module Boundary: lesson-readiness-module-boundary.md
   - Starter Project Preflight Evidence: starter-project-preflight-evidence.md
+  - Save/reopen Readiness: save-reopen-readiness.md
   - Default-workflow PR Readiness: default-workflow-pr-readiness.md
   - "PR #199 Recovery Workflow": pr-199-recovery-workflow.md
   - "PR #160 Gap-Reporting Readiness": pr-160-gap-reporting-readiness.md

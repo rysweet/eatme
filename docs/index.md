@@ -31,6 +31,7 @@ Eatme has three layers:
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Maintaining first-lesson readiness module boundaries | [Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md) |
 | Reviewing starter project preflight evidence | [Starter Project Preflight Evidence](starter-project-preflight-evidence.md) |
+| Reviewing save/reopen readiness evidence | [Save/reopen Readiness](save-reopen-readiness.md) |
 | Recording exact-head PR readiness | [Default-workflow PR Readiness](default-workflow-pr-readiness.md) |
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing PR #160 gap-reporting recovery readiness | [PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md) |
@@ -108,6 +109,9 @@ Audit instructor/student lesson-session readiness:
 
 Review the conservative first-lesson evidence boundary contract:
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md).
+
+Review the save/reopen artifact and reopened-state evidence boundary:
+[Save/reopen Readiness](save-reopen-readiness.md).
 
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
