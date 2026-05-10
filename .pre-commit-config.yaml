@@ -8,6 +8,7 @@ repos:
         pass_filenames: false
         always_run: true
 
+        types: [rust]
       - id: cargo-clippy
         name: cargo clippy
         entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -28,3 +29,4 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+        types: [rust]

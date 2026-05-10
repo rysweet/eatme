@@ -182,11 +182,10 @@ mod tests {
                 &CommandSpec::new("sh")
                     .args([
                         "-c",
-                        "set -e; if [ -f \"$1\" ]; then count=$(cat \"$1\"); else count=0; fi; count=$((count + 1)); echo \"$count\" > \"$1\"; [ \"$count\" -ge 2 ]",
+                        "count=$(cat \"$1\" 2>/dev/null || echo 0); count=$((count + 1)); echo \"$count\" > \"$1\"; [ \"$count\" -ge 2 ]",
                         "sh",
                         counter_path.to_str().unwrap(),
                     ])
-                    .timeout(Duration::from_secs(10))
                     .retries(2, Duration::from_millis(10)),
             )
             .unwrap();

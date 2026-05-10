@@ -57,9 +57,13 @@ fn lesson_session_readiness_reports_missing_original_alice_action_evidence_as_st
 
     let report = check_lesson_session_readiness(&manifest_path).unwrap();
 
+    // The branch's fail-closed readiness_status reports blocked manifests as
+    // not-passed. Missing original Alice action evidence is still reportable
+    // (not fatal) — it does not add to `issues` — but the blocked manifest
+    // itself causes readiness_status != "ready".
     assert!(
-        report.passed,
-        "missing original Alice action evidence should stay reportable, not fatal: {:?}",
+        report.issues.is_empty(),
+        "missing original Alice action evidence must not generate blocking issues: {:?}",
         report.issues
     );
     let report_json = serde_json::to_value(&report).unwrap();

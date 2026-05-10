@@ -23,7 +23,10 @@ fn run_first_lesson_readiness_cli_plain_text_uses_user_facing_readiness_sections
 
     assert_exit_code(&output, 1);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("First-lesson automation scenario readiness: not ready"));
+    assert!(stdout.contains("First-lesson/grading gap report: not ready"));
+    assert!(stdout.contains(
+        "Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only."
+    ));
     assert!(stdout.contains("Shown:"));
     assert!(stdout.contains("Not yet shown:"));
     assert!(stdout.contains("- Save option/action evidence is not yet shown."));
