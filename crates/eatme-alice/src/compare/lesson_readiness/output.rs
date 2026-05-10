@@ -6,7 +6,13 @@ use crate::compare::desktop_evidence::{
     DesktopFirstLessonNextActionEvidence, DesktopRunPixelBoundaryEvidence,
     DesktopRunPixelObservationEvidence, FirstLessonEvidenceBoundary, ProjectProofArtifactEvidence,
 };
+use project_proof_output::{not_yet_shown_detail, progress_item_does_not_prove};
 use serde::Serialize;
+use std::collections::BTreeSet;
+
+pub const EVIDENCE_GAP_MESSAGE: &str = "Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.";
+
+mod project_proof_output;
 
 #[derive(Clone, Copy)]
 struct UnprovenClaim {
@@ -14,38 +20,41 @@ struct UnprovenClaim {
     non_claim: &'static str,
 }
 
-const FULL_ALICE_UI_AUTOMATION: UnprovenClaim = UnprovenClaim {
-    sentence: "Full Alice UI automation is not proven.",
-    non_claim: "Full Alice UI automation",
-};
-const GRADING: UnprovenClaim = UnprovenClaim {
-    sentence: "Grading is not proven.",
-    non_claim: "grading",
-};
-const CREATIVE_ASSESSMENT: UnprovenClaim = UnprovenClaim {
-    sentence: "Creative assessment is not proven.",
-    non_claim: "creative assessment",
-};
-const VISIBLE_RENDERING_CORRECTNESS: UnprovenClaim = UnprovenClaim {
-    sentence: "Visible rendering correctness is not proven.",
-    non_claim: "visible rendering correctness",
-};
 const SAVE_COMPLETION: UnprovenClaim = UnprovenClaim {
     sentence: "Save completion is not proven.",
     non_claim: "Save completion",
 };
+
 const FIRST_LESSON_COMPLETION: UnprovenClaim = UnprovenClaim {
     sentence: "First-lesson completion is not proven.",
     non_claim: "first-lesson completion",
 };
 
 const UNPROVEN_CLAIMS: &[UnprovenClaim] = &[
-    FULL_ALICE_UI_AUTOMATION,
-    GRADING,
-    CREATIVE_ASSESSMENT,
-    VISIBLE_RENDERING_CORRECTNESS,
-    SAVE_COMPLETION,
-    FIRST_LESSON_COMPLETION,
+    UnprovenClaim {
+        sentence: "Full Alice UI automation is not proven.",
+        non_claim: "Full Alice UI automation",
+    },
+    UnprovenClaim {
+        sentence: "Grading is not proven.",
+        non_claim: "grading",
+    },
+    UnprovenClaim {
+        sentence: "Creative assessment is not proven.",
+        non_claim: "creative assessment",
+    },
+    UnprovenClaim {
+        sentence: "Visible rendering correctness is not proven.",
+        non_claim: "visible rendering correctness",
+    },
+    UnprovenClaim {
+        sentence: "Save completion is not proven.",
+        non_claim: "Save completion",
+    },
+    UnprovenClaim {
+        sentence: "First-lesson completion is not proven.",
+        non_claim: "first-lesson completion",
+    },
 ];
 
 const LEGACY_LIMITATIONS: &[&str] = &[
@@ -132,11 +141,11 @@ pub(super) fn build_readiness_output(
     readiness_status: &str,
     has_issues: bool,
     no_go_contracts: Vec<LessonSessionNoGoContract>,
+    required_evidence: Vec<String>,
     default_scenario_id: &str,
 ) -> ReadinessOutput {
     let status = normalized_readiness_status(readiness_status).to_string();
     let blocked_reason = (status == "blocked").then(|| readiness_status.to_string());
-    let required_evidence = required_evidence();
     let human_summary = human_summary(
         scenario_id,
         &status,
@@ -144,31 +153,22 @@ pub(super) fn build_readiness_output(
         has_issues,
         default_scenario_id,
     );
+    let lesson_session_readiness = LessonSessionReadinessEnvelope {
+        scenario_id: scenario_id.map(str::to_string),
+        role: "student".into(),
+        status: status.clone(),
+        blocked_reason: blocked_reason.clone(),
+        human_summary: human_summary.clone(),
+        required_evidence: required_evidence.clone(),
+        no_go_contracts: no_go_contracts.clone(),
+    };
     let role_readiness = ["instructor", "student"]
         .into_iter()
         .map(|role| LessonSessionReadinessEnvelope {
-            scenario_id: scenario_id.map(str::to_string),
             role: role.into(),
-            status: status.clone(),
-            blocked_reason: blocked_reason.clone(),
-            human_summary: human_summary.clone(),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: no_go_contracts.clone(),
+            ..lesson_session_readiness.clone()
         })
         .collect::<Vec<_>>();
-    let lesson_session_readiness = role_readiness
-        .iter()
-        .find(|readiness| readiness.role == "student")
-        .cloned()
-        .unwrap_or_else(|| LessonSessionReadinessEnvelope {
-            scenario_id: scenario_id.map(str::to_string),
-            role: "student".into(),
-            status: status.clone(),
-            blocked_reason: blocked_reason.clone(),
-            human_summary: human_summary.clone(),
-            required_evidence: required_evidence.clone(),
-            no_go_contracts: no_go_contracts.clone(),
-        });
 
     ReadinessOutput {
         status,
@@ -181,6 +181,23 @@ pub(super) fn build_readiness_output(
     }
 }
 
+pub(super) fn evidence_gap_message(
+    has_issues: bool,
+    missing: usize,
+    invalid: usize,
+    not_observed: usize,
+    blocked: usize,
+    has_no_go_contracts: bool,
+) -> Option<String> {
+    let has_gap = has_issues
+        || missing > 0
+        || invalid > 0
+        || not_observed > 0
+        || blocked > 0
+        || has_no_go_contracts;
+    has_gap.then(|| EVIDENCE_GAP_MESSAGE.to_string())
+}
+
 fn normalized_readiness_status(readiness_status: &str) -> &'static str {
     match readiness_status {
         "ready" => "ready",
@@ -189,7 +206,7 @@ fn normalized_readiness_status(readiness_status: &str) -> &'static str {
     }
 }
 
-fn required_evidence() -> Vec<String> {
+pub(super) fn required_evidence() -> Vec<String> {
     [
         "comparison-manifest.json with baseline and modernized targets",
         "launch evidence for each target",
@@ -216,17 +233,17 @@ fn human_summary(
 ) -> String {
     let scenario = scenario_id.unwrap_or(default_scenario_id);
     match status {
-        "ready" => format!(
-            "{scenario} has bounded comparison and UI action evidence with no accepted blockers."
-        ),
+        "ready" => {
+            format!("{scenario} has all required gap-reporting evidence with no accepted blockers.")
+        }
         "blocked" => format!(
-            "{scenario} has launch and automation scenario action evidence but is blocked until deterministic desktop UI automation exists ({reason}).",
+            "{scenario} has bounded gap-reporting evidence, but evidence gaps remain; this report cannot confirm first-lesson readiness ({reason}).",
             reason = blocked_reason.unwrap_or("blocked")
         ),
         "not_ready" if has_issues => format!(
-            "{scenario} readiness evidence is not ready because required comparison or UI action evidence is missing, invalid, stale, or inconsistent."
+            "{scenario} gap-reporting evidence is not ready because required comparison or UI action evidence is missing, invalid, stale, or inconsistent."
         ),
-        _ => format!("{scenario} readiness evidence is not ready."),
+        _ => format!("{scenario} gap-reporting evidence is not ready."),
     }
 }
 
@@ -262,20 +279,19 @@ pub(super) fn not_yet_shown(
     boundaries: &[FirstLessonEvidenceBoundary],
 ) -> Vec<ReadinessEvidenceItem> {
     let mut items = Vec::new();
+    let mut seen_ids = BTreeSet::new();
 
     for boundary in boundaries
         .iter()
         .filter(|boundary| boundary.status != "present")
     {
+        seen_ids.insert(boundary.id.clone());
         items.push(boundary_readiness_item(boundary, false));
     }
 
     for item in progress.items.iter().filter(|item| item.state != "present") {
         let id = progress_item_id(&item.evidence);
-        if items
-            .iter()
-            .any(|existing: &ReadinessEvidenceItem| existing.id == id)
-        {
+        if !seen_ids.insert(id.clone()) {
             continue;
         }
         items.push(ReadinessEvidenceItem {
@@ -285,8 +301,8 @@ pub(super) fn not_yet_shown(
                 "{} is not yet shown.",
                 user_facing_evidence_label(&item.evidence)
             ),
-            detail: not_yet_shown_detail(&item.evidence, &item.state),
-            does_not_prove: Vec::new(),
+            detail: not_yet_shown_detail(&item.evidence, &item.state, &item.detail),
+            does_not_prove: progress_item_does_not_prove(&item.evidence),
         });
     }
 
@@ -410,11 +426,11 @@ fn boundary_subject(boundary: &FirstLessonEvidenceBoundary) -> String {
 fn boundary_does_not_prove(boundary: &FirstLessonEvidenceBoundary) -> Vec<String> {
     let mut claims = boundary.does_not_prove.clone();
     if boundary.id == "save_project" {
-        push_unique(&mut claims, SAVE_COMPLETION.non_claim);
-        push_unique(&mut claims, FIRST_LESSON_COMPLETION.non_claim);
+        push_unique(&mut claims, "Save completion");
+        push_unique(&mut claims, "first-lesson completion");
     }
     if boundary.id == "visible_rendering" {
-        push_unique(&mut claims, VISIBLE_RENDERING_CORRECTNESS.non_claim);
+        push_unique(&mut claims, "visible rendering correctness");
     }
     claims
 }
@@ -438,16 +454,6 @@ fn user_facing_evidence_label(evidence: &str) -> String {
         "screenshot, log, and window artifacts" => "Screenshot, log, and window evidence".into(),
         "automation scenario action evidence" => "Automation scenario action evidence".into(),
         _ => evidence.to_string(),
-    }
-}
-
-fn not_yet_shown_detail(evidence: &str, state: &str) -> String {
-    let label = user_facing_evidence_label(evidence);
-    match state {
-        "blocked" => format!("{label} is blocked until the next evidence is shown."),
-        "invalid" => format!("{label} was shown but cannot be used yet."),
-        "not_observed" => format!("{label} is not yet observed."),
-        _ => format!("{label} is not yet shown."),
     }
 }
 
@@ -482,3 +488,6 @@ fn push_unique(claims: &mut Vec<String>, claim: &str) {
         claims.push(claim.to_string());
     }
 }
+
+#[cfg(test)]
+mod tests;

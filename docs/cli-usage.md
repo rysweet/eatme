@@ -7,9 +7,10 @@ cargo run -q -p eatme-cli -- <command>
 ```
 
 Commands that accept `--json` print JSON when the flag is present. Without
-`--json`, `alice run-first-lesson-readiness` prints a plain readiness report with
-`Desktop proof`, `Shown`, `Not yet shown`, optional `Desktop next action`, and
-`Unproven`.
+`--json`, `alice run-first-lesson-readiness` prints a plain readiness report.
+After the `Desktop proof` summary, first-lesson proof details are emitted in this
+order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
+`Original Alice action evidence`, and `Unproven`.
 
 ## Command overview
 
@@ -246,12 +247,17 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 
 This consumes the embedded target launch manifests and first-lesson readiness
 progress evidence. The report adds user-facing
-`shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`, and
-`unproven_claims`, while preserving legacy `evidence_boundaries[]` and
-`evidence_progress.items[]` states for automation consumers. It reports original
-Alice and RabbitHole launch/action diagnostics in `target_evidence[]`, then
-reports one normalized boundary state per first-lesson scenario claim for Select
-Project, procedure/edit, Save option/action evidence, visible rendering, grading,
+`shown_evidence[]`, `not_yet_shown[]`, optional `desktop_next_action`,
+`original_alice_action_evidence`, and `unproven_claims`, while preserving legacy
+`evidence_boundaries[]` and `evidence_progress.items[]` states for automation
+consumers. It reports original Alice and RabbitHole launch/action diagnostics in
+`target_evidence[]` and summarizes original Alice action evidence in
+`original_alice_action_evidence`. If
+`original_alice_action_evidence.status` is `missing`, that state remains visible
+as structured JSON; the `alice run-first-lesson-readiness` plain renderer also
+shows it in the `Original Alice action evidence` section. The report then emits
+one normalized boundary state per first-lesson scenario claim for Select Project,
+procedure/edit, Save option/action evidence, visible rendering, grading,
 creative assessment, and first-lesson completion. Missing, malformed, ambiguous,
 unsafe, manifest-only, incomplete, out-of-order, or uncertain evidence remains
 visible as `Not yet shown`. Boundary metadata may show that a boundary was
@@ -259,11 +265,32 @@ declared or observed, but it does not prove Save completion, rendering
 correctness, grading, creative assessment, or first-lesson completion unless a
 matching explicit completion/correctness evidence item exists.
 
-The report includes `role_readiness` for `instructor` and `student`, plus the
-legacy `lesson_session_readiness` student envelope. The normalized `status` is
-`ready`, `not_ready`, or `blocked`. A blocked report can still be structurally
-valid; that means the report found coherent evidence plus an explicit blocker,
-not that full Alice UI automation is complete.
+When required evidence is missing, invalid, incomplete, or insufficient, JSON
+includes `evidence_gap_message` and plain output prints the same line:
+
+```text
+Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.
+```
+
+Use that line as a stop sign for confirmation, not as a failed grade or a lesson
+result. A pure known-blocker report does not need the line; if the report also
+has missing, invalid, incomplete, or insufficient required evidence, it remains
+`not_ready` and includes the line.
+
+The `alice check-lesson-readiness --json` report includes `role_readiness` for
+`instructor` and `student`, plus the legacy `lesson_session_readiness` student
+envelope. The normalized `status` is `ready`, `not_ready`, or `blocked`. A
+blocked report can identify a coherent explicit blocker, but `passed` remains
+false until the bounded readiness status is `ready`; the blocker is not proof
+that full Alice UI automation is complete.
+
+The `alice run-first-lesson-readiness --json` sequence report repeats the same
+gap field at the sequence top level and inside
+`readiness_report.evidence_gap_message`.
+When the missing proof is the next-action artifact, JSON
+`evidence_progress.next_missing_real_desktop_proof`, progress details, and plain
+CLI blockers use the display-safe phrase `desktop next-action evidence` instead
+of exposing the internal artifact path.
 Valid RabbitHole desktop next-action evidence that applies to the current run
 emits top-level `desktop_next_action` in JSON and a
 `Desktop next action` section after `Not yet shown` in plain output. Missing,
@@ -295,24 +322,31 @@ then immediately runs the same readiness check against that manifest. Without
 detail `readiness_status=incomplete` because target launch evidence is missing.
 Its `desktop_proof_contract` reports `status="skipped"` and
 `reason_code="execute_not_requested"` so scripts can distinguish a deliberate
-manual smoke skip from a failed desktop proof run. The boundary renderer keeps
-plain output scenario-focused:
+manual smoke skip from a failed desktop proof run. Boundary reporting keeps
+plain-output blockers scenario-focused:
 
 ```text
-First-lesson automation scenario readiness: not ready
+First-lesson/grading gap report: not ready
+Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only.
+Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.
 Desktop proof: skipped (execute_not_requested) - execution was not requested; rerun with --execute on a machine with Alice desktop access to collect real desktop proof
 
 Shown:
-- Alice launch scenario evidence is shown.
-- Visible rendering scenario evidence is shown.
+- Nothing yet.
 
 Not yet shown:
-- Select Project scenario evidence is not yet shown.
-- Procedure/edit scenario evidence is not yet shown.
+- Select Project is not yet shown.
+- Procedure/edit is not yet shown.
 - Save option/action evidence is not yet shown.
+- Visible rendering is not yet shown.
 - Grading is not yet shown.
 - Creative assessment is not yet shown.
 - First-lesson completion is not yet shown.
+- Screenshot, log, and window evidence is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.
@@ -401,3 +435,48 @@ terminal text.
 For retcon or specification documentation, document only fields and artifacts
 that the scenario contract owns. Do not describe launch smoke as full UI
 automation, creative assessment, or learner-world grading.
+
+## Save/reopen evidence in first-lesson readiness
+
+When Alice hooks are available, the first-lesson readiness sequence includes
+save and reopen probes after run-world proof is accepted. The sequence is:
+
+1. Run-world proof is established through the Alice launch and procedure-edit
+   flow.
+2. `tools/eatme-save-project` is invoked to save the edited project under
+   `project-save/`.
+3. `tools/eatme-reopen-project` is invoked to reopen the saved artifact under
+   `project-reopen/`.
+4. Save and reopen evidence appears in the readiness report alongside the
+   existing launch, action-contract, and first-lesson evidence.
+
+The save/reopen probes are gated: save requires run-world proof, reopen requires
+accepted save proof. When a hook is missing or a precondition is not met, the
+probe reports `blocked` and the readiness report shows the boundary explicitly.
+
+Save proof may appear in `ui-action-contract.json`. Reopen proof appears only in
+the `project-reopen/` evidence directory and is never inferred from save proof
+alone. For the full hook API, artifact layout, and validation rules, see
+[Save/reopen Readiness](save-reopen-readiness.md).
+
+## Cache isolation
+
+When eatme is installed through `uvx` or `pip`, the Python CLI wrapper
+(`src/eatme_uvx/cli.py`) uses a SHA-256 hash of the source root to isolate the
+Cargo target directory. This prevents target-dir conflicts when multiple
+worktrees, clones, or `uvx`-installed copies of the repository build
+concurrently.
+
+The isolated target directory is:
+
+```text
+${XDG_CACHE_HOME:-~/.cache}/eatme-uvx/targets/<sha256-prefix-16>/
+```
+
+The hash uses the first 16 hex characters of `sha256(str(source_root))`. Each
+distinct source root gets its own target directory so incremental builds do not
+interfere across worktrees.
+
+The `CARGO_TARGET_DIR` environment variable is set automatically when not already
+present. To override the default isolation, set `CARGO_TARGET_DIR` explicitly
+before invoking the wrapper.

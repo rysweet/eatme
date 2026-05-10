@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -41,6 +42,8 @@ def _target_dir(source_root: Path) -> Path:
     cache_home = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     source_key = sha256(str(source_root).encode("utf-8")).hexdigest()[:16]
     target_dir = cache_home / "eatme-uvx" / source_key / "target"
+    source_key = hashlib.sha256(str(source_root).encode()).hexdigest()[:16]
+    target_dir = cache_home / "eatme-uvx" / "targets" / source_key
     target_dir.mkdir(parents=True, exist_ok=True)
     return target_dir
 

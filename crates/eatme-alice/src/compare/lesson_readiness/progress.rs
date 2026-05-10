@@ -105,13 +105,7 @@ pub(super) fn evidence_progress(
     ));
     items.push(progress_item(
         &required_evidence[6],
-        if issues.iter().any(|issue| {
-            issue.contains("missing visible desktop rendering evidence after Run-frame")
-        }) {
-            "missing"
-        } else {
-            "present"
-        },
+        screenshot_log_window_state(modernized, issues),
         "screenshot/log/window artifact checks",
     ));
     items.push(progress_item(
@@ -132,11 +126,7 @@ pub(super) fn evidence_progress(
         |next_action| &next_action.select_project_proof_artifact,
     ));
 
-    let present = count_state(&items, "present");
-    let missing = count_state(&items, "missing");
-    let invalid = count_state(&items, "invalid");
-    let not_observed = count_state(&items, "not_observed");
-    let blocked = count_state(&items, "blocked");
+    let (present, missing, invalid, not_observed, blocked) = state_counts(&items);
     let total_required = items.len();
     let next_actionable_blocker = next_actionable_blocker(modernized);
     let next_missing_real_desktop_proof = next_missing_real_desktop_proof(modernized, &items);
@@ -214,8 +204,40 @@ fn project_proof_progress_detail(label: &str, artifact: &ProjectProofArtifactEvi
     }
 }
 
-fn count_state(items: &[LessonReadinessEvidenceProgressItem], state: &str) -> usize {
-    items.iter().filter(|item| item.state == state).count()
+fn state_counts(
+    items: &[LessonReadinessEvidenceProgressItem],
+) -> (usize, usize, usize, usize, usize) {
+    let (mut present, mut missing, mut invalid, mut not_observed, mut blocked) = (0, 0, 0, 0, 0);
+    for item in items {
+        match item.state.as_str() {
+            "present" => present += 1,
+            "missing" => missing += 1,
+            "invalid" => invalid += 1,
+            "not_observed" => not_observed += 1,
+            "blocked" => blocked += 1,
+            _ => {}
+        }
+    }
+    (present, missing, invalid, not_observed, blocked)
+}
+
+fn screenshot_log_window_state(
+    target: Option<&LessonTargetEvidence>,
+    issues: &[String],
+) -> &'static str {
+    let Some(target) = target else {
+        return "missing";
+    };
+    if !target.launch_manifest_present {
+        return "missing";
+    }
+    if issues
+        .iter()
+        .any(|issue| issue.contains("missing visible desktop rendering evidence after Run-frame"))
+    {
+        return "missing";
+    }
+    "present"
 }
 
 pub(super) fn progress_item_id(evidence: &str) -> String {
@@ -259,6 +281,7 @@ fn next_missing_real_desktop_proof(
     items: &[LessonReadinessEvidenceProgressItem],
 ) -> Option<String> {
     let target = target?;
+    let passed_actions = passed_action_ids(target);
     for (action_id, message) in [
         (
             "verify-specific-alice-window",
@@ -277,7 +300,7 @@ fn next_missing_real_desktop_proof(
             "next missing real-desktop proof: observe desktop Run execution after toolbar dispatch (observe-desktop-run-execution-after-toolbar-button).",
         ),
     ] {
-        if !action_passed(target, action_id) {
+        if !action_id_passed(&passed_actions, action_id) {
             return Some(message.into());
         }
     }
@@ -322,7 +345,7 @@ fn next_missing_real_desktop_proof(
         ("run-world", "tools/eatme-run-world", "world run"),
         ("save-project", "tools/eatme-save-project", "project save"),
     ] {
-        if !action_passed(target, action_id) {
+        if !action_id_passed(&passed_actions, action_id) {
             return Some(format!(
                 "next missing real-desktop proof: wire the {label} hook ({action_id}) \
                  at {hook_path} so the harness can collect deterministic evidence; \
@@ -338,20 +361,10 @@ fn next_missing_real_desktop_proof(
             "next missing real-desktop proof: missing {DESKTOP_FIRST_LESSON_NEXT_ACTION_LABEL} before checking {SAVE_PROJECT_PROOF_LABEL}."
         ));
     }
-    for evidence in [
-        "Save Project proof artifact",
-        "Select Project proof artifact",
-    ] {
-        if let Some(item) = items
-            .iter()
-            .find(|item| item.evidence == evidence && item.state == "blocked")
-        {
-            return Some(format!("next missing real-desktop proof: {}", item.detail));
-        }
-        if let Some(item) = items
-            .iter()
-            .find(|item| item.evidence == evidence && item.state == "missing")
-        {
+    for evidence in [SAVE_PROJECT_PROOF_LABEL, SELECT_PROJECT_PROOF_LABEL] {
+        if let Some(item) = items.iter().find(|item| {
+            item.evidence == evidence && matches!(item.state.as_str(), "blocked" | "missing")
+        }) {
             return Some(format!("next missing real-desktop proof: {}", item.detail));
         }
     }
@@ -359,11 +372,17 @@ fn next_missing_real_desktop_proof(
     None
 }
 
-fn action_passed(target: &LessonTargetEvidence, action_id: &str) -> bool {
+fn passed_action_ids(target: &LessonTargetEvidence) -> Vec<&str> {
     target
         .action_assertions
         .iter()
-        .any(|action| action.action_id == action_id && action.passed)
+        .filter(|action| action.passed)
+        .map(|action| action.action_id.as_str())
+        .collect()
+}
+
+fn action_id_passed(passed_action_ids: &[&str], action_id: &str) -> bool {
+    passed_action_ids.contains(&action_id)
 }
 
 fn item_needs_proof(items: &[LessonReadinessEvidenceProgressItem], evidence: &str) -> bool {

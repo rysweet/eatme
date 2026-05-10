@@ -2,14 +2,17 @@ repos:
   - repo: local
     hooks:
       - id: cargo-fmt-check
+      - id: cargo-fmt
         name: cargo fmt --check
         entry: cargo fmt --check
         language: system
         pass_filenames: false
         types_or: [rust]
+        types: [rust]
       - id: cargo-clippy
         name: cargo clippy
         entry: cargo clippy --workspace --all-targets --all-features -- -D warnings
         language: system
         pass_filenames: false
         types_or: [rust]
+        types: [rust]

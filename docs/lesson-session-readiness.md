@@ -24,9 +24,10 @@ Project, procedure/edit, Save option/action evidence, visible rendering, grading
 creative assessment, and first-lesson completion, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). That page
 defines the user-facing `Desktop proof`, `Shown`, `Not yet shown`, optional
-`Desktop next action`, and `Unproven` output, plus additive JSON
-`shown_evidence[]`, `not_yet_shown[]`, `desktop_next_action`, and
-`unproven_claims` fields while preserving legacy progress and boundary fields.
+`Desktop next action`, optional `Original Alice action evidence`, and `Unproven`
+output, plus additive JSON `shown_evidence[]`, `not_yet_shown[]`,
+`desktop_next_action`, `original_alice_action_evidence`, and `unproven_claims`
+fields while preserving legacy progress and boundary fields.
 For the artifact shape, filler rejection, and non-claim wording contract for
 those evidence surfaces, see
 [Evidence Artifact Contract](evidence-artifact-contract.md).
@@ -70,15 +71,29 @@ Repository readiness evidence is necessary, but it cannot replace RabbitHole
 evidence. Readiness marks the next first-lesson action `ready` only after
 RabbitHole evidence files show launch, the Run window, desktop execution,
 screenshot artifacts, log artifacts, window artifacts, a readable action
-contract, project proof-artifact states, and explicit boundary states for Select
+contract, project proof-artifact states, explicit boundary states for Select
 Project, procedure/edit, Save, visible rendering, grading, creative assessment,
-and first-lesson completion.
+and first-lesson completion, `failure_category: null` on target and launch
+manifests, and no unsupported-action no-go entries.
 
 If that evidence is missing, invalid, incomplete, or insufficient, eatme reports
 `not_ready`. If the evidence is present but shows a known unsupported desktop
 action, eatme reports `blocked`. Some existing schema fields still use
 `no_go`; in plain language, that means "do not continue because this action is
 unsupported."
+
+When required first-lesson evidence is missing, invalid, incomplete, or
+insufficient, human and JSON reports include the same plain evidence-gap notice:
+
+```text
+Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.
+```
+
+The notice explains why the report cannot confirm readiness. It does not create
+a grade, score, certification, completion result, or creative assessment. A
+coherent report with only a target-level known blocker may omit the notice. When
+missing, invalid, incomplete, insufficient, or explicit no-go evidence is also
+present, the report includes the notice and must not be treated as ready.
 
 ### RabbitHole evidence needed before continuing
 
@@ -99,8 +114,8 @@ the RabbitHole desktop execution check.
 | Modernized Run-window evidence | `run_world_desktop_toolbar_window_observed` assertion on the `modernized` launch manifest | No RabbitHole evidence that the Run window appeared after the toolbar dispatch, or only an unstructured claim that a Run window appeared. The older `run_world_desktop_window_observed` shortcut assertion may appear in action evidence, but it is not the modernized RabbitHole readiness check. |
 | Modernized desktop execution evidence | `run_world_desktop_execution_observed` assertion on the `modernized` launch manifest | No RabbitHole desktop Run execution artifact with runtime statement evidence. |
 | Action contract artifact | Readable `ui-action-contract.json` referenced by target evidence and safely resolved under the comparison evidence root | Missing file, unsafe path, malformed JSON, missing required action ids, or missing explicit unsupported-action entries. |
-| Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove Save completion without distinct explicit Save-completion evidence. |
-| Select Project proof artifact | `select_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, or blocked select-project proof state. |
+| Save Project proof artifact | `save_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, `invalid`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, unsupported artifact status, or blocked save-project proof state. A present artifact proves artifact availability only; it does not prove Save completion without distinct explicit Save-completion evidence. |
+| Select Project proof artifact | `select_project_proof_artifact` declaration from desktop next-action evidence, normalized to `present`, `missing`, `invalid`, or `blocked` | Missing declaration, unsafe artifact path, absent artifact metadata, unsupported artifact status, or blocked select-project proof state. |
 | Screenshot artifact | `screenshots/run-window-after-dispatch.png` next to the modernized `ui-action-contract.json`, canonicalized under the comparison evidence root | Missing file, empty file, unreadable file, symlink escape, or artifact outside the expected evidence root. |
 | Log and window artifacts | Log, window-list, and startup screenshot paths represented by launch-manifest assertions | Missing, invalid, incomplete, or insufficient launch evidence. |
 
@@ -142,13 +157,14 @@ observed, or blocked:
 | `not_observed` | `evidence_progress.items[].state` and `evidence_progress.not_observed` | A desktop evidence producer ran, but the expected visible observation was not made. |
 | `blocked` | `evidence_progress.items[].state`, `evidence_progress.blocked`, and readiness `status` when applicable | RabbitHole supplied a normalized blocker, or a known unsupported desktop affordance prevents continuing. |
 
-Save Project and Select Project proof-artifact entries intentionally use only
-`present`, `missing`, or `blocked`. The broader readiness progress object can
-also emit `invalid` and `not_observed` for desktop pixel evidence. Malformed,
-unsafe, or out-of-root project proof-artifact declarations are not promoted to
-`present`; they remain `missing` and may also appear in `issues` so the caller
-knows what to repair. `blocked` remains separate from `missing`: blocked means
-the report received an explicit reason proof collection could not proceed.
+Save Project and Select Project proof-artifact entries intentionally use
+`present`, `missing`, `invalid`, or `blocked`. The broader readiness progress
+object can also emit `not_observed` for desktop pixel evidence. Malformed,
+unsafe, out-of-root, or explicitly unsupported project proof-artifact
+declarations are not promoted to `present`; they remain `missing` or `invalid`
+and may also appear in `issues` so the caller knows what to repair. `blocked`
+remains separate from `missing`: blocked means the report received an explicit
+reason proof collection could not proceed.
 
 ### Readiness results
 
@@ -158,7 +174,7 @@ Treat these states as the decision for the next first-lesson action:
 | --- | --- | --- |
 | `status: "not_ready"` | RabbitHole evidence is absent, incomplete, malformed, outside the expected evidence root, or not linked to the first-lesson scenario. | Do not proceed. Produce or repair the RabbitHole evidence artifact, then rerun readiness. |
 | `status: "blocked"` | Required evidence is readable and coherent, the target failure category is a known UI-action blocker, and unsupported actions remain represented by explicit `no_go` entries. | Do not claim full first-lesson automation. Keep the blocker visible until deterministic action evidence replaces the unsupported-action entry. |
-| `status: "ready"` | Required RabbitHole and repository evidence is present, coherent, and free of known unsupported desktop action blockers. | Treat the report as readiness to proceed to the next bounded first-lesson action only. Do not treat it as lesson completion. |
+| `status: "ready"` | Required RabbitHole and repository evidence is present and coherent, target and launch-manifest `failure_category` values are `null`, and unsupported-action no-go entries are absent. | Treat the report as readiness to proceed to the next bounded first-lesson action only. Do not treat it as lesson completion. |
 
 Local validation, launcher readiness, archive recovery, Run-window evidence, and
 desktop execution evidence can make the repository ready to consume RabbitHole
@@ -212,14 +228,20 @@ normalizes the target evidence:
       ],
       "no_go_contracts": [
         {
-          "code": "unsupported_desktop_action",
-          "action": "modernized.object_placement",
-          "reason": "deterministic object-placement affordance is unavailable",
-          "message": "RabbitHole object-placement evidence is blocked until deterministic desktop support exists."
+          "target_role": "modernized",
+          "affordance": "object_placement",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for object placement; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
         }
       ]
     }
-  ]
+  ],
+  "original_alice_action_evidence": {
+    "status": "missing",
+    "summary": "Original Alice action evidence is missing.",
+    "detail": "Original Alice action evidence was not found in the comparison target evidence."
+  }
 }
 ```
 
@@ -296,10 +318,12 @@ cargo run -q -p eatme-cli -- alice check-lesson-readiness \
 The command consumes embedded target launch manifests and each
 `ui-action-contract.json`. It requires real Alice execution evidence, specific
 Alice window evidence, action assertions, and matching action ids for the
-student first-lesson flow. The plain output renders `Desktop proof`, `Shown`,
-`Not yet shown`, optional `Desktop next action`, and `Unproven`. JSON adds
-the matching user-facing arrays while still keeping Save Project and Select
-Project proof-artifact categories in legacy `evidence_progress.items[]`.
+student first-lesson flow. JSON adds the matching user-facing arrays and the
+structured `original_alice_action_evidence` object while still keeping Save
+Project and Select Project proof-artifact categories in legacy
+`evidence_progress.items[]`. The plain `Original Alice action evidence` section
+belongs to the `alice run-first-lesson-readiness` sequence renderer and appears
+only when `original_alice_action_evidence.status` is `missing`.
 Declarations come from the modernized target's desktop next-action evidence; if
 that evidence or a category declaration is absent, the category remains visible
 as not yet shown.
@@ -311,7 +335,8 @@ include the modernized/RabbitHole target and must reference the target launch
 manifest plus evidence files showing launch, the Run window, desktop execution,
 screenshot artifacts, log artifacts, window artifacts, and
 `ui-action-contract.json`. The modernized target also reports the Save Project
-and Select Project proof-artifact states as `present`, `missing`, or `blocked`:
+and Select Project proof-artifact states as `present`, `missing`, `invalid`, or
+`blocked`:
 
 ```bash
 cargo run -q -p eatme-cli -- alice check-lesson-readiness \
@@ -323,7 +348,7 @@ Interpret the result as the required evidence check:
 
 | Result | RabbitHole evidence state |
 | --- | --- |
-| `status: "ready"` | Required RabbitHole evidence is present, valid, and sufficient for the named bounded claims. |
+| `status: "ready"` | Required RabbitHole evidence is present, valid, sufficient for the named bounded claims, target and launch-manifest `failure_category` values are `null`, and unsupported-action no-go entries are absent. |
 | `status: "not_ready"` | Required RabbitHole evidence is not yet shown because it is missing, invalid, incomplete, or insufficient. |
 | `status: "blocked"` | Required RabbitHole evidence was read, but it includes an explicit reason a bounded claim is not yet shown. |
 
@@ -374,13 +399,13 @@ Readiness reports expose both a normalized state and the detailed legacy reason.
 | `status` | `ready`, `not_ready`, `blocked` | Normalized top-level readiness state for humans, CI, and adapters. |
 | `readiness_status` | `ready`, `incomplete`, `blocked_until_ui_automation` | Detailed reason retained for compatibility and debugging. |
 | `blocked_reason` | `null` or a string | Present when `status` is `blocked`; `blocked_until_ui_automation` identifies unsupported UI automation blockers. |
-| `passed` | `true` or `false` | Structural check result. `true` means required evidence is present and coherent, even if the normalized status is `blocked`. |
+| `passed` | `true` or `false` | Readiness gate result. `true` is reserved for `status: "ready"`; missing, invalid, not-observed, or blocked evidence stays false. |
 
 Interpret the states this way:
 
 | State | Meaning | Common next action |
 | --- | --- | --- |
-| `ready` | Required RabbitHole evidence is present, valid, and sufficient. | Use the report as readiness evidence for the selected first-lesson scenario. |
+| `ready` | Required RabbitHole evidence is present, valid, and sufficient; baseline and RabbitHole target records and launch manifests have `failure_category: null`; unsupported-action `no_go_contracts[]` are absent. | Use the report as bounded readiness evidence for the selected first-lesson scenario, not as lesson completion. |
 | `not_ready` | Required evidence is missing, invalid, incomplete, stale, inconsistent, insufficient, or was produced without execution. | Fix assets, regenerate adapters, rerun comparison with `--execute`, or inspect `issues`. |
 | `blocked` | Required evidence is present, but at least one target reports a known unsupported desktop action. | Treat the blocker as the honest boundary; do not mark the lesson as fully automated. |
 
@@ -390,17 +415,18 @@ Project or Select Project proof artifact is reported separately from missing
 evidence and preserves a normalized blocker summary when RabbitHole supplies
 one.
 
-A report can have `passed: true`, `status: "blocked"`, and
-`readiness_status: "blocked_until_ui_automation"`. That means structural
-evidence exists, the target failure category is a known UI-action blocker, and
-the remaining unsupported actions are represented by explicit blocker entries.
+A report can have `passed: false`, `status: "blocked"`, and
+`readiness_status: "blocked_until_ui_automation"`. That means available evidence
+was coherent enough to identify the blocker, but the readiness gate still fails
+closed because unsupported actions remain.
 
-For `first-lessons-real-ui-actions`, that blocked-but-valid state is the
-evidence-ready state when deterministic object placement, procedure editing,
-world running, or project saving affordances are still represented by
-unsupported-action entries. The `ready` state is the no-blocker state: the report
-uses it only when required evidence is present and no unsupported-action blocker
-remains.
+For `first-lessons-real-ui-actions`, that blocked-but-not-passed state is the
+expected honest state while deterministic object placement, procedure editing,
+world running, or project-saving affordances are still represented by
+unsupported-action entries. The `ready` state is reserved for the no-blocker
+state: the report can use it only when required evidence is present, both
+target-level and launch-manifest `failure_category` values are `null`, and
+unsupported-action no-go entries are gone.
 
 ## Readiness JSON API
 
@@ -416,14 +442,16 @@ Top-level fields:
 | `schema_version` | string | Report schema. |
 | `manifest_path` | string | Comparison manifest that was inspected. |
 | `scenario_id` | string or null | Scenario id from the comparison manifest. |
-| `passed` | boolean | `true` when required structural evidence is present and coherent. |
+| `passed` | boolean | `true` only when the normalized readiness `status` is `ready`. |
 | `status` | string | Normalized state: `ready`, `not_ready`, or `blocked`. |
 | `readiness_status` | string | Detailed status such as `ready`, `incomplete`, or `blocked_until_ui_automation`. |
 | `blocked_reason` | string or null | Machine-readable blocker reason when `status` is `blocked`. |
 | `human_summary` | string | Single-sentence human explanation of the readiness result. |
+| `evidence_gap_message` | string or null | Plain user-facing message present when required first-lesson evidence is missing, invalid, incomplete, or insufficient. Pure known blockers use `status: "blocked"` and structured blocker fields; include this line only when the blocker also leaves required evidence unconfirmed: `Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.` It is `null` for `ready`. |
 | `shown_evidence` | array | User-facing evidence facts that are shown by accepted evidence. |
 | `not_yet_shown` | array | User-facing missing, invalid, not-observed, or blocked claims. |
 | `desktop_next_action` | object or omitted | RabbitHole desktop next-action summary, emitted only when valid, safe, current, and applicable to the current run. Missing or invalid evidence is represented through not-yet-shown, issues, or legacy fields instead. |
+| `original_alice_action_evidence` | object | Structured original Alice action evidence summary. `status` is `missing` when a target evidence blocker has `code: "missing_real_action_evidence"`; otherwise it is `available`. |
 | `unproven_claims` | array | Canonical non-claims that remain visible in plain output and JSON. |
 | `desktop_proof_contract` | object | Machine-readable modernized desktop proof state: `skipped`, `unsupported_environment`, `launched_but_unverified`, or `verified`. |
 | `evidence_progress` | object | Required-evidence counts, project proof-artifact entries, and next blocker/proof hints using explicit `present`, `missing`, `invalid`, `not_observed`, and `blocked` states. |
@@ -442,6 +470,35 @@ First-lesson boundary reporting adds `evidence_boundaries[]` to this schema.
 Consumers that need the bounded automation scenarios contract should read
 `evidence_boundaries[]`; older consumers can continue to use
 `evidence_progress.items[]` and the project proof-artifact entries.
+
+### Original Alice action evidence API
+
+`original_alice_action_evidence` is the stable summary for original Alice action
+evidence state. It is additive and does not remove target-local diagnostics from
+`target_evidence[]`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | string | `available` or `missing`. |
+| `summary` | string | Fixed user-facing summary: `Original Alice action evidence is missing.` or `Original Alice action evidence is available.` |
+| `detail` | string | Fixed bounded detail for the selected status. |
+
+The readiness builder derives this field after building `target_evidence[]`.
+The only missing-evidence source of truth is a target evidence blocker with
+`code: "missing_real_action_evidence"`. The blocker remains in
+`target_evidence[]`; the new field prevents the state from being hidden inside
+nested diagnostics only. Missing original Alice action evidence is reportable
+structured state. It is not fatal by itself and does not become a claim that full
+UI automation, Save completion, lesson completion, grading, or creative
+assessment succeeded. `available` only means no `missing_real_action_evidence`
+blocker was found; it does not prove full UI automation, Save completion, lesson
+completion, grading, or creative assessment.
+
+The `alice run-first-lesson-readiness --json` command returns a sequence report
+with schema `eatme.first-lesson-readiness-sequence/v1`. That sequence report
+places `evidence_gap_message` at the sequence top level and repeats the same
+value under `readiness_report.evidence_gap_message`, where the embedded
+`eatme.alice-lesson-session-readiness/v1` report lives.
 
 ### Evidence progress API
 
@@ -500,7 +557,8 @@ automation. It reports what happened to the modernized desktop proof attempt:
 This legacy desktop proof contract includes `reason_code`, `detail`,
 `target_role`, and optional `artifact` fields so CI and reports can preserve the
 exact skip shape. First-lesson unsupported-action blockers use the canonical
-`code`, `action`, `reason`, and safe `message` shape described below.
+`target_role`, `affordance`, `decision`, `reason`, and
+`missing_affordance_id` shape described below.
 
 ### Project proof-artifact states
 
@@ -552,6 +610,7 @@ Normalization uses this precedence for each category:
 | Normalized state | Condition | Boundary |
 | --- | --- | --- |
 | `blocked` | The declaration has blocker metadata, or declares `status: "blocked"`. | Report the blocker reason, codes, next action, or component state when present. If no detail exists, report only that the proof artifact is blocked. |
+| `invalid` | The declaration has an explicit unsupported `status`. | Report the unsupported status as an evidence gap. Do not treat a readable artifact path as present when the status is invalid. |
 | `present` | The declaration has `ArtifactInfo` metadata or a safe comparison-evidence-root-relative artifact path. | Report artifact availability only. These entries count toward `evidence_progress.present`. Path, `size_bytes`, `sha256`, and normalized metadata summaries may be included. |
 | `missing` | No declaration exists, the declaration has no usable artifact metadata, or the path is absent or unsafe. | Report missing artifact availability plainly. Do not convert this to success language. |
 
@@ -577,8 +636,8 @@ The shared progress entries use stable evidence labels:
 
 | Declaration key | Human label | States |
 | --- | --- | --- |
-| `save_project_proof_artifact` | Save Project proof artifact | `present`, `missing`, `blocked` |
-| `select_project_proof_artifact` | Select Project proof artifact | `present`, `missing`, `blocked` |
+| `save_project_proof_artifact` | Save Project proof artifact | `present`, `missing`, `invalid`, `blocked` |
+| `select_project_proof_artifact` | Select Project proof artifact | `present`, `missing`, `invalid`, `blocked` |
 
 Example `evidence_progress.items[]` entries:
 
@@ -628,7 +687,7 @@ backward-compatible student envelope.
       "role": "instructor",
       "status": "blocked",
       "blocked_reason": "blocked_until_ui_automation",
-      "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+      "human_summary": "first-lessons-real-ui-actions has bounded gap-reporting evidence, but evidence gaps remain; this report cannot confirm first-lesson readiness (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
         "ui-action-contract.json",
@@ -637,28 +696,32 @@ backward-compatible student envelope.
       ],
       "no_go_contracts": [
         {
-          "code": "unsupported_desktop_action",
-          "action": "baseline.object_placement",
-          "reason": "deterministic object-placement affordance is unavailable",
-          "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
+          "target_role": "baseline",
+          "affordance": "object_placement",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for object placement; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
         },
         {
-          "code": "unsupported_desktop_action",
-          "action": "baseline.procedure_edit",
-          "reason": "deterministic procedure-edit affordance is unavailable",
-          "message": "Original Alice procedure/edit evidence is blocked until deterministic desktop support exists."
+          "target_role": "baseline",
+          "affordance": "procedure_edit",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for procedure edit; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-procedure-edit-affordance"
         },
         {
-          "code": "unsupported_desktop_action",
-          "action": "baseline.world_run",
-          "reason": "deterministic world-run affordance is unavailable",
-          "message": "Original Alice world-run evidence is blocked until deterministic desktop support exists."
+          "target_role": "baseline",
+          "affordance": "world_run",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for world run; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-world-run-affordance"
         },
         {
-          "code": "unsupported_desktop_action",
-          "action": "baseline.project_save",
-          "reason": "deterministic project-save affordance is unavailable",
-          "message": "Original Alice project-save evidence is blocked until deterministic desktop support exists."
+          "target_role": "baseline",
+          "affordance": "project_save",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for project save; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-project-save-affordance"
         }
       ]
     },
@@ -667,7 +730,7 @@ backward-compatible student envelope.
       "role": "student",
       "status": "blocked",
       "blocked_reason": "blocked_until_ui_automation",
-      "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+      "human_summary": "first-lessons-real-ui-actions has bounded gap-reporting evidence, but evidence gaps remain; this report cannot confirm first-lesson readiness (blocked_until_ui_automation).",
       "required_evidence": [
         "comparison-manifest.json",
         "ui-action-contract.json",
@@ -676,10 +739,11 @@ backward-compatible student envelope.
       ],
       "no_go_contracts": [
         {
-          "code": "unsupported_desktop_action",
-          "action": "baseline.object_placement",
-          "reason": "deterministic object-placement affordance is unavailable",
-          "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
+          "target_role": "baseline",
+          "affordance": "object_placement",
+          "decision": "no_go",
+          "reason": "Evidence gap: required evidence is missing or incomplete for object placement; cannot report this action as supported.",
+          "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
         }
       ]
     }
@@ -689,7 +753,7 @@ backward-compatible student envelope.
     "role": "student",
     "status": "blocked",
     "blocked_reason": "blocked_until_ui_automation",
-    "human_summary": "first-lessons-real-ui-actions has launch/action-contract evidence but is blocked until deterministic desktop UI automation exists (blocked_until_ui_automation).",
+    "human_summary": "first-lessons-real-ui-actions has bounded gap-reporting evidence, but evidence gaps remain; this report cannot confirm first-lesson readiness (blocked_until_ui_automation).",
     "required_evidence": [
       "comparison-manifest.json",
       "ui-action-contract.json",
@@ -698,10 +762,11 @@ backward-compatible student envelope.
     ],
     "no_go_contracts": [
       {
-        "code": "unsupported_desktop_action",
-        "action": "baseline.object_placement",
-        "reason": "deterministic object-placement affordance is unavailable",
-        "message": "Original Alice object-placement evidence is blocked until deterministic desktop support exists."
+        "target_role": "baseline",
+        "affordance": "object_placement",
+        "decision": "no_go",
+        "reason": "Evidence gap: required evidence is missing or incomplete for object placement; cannot report this action as supported.",
+        "missing_affordance_id": "deterministic-alice-object-gallery-placement-affordance"
       }
     ]
   }
@@ -738,6 +803,7 @@ Each `target_evidence[]` entry describes one comparison target:
 | `required_actions` | array of strings | Action ids discovered from the UI action contract. |
 | `missing_assertions` | array of strings | Required assertions absent from the target evidence. |
 | `missing_required_actions` | array of strings | Required action ids absent from the UI action contract. |
+| `blockers` | array | Target-local structured blockers. A blocker with `code: "missing_real_action_evidence"` is also summarized by top-level `original_alice_action_evidence.status: "missing"`. |
 | `no_go_contracts` | array | Target-local unsupported-action entries. |
 
 Required action ids for the first-lesson flow are:
@@ -761,26 +827,27 @@ whose source contract says `decision: "no_go"` or whose
 harness, adapters, and docs from converting unsupported actions into silent
 success.
 
-Each unsupported-action entry uses the canonical structured blocker shape:
+Each unsupported-action entry uses the canonical evidence-gap blocker shape:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `code` | string | Stable machine-readable blocker category, such as `unsupported_desktop_action`. |
-| `action` | string or null | Target-qualified action or boundary, such as `baseline.object_placement`, `baseline.procedure_edit`, `baseline.world_run`, or `baseline.project_save`. |
-| `reason` | string | Stable reason phrase suitable for logs and CI. |
-| `message` | string | Safe human-readable message. It must not expose absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw framework internals. |
+| `target_role` | string | Target role that supplied the blocker, usually `baseline` or `modernized`. |
+| `affordance` | string | Normalized affordance name: `object_placement`, `procedure_edit`, `world_run`, `project_save`, or `unknown`. |
+| `decision` | string | Always `no_go` for unsupported-action blockers. |
+| `reason` | string | Safe evidence-gap reason suitable for logs, CI, and plain reports. It starts with `Evidence gap:` and must not expose absolute paths, raw artifact contents, screenshots, logs, environment variables, secrets, or raw framework internals. |
+| `missing_affordance_id` | string or null | Source missing-affordance id when the contract supplied one, such as `deterministic-alice-object-gallery-placement-affordance`. |
 
-Known unsupported action reasons:
+Known unsupported action affordances:
 
-| Reason | Action | Meaning |
+| Missing affordance id | Affordance | Meaning |
 | --- | --- | --- |
-| `deterministic object-placement affordance is unavailable` | `object_placement` | A stable Alice-side way to place a named gallery object and produce durable evidence is unavailable. |
-| `deterministic procedure-edit affordance is unavailable` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and prove the edit is unavailable. |
-| `deterministic world-run affordance is unavailable` | `world_run` | A stable Alice-side way to prove the world ran after student edits is unavailable. |
-| `deterministic project-save affordance is unavailable` | `project_save` | A stable Alice-side way to prove a project save artifact is unavailable. |
+| `deterministic-alice-object-gallery-placement-affordance` | `object_placement` | A stable Alice-side way to place a named gallery object and produce durable evidence is unavailable. |
+| `deterministic-alice-procedure-edit-affordance` | `procedure_edit` | A stable Alice-side way to edit a procedure or code block and prove the edit is unavailable. |
+| `deterministic-alice-world-run-affordance` | `world_run` | A stable Alice-side way to prove the world ran after student edits is unavailable. |
+| `deterministic-alice-project-save-affordance` | `project_save` | A stable Alice-side way to prove a project save artifact is unavailable. |
 
-Consumers must treat `code: "unsupported_desktop_action"` as a blocked action,
-not as a failed test to hide and not as a pass to override.
+Consumers must treat `decision: "no_go"` entries as blocked actions, not as
+failed tests to hide and not as passes to override.
 
 ## Configuration
 
@@ -841,21 +908,27 @@ This is acceptable first-lesson evidence when the report also includes
 
 ### Student flow: inspect first-lesson scenario evidence
 
-Boundary reporting makes plain output name shown and not-yet-shown scenario
+The first-lesson sequence plain renderer names shown and not-yet-shown scenario
 evidence boundaries:
 
 ```text
-First-lesson automation scenario readiness: not ready
+First-lesson/grading gap report: not ready
+Gap report scope: missing/incomplete evidence, unsupported claims, and next actions only.
+Evidence gap: Missing evidence means this report cannot confirm first-lesson readiness, lesson completion, grading, or creative assessment.
 Desktop proof: launched_but_unverified (desktop_run_window_unverified) - desktop Run window dispatch lacks modernized-target proof
 
 Shown:
-- Select Project scenario evidence is shown.
-- Procedure/edit scenario evidence is shown.
-- Visible rendering scenario evidence is shown.
+- Select Project is shown.
+- Procedure/edit is shown.
+- Visible rendering is shown.
 
 Not yet shown:
 - Save completion is not yet proven.
 - First-lesson completion is not yet shown.
+
+Original Alice action evidence:
+- Original Alice action evidence is missing.
+- Original Alice action evidence was not found in the comparison target evidence.
 
 Unproven:
 - Full Alice UI automation is not proven.

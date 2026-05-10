@@ -39,11 +39,13 @@ pub struct FirstLessonReadinessSequenceReport {
     pub readiness_status: String,
     pub blocked_reason: Option<String>,
     pub human_summary: String,
+    pub evidence_gap_message: Option<String>,
     pub desktop_proof_contract: super::DesktopProofContract,
     pub shown_evidence: Vec<super::ReadinessEvidenceItem>,
     pub not_yet_shown: Vec<super::ReadinessEvidenceItem>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub desktop_next_action: Option<super::DesktopNextActionSummary>,
+    pub original_alice_action_evidence: super::OriginalAliceActionEvidenceReport,
     pub unproven_claims: Vec<String>,
     pub evidence_progress: super::LessonReadinessEvidenceProgress,
     pub evidence_boundaries: Vec<super::FirstLessonEvidenceBoundary>,
@@ -108,10 +110,12 @@ pub fn run_first_lesson_readiness_sequence(
         readiness_status: readiness.readiness_status.clone(),
         blocked_reason: readiness.blocked_reason.clone(),
         human_summary: readiness.human_summary.clone(),
+        evidence_gap_message: readiness.evidence_gap_message.clone(),
         desktop_proof_contract: readiness.desktop_proof_contract.clone(),
         shown_evidence: readiness.shown_evidence.clone(),
         not_yet_shown: readiness.not_yet_shown.clone(),
         desktop_next_action: readiness.desktop_next_action.clone(),
+        original_alice_action_evidence: readiness.original_alice_action_evidence,
         unproven_claims: readiness.unproven_claims.clone(),
         evidence_progress: readiness.evidence_progress.clone(),
         evidence_boundaries: readiness.evidence_boundaries.clone(),
@@ -136,5 +140,125 @@ fn target_status(target: &ComparisonTargetRun) -> FirstLessonTargetStatus {
             .as_ref()
             .and_then(|manifest| manifest.ui_action_contract.as_ref())
             .map(|artifact| artifact.path.clone()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::compare::{
+        DesktopProofContract, LessonReadinessEvidenceProgress, LessonSessionContractCheck,
+        LessonSessionReadinessEnvelope, OriginalAliceActionEvidenceReport,
+    };
+
+    #[test]
+    fn first_lesson_sequence_serializes_missing_original_alice_action_evidence_at_top_level() {
+        let readiness_report = readiness_report_with_missing_original_alice_action_evidence();
+        let report = FirstLessonReadinessSequenceReport {
+            schema_version: "eatme.first-lesson-readiness-sequence/v1".into(),
+            scenario_id: FIRST_LESSON_SCENARIO_ID.into(),
+            run_id: "test".into(),
+            execute_requested: true,
+            comparison_manifest_path: readiness_report.manifest_path.clone(),
+            passed: readiness_report.passed,
+            status: readiness_report.status.clone(),
+            readiness_status: readiness_report.readiness_status.clone(),
+            blocked_reason: readiness_report.blocked_reason.clone(),
+            human_summary: readiness_report.human_summary.clone(),
+            evidence_gap_message: readiness_report.evidence_gap_message.clone(),
+            desktop_proof_contract: readiness_report.desktop_proof_contract.clone(),
+            shown_evidence: readiness_report.shown_evidence.clone(),
+            not_yet_shown: readiness_report.not_yet_shown.clone(),
+            desktop_next_action: readiness_report.desktop_next_action.clone(),
+            original_alice_action_evidence: readiness_report.original_alice_action_evidence,
+            unproven_claims: readiness_report.unproven_claims.clone(),
+            evidence_progress: readiness_report.evidence_progress.clone(),
+            evidence_boundaries: readiness_report.evidence_boundaries.clone(),
+            required_evidence: readiness_report.required_evidence.clone(),
+            no_go_contracts: readiness_report.no_go_contracts.clone(),
+            role_readiness: readiness_report.role_readiness.clone(),
+            target_statuses: BTreeMap::new(),
+            issues: readiness_report.issues.clone(),
+            limitations: readiness_report.limitations.clone(),
+            readiness_report,
+        };
+
+        let report_json = serde_json::to_value(&report).unwrap();
+
+        assert_eq!(
+            report_json["original_alice_action_evidence"]["status"],
+            "missing"
+        );
+        assert_eq!(
+            report_json["original_alice_action_evidence"],
+            report_json["readiness_report"]["original_alice_action_evidence"],
+            "sequence JSON must preserve the underlying readiness original Alice action evidence state"
+        );
+    }
+
+    fn readiness_report_with_missing_original_alice_action_evidence() -> LessonSessionReadinessReport
+    {
+        let envelope = LessonSessionReadinessEnvelope {
+            scenario_id: Some(FIRST_LESSON_SCENARIO_ID.into()),
+            role: "student".into(),
+            status: "blocked".into(),
+            blocked_reason: Some("blocked_until_ui_automation".into()),
+            human_summary: "blocked".into(),
+            required_evidence: Vec::new(),
+            no_go_contracts: Vec::new(),
+        };
+        LessonSessionReadinessReport {
+            schema_version: "eatme.alice-lesson-session-readiness/v1".into(),
+            manifest_path: "comparison-manifest.json".into(),
+            scenario_id: Some(FIRST_LESSON_SCENARIO_ID.into()),
+            passed: true,
+            status: "blocked".into(),
+            readiness_status: "blocked_until_ui_automation".into(),
+            blocked_reason: Some("blocked_until_ui_automation".into()),
+            human_summary: "blocked".into(),
+            evidence_gap_message: None,
+            desktop_proof_contract: DesktopProofContract {
+                status: "launched_but_unverified".into(),
+                reason_code: "desktop_pixel_observation_blocked".into(),
+                detail: "desktop proof is not verified".into(),
+                target_role: "modernized".into(),
+                artifact: None,
+            },
+            shown_evidence: Vec::new(),
+            not_yet_shown: Vec::new(),
+            desktop_next_action: None,
+            original_alice_action_evidence: OriginalAliceActionEvidenceReport::missing(),
+            unproven_claims: Vec::new(),
+            evidence_progress: LessonReadinessEvidenceProgress {
+                total_required: 0,
+                present: 0,
+                missing: 0,
+                invalid: 0,
+                not_observed: 0,
+                blocked: 0,
+                summary: "0 of 0 required evidence items are present; 0 missing, 0 invalid, 0 not observed, 0 blocked.".into(),
+                next_actionable_blocker: None,
+                next_missing_real_desktop_proof: None,
+                items: Vec::new(),
+            },
+            evidence_boundaries: Vec::new(),
+            required_evidence: Vec::new(),
+            no_go_contracts: Vec::new(),
+            lesson_session_readiness: envelope.clone(),
+            role_readiness: vec![envelope],
+            contract_check: LessonSessionContractCheck {
+                schema_version: "eatme.alice-lesson-session-check/v1".into(),
+                manifest_path: "comparison-manifest.json".into(),
+                scenario_id: Some(FIRST_LESSON_SCENARIO_ID.into()),
+                session_kind: Some("first_lesson_action_contract".into()),
+                automation_status: Some("blocked".into()),
+                passed: true,
+                issues: Vec::new(),
+            },
+            execute_requested: Some(true),
+            target_evidence: Vec::new(),
+            issues: Vec::new(),
+            limitations: Vec::new(),
+        }
     }
 }
