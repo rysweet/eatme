@@ -16,9 +16,7 @@ fn real_alice_enabled() -> bool {
 }
 
 fn alice_home() -> PathBuf {
-    PathBuf::from(
-        env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()),
-    )
+    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
 }
 
 #[test]
@@ -65,11 +63,7 @@ fn real_alice_launch_smoke_produces_deterministic_evidence() {
             .assertions
             .get(*key)
             .unwrap_or_else(|| panic!("manifest missing assertion: {key}"));
-        assert!(
-            result.passed,
-            "assertion {key} failed: {}",
-            result.detail,
-        );
+        assert!(result.passed, "assertion {key} failed: {}", result.detail,);
     }
 
     // --- Assertion 2: no failure category ---
@@ -130,8 +124,5 @@ fn real_alice_launch_smoke_produces_deterministic_evidence() {
         .log
         .as_ref()
         .expect("manifest should include a log artifact");
-    assert!(
-        log_artifact.size_bytes > 0,
-        "alice.log should be non-empty",
-    );
+    assert!(log_artifact.size_bytes > 0, "alice.log should be non-empty",);
 }
