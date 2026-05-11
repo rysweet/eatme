@@ -210,7 +210,11 @@ fn all_ready_complete_program_preconditions_ready() {
     let report =
         grade_events_and_collision(events_input_all_ready(Some(complete_events_program())));
     assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
-    assert_eq!(report.steps[1].status, StepStatus::Ready, "check-dependencies");
+    assert_eq!(
+        report.steps[1].status,
+        StepStatus::Ready,
+        "check-dependencies"
+    );
     assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
 }
 
@@ -280,16 +284,19 @@ fn no_program_all_interaction_steps_blocked() {
 
 #[test]
 fn missing_event_listener_blocks_and_cascades() {
-    let report = grade_events_and_collision(events_input_all_ready(Some(
-        program_with_collision_only(),
-    )));
+    let report =
+        grade_events_and_collision(events_input_all_ready(Some(program_with_collision_only())));
     assert_eq!(report.steps[3].status, StepStatus::Blocked);
     assert!(
         report.steps[3].reason.contains("No EventListener found"),
         "reason: {}",
         report.steps[3].reason
     );
-    assert_eq!(report.steps[4].status, StepStatus::Blocked, "add-collision-listener");
+    assert_eq!(
+        report.steps[4].status,
+        StepStatus::Blocked,
+        "add-collision-listener"
+    );
     assert_eq!(report.steps[5].status, StepStatus::Blocked, "run-world");
     assert_eq!(report.steps[6].status, StepStatus::Blocked, "save-project");
 }
@@ -300,10 +307,16 @@ fn missing_event_listener_blocks_and_cascades() {
 fn missing_collision_listener_blocks_and_cascades() {
     let report =
         grade_events_and_collision(events_input_all_ready(Some(program_with_event_only())));
-    assert_eq!(report.steps[3].status, StepStatus::Ready, "add-event-listener still ready");
+    assert_eq!(
+        report.steps[3].status,
+        StepStatus::Ready,
+        "add-event-listener still ready"
+    );
     assert_eq!(report.steps[4].status, StepStatus::Blocked);
     assert!(
-        report.steps[4].reason.contains("No CollisionListener found"),
+        report.steps[4]
+            .reason
+            .contains("No CollisionListener found"),
         "reason: {}",
         report.steps[4].reason
     );
@@ -315,11 +328,13 @@ fn missing_collision_listener_blocks_and_cascades() {
 
 #[test]
 fn blocked_assets_cascades_all_downstream() {
-    let report = grade_events_and_collision(events_input_blocked_assets(Some(
-        complete_events_program(),
-    )));
+    let report =
+        grade_events_and_collision(events_input_blocked_assets(Some(complete_events_program())));
     assert_eq!(report.steps[0].status, StepStatus::Blocked);
-    assert_eq!(report.steps[0].reason, "3 scenario assets failed validation");
+    assert_eq!(
+        report.steps[0].reason,
+        "3 scenario assets failed validation"
+    );
     assert_eq!(report.steps[1].status, StepStatus::Ready);
     assert_eq!(report.steps[2].status, StepStatus::Blocked);
     for i in 3..=6 {
@@ -337,12 +352,14 @@ fn blocked_assets_cascades_all_downstream() {
 
 #[test]
 fn blocked_deps_cascades_all_downstream() {
-    let report = grade_events_and_collision(events_input_blocked_deps(Some(
-        complete_events_program(),
-    )));
+    let report =
+        grade_events_and_collision(events_input_blocked_deps(Some(complete_events_program())));
     assert_eq!(report.steps[0].status, StepStatus::Ready);
     assert_eq!(report.steps[1].status, StepStatus::Blocked);
-    assert_eq!(report.steps[1].reason, "Missing required tools: Xvfb, wmctrl");
+    assert_eq!(
+        report.steps[1].reason,
+        "Missing required tools: Xvfb, wmctrl"
+    );
     assert_eq!(report.steps[2].status, StepStatus::Blocked);
     assert!(
         report.steps[2].reason.contains("check-dependencies"),
@@ -364,9 +381,8 @@ fn blocked_deps_cascades_all_downstream() {
 
 #[test]
 fn both_blocked_launch_smoke_mentions_both_blockers() {
-    let report = grade_events_and_collision(events_input_both_blocked(Some(
-        complete_events_program(),
-    )));
+    let report =
+        grade_events_and_collision(events_input_both_blocked(Some(complete_events_program())));
     let reason = &report.steps[2].reason;
     assert!(
         reason.contains("validate-assets") && reason.contains("check-dependencies"),
@@ -376,9 +392,8 @@ fn both_blocked_launch_smoke_mentions_both_blockers() {
 
 #[test]
 fn both_blocked_all_steps_blocked() {
-    let report = grade_events_and_collision(events_input_both_blocked(Some(
-        complete_events_program(),
-    )));
+    let report =
+        grade_events_and_collision(events_input_both_blocked(Some(complete_events_program())));
     assert_eq!(report.steps[0].status, StepStatus::Blocked);
     assert_eq!(report.steps[1].status, StepStatus::Blocked);
     for i in 2..=6 {

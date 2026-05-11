@@ -105,7 +105,7 @@ fn interaction_step(
     }
 }
 
-fn build_preconditions(
+pub(crate) fn build_preconditions(
     assets_valid: bool,
     asset_reason: String,
     deps_available: bool,
@@ -201,7 +201,7 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
     }
 }
 
-fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
+pub(crate) fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
@@ -210,7 +210,7 @@ fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     }
 }
 
-fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
+pub(crate) fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
     steps
         .iter()
         .map(|(name, dep)| StepGrade {
@@ -222,24 +222,37 @@ fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
         .collect()
 }
 
-fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGrade {
+pub(crate) fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGrade {
     let (status, reason) = if found {
-        (StepStatus::Ready, format!("{construct} found in student program"))
+        (
+            StepStatus::Ready,
+            format!("{construct} found in student program"),
+        )
     } else {
-        (StepStatus::Blocked, format!("No {construct} found in student program"))
+        (
+            StepStatus::Blocked,
+            format!("No {construct} found in student program"),
+        )
     };
-    StepGrade { name: name.into(), status, reason, depends_on: vec![dep.into()] }
+    StepGrade {
+        name: name.into(),
+        status,
+        reason,
+        depends_on: vec![dep.into()],
+    }
 }
 
 fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
-        None => return no_program_chain(&[
-            ("build-counting-loop", "launch-smoke"),
-            ("add-conditional-branch", "build-counting-loop"),
-            ("run-world", "add-conditional-branch"),
-            ("save-project", "run-world"),
-        ]),
+        None => {
+            return no_program_chain(&[
+                ("build-counting-loop", "launch-smoke"),
+                ("add-conditional-branch", "build-counting-loop"),
+                ("run-world", "add-conditional-branch"),
+                ("save-project", "run-world"),
+            ]);
+        }
     };
 
     let (has_loop, has_conditional) = ast_find_constructs(program);
@@ -250,7 +263,12 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let add_cond = if loop_blocked {
         cascade_blocked("add-conditional-branch", &["build-counting-loop"])
     } else {
-        ast_check_step("add-conditional-branch", "build-counting-loop", has_conditional, "IfElse")
+        ast_check_step(
+            "add-conditional-branch",
+            "build-counting-loop",
+            has_conditional,
+            "IfElse",
+        )
     };
 
     let cond_blocked = add_cond.status == StepStatus::Blocked;
@@ -373,23 +391,35 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
 fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
-        None => return no_program_chain(&[
-            ("add-event-listener", "launch-smoke"),
-            ("add-collision-listener", "add-event-listener"),
-            ("run-world", "add-collision-listener"),
-            ("save-project", "run-world"),
-        ]),
+        None => {
+            return no_program_chain(&[
+                ("add-event-listener", "launch-smoke"),
+                ("add-collision-listener", "add-event-listener"),
+                ("run-world", "add-collision-listener"),
+                ("save-project", "run-world"),
+            ]);
+        }
     };
 
     let (has_event, has_collision) = ast_find_event_constructs(program);
 
-    let add_event = ast_check_step("add-event-listener", "launch-smoke", has_event, "EventListener");
+    let add_event = ast_check_step(
+        "add-event-listener",
+        "launch-smoke",
+        has_event,
+        "EventListener",
+    );
     let event_blocked = add_event.status == StepStatus::Blocked;
 
     let add_collision = if event_blocked {
         cascade_blocked("add-collision-listener", &["add-event-listener"])
     } else {
-        ast_check_step("add-collision-listener", "add-event-listener", has_collision, "CollisionListener")
+        ast_check_step(
+            "add-collision-listener",
+            "add-event-listener",
+            has_collision,
+            "CollisionListener",
+        )
     };
 
     let collision_blocked = add_collision.status == StepStatus::Blocked;
@@ -414,7 +444,11 @@ fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
             .ok()
             .and_then(|j| serde_json::from_str::<Program>(&j).ok())
             .is_some_and(|restored| restored == *program);
-        let status = if round_trip_ok { StepStatus::Ready } else { StepStatus::Blocked };
+        let status = if round_trip_ok {
+            StepStatus::Ready
+        } else {
+            StepStatus::Blocked
+        };
         let reason = if round_trip_ok {
             "Program round-trip (serialize → deserialize → compare) verified"
         } else {
@@ -443,11 +477,7 @@ fn ast_find_event_constructs(program: &Program) -> (bool, bool) {
     (has_event, has_collision)
 }
 
-fn stmt_find_event_constructs(
-    stmts: &[Statement],
-    has_event: &mut bool,
-    has_collision: &mut bool,
-) {
+fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_collision: &mut bool) {
     for stmt in stmts {
         match stmt {
             Statement::EventListener { body, .. } => {

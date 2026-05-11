@@ -3,9 +3,7 @@
 // Exercises: AST construction → grading report → JSON serialization →
 // save/reopen round-trip.
 
-use eatme_assets::grading_report::{
-    EventsGradingInput, StepStatus, grade_events_and_collision,
-};
+use eatme_assets::grading_report::{EventsGradingInput, StepStatus, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
 
 // --- Shared fixtures ---
@@ -186,9 +184,11 @@ fn events_grading_missing_collision_listener_blocks_downstream() {
 
     // add-collision-listener: no CollisionListener → blocked
     assert_eq!(report.steps[4].status, StepStatus::Blocked);
-    assert!(report.steps[4]
-        .reason
-        .contains("No CollisionListener found"));
+    assert!(
+        report.steps[4]
+            .reason
+            .contains("No CollisionListener found")
+    );
 
     // Downstream steps cascade to blocked
     assert_eq!(report.steps[5].status, StepStatus::Blocked, "run-world");

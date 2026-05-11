@@ -20,6 +20,9 @@ mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 pub mod grading_report;
+pub(crate) mod grading_report_events;
+#[cfg(test)]
+mod grading_report_extraction_tests;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
