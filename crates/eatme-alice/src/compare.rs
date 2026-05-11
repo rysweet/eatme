@@ -14,6 +14,7 @@ mod contract;
 mod desktop_evidence;
 mod first_lesson;
 pub mod grading_report;
+pub use grading_report::*;
 mod lesson_readiness;
 mod lesson_session;
 mod scorecard;

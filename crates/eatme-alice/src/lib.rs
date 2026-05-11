@@ -25,7 +25,7 @@ pub mod scenario;
 
 pub use compare::{
     AliceComparisonOptions, FIRST_LESSON_SCENARIO_ID, FirstLessonReadinessOptions,
-    check_lesson_session_contract, check_lesson_session_readiness,
+    check_lesson_session_contract, check_lesson_session_readiness, first_lesson_grading_report,
     run_first_lesson_readiness_sequence, run_launch_smoke_comparison,
 };
 pub use deps::{DependencyReport, check_dependencies};
