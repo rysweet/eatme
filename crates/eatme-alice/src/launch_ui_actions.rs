@@ -1,3 +1,4 @@
+use crate::launch::assertions::bool_assert;
 use crate::launch_edit_procedure::{
     UiActionEditProcedureProbe, probe_edit_procedure_preconditions,
 };
@@ -131,6 +132,10 @@ pub fn record_preflight_ui_action_blockers(
     assertions.insert(
         "activate_alice_window_ui_action".into(),
         AssertionResult::fail("preflight blocked before an Alice window could be activated"),
+    );
+    assertions.insert(
+        "post_focus_screenshot_captured".into(),
+        AssertionResult::fail("preflight blocked before a post-focus screenshot could be captured"),
     );
     assertions.insert(
         "place_object_ui_action".into(),
@@ -486,14 +491,6 @@ fn record_save_project_precondition_no_go(
             precondition_probe.blocking_reason.clone(),
         ),
     );
-}
-
-fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
-    if passed {
-        AssertionResult::pass(detail)
-    } else {
-        AssertionResult::fail(detail)
-    }
 }
 
 #[cfg(test)]

@@ -1,7 +1,10 @@
 #[cfg(test)]
 use crate::launch_window_targeting::alice_window_search;
 use anyhow::{Context, Result, bail};
-use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec, file_size, sha256_file};
+use eatme_core::{
+    ArtifactInfo, AssertionResult, CommandRunner, CommandSpec, file_size, sha256_file,
+};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
@@ -67,7 +70,48 @@ pub(super) fn capture_screenshot(
     display: &str,
     run_dir: &Path,
 ) -> Result<ArtifactInfo> {
-    let path = run_dir.join("screenshots/startup.png");
+    capture_screenshot_to(runner, display, &run_dir.join("screenshots/startup.png"))
+}
+
+pub(super) fn record_post_focus(
+    runner: &impl CommandRunner,
+    display: &str,
+    run_dir: &Path,
+    activation_ok: bool,
+    assertions: &mut BTreeMap<String, AssertionResult>,
+) -> (Option<ArtifactInfo>, Option<String>) {
+    if !activation_ok {
+        assertions.insert(
+            "post_focus_screenshot_captured".into(),
+            AssertionResult::fail("blocked: Alice window activation did not succeed"),
+        );
+        return (None, None);
+    }
+    let path = run_dir.join("screenshots/post_focus.png");
+    match capture_screenshot_to(runner, display, &path) {
+        Ok(artifact) => {
+            assertions.insert(
+                "post_focus_screenshot_captured".into(),
+                AssertionResult::pass("post-focus screenshot captured after window activation"),
+            );
+            (Some(artifact), None)
+        }
+        Err(err) => {
+            let msg = format!("{err:#}");
+            assertions.insert(
+                "post_focus_screenshot_captured".into(),
+                AssertionResult::fail(&msg),
+            );
+            (None, Some(msg))
+        }
+    }
+}
+
+fn capture_screenshot_to(
+    runner: &impl CommandRunner,
+    display: &str,
+    path: &Path,
+) -> Result<ArtifactInfo> {
     let scrot = CommandSpec::new("scrot")
         .args([path.display().to_string()])
         .env("DISPLAY", display)
@@ -84,7 +128,8 @@ pub(super) fn capture_screenshot(
         )?;
         if fallback.exit_status != Some(0) {
             bail!(
-                "capturing startup screenshot failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
+                "capturing screenshot to {} failed: scrot={:?}, import={:?}\nscrot stdout:\n{}scrot stderr:\n{}import stdout:\n{}import stderr:\n{}",
+                path.display(),
                 output.exit_status,
                 fallback.exit_status,
                 output.stdout,
@@ -94,7 +139,7 @@ pub(super) fn capture_screenshot(
             );
         }
     }
-    artifact_info(&path).with_context(|| format!("capturing screenshot {}", path.display()))
+    artifact_info(path).with_context(|| format!("capturing screenshot {}", path.display()))
 }
 
 pub(super) fn artifact_info(path: &Path) -> Result<ArtifactInfo> {

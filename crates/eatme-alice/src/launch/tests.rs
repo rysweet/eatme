@@ -114,6 +114,12 @@ fn manifest_schema_round_trip() {
             sha256: "ddeeff".into(),
         }),
         screenshot_error: None,
+        post_focus_screenshot: Some(ArtifactInfo {
+            path: "screenshots/post_focus.png".into(),
+            size_bytes: 8192,
+            sha256: "aabb11".into(),
+        }),
+        post_focus_screenshot_error: None,
         ui_action_contract: None,
         log: Some(ArtifactInfo {
             path: "alice.log".into(),
@@ -151,6 +157,21 @@ fn manifest_schema_round_trip() {
         round_tripped.screenshot.as_ref().map(|s| &s.sha256),
         manifest.screenshot.as_ref().map(|s| &s.sha256),
     );
+    assert_eq!(
+        round_tripped
+            .post_focus_screenshot
+            .as_ref()
+            .map(|s| &s.sha256),
+        manifest.post_focus_screenshot.as_ref().map(|s| &s.sha256),
+    );
+    assert!(
+        round_tripped.post_focus_screenshot.is_some(),
+        "post_focus_screenshot should survive round-trip serialization"
+    );
+    assert!(
+        round_tripped.post_focus_screenshot_error.is_none(),
+        "post_focus_screenshot_error should remain None after round-trip"
+    );
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {
@@ -163,4 +184,41 @@ fn unique_test_dir(prefix: &str) -> PathBuf {
         .join("target")
         .join("eatme-alice-tests")
         .join(format!("{prefix}-{nonce}"))
+}
+
+#[test]
+fn manifest_deserializes_without_post_focus_fields() {
+    let json = r#"{
+        "schema_version": "eatme.launch-smoke/v1",
+        "scenario_id": "test",
+        "run_id": "old-run",
+        "alice_home": "/opt/alice3",
+        "alice_git_commit": "abc",
+        "eatme_git_commit": "def",
+        "java_version": "21",
+        "maven_version": "3.9.0",
+        "dependency_checks": {},
+        "build_command": "mvn package",
+        "build_exit_status": 0,
+        "launch_command": "java ...",
+        "display": ":99",
+        "xvfb_pid": 1234,
+        "alice_pid": 5678,
+        "timeout_seconds": 90,
+        "window_list": null,
+        "window_list_error": null,
+        "screenshot": null,
+        "screenshot_error": null,
+        "ui_action_contract": null,
+        "log": null,
+        "log_error": null,
+        "fatal_log_scan": [],
+        "assertions": {},
+        "failure_category": null
+    }"#;
+
+    let manifest: LaunchSmokeManifest =
+        serde_json::from_str(json).expect("older manifests without post_focus fields must parse");
+    assert!(manifest.post_focus_screenshot.is_none());
+    assert!(manifest.post_focus_screenshot_error.is_none());
 }
