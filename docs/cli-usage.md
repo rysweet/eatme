@@ -26,6 +26,7 @@ order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 | `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
 | `alice run-first-lesson-readiness` | Run the first-lesson comparison plus readiness check sequence |
+| `alice first-lesson-grading-report` | Per-step completion status for Building a Scene first lesson |
 
 ## Validate assets
 
@@ -362,6 +363,45 @@ With `--execute`, non-baseline Alice scenarios still require
 not create a complete instructor assignment, consume a complete student lesson,
 perform creative assessment, grade learner worlds, or claim broad Alice
 compatibility.
+
+## First-lesson grading report
+
+Check per-step completion status for the Building a Scene first lesson:
+
+```bash
+cargo run -q -p eatme-cli -- alice first-lesson-grading-report \
+  --manifest runs/comparisons/first-lessons-real-ui-actions/local/comparison-manifest.json \
+  --json
+```
+
+The report maps 11 canonical curriculum steps to `ready`, `blocked`, or
+`not_yet_tested`. It consumes the same comparison manifest as
+`alice check-lesson-readiness` and applies a simpler per-step view over the
+underlying readiness report.
+
+Without `--json`, the command prints a plain table:
+
+```text
+First-lesson grading report
+Scenario: first-lessons-real-ui-actions
+
+  verify-specific-alice-window    blocked
+  activate-specific-alice-window  blocked
+  place-object                    blocked
+  edit-procedure-or-code-block    blocked
+  run-world                       blocked
+  save-project                    blocked
+  select_project                  not_yet_tested
+  visible_rendering               not_yet_tested
+  grading                         not_yet_tested
+  creative_assessment             not_yet_tested
+  first_lesson_completion         not_yet_tested
+```
+
+The command exits 0 on success. A non-zero exit indicates a manifest parse
+error, not a grading failure. See
+[First-Lesson Grading Report](first-lesson-grading-report.md) for the full
+schema, status mapping rules, and non-claims.
 
 For the conservative boundary schema, see
 [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md). For

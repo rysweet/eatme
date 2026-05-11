@@ -13,6 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod contract;
 mod desktop_evidence;
 mod first_lesson;
+pub mod grading_report;
 mod lesson_readiness;
 mod lesson_session;
 mod scorecard;
