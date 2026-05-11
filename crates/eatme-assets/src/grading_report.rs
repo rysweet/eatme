@@ -210,6 +210,18 @@ fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     }
 }
 
+fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
+    steps
+        .iter()
+        .map(|(name, dep)| StepGrade {
+            name: (*name).into(),
+            status: StepStatus::Blocked,
+            reason: "No student program provided".into(),
+            depends_on: vec![(*dep).into()],
+        })
+        .collect()
+}
+
 fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGrade {
     let (status, reason) = if found {
         (StepStatus::Ready, format!("{construct} found in student program"))
@@ -222,21 +234,12 @@ fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGr
 fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
-        None => {
-            let reason = "No student program provided".to_string();
-            let blocked = |name: &str, dep: &str| StepGrade {
-                name: name.into(),
-                status: StepStatus::Blocked,
-                reason: reason.clone(),
-                depends_on: vec![dep.into()],
-            };
-            return vec![
-                blocked("build-counting-loop", "launch-smoke"),
-                blocked("add-conditional-branch", "build-counting-loop"),
-                blocked("run-world", "add-conditional-branch"),
-                blocked("save-project", "run-world"),
-            ];
-        }
+        None => return no_program_chain(&[
+            ("build-counting-loop", "launch-smoke"),
+            ("add-conditional-branch", "build-counting-loop"),
+            ("run-world", "add-conditional-branch"),
+            ("save-project", "run-world"),
+        ]),
     };
 
     let (has_loop, has_conditional) = ast_find_constructs(program);
@@ -370,21 +373,12 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
 fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
-        None => {
-            let reason = "No student program provided".to_string();
-            let blocked = |name: &str, dep: &str| StepGrade {
-                name: name.into(),
-                status: StepStatus::Blocked,
-                reason: reason.clone(),
-                depends_on: vec![dep.into()],
-            };
-            return vec![
-                blocked("add-event-listener", "launch-smoke"),
-                blocked("add-collision-listener", "add-event-listener"),
-                blocked("run-world", "add-collision-listener"),
-                blocked("save-project", "run-world"),
-            ];
-        }
+        None => return no_program_chain(&[
+            ("add-event-listener", "launch-smoke"),
+            ("add-collision-listener", "add-event-listener"),
+            ("run-world", "add-collision-listener"),
+            ("save-project", "run-world"),
+        ]),
     };
 
     let (has_event, has_collision) = ast_find_event_constructs(program);
