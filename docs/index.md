@@ -30,6 +30,7 @@ Eatme has three layers:
 | Reviewing post-focus screenshot evidence | [Post-focus Screenshot Evidence](post-focus-screenshot-evidence.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Checking first-lesson readiness preflight | [First-Lesson Grading Report](first-lesson-grading-report.md) |
+| Understanding machine vs. human assessment boundaries | [Creative Assessment Boundary](creative-assessment-boundary.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
 | Maintaining first-lesson readiness module boundaries | [Lesson Readiness Module Boundary](lesson-readiness-module-boundary.md) |

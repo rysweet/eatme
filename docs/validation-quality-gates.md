@@ -102,6 +102,7 @@ from `master` pushes or manual dispatch, never from pull requests.
 | Alice harness | Rust quality gates; real Alice smoke where environment permits |
 | CLI command surface | Rust quality gates; update CLI usage docs; docs build |
 | Grading report | Rust quality gates; `assets validate`; `deps check`; docs build |
+| Creative assessment boundary | Rust quality gates; docs build; verify boundary aspects match grading report steps |
 | Lesson-session readiness docs | `mkdocs build --strict`; asset validation and Gadugi freshness checks when scenario ids or adapter behavior are mentioned |
 | Save/reopen contract code | `cargo test -p eatme-alice`; asset validation; docs build when evidence boundary wording changes |
 | Path validation | `cargo test -p eatme-alice launch_path`; verify symlink and traversal rejection tests pass |
