@@ -9,7 +9,6 @@ use std::env;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-
 mod contract;
 mod desktop_evidence;
 mod first_lesson;
@@ -495,7 +494,6 @@ fn now_ms() -> u128 {
         .unwrap_or_default()
         .as_millis()
 }
-
 #[cfg(test)]
 mod lesson_session_tests;
 #[cfg(test)]
