@@ -69,17 +69,16 @@ focused" evidence before the harness attempts deeper interaction.
 2. Alice discovery + packaging
 3. Xvfb display start
 4. Alice launch + process wait
-5. Window list capture (wmctrl -lx / xwininfo)
+5. Window list capture + Alice window search (wmctrl -lx / xwininfo → targeting)
 6. Startup screenshot (scrot / import → screenshots/startup.png)
-7. Alice window search (targeting)
-8. Window activation (wmctrl -ia / xdotool windowfocus)
-9. ► Post-focus screenshot (scrot / import → screenshots/post_focus.png)   ← NEW
-10. UI-action contract probes (place-object, edit, run, save)
-11. Manifest build + write
+7. Window activation (wmctrl -ia / xdotool windowfocus)
+8. ► Post-focus screenshot (scrot / import → screenshots/post_focus.png)   ← NEW
+9. UI-action contract probes (place-object, edit, run, save)
+10. Manifest build + write
 ```
 
 The startup screenshot (step 6) captures whatever is on the virtual display
-immediately after launch. The post-focus screenshot (step 9) captures the
+immediately after launch. The post-focus screenshot (step 8) captures the
 display state after the harness has identified and focused a specific Alice
 window. Comparing the two provides visual evidence that focus changed.
 
@@ -179,7 +178,7 @@ The capture logic lives in `crates/eatme-alice/src/launch/evidence.rs`:
 
 | Function | Visibility | Purpose |
 | --- | --- | --- |
-| `capture_screenshot_to(runner, display, path)` | `pub(super)` | Shared helper that runs scrot→import fallback chain to an explicit output path. Used by both `capture_screenshot` and `capture_post_focus_screenshot`. |
+| `capture_screenshot_to(runner, display, path)` | private (`fn`) | Shared helper that runs scrot→import fallback chain to an explicit output path. Used by both `capture_screenshot` and `capture_post_focus_screenshot`. Not visible outside `evidence.rs`. |
 | `capture_post_focus_screenshot(runner, display, run_dir)` | `pub(super)` | Captures to `screenshots/post_focus.png`. Returns `Result<ArtifactInfo>`. |
 
 The existing `capture_screenshot` function is refactored to call
@@ -252,7 +251,9 @@ pub(super) fn build_manifest(
 ```
 
 `write_blocked_manifest` passes `None` for both fields when writing a
-manifest for an early-exit failure.
+manifest for an early-exit failure. The `record_preflight_ui_action_blockers`
+function also records `post_focus_screenshot_captured` as failed so that
+preflight-blocked manifests include the same assertion keys as normal runs.
 
 ## Configuration
 
@@ -269,8 +270,9 @@ The post-focus screenshot is always written to:
 ```
 
 This path is hardcoded — no user-controlled path components are involved.
-The `screenshots/` directory is created by the existing startup screenshot
-capture, so it exists before the post-focus capture runs.
+The `screenshots/` directory is created by `prepare_run_dir` early in the
+pipeline (before any screenshot capture runs), so it exists before the
+post-focus capture.
 
 ## Examples
 
