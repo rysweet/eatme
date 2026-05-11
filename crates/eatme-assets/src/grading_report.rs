@@ -1,4 +1,4 @@
-use eatme_core::ast::Program;
+use eatme_core::ast::{Program, Statement};
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
@@ -155,8 +155,236 @@ pub struct LoopsGradingInput {
     pub student_program: Option<Program>,
 }
 
-pub fn grade_loops_and_conditionals(_input: LoopsGradingInput) -> GradingReport {
-    todo!("Implementation pending — TDD red phase")
+pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
+    let validate_assets = StepGrade {
+        name: "validate-assets".into(),
+        status: if input.assets_valid {
+            StepStatus::Ready
+        } else {
+            StepStatus::Blocked
+        },
+        reason: input.asset_reason,
+        depends_on: vec![],
+    };
+
+    let check_deps = StepGrade {
+        name: "check-dependencies".into(),
+        status: if input.deps_available {
+            StepStatus::Ready
+        } else {
+            StepStatus::Blocked
+        },
+        reason: input.deps_reason,
+        depends_on: vec![],
+    };
+
+    let launch_smoke = {
+        let mut blockers = Vec::new();
+        if validate_assets.status == StepStatus::Blocked {
+            blockers.push("validate-assets");
+        }
+        if check_deps.status == StepStatus::Blocked {
+            blockers.push("check-dependencies");
+        }
+        if blockers.is_empty() {
+            StepGrade {
+                name: "launch-smoke".into(),
+                status: StepStatus::Ready,
+                reason: "All preconditions met".into(),
+                depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
+            }
+        } else {
+            StepGrade {
+                name: "launch-smoke".into(),
+                status: StepStatus::Blocked,
+                reason: format!("Blocked by: {}", blockers.join(", ")),
+                depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
+            }
+        }
+    };
+
+    let preconditions_blocked = launch_smoke.status == StepStatus::Blocked;
+
+    let (build_loop, add_cond, run_world, save_project) = if preconditions_blocked {
+        (
+            cascade_blocked("build-counting-loop", &["launch-smoke"]),
+            cascade_blocked("add-conditional-branch", &["build-counting-loop"]),
+            cascade_blocked("run-world", &["add-conditional-branch"]),
+            cascade_blocked("save-project", &["run-world"]),
+        )
+    } else {
+        evaluate_loops_steps(&input.student_program)
+    };
+
+    let passed = [
+        &validate_assets,
+        &check_deps,
+        &launch_smoke,
+        &build_loop,
+        &add_cond,
+        &run_world,
+        &save_project,
+    ]
+    .iter()
+    .all(|s| s.status == StepStatus::Ready);
+
+    GradingReport {
+        schema_version: "eatme.assets/grading/v1".into(),
+        lesson: "loops-and-conditionals-mini-challenge".into(),
+        passed,
+        steps: vec![
+            validate_assets,
+            check_deps,
+            launch_smoke,
+            build_loop,
+            add_cond,
+            run_world,
+            save_project,
+        ],
+    }
+}
+
+fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
+    StepGrade {
+        name: name.into(),
+        status: StepStatus::Blocked,
+        reason: format!("Blocked by: {}", deps.join(", ")),
+        depends_on: deps.iter().map(|d| (*d).into()).collect(),
+    }
+}
+
+fn evaluate_loops_steps(program: &Option<Program>) -> (StepGrade, StepGrade, StepGrade, StepGrade) {
+    let program = match program {
+        Some(p) => p,
+        None => {
+            let r = "No student program provided".to_string();
+            return (
+                StepGrade {
+                    name: "build-counting-loop".into(),
+                    status: StepStatus::Blocked,
+                    reason: r.clone(),
+                    depends_on: vec!["launch-smoke".into()],
+                },
+                StepGrade {
+                    name: "add-conditional-branch".into(),
+                    status: StepStatus::Blocked,
+                    reason: r.clone(),
+                    depends_on: vec!["build-counting-loop".into()],
+                },
+                StepGrade {
+                    name: "run-world".into(),
+                    status: StepStatus::Blocked,
+                    reason: r.clone(),
+                    depends_on: vec!["add-conditional-branch".into()],
+                },
+                StepGrade {
+                    name: "save-project".into(),
+                    status: StepStatus::Blocked,
+                    reason: r,
+                    depends_on: vec!["run-world".into()],
+                },
+            );
+        }
+    };
+
+    let has_loop = ast_contains_count_loop(program);
+    let has_conditional = ast_contains_if_else(program);
+
+    let build_loop = if has_loop {
+        StepGrade {
+            name: "build-counting-loop".into(),
+            status: StepStatus::Ready,
+            reason: "CountLoop found in student program".into(),
+            depends_on: vec!["launch-smoke".into()],
+        }
+    } else {
+        StepGrade {
+            name: "build-counting-loop".into(),
+            status: StepStatus::Blocked,
+            reason: "No CountLoop found in student program".into(),
+            depends_on: vec!["launch-smoke".into()],
+        }
+    };
+
+    let loop_blocked = build_loop.status == StepStatus::Blocked;
+
+    let add_cond = if loop_blocked {
+        cascade_blocked("add-conditional-branch", &["build-counting-loop"])
+    } else if has_conditional {
+        StepGrade {
+            name: "add-conditional-branch".into(),
+            status: StepStatus::Ready,
+            reason: "IfElse found in student program".into(),
+            depends_on: vec!["build-counting-loop".into()],
+        }
+    } else {
+        StepGrade {
+            name: "add-conditional-branch".into(),
+            status: StepStatus::Blocked,
+            reason: "No IfElse found in student program".into(),
+            depends_on: vec!["build-counting-loop".into()],
+        }
+    };
+
+    let cond_blocked = add_cond.status == StepStatus::Blocked;
+
+    let run_world = if cond_blocked {
+        cascade_blocked("run-world", &["add-conditional-branch"])
+    } else {
+        StepGrade {
+            name: "run-world".into(),
+            status: StepStatus::NotYetTested,
+            reason: "Run the world and observe results — requires human interaction".into(),
+            depends_on: vec!["add-conditional-branch".into()],
+        }
+    };
+
+    let run_world_blocked = run_world.status == StepStatus::Blocked;
+
+    let save_project = if run_world_blocked {
+        cascade_blocked("save-project", &["run-world"])
+    } else {
+        StepGrade {
+            name: "save-project".into(),
+            status: StepStatus::Ready,
+            reason: "Save and reopen project to verify persistence".into(),
+            depends_on: vec!["run-world".into()],
+        }
+    };
+
+    (build_loop, add_cond, run_world, save_project)
+}
+
+fn ast_contains_count_loop(program: &Program) -> bool {
+    program
+        .procedures
+        .iter()
+        .any(|p| p.body.iter().any(stmt_has_count_loop))
+}
+
+fn stmt_has_count_loop(stmt: &Statement) -> bool {
+    match stmt {
+        Statement::CountLoop { .. } => true,
+        Statement::IfElse {
+            if_body, else_body, ..
+        } => if_body.iter().any(stmt_has_count_loop) || else_body.iter().any(stmt_has_count_loop),
+        Statement::MethodCall { .. } => false,
+    }
+}
+
+fn ast_contains_if_else(program: &Program) -> bool {
+    program
+        .procedures
+        .iter()
+        .any(|p| p.body.iter().any(stmt_has_if_else))
+}
+
+fn stmt_has_if_else(stmt: &Statement) -> bool {
+    match stmt {
+        Statement::IfElse { .. } => true,
+        Statement::CountLoop { body, .. } => body.iter().any(stmt_has_if_else),
+        Statement::MethodCall { .. } => false,
+    }
 }
 
 #[cfg(test)]
