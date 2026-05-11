@@ -196,9 +196,9 @@ The schema fields are identical to the first-lesson grading report:
 | `lesson` | string | Always `loops-and-conditionals-mini-challenge`. |
 | `passed` | bool | `true` only when all steps are `ready`. |
 | `steps` | array | Ordered list of `StepGrade` objects. |
-| `steps[].name` | string | Step identifier. |
+| `steps[].name` | string | Step identifier. Precondition step names match the scenario YAML step ids; lesson interaction step names are hardcoded in the grading function. |
 | `steps[].status` | string | One of `ready`, `blocked`, or `not-yet-tested`. |
-| `steps[].depends_on` | array of strings | Step names this step depends on. |
+| `steps[].depends_on` | array of strings | Step names this step depends on. Empty array `[]` for root steps. |
 | `steps[].reason` | string | Human-readable explanation of the status. |
 
 ## Lesson steps
@@ -225,6 +225,14 @@ curriculum.
 | `add-conditional-branch` | Student AST contains ≥1 `IfElse` node | `ready` if found, `blocked` if missing | `blocked` |
 | `run-world` | Student world executes successfully | `not-yet-tested` (requires runtime) | `blocked` |
 | `save-project` | Saved AST round-trips without loss | `ready` if round-trip passes, `blocked` if not | `blocked` |
+
+The "With `Program`" column assumes all upstream dependencies are satisfied.
+When any upstream step is `blocked`, downstream steps cascade to `blocked`
+regardless of the `Program`. The lesson interaction steps are hardcoded in the
+grading function — they do not appear in the scenario YAML
+(`loops-and-conditionals-mini-challenge.yaml`), which only defines the three
+precondition steps. The interaction steps represent the alice.org curriculum's
+Loops and Conditionals mini-challenge activities.
 
 When a student `Program` is provided to the grading function, the
 `build-counting-loop` step walks the AST recursively to find any `CountLoop`
@@ -273,6 +281,12 @@ When a `Program` is provided, AST-aware steps (`build-counting-loop`,
 `add-conditional-branch`, `save-project`) produce `ready` or `blocked` based on
 AST inspection. When no `Program` is provided (`None`), all lesson interaction
 steps produce `blocked` with reason `"No student program provided"`.
+
+The top-level `passed` field is `true` only when every step is `ready`.
+Because `run-world` always produces `not-yet-tested` (it requires runtime
+execution the grading function does not perform), `passed` is always `false`
+when called from the grading function alone. This is intentional — the report
+confirms structural readiness, not lesson completion.
 
 ## API reference
 
@@ -339,6 +353,42 @@ fn contains_if_else(program: &Program) -> bool
 
 Both helpers traverse nested bodies (`CountLoop.body`, `IfElse.if_body`,
 `IfElse.else_body`) recursively.
+
+### Dependency propagation logic
+
+The grading function propagates status through the dependency graph:
+
+1. Root steps (`validate-assets`, `check-dependencies`) are graded from
+   `LoopsGradingInput` fields.
+2. `launch-smoke` checks its `depends_on` list. If any dependency is `Blocked`,
+   `launch-smoke` is `Blocked` with a reason listing the blockers.
+3. AST-aware steps (`build-counting-loop`, `add-conditional-branch`,
+   `save-project`) evaluate their AST checks when all upstream dependencies are
+   satisfied. If any upstream dependency is `Blocked`, the step cascades to
+   `Blocked`. If the upstream dependency is `NotYetTested`, the step evaluates
+   independently (`not-yet-tested` does not cascade).
+4. The `run-world` step is not AST-aware. It reports `NotYetTested` when all
+   upstream dependencies are satisfied, and `Blocked` when any upstream
+   dependency is `Blocked`.
+
+### Crate boundary
+
+The `eatme-assets` crate owns the grading types and pure grading function. The
+`eatme-core` crate owns the AST types. The `eatme-cli` crate orchestrates:
+
+```text
+eatme-cli (main.rs)
+  ├── eatme_assets::validate_assets()    → AssetValidationReport
+  ├── eatme_alice::check_dependencies()  → DependencyReport
+  ├── eatme_core::ast::Program           → student program AST
+  └── eatme_assets::grade_loops_and_conditionals(LoopsGradingInput { ... })
+                                          → GradingReport (7 steps)
+```
+
+The `eatme-core` crate provides the `ast` module (`Program`, `Procedure`,
+`Statement`). The `eatme-assets` crate depends on `eatme-core` for AST types.
+The `eatme-cli` crate depends on both. This boundary ensures `eatme-assets`
+does not depend on `eatme-alice`.
 
 ## Configuration
 
@@ -428,6 +478,38 @@ assert_eq!(report.steps[3].status, StepStatus::Blocked);
 assert!(report.steps[3].reason.contains("No student program provided"));
 ```
 
+### Grade with missing loop construct
+
+```rust
+let program = Program {
+    procedures: vec![Procedure {
+        name: "myFirstMethod".into(),
+        body: vec![Statement::IfElse {
+            condition: "this.cat isCloseTo this.dog".into(),
+            if_body: vec![],
+            else_body: vec![],
+        }],
+    }],
+};
+
+let report = grade_loops_and_conditionals(LoopsGradingInput {
+    assets_valid: true,
+    asset_reason: "All 93 scenario assets passed validation".into(),
+    deps_available: true,
+    deps_reason: "All required tools available".into(),
+    student_program: Some(program),
+});
+
+// build-counting-loop: no CountLoop → blocked
+assert_eq!(report.steps[3].status, StepStatus::Blocked);
+assert!(report.steps[3].reason.contains("No CountLoop found"));
+// add-conditional-branch: blocked cascades from build-counting-loop
+assert_eq!(report.steps[4].status, StepStatus::Blocked);
+// run-world and save-project: blocked cascades
+assert_eq!(report.steps[5].status, StepStatus::Blocked);
+assert_eq!(report.steps[6].status, StepStatus::Blocked);
+```
+
 ### Verify AST round-trip
 
 ```rust
@@ -464,6 +546,30 @@ Run the full quality gate:
 ```bash
 TMPDIR=/tmp ./scripts/quality-gates.sh
 ```
+
+### Plain text output (no --json)
+
+```bash
+cargo run -q -p eatme-cli -- assets grading-report \
+  --lesson loops-and-conditionals-mini-challenge
+```
+
+```text
+Loops grading: loops-and-conditionals-mini-challenge
+  validate-assets: ready — All 93 scenario assets passed validation
+  check-dependencies: blocked — Missing required tools: Xvfb, wmctrl
+  launch-smoke: blocked — Blocked by: check-dependencies
+  build-counting-loop: blocked — Blocked by: launch-smoke
+  add-conditional-branch: blocked — Blocked by: build-counting-loop
+  run-world: blocked — Blocked by: add-conditional-branch
+  save-project: blocked — Blocked by: run-world
+Result: NOT READY
+```
+
+The result is `NOT READY` because lesson interaction steps are blocked by
+missing host dependencies. When all precondition steps are `ready` and a
+complete program is provided, the result is still `NOT READY` because
+`run-world` reports `not-yet-tested`.
 
 ## E2E test
 
