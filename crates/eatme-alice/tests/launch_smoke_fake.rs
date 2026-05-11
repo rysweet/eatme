@@ -90,11 +90,11 @@ fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
         json: true,
         no_memory: true,
         offline_package: true,
-        scenario: LaunchSmokeScenario::new("code-editor-first-run"),
+        scenario: LaunchSmokeScenario::new("building-a-scene-first-world"),
     })
     .unwrap();
 
-    assert_eq!(manifest.scenario_id, "code-editor-first-run");
+    assert_eq!(manifest.scenario_id, "building-a-scene-first-world");
     assert!(
         manifest.failure_category.is_none(),
         "window evidence should satisfy lesson smoke-ready state without a screenshot: {:?}",
