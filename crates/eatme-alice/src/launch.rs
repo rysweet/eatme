@@ -1,5 +1,5 @@
 mod alice_cmd;
-mod assertions;
+pub(crate) mod assertions;
 mod display;
 mod evidence;
 mod manifest;
@@ -9,7 +9,7 @@ mod util;
 use self::alice_cmd::{alice_launch_args, start_alice};
 use self::assertions::{bool_assert, fatal_log_detail, visual_evidence_detail};
 use self::display::{reserve_display, start_xvfb, wait_for_display};
-use self::evidence::{capture_screenshot, capture_window_list, scan_fatal_logs};
+use self::evidence::{capture_screenshot, capture_window_list, record_post_focus, scan_fatal_logs};
 use self::manifest::{build_manifest, write_blocked_manifest, write_manifest};
 use self::run_dir::{launch_run_dir, prepare_run_dir};
 use self::util::{
@@ -292,16 +292,24 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         .scenario
         .requires_real_ui_actions()
         .then(|| probe_specific_alice_window(&window_search));
-    let alice_window_activation_probe = if options.scenario.requires_real_ui_actions() {
-        let probe = probe_alice_window_activation(&runner, display.name(), &window_text);
-        record_alice_window_activation(&mut assertions, &probe);
-        if probe.status != "passed" && failure_category.is_none() {
-            failure_category = Some(ui_action_activation_failure_category(&probe).into());
-        }
-        Some(probe)
-    } else {
-        None
-    };
+    let (alice_window_activation_probe, post_focus_screenshot, post_focus_screenshot_error) =
+        if options.scenario.requires_real_ui_actions() {
+            let probe = probe_alice_window_activation(&runner, display.name(), &window_text);
+            record_alice_window_activation(&mut assertions, &probe);
+            if probe.status != "passed" && failure_category.is_none() {
+                failure_category = Some(ui_action_activation_failure_category(&probe).into());
+            }
+            let (pfs, err) = record_post_focus(
+                &runner,
+                display.name(),
+                &run_dir,
+                probe.status == "passed",
+                &mut assertions,
+            );
+            (Some(probe), pfs, err)
+        } else {
+            (None, None, None)
+        };
     let desktop_save_shortcut_probe = options.scenario.requires_real_ui_actions().then(|| {
         probe_desktop_save_shortcut(
             &runner,
@@ -473,8 +481,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         window_list_error,
         screenshot,
         screenshot_error,
-        None,
-        None,
+        post_focus_screenshot,
+        post_focus_screenshot_error,
         ui_action_contract,
         log,
         log_error,

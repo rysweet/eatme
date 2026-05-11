@@ -34,7 +34,7 @@ pub(super) fn fatal_log_detail(fatal_lines: &[String], log_error: Option<&str>) 
     format!("{} fatal log lines found", fatal_lines.len())
 }
 
-pub(super) fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
+pub(crate) fn bool_assert(passed: bool, detail: impl Into<String>) -> AssertionResult {
     if passed {
         AssertionResult::pass(detail)
     } else {
