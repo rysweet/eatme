@@ -7,6 +7,7 @@ repository.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+eatme-core = { path = "../eatme-core" }
 serde.workspace = true
 serde_yaml.workspace = true
 
