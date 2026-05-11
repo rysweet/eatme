@@ -12,7 +12,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 mod first_lesson;
+mod grading;
 use first_lesson::{RunFirstLessonReadinessArgs, print_first_lesson_readiness_result};
+use grading::AssetsGradingReportArgs;
 
 #[derive(Parser)]
 #[command(name = "eatme")]
@@ -42,6 +44,7 @@ enum Commands {
 enum AssetsCommand {
     Validate(AssetsValidateArgs),
     GenerateGadugi(AssetsGenerateGadugiArgs),
+    GradingReport(AssetsGradingReportArgs),
 }
 
 #[derive(Subcommand)]
@@ -83,7 +86,6 @@ struct AssetsGenerateGadugiArgs {
     #[arg(long)]
     json: bool,
 }
-
 #[derive(Args)]
 struct AliceHomeArgs {
     #[arg(long, env = "ALICE_HOME")]
@@ -193,6 +195,9 @@ fn main() -> Result<()> {
                 bail!("gadugi adapter generation check failed");
             }
         }
+        Commands::Assets {
+            command: AssetsCommand::GradingReport(args),
+        } => grading::run_grading_report(&args, &runner)?,
         Commands::Deps {
             command: DepsCommand::Check(args),
         } => print_result(args.json, &check_dependencies(&runner)?)?,

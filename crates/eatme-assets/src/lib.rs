@@ -16,6 +16,9 @@ mod default_workflow_pr_readiness_contract_tests;
 mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
+pub mod grading_report;
+#[cfg(test)]
+mod grading_report_integration_tests;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
@@ -39,6 +42,9 @@ mod student_reflection_artifact_tests;
 mod validation;
 
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
+pub use grading_report::{
+    GradingInput, GradingReport, StepGrade, StepStatus, grade_first_lesson_readiness,
+};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };
