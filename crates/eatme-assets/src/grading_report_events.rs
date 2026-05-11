@@ -41,10 +41,11 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
         evaluate_events_steps(&input.student_program)
     };
 
-    let passed = steps
-        .iter()
-        .chain(interaction_steps.iter())
-        .all(|s| s.status == StepStatus::Ready);
+    // Precondition steps are all Ready when !preconditions_blocked, so skip them.
+    let passed = !preconditions_blocked
+        && interaction_steps
+            .iter()
+            .all(|s| s.status == StepStatus::Ready);
 
     steps.extend(interaction_steps);
 
@@ -108,9 +109,9 @@ fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let save_project = if run_world_blocked {
         cascade_blocked("save-project", &["run-world"])
     } else {
-        let round_trip_ok = serde_json::to_string(program)
+        let round_trip_ok = serde_json::to_vec(program)
             .ok()
-            .and_then(|j| serde_json::from_str::<Program>(&j).ok())
+            .and_then(|bytes| serde_json::from_slice::<Program>(&bytes).ok())
             .is_some_and(|restored| restored == *program);
         let status = if round_trip_ok {
             StepStatus::Ready
@@ -161,14 +162,18 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                 }
             }
             Statement::CountLoop { body, .. } => {
-                stmt_find_event_constructs(body, has_event, has_collision);
+                if !(*has_event && *has_collision) {
+                    stmt_find_event_constructs(body, has_event, has_collision);
+                }
             }
             Statement::IfElse {
                 if_body, else_body, ..
             } => {
-                stmt_find_event_constructs(if_body, has_event, has_collision);
                 if !(*has_event && *has_collision) {
-                    stmt_find_event_constructs(else_body, has_event, has_collision);
+                    stmt_find_event_constructs(if_body, has_event, has_collision);
+                    if !(*has_event && *has_collision) {
+                        stmt_find_event_constructs(else_body, has_event, has_collision);
+                    }
                 }
             }
             Statement::MethodCall { .. } => {}

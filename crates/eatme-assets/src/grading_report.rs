@@ -62,12 +62,9 @@ pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
     );
 
     let passed = !preconditions_blocked
-        && place_object.status != StepStatus::Blocked
-        && edit_code.status != StepStatus::Blocked
-        && run_world.status != StepStatus::Blocked
-        && place_object.status != StepStatus::NotYetTested
-        && edit_code.status != StepStatus::NotYetTested
-        && run_world.status != StepStatus::NotYetTested;
+        && place_object.status == StepStatus::Ready
+        && edit_code.status == StepStatus::Ready
+        && run_world.status == StepStatus::Ready;
 
     steps.extend([place_object, edit_code, run_world]);
 
@@ -186,10 +183,11 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
         evaluate_loops_steps(&input.student_program)
     };
 
-    let passed = steps
-        .iter()
-        .chain(interaction_steps.iter())
-        .all(|s| s.status == StepStatus::Ready);
+    // Precondition steps are all Ready when !preconditions_blocked, so skip them.
+    let passed = !preconditions_blocked
+        && interaction_steps
+            .iter()
+            .all(|s| s.status == StepStatus::Ready);
 
     steps.extend(interaction_steps);
 
@@ -334,10 +332,14 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
             }
             Statement::MethodCall { .. } => {}
             Statement::EventListener { body, .. } => {
-                stmt_find_constructs(body, has_loop, has_cond);
+                if !(*has_loop && *has_cond) {
+                    stmt_find_constructs(body, has_loop, has_cond);
+                }
             }
             Statement::CollisionListener { body, .. } => {
-                stmt_find_constructs(body, has_loop, has_cond);
+                if !(*has_loop && *has_cond) {
+                    stmt_find_constructs(body, has_loop, has_cond);
+                }
             }
         }
         if *has_loop && *has_cond {
