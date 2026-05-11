@@ -49,8 +49,8 @@ pub use creative_assessment::{
 };
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
 pub use grading_report::{
-    GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
-    grade_first_lesson_readiness, grade_loops_and_conditionals,
+    EventsGradingInput, GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
+    grade_events_and_collision, grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,

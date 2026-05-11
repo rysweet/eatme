@@ -28,6 +28,15 @@ pub enum Statement {
         if_body: Vec<Statement>,
         else_body: Vec<Statement>,
     },
+    EventListener {
+        event: String,
+        body: Vec<Statement>,
+    },
+    CollisionListener {
+        object_a: String,
+        object_b: String,
+        body: Vec<Statement>,
+    },
 }
 
 #[cfg(test)]

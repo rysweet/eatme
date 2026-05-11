@@ -210,6 +210,15 @@ fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     }
 }
 
+fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGrade {
+    let (status, reason) = if found {
+        (StepStatus::Ready, format!("{construct} found in student program"))
+    } else {
+        (StepStatus::Blocked, format!("No {construct} found in student program"))
+    };
+    StepGrade { name: name.into(), status, reason, depends_on: vec![dep.into()] }
+}
+
 fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
@@ -232,40 +241,13 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
 
     let (has_loop, has_conditional) = ast_find_constructs(program);
 
-    let build_loop = if has_loop {
-        StepGrade {
-            name: "build-counting-loop".into(),
-            status: StepStatus::Ready,
-            reason: "CountLoop found in student program".into(),
-            depends_on: vec!["launch-smoke".into()],
-        }
-    } else {
-        StepGrade {
-            name: "build-counting-loop".into(),
-            status: StepStatus::Blocked,
-            reason: "No CountLoop found in student program".into(),
-            depends_on: vec!["launch-smoke".into()],
-        }
-    };
-
+    let build_loop = ast_check_step("build-counting-loop", "launch-smoke", has_loop, "CountLoop");
     let loop_blocked = build_loop.status == StepStatus::Blocked;
 
     let add_cond = if loop_blocked {
         cascade_blocked("add-conditional-branch", &["build-counting-loop"])
-    } else if has_conditional {
-        StepGrade {
-            name: "add-conditional-branch".into(),
-            status: StepStatus::Ready,
-            reason: "IfElse found in student program".into(),
-            depends_on: vec!["build-counting-loop".into()],
-        }
     } else {
-        StepGrade {
-            name: "add-conditional-branch".into(),
-            status: StepStatus::Blocked,
-            reason: "No IfElse found in student program".into(),
-            depends_on: vec!["build-counting-loop".into()],
-        }
+        ast_check_step("add-conditional-branch", "build-counting-loop", has_conditional, "IfElse")
     };
 
     let cond_blocked = add_cond.status == StepStatus::Blocked;
@@ -330,8 +312,176 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
                 }
             }
             Statement::MethodCall { .. } => {}
+            Statement::EventListener { body, .. } => {
+                stmt_find_constructs(body, has_loop, has_cond);
+            }
+            Statement::CollisionListener { body, .. } => {
+                stmt_find_constructs(body, has_loop, has_cond);
+            }
         }
         if *has_loop && *has_cond {
+            return;
+        }
+    }
+}
+
+pub struct EventsGradingInput {
+    pub assets_valid: bool,
+    pub asset_reason: String,
+    pub deps_available: bool,
+    pub deps_reason: String,
+    pub student_program: Option<Program>,
+}
+
+pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
+    let (mut steps, preconditions_blocked) = build_preconditions(
+        input.assets_valid,
+        input.asset_reason,
+        input.deps_available,
+        input.deps_reason,
+    );
+
+    let interaction_steps = if preconditions_blocked {
+        vec![
+            cascade_blocked("add-event-listener", &["launch-smoke"]),
+            cascade_blocked("add-collision-listener", &["add-event-listener"]),
+            cascade_blocked("run-world", &["add-collision-listener"]),
+            cascade_blocked("save-project", &["run-world"]),
+        ]
+    } else {
+        evaluate_events_steps(&input.student_program)
+    };
+
+    let passed = steps
+        .iter()
+        .chain(interaction_steps.iter())
+        .all(|s| s.status == StepStatus::Ready);
+
+    steps.extend(interaction_steps);
+
+    GradingReport {
+        schema_version: "eatme.assets/grading/v1".into(),
+        lesson: "events-collision-proximity-game".into(),
+        passed,
+        steps,
+    }
+}
+
+fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
+    let program = match program {
+        Some(p) => p,
+        None => {
+            let reason = "No student program provided".to_string();
+            let blocked = |name: &str, dep: &str| StepGrade {
+                name: name.into(),
+                status: StepStatus::Blocked,
+                reason: reason.clone(),
+                depends_on: vec![dep.into()],
+            };
+            return vec![
+                blocked("add-event-listener", "launch-smoke"),
+                blocked("add-collision-listener", "add-event-listener"),
+                blocked("run-world", "add-collision-listener"),
+                blocked("save-project", "run-world"),
+            ];
+        }
+    };
+
+    let (has_event, has_collision) = ast_find_event_constructs(program);
+
+    let add_event = ast_check_step("add-event-listener", "launch-smoke", has_event, "EventListener");
+    let event_blocked = add_event.status == StepStatus::Blocked;
+
+    let add_collision = if event_blocked {
+        cascade_blocked("add-collision-listener", &["add-event-listener"])
+    } else {
+        ast_check_step("add-collision-listener", "add-event-listener", has_collision, "CollisionListener")
+    };
+
+    let collision_blocked = add_collision.status == StepStatus::Blocked;
+
+    let run_world = if collision_blocked {
+        cascade_blocked("run-world", &["add-collision-listener"])
+    } else {
+        StepGrade {
+            name: "run-world".into(),
+            status: StepStatus::NotYetTested,
+            reason: "Run the world and observe results — requires human interaction".into(),
+            depends_on: vec!["add-collision-listener".into()],
+        }
+    };
+
+    let run_world_blocked = run_world.status == StepStatus::Blocked;
+
+    let save_project = if run_world_blocked {
+        cascade_blocked("save-project", &["run-world"])
+    } else {
+        let round_trip_ok = serde_json::to_string(program)
+            .ok()
+            .and_then(|j| serde_json::from_str::<Program>(&j).ok())
+            .is_some_and(|restored| restored == *program);
+        let status = if round_trip_ok { StepStatus::Ready } else { StepStatus::Blocked };
+        let reason = if round_trip_ok {
+            "Program round-trip (serialize → deserialize → compare) verified"
+        } else {
+            "Program failed round-trip verification"
+        };
+        StepGrade {
+            name: "save-project".into(),
+            status,
+            reason: reason.into(),
+            depends_on: vec!["run-world".into()],
+        }
+    };
+
+    vec![add_event, add_collision, run_world, save_project]
+}
+
+/// Single-pass AST scan: returns (has_event_listener, has_collision_listener).
+fn ast_find_event_constructs(program: &Program) -> (bool, bool) {
+    let (mut has_event, mut has_collision) = (false, false);
+    for proc in &program.procedures {
+        stmt_find_event_constructs(&proc.body, &mut has_event, &mut has_collision);
+        if has_event && has_collision {
+            return (true, true);
+        }
+    }
+    (has_event, has_collision)
+}
+
+fn stmt_find_event_constructs(
+    stmts: &[Statement],
+    has_event: &mut bool,
+    has_collision: &mut bool,
+) {
+    for stmt in stmts {
+        match stmt {
+            Statement::EventListener { body, .. } => {
+                *has_event = true;
+                if !*has_collision {
+                    stmt_find_event_constructs(body, has_event, has_collision);
+                }
+            }
+            Statement::CollisionListener { body, .. } => {
+                *has_collision = true;
+                if !*has_event {
+                    stmt_find_event_constructs(body, has_event, has_collision);
+                }
+            }
+            Statement::CountLoop { body, .. } => {
+                stmt_find_event_constructs(body, has_event, has_collision);
+            }
+            Statement::IfElse {
+                if_body, else_body, ..
+            } => {
+                stmt_find_event_constructs(if_body, has_event, has_collision);
+                if !(*has_event && *has_collision) {
+                    stmt_find_event_constructs(else_body, has_event, has_collision);
+                }
+            }
+            Statement::MethodCall { .. } => {}
+        }
+        if *has_event && *has_collision {
             return;
         }
     }
@@ -344,3 +494,7 @@ mod tests;
 #[cfg(test)]
 #[path = "grading_report_loops_tests.rs"]
 mod loops_tests;
+
+#[cfg(test)]
+#[path = "grading_report_events_tests.rs"]
+mod events_tests;
