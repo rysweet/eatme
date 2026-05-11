@@ -1,3 +1,4 @@
+use eatme_core::ast::Program;
 use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
@@ -146,6 +147,22 @@ fn interaction_step(
     }
 }
 
+pub struct LoopsGradingInput {
+    pub assets_valid: bool,
+    pub asset_reason: String,
+    pub deps_available: bool,
+    pub deps_reason: String,
+    pub student_program: Option<Program>,
+}
+
+pub fn grade_loops_and_conditionals(_input: LoopsGradingInput) -> GradingReport {
+    todo!("Implementation pending — TDD red phase")
+}
+
 #[cfg(test)]
 #[path = "grading_report_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "grading_report_loops_tests.rs"]
+mod loops_tests;
