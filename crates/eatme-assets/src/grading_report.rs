@@ -35,52 +35,12 @@ pub struct GradingInput {
 }
 
 pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
-    let validate_assets = StepGrade {
-        name: "validate-assets".into(),
-        status: if input.assets_valid {
-            StepStatus::Ready
-        } else {
-            StepStatus::Blocked
-        },
-        reason: input.asset_reason,
-        depends_on: vec![],
-    };
-    let check_deps = StepGrade {
-        name: "check-dependencies".into(),
-        status: if input.deps_available {
-            StepStatus::Ready
-        } else {
-            StepStatus::Blocked
-        },
-        reason: input.deps_reason,
-        depends_on: vec![],
-    };
-    let launch_smoke = {
-        let mut blockers = Vec::new();
-        if validate_assets.status == StepStatus::Blocked {
-            blockers.push("validate-assets");
-        }
-        if check_deps.status == StepStatus::Blocked {
-            blockers.push("check-dependencies");
-        }
-        if blockers.is_empty() {
-            StepGrade {
-                name: "launch-smoke".into(),
-                status: StepStatus::Ready,
-                reason: "All preconditions met".into(),
-                depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
-            }
-        } else {
-            StepGrade {
-                name: "launch-smoke".into(),
-                status: StepStatus::Blocked,
-                reason: format!("Blocked by: {}", blockers.join(", ")),
-                depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
-            }
-        }
-    };
-
-    let preconditions_blocked = launch_smoke.status == StepStatus::Blocked;
+    let (mut steps, preconditions_blocked) = build_preconditions(
+        input.assets_valid,
+        input.asset_reason,
+        input.deps_available,
+        input.deps_reason,
+    );
 
     let place_object = interaction_step(
         "place-object",
@@ -109,18 +69,13 @@ pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
         && edit_code.status != StepStatus::NotYetTested
         && run_world.status != StepStatus::NotYetTested;
 
+    steps.extend([place_object, edit_code, run_world]);
+
     GradingReport {
         schema_version: "eatme.assets/grading/v1".into(),
         lesson: "building-a-scene-first-world".into(),
         passed,
-        steps: vec![
-            validate_assets,
-            check_deps,
-            launch_smoke,
-            place_object,
-            edit_code,
-            run_world,
-        ],
+        steps,
     }
 }
 
@@ -147,37 +102,32 @@ fn interaction_step(
     }
 }
 
-pub struct LoopsGradingInput {
-    pub assets_valid: bool,
-    pub asset_reason: String,
-    pub deps_available: bool,
-    pub deps_reason: String,
-    pub student_program: Option<Program>,
-}
-
-pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
+fn build_preconditions(
+    assets_valid: bool,
+    asset_reason: String,
+    deps_available: bool,
+    deps_reason: String,
+) -> (Vec<StepGrade>, bool) {
     let validate_assets = StepGrade {
         name: "validate-assets".into(),
-        status: if input.assets_valid {
+        status: if assets_valid {
             StepStatus::Ready
         } else {
             StepStatus::Blocked
         },
-        reason: input.asset_reason,
+        reason: asset_reason,
         depends_on: vec![],
     };
-
     let check_deps = StepGrade {
         name: "check-dependencies".into(),
-        status: if input.deps_available {
+        status: if deps_available {
             StepStatus::Ready
         } else {
             StepStatus::Blocked
         },
-        reason: input.deps_reason,
+        reason: deps_reason,
         depends_on: vec![],
     };
-
     let launch_smoke = {
         let mut blockers = Vec::new();
         if validate_assets.status == StepStatus::Blocked {
@@ -202,45 +152,49 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
             }
         }
     };
+    let blocked = launch_smoke.status == StepStatus::Blocked;
+    (vec![validate_assets, check_deps, launch_smoke], blocked)
+}
 
-    let preconditions_blocked = launch_smoke.status == StepStatus::Blocked;
+pub struct LoopsGradingInput {
+    pub assets_valid: bool,
+    pub asset_reason: String,
+    pub deps_available: bool,
+    pub deps_reason: String,
+    pub student_program: Option<Program>,
+}
 
-    let (build_loop, add_cond, run_world, save_project) = if preconditions_blocked {
-        (
+pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
+    let (mut steps, preconditions_blocked) = build_preconditions(
+        input.assets_valid,
+        input.asset_reason,
+        input.deps_available,
+        input.deps_reason,
+    );
+
+    let interaction_steps = if preconditions_blocked {
+        vec![
             cascade_blocked("build-counting-loop", &["launch-smoke"]),
             cascade_blocked("add-conditional-branch", &["build-counting-loop"]),
             cascade_blocked("run-world", &["add-conditional-branch"]),
             cascade_blocked("save-project", &["run-world"]),
-        )
+        ]
     } else {
         evaluate_loops_steps(&input.student_program)
     };
 
-    let passed = [
-        &validate_assets,
-        &check_deps,
-        &launch_smoke,
-        &build_loop,
-        &add_cond,
-        &run_world,
-        &save_project,
-    ]
-    .iter()
-    .all(|s| s.status == StepStatus::Ready);
+    let passed = steps
+        .iter()
+        .chain(interaction_steps.iter())
+        .all(|s| s.status == StepStatus::Ready);
+
+    steps.extend(interaction_steps);
 
     GradingReport {
         schema_version: "eatme.assets/grading/v1".into(),
         lesson: "loops-and-conditionals-mini-challenge".into(),
         passed,
-        steps: vec![
-            validate_assets,
-            check_deps,
-            launch_smoke,
-            build_loop,
-            add_cond,
-            run_world,
-            save_project,
-        ],
+        steps,
     }
 }
 
@@ -253,37 +207,23 @@ fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     }
 }
 
-fn evaluate_loops_steps(program: &Option<Program>) -> (StepGrade, StepGrade, StepGrade, StepGrade) {
+fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
         None => {
-            let r = "No student program provided".to_string();
-            return (
-                StepGrade {
-                    name: "build-counting-loop".into(),
-                    status: StepStatus::Blocked,
-                    reason: r.clone(),
-                    depends_on: vec!["launch-smoke".into()],
-                },
-                StepGrade {
-                    name: "add-conditional-branch".into(),
-                    status: StepStatus::Blocked,
-                    reason: r.clone(),
-                    depends_on: vec!["build-counting-loop".into()],
-                },
-                StepGrade {
-                    name: "run-world".into(),
-                    status: StepStatus::Blocked,
-                    reason: r.clone(),
-                    depends_on: vec!["add-conditional-branch".into()],
-                },
-                StepGrade {
-                    name: "save-project".into(),
-                    status: StepStatus::Blocked,
-                    reason: r,
-                    depends_on: vec!["run-world".into()],
-                },
-            );
+            let reason = "No student program provided".to_string();
+            let blocked = |name: &str, dep: &str| StepGrade {
+                name: name.into(),
+                status: StepStatus::Blocked,
+                reason: reason.clone(),
+                depends_on: vec![dep.into()],
+            };
+            return vec![
+                blocked("build-counting-loop", "launch-smoke"),
+                blocked("add-conditional-branch", "build-counting-loop"),
+                blocked("run-world", "add-conditional-branch"),
+                blocked("save-project", "run-world"),
+            ];
         }
     };
 
@@ -352,7 +292,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> (StepGrade, StepGrade, Ste
         }
     };
 
-    (build_loop, add_cond, run_world, save_project)
+    vec![build_loop, add_cond, run_world, save_project]
 }
 
 fn ast_contains_count_loop(program: &Program) -> bool {
