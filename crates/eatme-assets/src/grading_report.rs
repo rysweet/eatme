@@ -85,20 +85,23 @@ fn interaction_step(
     upstream_blocked: bool,
     description: &str,
 ) -> StepGrade {
-    if upstream_blocked {
-        StepGrade {
-            name: name.into(),
-            status: StepStatus::Blocked,
-            reason: format!("Blocked by: {}", deps.join(", ")),
-            depends_on: deps.iter().map(|d| (*d).into()).collect(),
-        }
+    let depends_on: Vec<String> = deps.iter().map(|d| (*d).into()).collect();
+    let (status, reason) = if upstream_blocked {
+        (
+            StepStatus::Blocked,
+            format!("Blocked by: {}", deps.join(", ")),
+        )
     } else {
-        StepGrade {
-            name: name.into(),
-            status: StepStatus::NotYetTested,
-            reason: format!("{} — requires human interaction", description),
-            depends_on: deps.iter().map(|d| (*d).into()).collect(),
-        }
+        (
+            StepStatus::NotYetTested,
+            format!("{} — requires human interaction", description),
+        )
+    };
+    StepGrade {
+        name: name.into(),
+        status,
+        reason,
+        depends_on,
     }
 }
 
@@ -227,8 +230,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
         }
     };
 
-    let has_loop = ast_contains_count_loop(program);
-    let has_conditional = ast_contains_if_else(program);
+    let (has_loop, has_conditional) = ast_find_constructs(program);
 
     let build_loop = if has_loop {
         StepGrade {
@@ -295,35 +297,43 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     vec![build_loop, add_cond, run_world, save_project]
 }
 
-fn ast_contains_count_loop(program: &Program) -> bool {
-    program
-        .procedures
-        .iter()
-        .any(|p| p.body.iter().any(stmt_has_count_loop))
-}
-
-fn stmt_has_count_loop(stmt: &Statement) -> bool {
-    match stmt {
-        Statement::CountLoop { .. } => true,
-        Statement::IfElse {
-            if_body, else_body, ..
-        } => if_body.iter().any(stmt_has_count_loop) || else_body.iter().any(stmt_has_count_loop),
-        Statement::MethodCall { .. } => false,
+/// Single-pass AST scan: returns (has_count_loop, has_if_else).
+fn ast_find_constructs(program: &Program) -> (bool, bool) {
+    let (mut has_loop, mut has_cond) = (false, false);
+    for proc in &program.procedures {
+        stmt_find_constructs(&proc.body, &mut has_loop, &mut has_cond);
+        if has_loop && has_cond {
+            return (true, true);
+        }
     }
+    (has_loop, has_cond)
 }
 
-fn ast_contains_if_else(program: &Program) -> bool {
-    program
-        .procedures
-        .iter()
-        .any(|p| p.body.iter().any(stmt_has_if_else))
-}
-
-fn stmt_has_if_else(stmt: &Statement) -> bool {
-    match stmt {
-        Statement::IfElse { .. } => true,
-        Statement::CountLoop { body, .. } => body.iter().any(stmt_has_if_else),
-        Statement::MethodCall { .. } => false,
+fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut bool) {
+    for stmt in stmts {
+        match stmt {
+            Statement::CountLoop { body, .. } => {
+                *has_loop = true;
+                if !*has_cond {
+                    stmt_find_constructs(body, has_loop, has_cond);
+                }
+            }
+            Statement::IfElse {
+                if_body, else_body, ..
+            } => {
+                *has_cond = true;
+                if !*has_loop {
+                    stmt_find_constructs(if_body, has_loop, has_cond);
+                    if !*has_loop {
+                        stmt_find_constructs(else_body, has_loop, has_cond);
+                    }
+                }
+            }
+            Statement::MethodCall { .. } => {}
+        }
+        if *has_loop && *has_cond {
+            return;
+        }
     }
 }
 
