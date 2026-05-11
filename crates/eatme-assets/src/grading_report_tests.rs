@@ -51,9 +51,9 @@ fn lesson_is_building_a_scene_first_world() {
 }
 
 #[test]
-fn always_produces_three_steps() {
+fn always_produces_six_steps() {
     let report = grade_first_lesson_readiness(input_all_ready());
-    assert_eq!(report.steps.len(), 3);
+    assert_eq!(report.steps.len(), 6);
 }
 
 #[test]
@@ -62,18 +62,67 @@ fn step_names_in_order() {
     let names: Vec<&str> = report.steps.iter().map(|s| s.name.as_str()).collect();
     assert_eq!(
         names,
-        ["validate-assets", "check-dependencies", "launch-smoke"]
+        [
+            "validate-assets",
+            "check-dependencies",
+            "launch-smoke",
+            "place-object",
+            "edit-code",
+            "run-world",
+        ]
     );
+}
+
+// --- depends_on field tests ---
+
+#[test]
+fn depends_on_root_steps_have_empty_dependencies() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert!(
+        report.steps[0].depends_on.is_empty(),
+        "validate-assets should have no dependencies"
+    );
+    assert!(
+        report.steps[1].depends_on.is_empty(),
+        "check-dependencies should have no dependencies"
+    );
+}
+
+#[test]
+fn depends_on_launch_smoke_depends_on_first_two() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert_eq!(
+        report.steps[2].depends_on,
+        vec!["validate-assets", "check-dependencies"]
+    );
+}
+
+#[test]
+fn depends_on_place_object_depends_on_launch_smoke() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert_eq!(report.steps[3].depends_on, vec!["launch-smoke"]);
+}
+
+#[test]
+fn depends_on_edit_code_depends_on_place_object() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert_eq!(report.steps[4].depends_on, vec!["place-object"]);
+}
+
+#[test]
+fn depends_on_run_world_depends_on_edit_code() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert_eq!(report.steps[5].depends_on, vec!["edit-code"]);
 }
 
 // --- All ready scenario ---
 
 #[test]
-fn all_ready_report_passes() {
+fn all_ready_preconditions_report_does_not_pass() {
     let report = grade_first_lesson_readiness(input_all_ready());
     assert!(
-        report.passed,
-        "report should pass when all inputs are valid"
+        !report.passed,
+        "report should not pass when interaction steps are not-yet-tested"
     );
 }
 
@@ -93,6 +142,26 @@ fn all_ready_check_dependencies_is_ready() {
 fn all_ready_launch_smoke_is_ready() {
     let report = grade_first_lesson_readiness(input_all_ready());
     assert_eq!(report.steps[2].status, StepStatus::Ready);
+}
+
+#[test]
+fn all_ready_interaction_steps_are_not_yet_tested() {
+    let report = grade_first_lesson_readiness(input_all_ready());
+    assert_eq!(
+        report.steps[3].status,
+        StepStatus::NotYetTested,
+        "place-object"
+    );
+    assert_eq!(
+        report.steps[4].status,
+        StepStatus::NotYetTested,
+        "edit-code"
+    );
+    assert_eq!(
+        report.steps[5].status,
+        StepStatus::NotYetTested,
+        "run-world"
+    );
 }
 
 #[test]
@@ -140,6 +209,14 @@ fn blocked_assets_launch_smoke_is_blocked() {
     );
 }
 
+#[test]
+fn blocked_assets_interaction_steps_are_blocked() {
+    let report = grade_first_lesson_readiness(input_blocked_assets());
+    assert_eq!(report.steps[3].status, StepStatus::Blocked, "place-object");
+    assert_eq!(report.steps[4].status, StepStatus::Blocked, "edit-code");
+    assert_eq!(report.steps[5].status, StepStatus::Blocked, "run-world");
+}
+
 // --- Blocked dependencies scenario ---
 
 #[test]
@@ -178,6 +255,14 @@ fn blocked_deps_launch_smoke_is_blocked() {
     );
 }
 
+#[test]
+fn blocked_deps_interaction_steps_are_blocked() {
+    let report = grade_first_lesson_readiness(input_blocked_deps());
+    assert_eq!(report.steps[3].status, StepStatus::Blocked, "place-object");
+    assert_eq!(report.steps[4].status, StepStatus::Blocked, "edit-code");
+    assert_eq!(report.steps[5].status, StepStatus::Blocked, "run-world");
+}
+
 // --- Both blocked scenario ---
 
 #[test]
@@ -214,6 +299,14 @@ fn both_blocked_launch_smoke_mentions_both_blockers() {
     );
 }
 
+#[test]
+fn both_blocked_interaction_steps_are_blocked() {
+    let report = grade_first_lesson_readiness(input_both_blocked());
+    assert_eq!(report.steps[3].status, StepStatus::Blocked, "place-object");
+    assert_eq!(report.steps[4].status, StepStatus::Blocked, "edit-code");
+    assert_eq!(report.steps[5].status, StepStatus::Blocked, "run-world");
+}
+
 // --- JSON serialization ---
 
 #[test]
@@ -235,9 +328,14 @@ fn report_serializes_to_expected_json_shape() {
 
     assert_eq!(json["schema_version"], "eatme.assets/grading/v1");
     assert_eq!(json["lesson"], "building-a-scene-first-world");
-    assert!(json["passed"].as_bool().unwrap());
+    assert!(!json["passed"].as_bool().unwrap());
     assert!(json["steps"].is_array());
-    assert_eq!(json["steps"].as_array().unwrap().len(), 3);
+    assert_eq!(json["steps"].as_array().unwrap().len(), 6);
     assert_eq!(json["steps"][0]["name"], "validate-assets");
     assert_eq!(json["steps"][0]["status"], "ready");
+    assert!(json["steps"][0]["depends_on"].is_array());
+    assert_eq!(json["steps"][0]["depends_on"].as_array().unwrap().len(), 0);
+    assert_eq!(json["steps"][3]["name"], "place-object");
+    assert_eq!(json["steps"][3]["status"], "not-yet-tested");
+    assert_eq!(json["steps"][3]["depends_on"][0], "launch-smoke");
 }

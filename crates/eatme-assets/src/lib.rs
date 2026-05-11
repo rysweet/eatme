@@ -6,6 +6,9 @@ use std::path::Path;
 mod accessibility_rescue_camera_captions_tests;
 #[cfg(test)]
 mod assessment_boundary_tests;
+pub mod creative_assessment;
+#[cfg(test)]
+mod creative_assessment_tests;
 #[cfg(test)]
 mod creature_choreography_tests;
 #[cfg(test)]
@@ -41,6 +44,9 @@ mod starter_project_preflight_boundary_tests;
 mod student_reflection_artifact_tests;
 mod validation;
 
+pub use creative_assessment::{
+    AssessmentAspect, AssessmentCategory, CreativeAssessmentReport, for_building_a_scene,
+};
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
 pub use grading_report::{
     GradingInput, GradingReport, StepGrade, StepStatus, grade_first_lesson_readiness,

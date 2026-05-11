@@ -28,7 +28,7 @@ fn grade_committed_assets_produces_valid_report() {
 
     assert_eq!(report.schema_version, "eatme.assets/grading/v1");
     assert_eq!(report.lesson, "building-a-scene-first-world");
-    assert_eq!(report.steps.len(), 3);
+    assert_eq!(report.steps.len(), 6);
     // Committed assets should pass validation
     assert_eq!(report.steps[0].status, StepStatus::Ready);
     assert_eq!(report.steps[0].name, "validate-assets");
@@ -38,6 +38,13 @@ fn grade_committed_assets_produces_valid_report() {
     // Launch smoke should be blocked because deps are blocked
     assert_eq!(report.steps[2].status, StepStatus::Blocked);
     assert_eq!(report.steps[2].name, "launch-smoke");
+    // Interaction steps should be blocked (upstream is blocked)
+    assert_eq!(report.steps[3].status, StepStatus::Blocked);
+    assert_eq!(report.steps[3].name, "place-object");
+    assert_eq!(report.steps[4].status, StepStatus::Blocked);
+    assert_eq!(report.steps[4].name, "edit-code");
+    assert_eq!(report.steps[5].status, StepStatus::Blocked);
+    assert_eq!(report.steps[5].name, "run-world");
     assert!(!report.passed);
 }
 
@@ -63,15 +70,26 @@ fn grade_committed_assets_all_ready_path() {
 
     let report = grade_first_lesson_readiness(input);
 
-    assert!(report.passed);
-    for step in &report.steps {
+    // Precondition steps should be ready
+    for step in &report.steps[..3] {
         assert_eq!(
             step.status,
             StepStatus::Ready,
-            "step {} should be ready",
+            "precondition step {} should be ready",
             step.name
         );
     }
+    // Interaction steps should be not-yet-tested
+    for step in &report.steps[3..] {
+        assert_eq!(
+            step.status,
+            StepStatus::NotYetTested,
+            "interaction step {} should be not-yet-tested",
+            step.name
+        );
+    }
+    // Report should not pass because interaction steps are not yet tested
+    assert!(!report.passed);
 }
 
 #[test]
@@ -95,6 +113,7 @@ fn grading_report_json_round_trips_cleanly() {
         assert!(step["name"].is_string());
         assert!(step["status"].is_string());
         assert!(step["reason"].is_string());
+        assert!(step["depends_on"].is_array(), "depends_on must be an array");
         let status = step["status"].as_str().unwrap();
         assert!(
             ["ready", "blocked", "not-yet-tested"].contains(&status),
