@@ -34,6 +34,23 @@ fn program_with_all_variants_round_trips() {
                         arguments: vec!["\"Hmm...\"".into()],
                     }],
                 },
+                Statement::EventListener {
+                    event: "SceneActivated".into(),
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec!["\"Scene started!\"".into()],
+                    }],
+                },
+                Statement::CollisionListener {
+                    object_a: "this.cat".into(),
+                    object_b: "this.dog".into(),
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec!["\"Ouch!\"".into()],
+                    }],
+                },
             ],
         }],
     };
@@ -272,4 +289,129 @@ fn method_call_with_many_arguments() {
     let json = serde_json::to_string(&stmt).unwrap();
     let restored: Statement = serde_json::from_str(&json).unwrap();
     assert_eq!(stmt, restored);
+}
+
+// --- EventListener and CollisionListener tests ---
+
+#[test]
+fn event_listener_round_trips() {
+    let stmt = Statement::EventListener {
+        event: "SceneActivated".into(),
+        body: vec![Statement::MethodCall {
+            object: "this.cat".into(),
+            method: "say".into(),
+            arguments: vec!["\"Hello world!\"".into()],
+        }],
+    };
+    let json = serde_json::to_string(&stmt).unwrap();
+    let restored: Statement = serde_json::from_str(&json).unwrap();
+    assert_eq!(stmt, restored);
+}
+
+#[test]
+fn collision_listener_round_trips() {
+    let stmt = Statement::CollisionListener {
+        object_a: "this.cat".into(),
+        object_b: "this.dog".into(),
+        body: vec![Statement::MethodCall {
+            object: "this.cat".into(),
+            method: "say".into(),
+            arguments: vec!["\"Ouch!\"".into()],
+        }],
+    };
+    let json = serde_json::to_string(&stmt).unwrap();
+    let restored: Statement = serde_json::from_str(&json).unwrap();
+    assert_eq!(stmt, restored);
+}
+
+#[test]
+fn event_listener_json_has_kind_field() {
+    let stmt = Statement::EventListener {
+        event: "KeyPress".into(),
+        body: vec![],
+    };
+    let json: serde_json::Value = serde_json::to_value(&stmt).unwrap();
+    assert_eq!(json["kind"], "EventListener");
+}
+
+#[test]
+fn collision_listener_json_has_kind_field() {
+    let stmt = Statement::CollisionListener {
+        object_a: "this.cat".into(),
+        object_b: "this.dog".into(),
+        body: vec![],
+    };
+    let json: serde_json::Value = serde_json::to_value(&stmt).unwrap();
+    assert_eq!(json["kind"], "CollisionListener");
+}
+
+#[test]
+fn event_listener_with_empty_body_round_trips() {
+    let stmt = Statement::EventListener {
+        event: "MouseClick".into(),
+        body: vec![],
+    };
+    let json = serde_json::to_string(&stmt).unwrap();
+    let restored: Statement = serde_json::from_str(&json).unwrap();
+    assert_eq!(stmt, restored);
+}
+
+#[test]
+fn collision_listener_with_empty_body_round_trips() {
+    let stmt = Statement::CollisionListener {
+        object_a: "this.cat".into(),
+        object_b: "this.dog".into(),
+        body: vec![],
+    };
+    let json = serde_json::to_string(&stmt).unwrap();
+    let restored: Statement = serde_json::from_str(&json).unwrap();
+    assert_eq!(stmt, restored);
+}
+
+#[test]
+fn event_listener_nested_in_count_loop_round_trips() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "nestedEvent".into(),
+            body: vec![Statement::CountLoop {
+                count: 2,
+                body: vec![Statement::EventListener {
+                    event: "SceneActivated".into(),
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "walk".into(),
+                        arguments: vec![],
+                    }],
+                }],
+            }],
+        }],
+    };
+    let json = serde_json::to_string(&program).unwrap();
+    let restored: Program = serde_json::from_str(&json).unwrap();
+    assert_eq!(program, restored);
+}
+
+#[test]
+fn collision_listener_nested_in_if_else_round_trips() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "nestedCollision".into(),
+            body: vec![Statement::IfElse {
+                condition: "true".into(),
+                if_body: vec![Statement::CollisionListener {
+                    object_a: "this.cat".into(),
+                    object_b: "this.dog".into(),
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec!["\"Collided!\"".into()],
+                    }],
+                }],
+                else_body: vec![],
+            }],
+        }],
+    };
+    let json = serde_json::to_string(&program).unwrap();
+    let restored: Program = serde_json::from_str(&json).unwrap();
+    assert_eq!(program, restored);
 }

@@ -62,12 +62,9 @@ pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
     );
 
     let passed = !preconditions_blocked
-        && place_object.status != StepStatus::Blocked
-        && edit_code.status != StepStatus::Blocked
-        && run_world.status != StepStatus::Blocked
-        && place_object.status != StepStatus::NotYetTested
-        && edit_code.status != StepStatus::NotYetTested
-        && run_world.status != StepStatus::NotYetTested;
+        && place_object.status == StepStatus::Ready
+        && edit_code.status == StepStatus::Ready
+        && run_world.status == StepStatus::Ready;
 
     steps.extend([place_object, edit_code, run_world]);
 
@@ -105,7 +102,7 @@ fn interaction_step(
     }
 }
 
-fn build_preconditions(
+pub(crate) fn build_preconditions(
     assets_valid: bool,
     asset_reason: String,
     deps_available: bool,
@@ -186,10 +183,11 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
         evaluate_loops_steps(&input.student_program)
     };
 
-    let passed = steps
-        .iter()
-        .chain(interaction_steps.iter())
-        .all(|s| s.status == StepStatus::Ready);
+    // Precondition steps are all Ready when !preconditions_blocked, so skip them.
+    let passed = !preconditions_blocked
+        && interaction_steps
+            .iter()
+            .all(|s| s.status == StepStatus::Ready);
 
     steps.extend(interaction_steps);
 
@@ -201,7 +199,7 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
     }
 }
 
-fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
+pub(crate) fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
@@ -210,62 +208,65 @@ fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     }
 }
 
+pub(crate) fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
+    steps
+        .iter()
+        .map(|(name, dep)| StepGrade {
+            name: (*name).into(),
+            status: StepStatus::Blocked,
+            reason: "No student program provided".into(),
+            depends_on: vec![(*dep).into()],
+        })
+        .collect()
+}
+
+pub(crate) fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str) -> StepGrade {
+    let (status, reason) = if found {
+        (
+            StepStatus::Ready,
+            format!("{construct} found in student program"),
+        )
+    } else {
+        (
+            StepStatus::Blocked,
+            format!("No {construct} found in student program"),
+        )
+    };
+    StepGrade {
+        name: name.into(),
+        status,
+        reason,
+        depends_on: vec![dep.into()],
+    }
+}
+
 fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
         None => {
-            let reason = "No student program provided".to_string();
-            let blocked = |name: &str, dep: &str| StepGrade {
-                name: name.into(),
-                status: StepStatus::Blocked,
-                reason: reason.clone(),
-                depends_on: vec![dep.into()],
-            };
-            return vec![
-                blocked("build-counting-loop", "launch-smoke"),
-                blocked("add-conditional-branch", "build-counting-loop"),
-                blocked("run-world", "add-conditional-branch"),
-                blocked("save-project", "run-world"),
-            ];
+            return no_program_chain(&[
+                ("build-counting-loop", "launch-smoke"),
+                ("add-conditional-branch", "build-counting-loop"),
+                ("run-world", "add-conditional-branch"),
+                ("save-project", "run-world"),
+            ]);
         }
     };
 
     let (has_loop, has_conditional) = ast_find_constructs(program);
 
-    let build_loop = if has_loop {
-        StepGrade {
-            name: "build-counting-loop".into(),
-            status: StepStatus::Ready,
-            reason: "CountLoop found in student program".into(),
-            depends_on: vec!["launch-smoke".into()],
-        }
-    } else {
-        StepGrade {
-            name: "build-counting-loop".into(),
-            status: StepStatus::Blocked,
-            reason: "No CountLoop found in student program".into(),
-            depends_on: vec!["launch-smoke".into()],
-        }
-    };
-
+    let build_loop = ast_check_step("build-counting-loop", "launch-smoke", has_loop, "CountLoop");
     let loop_blocked = build_loop.status == StepStatus::Blocked;
 
     let add_cond = if loop_blocked {
         cascade_blocked("add-conditional-branch", &["build-counting-loop"])
-    } else if has_conditional {
-        StepGrade {
-            name: "add-conditional-branch".into(),
-            status: StepStatus::Ready,
-            reason: "IfElse found in student program".into(),
-            depends_on: vec!["build-counting-loop".into()],
-        }
     } else {
-        StepGrade {
-            name: "add-conditional-branch".into(),
-            status: StepStatus::Blocked,
-            reason: "No IfElse found in student program".into(),
-            depends_on: vec!["build-counting-loop".into()],
-        }
+        ast_check_step(
+            "add-conditional-branch",
+            "build-counting-loop",
+            has_conditional,
+            "IfElse",
+        )
     };
 
     let cond_blocked = add_cond.status == StepStatus::Blocked;
@@ -330,6 +331,16 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
                 }
             }
             Statement::MethodCall { .. } => {}
+            Statement::EventListener { body, .. } => {
+                if !(*has_loop && *has_cond) {
+                    stmt_find_constructs(body, has_loop, has_cond);
+                }
+            }
+            Statement::CollisionListener { body, .. } => {
+                if !(*has_loop && *has_cond) {
+                    stmt_find_constructs(body, has_loop, has_cond);
+                }
+            }
         }
         if *has_loop && *has_cond {
             return;

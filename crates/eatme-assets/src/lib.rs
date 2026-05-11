@@ -20,6 +20,11 @@ mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 pub mod grading_report;
+pub(crate) mod grading_report_events;
+#[cfg(test)]
+mod grading_report_extraction_edge_tests;
+#[cfg(test)]
+mod grading_report_extraction_tests;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
@@ -52,6 +57,7 @@ pub use grading_report::{
     GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
+pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };

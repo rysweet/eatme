@@ -62,6 +62,8 @@ The module-size gate enforces the repository convention that Rust source modules
 stay at or below 500 lines.
 For the split outside-in Alice expansion contract tests, see
 [Outside-in Alice Test Modules](outside-in-alice-test-modules.md).
+For the split events-and-collision extraction contract tests, see
+[Events and Collision Grading — Extraction contract test split](events-and-collision-grading.md#extraction-contract-test-split).
 
 ## Real Alice launch gate
 
