@@ -3,7 +3,7 @@
 // Exercises: AST construction → grading report → JSON serialization →
 // save/reopen round-trip.
 
-use eatme_assets::grading_report::{EventsGradingInput, StepStatus, grade_events_and_collision};
+use eatme_assets::{EventsGradingInput, StepStatus, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
 
 // --- Shared fixtures ---
