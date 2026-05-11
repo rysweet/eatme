@@ -23,6 +23,7 @@ boundary between machine-assessable and human-review-needed aspects, see
 - [Lesson steps](#lesson-steps)
 - [Step dependency graph](#step-dependency-graph)
 - [Status semantics](#status-semantics)
+- [Module structure](#module-structure)
 - [API reference](#api-reference)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -357,11 +358,96 @@ execution that the grading function does not perform), `passed` is always `false
 when called from the grading function alone. This is intentional — the report
 confirms structural readiness, not lesson completion.
 
+## Module structure
+
+The events-and-collision grading code lives in a dedicated module,
+`grading_report_events`, extracted from `grading_report` to keep both files
+under the 500-line quality gate.
+
+### File layout
+
+```text
+crates/eatme-assets/src/
+├── grading_report.rs             # Shared types (GradingReport, StepGrade,
+│                                 # StepStatus, GradingInput, LoopsGradingInput),
+│                                 # first-lesson + loops grading, shared helpers
+├── grading_report_events.rs      # EventsGradingInput, grade_events_and_collision,
+│                                 # event-specific AST helpers
+├── grading_report_tests.rs       # First-lesson grading unit tests
+├── grading_report_loops_tests.rs # Loops grading unit tests
+├── grading_report_events_tests.rs# Events grading unit tests
+└── lib.rs                        # pub(crate) mod grading_report_events;
+                                  # re-exports EventsGradingInput and
+                                  # grade_events_and_collision
+```
+
+### Shared helpers
+
+Four helper functions in `grading_report.rs` are used by both the loops grading
+and events grading modules. They are `pub(crate)` — visible within the crate
+but not part of the public API:
+
+| Helper | Purpose |
+| --- | --- |
+| `build_preconditions` | Produces the three precondition `StepGrade`s (validate-assets, check-dependencies, launch-smoke) |
+| `cascade_blocked` | Creates a `StepGrade` with `Blocked` status and "Blocked by:" reason |
+| `no_program_chain` | Creates a chain of `Blocked` steps when no student program is provided |
+| `ast_check_step` | Creates a `StepGrade` based on whether an AST construct was found |
+
+The `grading_report_events` module imports these helpers with a plain `use`
+statement (they are called, not re-exported):
+
+```rust
+// In grading_report_events.rs — plain use for pub(crate) helpers
+use crate::grading_report::{
+    build_preconditions, cascade_blocked, no_program_chain, ast_check_step,
+};
+```
+
+### Import paths
+
+External callers use the crate-level re-exports and do not need to know which
+internal module owns each symbol:
+
+```rust
+use eatme_assets::{
+    grade_events_and_collision, EventsGradingInput, GradingReport, StepStatus,
+};
+```
+
+For internal (in-crate) imports, the module path is explicit:
+
+```rust
+use crate::grading_report_events::{grade_events_and_collision, EventsGradingInput};
+```
+
+### Type re-exports for tests
+
+Shared types (`GradingReport`, `StepGrade`, `StepStatus`) must be re-exported
+with **`pub use`** (not plain `use`) in `grading_report_events.rs` so that the
+test file's `use super::*` can access them:
+
+```rust
+// In grading_report_events.rs — MUST be pub use so super::* works in tests
+pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
+```
+
+Using plain `use` instead of `pub use` here will cause the test file to fail
+with "unresolved import" errors because `use super::*` only re-exports items
+that are `pub` in the parent module.
+
+### Test module ownership
+
+The `#[cfg(test)]` declaration for `grading_report_events_tests.rs` lives in
+`grading_report_events.rs` (not `grading_report.rs`), so `use super::*` in the
+test file resolves to the events module.
+
 ## API reference
 
 ### `EventsGradingInput`
 
-Input struct for the events-and-collision grading function:
+Input struct for the events-and-collision grading function. Defined in
+`grading_report_events.rs`, re-exported from `eatme_assets`:
 
 ```rust
 use eatme_core::ast::Program;
@@ -385,10 +471,11 @@ pub struct EventsGradingInput {
 
 ### `grade_events_and_collision`
 
-Produces a `GradingReport` for the events-and-collision lesson:
+Produces a `GradingReport` for the events-and-collision lesson. Defined in
+`grading_report_events.rs`, re-exported from `eatme_assets`:
 
 ```rust
-use eatme_assets::grading_report::{
+use eatme_assets::{
     grade_events_and_collision, EventsGradingInput, GradingReport,
 };
 
@@ -407,7 +494,7 @@ not perform I/O, spawn processes, or access the filesystem.
 ### AST helper: `ast_find_event_constructs`
 
 Recursively walks a `Program` to determine if any `EventListener` or
-`CollisionListener` statements exist:
+`CollisionListener` statements exist. Private to `grading_report_events`:
 
 ```rust
 fn ast_find_event_constructs(program: &Program) -> (bool, bool)
@@ -417,7 +504,8 @@ Returns `(has_event_listener, has_collision_listener)`.
 
 ### AST helper: `stmt_find_event_constructs`
 
-Recursively walks a slice of statements to find event constructs:
+Recursively walks a slice of statements to find event constructs. Private to
+`grading_report_events`:
 
 ```rust
 fn stmt_find_event_constructs(
@@ -434,11 +522,11 @@ constructs.
 
 ### Exhaustive match update: `stmt_find_constructs`
 
-The existing loops scanner (`stmt_find_constructs`) is updated with two new
-match arms for the `EventListener` and `CollisionListener` variants. These arms
-**recurse into the body** (to find nested loops and conditionals) but do not set
-`has_loop` or `has_cond`. This maintains exhaustive pattern matching after the
-new AST variants are added.
+The existing loops scanner (`stmt_find_constructs`) in `grading_report.rs` is
+updated with two new match arms for the `EventListener` and
+`CollisionListener` variants. These arms **recurse into the body** (to find
+nested loops and conditionals) but do not set `has_loop` or `has_cond`. This
+maintains exhaustive pattern matching after the new AST variants are added.
 
 ### Dependency propagation logic
 
@@ -458,7 +546,7 @@ The grading function propagates status through the dependency graph:
 
 ### Crate boundary
 
-The `eatme-assets` crate owns the grading types and pure grading function. The
+The `eatme-assets` crate owns the grading types and pure grading functions. The
 `eatme-core` crate owns the AST types. The `eatme-cli` crate orchestrates:
 
 ```text
@@ -468,6 +556,24 @@ eatme-cli (main.rs)
   ├── eatme_core::ast::Program           → student program AST
   └── eatme_assets::grade_events_and_collision(EventsGradingInput { ... })
                                           → GradingReport (7 steps)
+```
+
+Within `eatme-assets`, the events grading code lives in
+`grading_report_events.rs` and imports shared helpers from `grading_report.rs`
+via `pub(crate)` visibility. The `lib.rs` re-exports ensure a flat public API —
+callers import from `eatme_assets::` regardless of which internal module owns
+the symbol.
+
+```text
+eatme-assets (lib.rs)
+  ├── pub mod grading_report           # GradingReport, StepGrade, StepStatus,
+  │                                    # GradingInput, LoopsGradingInput,
+  │                                    # grade_first_lesson_readiness,
+  │                                    # grade_loops_and_conditionals,
+  │                                    # pub(crate) helpers
+  └── pub(crate) mod grading_report_events  # EventsGradingInput,
+                                            # grade_events_and_collision,
+                                            # event-specific AST helpers
 ```
 
 The `eatme-core` crate provides the `ast` module (`Program`, `Procedure`,
@@ -492,7 +598,7 @@ execution, Node, or environment variables when used as a Rust API.
 
 ```rust
 use eatme_core::ast::{Program, Procedure, Statement};
-use eatme_assets::grading_report::{
+use eatme_assets::{
     grade_events_and_collision, EventsGradingInput, StepStatus,
 };
 
@@ -777,19 +883,23 @@ must include a `"kind"` field with one of `"MethodCall"`, `"CountLoop"`,
 
 ### Module too long (quality gate failure)
 
-All Rust source modules must stay at or below 500 lines. The files involved in
-this feature have the following expected sizes:
+All Rust source modules must stay at or below 500 lines. The events grading
+code is extracted into `grading_report_events.rs` to keep both files under the
+limit. Expected file sizes after extraction:
 
 | File | Expected lines | Limit |
 | --- | --- | --- |
 | `crates/eatme-core/src/ast.rs` | ~50 | 500 |
 | `crates/eatme-core/src/ast_tests.rs` | ~320 | 500 |
-| `crates/eatme-assets/src/grading_report.rs` | ~450 | 500 |
+| `crates/eatme-assets/src/grading_report.rs` | ~350 | 500 |
+| `crates/eatme-assets/src/grading_report_events.rs` | ~180 | 500 |
 | `crates/eatme-assets/src/grading_report_events_tests.rs` | ~490 | 500 |
 | `crates/eatme-alice/tests/events_and_collision_e2e.rs` | ~240 | 500 |
 
-If `grading_report.rs` exceeds 500 lines, extract the events grading function
-into a separate `grading_report_events.rs` module.
+If either `grading_report.rs` or `grading_report_events.rs` approaches the
+500-line limit again, follow the same extraction pattern: identify the
+lesson-specific code, create a new `grading_report_<lesson>.rs` module, widen
+shared helpers to `pub(crate)`, and update `lib.rs` re-exports.
 
 ## Related documentation
 
