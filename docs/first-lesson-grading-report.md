@@ -57,8 +57,7 @@ and `blocked` otherwise.
 
 These steps map to evidence boundary states from `boundary_specs()` in
 `first_lesson_boundaries.rs`. A boundary step is `ready` when its boundary
-status is `"valid"`, `blocked` when the boundary exists but is not valid, and
-`not_yet_tested` when the infrastructure cannot yet evaluate it.
+status is `"present"` in the readiness report, and `blocked` otherwise.
 
 | Step | Boundary ID | Evidence source |
 | --- | --- | --- |
@@ -71,11 +70,11 @@ These steps represent curriculum outcomes that current infrastructure cannot
 prove. They always report `not_yet_tested`. When infrastructure is extended to
 evaluate these boundaries, their status mapping will change.
 
-| Step | Boundary ID | Why not yet tested |
+| Step | Step ID | Why not yet tested |
 | --- | --- | --- |
 | Grading | `grading` | Automated grading infrastructure does not exist. |
-| Creative assessment | `creative_assessment` | Creative quality evaluation requires instructor judgment. |
-| First-lesson completion | `first_lesson_completion` | Full lesson completion proof requires all prior steps plus assessment. |
+| Creative assessment | `creative-assessment` | Creative quality evaluation requires instructor judgment. |
+| First-lesson completion | `first-lesson-completion` | Full lesson completion proof requires all prior steps plus assessment. |
 
 ## Status values
 
@@ -99,51 +98,62 @@ The `--json` output uses schema `eatme.first-lesson-grading-report/v1`:
 
 ```json
 {
-  "schema": "eatme.first-lesson-grading-report/v1",
+  "schema_version": "eatme.first-lesson-grading-report/v1",
   "scenario_id": "first-lessons-real-ui-actions",
   "steps": [
     {
-      "name": "verify-specific-alice-window",
+      "id": "verify-specific-alice-window",
+      "name": "Verify specific Alice window",
       "status": "blocked"
     },
     {
-      "name": "activate-specific-alice-window",
+      "id": "activate-specific-alice-window",
+      "name": "Activate specific Alice window",
       "status": "blocked"
     },
     {
-      "name": "place-object",
+      "id": "select-project",
+      "name": "Select project",
       "status": "blocked"
     },
     {
-      "name": "edit-procedure-or-code-block",
+      "id": "place-object",
+      "name": "Place object",
       "status": "blocked"
     },
     {
-      "name": "run-world",
+      "id": "edit-procedure-or-code-block",
+      "name": "Edit procedure or code block",
       "status": "blocked"
     },
     {
-      "name": "save-project",
+      "id": "run-world",
+      "name": "Run world",
       "status": "blocked"
     },
     {
-      "name": "select_project",
+      "id": "save-project",
+      "name": "Save project",
+      "status": "blocked"
+    },
+    {
+      "id": "visible-rendering",
+      "name": "Visible rendering",
+      "status": "blocked"
+    },
+    {
+      "id": "grading",
+      "name": "Grading",
       "status": "not_yet_tested"
     },
     {
-      "name": "visible_rendering",
+      "id": "creative-assessment",
+      "name": "Creative assessment",
       "status": "not_yet_tested"
     },
     {
-      "name": "grading",
-      "status": "not_yet_tested"
-    },
-    {
-      "name": "creative_assessment",
-      "status": "not_yet_tested"
-    },
-    {
-      "name": "first_lesson_completion",
+      "id": "first-lesson-completion",
+      "name": "First-lesson completion",
       "status": "not_yet_tested"
     }
   ]
@@ -151,26 +161,27 @@ The `--json` output uses schema `eatme.first-lesson-grading-report/v1`:
 ```
 
 The example above shows the output when no execution evidence is present
-(manifest-only mode). When the comparison manifest was produced with `--execute`
-by `alice compare-launch-smoke` or `alice run-first-lesson-readiness`, UI action
-steps move from `blocked` to `ready` as each action is observed, and boundary
-steps move from `not_yet_tested` to `ready` or `blocked` as evidence is
-evaluated.
+(manifest-only mode). All non-meta steps start as `blocked` because the
+infrastructure has no evidence of completion. When the comparison manifest was
+produced with `--execute` by `alice compare-launch-smoke` or
+`alice run-first-lesson-readiness`, UI action steps move from `blocked` to
+`ready` as each action is observed, and boundary steps move from `blocked` to
+`ready` as their evidence status becomes `"present"`.
 
 ### Schema fields
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `schema` | string | Always `"eatme.first-lesson-grading-report/v1"`. |
+| `schema_version` | string | Always `"eatme.first-lesson-grading-report/v1"`. |
 | `scenario_id` | string | The scenario used to produce the underlying readiness report. |
 | `steps` | array | Exactly 11 elements, one per canonical step, in curriculum order. |
-| `steps[].name` | string | Step identifier matching the UI action ID or boundary ID. |
+| `steps[].id` | string | Step identifier matching the canonical step ID (hyphen-separated). |
+| `steps[].name` | string | Human-readable step name from the curriculum. |
 | `steps[].status` | string | One of `"ready"`, `"blocked"`, or `"not_yet_tested"`. |
 
-The `steps` array is always exactly 11 elements. The order is stable: UI action
-steps first (in `REQUIRED_UI_ACTION_IDS` order), then boundary steps
-(`select_project`, `visible_rendering`), then meta-boundary steps (`grading`,
-`creative_assessment`, `first_lesson_completion`).
+The `steps` array is always exactly 11 elements. The order follows the
+curriculum sequence defined in `CANONICAL_STEPS`, with boundary steps
+interspersed among UI action steps and meta-boundary steps at the end.
 
 ## Plain output
 
@@ -182,15 +193,15 @@ Scenario: first-lessons-real-ui-actions
 
   verify-specific-alice-window    blocked
   activate-specific-alice-window  blocked
+  select-project                  blocked
   place-object                    blocked
   edit-procedure-or-code-block    blocked
   run-world                       blocked
   save-project                    blocked
-  select_project                  not_yet_tested
-  visible_rendering               not_yet_tested
+  visible-rendering               blocked
   grading                         not_yet_tested
-  creative_assessment             not_yet_tested
-  first_lesson_completion         not_yet_tested
+  creative-assessment             not_yet_tested
+  first-lesson-completion         not_yet_tested
 ```
 
 ## CLI usage
@@ -217,18 +228,15 @@ indicates a manifest parse error or missing file, not a grading failure.
 The grading report applies these rules in order for each step:
 
 1. **UI action steps**: Look up the action ID in the readiness report's
-   `required_actions`. If the action was observed and passed, status is `ready`.
-   Otherwise, status is `blocked`.
+   `target_evidence` action assertions. If the action was observed and passed,
+   status is `ready`. Otherwise, status is `blocked`.
 
 2. **Boundary steps** (`select_project`, `visible_rendering`): Look up the
    boundary ID in the readiness report's `evidence_boundaries`. If the boundary
-   status is `"valid"`, status is `ready`. If the boundary is `"missing"` and
-   the manifest contains no execution evidence for the relevant target (i.e.,
-   the infrastructure never attempted evaluation), status is `not_yet_tested`.
-   If the boundary is present but not valid after execution, status is `blocked`.
+   status is `"present"`, status is `ready`. Otherwise, status is `blocked`.
 
-3. **Meta-boundary steps** (`grading`, `creative_assessment`,
-   `first_lesson_completion`): Always `not_yet_tested`. These boundaries
+3. **Meta-boundary steps** (`grading`, `creative-assessment`,
+   `first-lesson-completion`): Always `not_yet_tested`. These boundaries
    represent curriculum outcomes that the current eatme infrastructure does not
    automate.
 
@@ -270,7 +278,7 @@ The library API is in `crates/eatme-alice/src/compare/grading_report.rs`:
 ```rust
 use eatme_alice::first_lesson_grading_report;
 
-let report = first_lesson_grading_report(manifest_path)?;
+let report = first_lesson_grading_report(&readiness);
 assert_eq!(report.steps.len(), 11);
 ```
 
@@ -279,20 +287,22 @@ from `eatme_alice::compare`:
 
 ```rust
 pub struct FirstLessonGradingReport {
-    pub schema: String,
+    pub schema_version: String,
     pub scenario_id: String,
     pub steps: Vec<GradingStep>,
 }
 
 pub struct GradingStep {
+    pub id: String,
     pub name: String,
-    pub status: String,
+    pub status: GradingStepStatus,
 }
 ```
 
-`first_lesson_grading_report(manifest_path: &Path) -> Result<FirstLessonGradingReport>`
-calls `check_lesson_session_readiness()` internally and maps the result to the
-11-step grading view.
+`first_lesson_grading_report(readiness: &LessonSessionReadinessReport) -> FirstLessonGradingReport`
+maps the readiness report to the 11-step grading view. It does not call
+`check_lesson_session_readiness()` internally — the caller supplies the
+readiness report.
 
 ## Testing
 
