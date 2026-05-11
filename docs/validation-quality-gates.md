@@ -104,4 +104,4 @@ from `master` pushes or manual dispatch, never from pull requests.
 | Lesson-session readiness docs | `mkdocs build --strict`; asset validation and Gadugi freshness checks when scenario ids or adapter behavior are mentioned |
 | Save/reopen contract code | `cargo test -p eatme-alice`; asset validation; docs build when evidence boundary wording changes |
 | Path validation | `cargo test -p eatme-alice launch_path`; verify symlink and traversal rejection tests pass |
-| Grading report | `cargo test -p eatme-alice grading_report`; Rust quality gates; docs build |
+| Grading report | `cargo test -p eatme-alice grading_report`; Rust quality gates; docs build. See [Outside-in Alice Test Modules § Grading report](outside-in-alice-test-modules.md#grading-report-test-modules-in-eatme-alice) for split test layout. |

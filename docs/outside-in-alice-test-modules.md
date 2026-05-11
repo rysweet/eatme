@@ -197,6 +197,28 @@ Before merging a change that touches these tests:
 Use `./scripts/quality-gates.sh` when a single command should run the repository
 Rust quality gate.
 
+## Grading report test modules in eatme-alice
+
+The first-lesson grading report tests in `crates/eatme-alice/src/compare/` are
+split into two sibling modules to stay within the 500-line module-size gate:
+
+| File | Responsibility |
+| --- | --- |
+| `crates/eatme-alice/src/compare/grading_report/tests.rs` | Core contract tests and shared test helpers (`empty_readiness_report`, `readiness_with_all_evidence`, `find_step`, `test_boundary`). |
+| `crates/eatme-alice/src/compare/grading_report/edge_case_tests.rs` | Serialization edge cases (JSON snake_case, round-trip) and boundary status edge cases (`"invalid"`, `"blocked"` mapping). |
+
+Both are declared with `#[cfg(test)]` in `grading_report.rs`. The
+`edge_case_tests` module imports helpers from `super::tests`.
+
+Run grading report tests:
+
+```bash
+cargo test -p eatme-alice grading_report
+```
+
+For the grading report contract, schema, and status mapping rules, see
+[First-Lesson Grading Report](first-lesson-grading-report.md).
+
 ## Save/reopen contract tests in eatme-alice
 
 The save/reopen persistence contract tests live in `crates/eatme-alice/src/`

@@ -296,22 +296,56 @@ calls `check_lesson_session_readiness()` internally and maps the result to the
 
 ## Testing
 
-Unit tests verify:
+The grading report tests are split into two sibling modules under
+`crates/eatme-alice/src/compare/grading_report/` to stay within the 500-line
+module-size gate:
+
+| File | Responsibility |
+| --- | --- |
+| `grading_report/tests.rs` | Core contract tests: step count, schema version, canonical order, status mapping for UI actions and boundaries, empty-evidence defaults. Owns shared test helpers (`empty_readiness_report`, `readiness_with_all_evidence`, `find_step`, `test_boundary`). |
+| `grading_report/edge_case_tests.rs` | Serialization and boundary edge-case tests: closed status set validation, JSON snake_case serialization, JSON round-trip fidelity, boundary `"invalid"` and `"blocked"` status mapping. |
+
+Both modules are declared with `#[cfg(test)]` in `grading_report.rs` and share
+the same parent imports. The `edge_case_tests` module imports shared helpers from
+`super::tests` (e.g., `empty_readiness_report`, `find_step`,
+`readiness_with_all_evidence`, `test_boundary`).
+
+### What the tests verify
+
+**Core tests** (`tests.rs`):
 
 - Step count is always exactly 11.
-- Meta-boundary steps (`grading`, `creative_assessment`,
-  `first_lesson_completion`) always report `not_yet_tested`.
+- Schema string is `"eatme.first-lesson-grading-report/v1"`.
+- Scenario ID is preserved from the readiness report.
+- Step IDs and names match canonical curriculum order.
+- Meta-boundary steps (`grading`, `creative-assessment`,
+  `first-lesson-completion`) always report `not_yet_tested`.
 - UI action steps map observed actions to `ready` and missing actions to
   `blocked`.
-- Boundary steps map `"valid"` to `ready` and `"missing"` to the correct
-  fallback status.
-- The `steps` array order matches curriculum order.
-- The schema string is `"eatme.first-lesson-grading-report/v1"`.
+- Boundary steps map `"present"` to `ready` and missing to `blocked`.
+- All non-meta steps are `blocked` when no evidence is present.
 
-Run grading report tests:
+**Edge-case tests** (`edge_case_tests.rs`):
+
+- Every step status is in the closed set (`Ready`, `Blocked`, `NotYetTested`).
+- JSON serialization produces snake_case status values (`"ready"`,
+  `"blocked"`, `"not_yet_tested"`).
+- JSON round-trip preserves schema version, scenario ID, and step count.
+- Boundary steps with `"invalid"` status map to `blocked`.
+- Boundary steps with `"blocked"` status map to `blocked`.
+
+### Running tests
+
+Run grading report tests (both modules):
 
 ```bash
 cargo test -p eatme-alice grading_report
+```
+
+Run only edge-case tests:
+
+```bash
+cargo test -p eatme-alice grading_report::edge_case_tests
 ```
 
 Run the full quality gate:
