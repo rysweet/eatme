@@ -40,6 +40,7 @@ Eatme has three layers:
 | Recovering PR #199 merge-readiness evidence | [PR #199 Recovery Workflow](pr-199-recovery-workflow.md) |
 | Reviewing PR #160 gap-reporting recovery readiness | [PR #160 Gap-Reporting Readiness](pr-160-gap-reporting-readiness.md) |
 | Reviewing live studio workshop evidence | [Live Studio Workshop Evidence Contract](live-studio-workshop-evidence.md) |
+| Checking sharing and deployment feature readiness | [Sharing Platform Readiness](sharing-platform-readiness.md) |
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |

@@ -43,6 +43,7 @@ mod save_reopen_readiness_docs_tests;
 mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
+pub mod sharing_platform;
 #[cfg(test)]
 mod starter_project_preflight_boundary_tests;
 #[cfg(test)]
@@ -60,6 +61,10 @@ pub use grading_report::{
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
+};
+pub use sharing_platform::{
+    FeatureEntry, FeatureReadiness, SharingPlatformInput, SharingPlatformReport,
+    check_sharing_platform_readiness,
 };
 pub use validation::{validate_persona_crew, validate_scenario_asset};
 
