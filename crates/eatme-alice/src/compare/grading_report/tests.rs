@@ -383,7 +383,7 @@ pub(super) fn readiness_with_all_evidence() -> LessonSessionReadinessReport {
     report
 }
 
-fn target_evidence_with_actions(actions: &[(&str, bool)]) -> LessonTargetEvidence {
+pub(super) fn target_evidence_with_actions(actions: &[(&str, bool)]) -> LessonTargetEvidence {
     let action_assertions = actions
         .iter()
         .map(|(action_id, passed)| LessonActionAssertionEvidence {
