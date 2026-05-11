@@ -18,6 +18,7 @@ order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
 | --- | --- |
 | `assets validate` | Validate persona and scenario assets |
 | `assets generate-gadugi` | Generate or check Gadugi adapter scenarios |
+| `assets grading-report` | Report first-lesson readiness for Building a Scene |
 | `deps check` | Check host dependencies for real Alice smoke runs |
 | `alice discover` | Inspect an Alice checkout |
 | `alice package` | Package Alice through Maven |
@@ -83,6 +84,22 @@ The adapter generator derives validation expectations from the actual scenario
 asset inventory. See
 [Generated Asset Consistency](generated-asset-consistency.md) for the
 `scenario_asset_count` and exit-code contracts.
+
+## First-lesson grading report
+
+Report readiness for the Building a Scene first-lesson scenario:
+
+```bash
+cargo run -q -p eatme-cli -- assets grading-report --json
+```
+
+The report evaluates three steps from the `building-a-scene-first-world`
+scenario: `validate-assets`, `check-dependencies`, and `launch-smoke`. Each
+step receives a status of `ready` or `blocked`. The command does not launch
+Alice; it checks whether preconditions for launching are satisfied.
+
+See [First-Lesson Grading Report](first-lesson-grading-report.md) for the
+full output schema, status semantics, and examples.
 
 ## Check dependencies
 
