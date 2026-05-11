@@ -27,6 +27,7 @@ Eatme has three layers:
 | Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
 | Running the deterministic real-Alice integration test | [Deterministic Real-Alice Smoke Test](deterministic-real-alice-smoke-test.md) |
+| Reviewing post-focus screenshot evidence | [Post-focus Screenshot Evidence](post-focus-screenshot-evidence.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
 | Reviewing the first-lesson evidence boundary contract | [First-Lesson Evidence Readiness](first-lesson-evidence-readiness.md) |
 | Auditing readiness artifact shape and wording | [Evidence Artifact Contract](evidence-artifact-contract.md) |
@@ -40,7 +41,6 @@ Eatme has three layers:
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
-| Reviewing post-focus screenshot evidence | [Post-focus Screenshot Evidence](post-focus-screenshot-evidence.md) |
 | Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 
 ## What eatme proves

@@ -163,8 +163,8 @@ The assertion result includes a detail string:
 
 | Outcome | Detail |
 | --- | --- |
-| Captured successfully | `"post-focus screenshot captured (N bytes)"` |
-| Capture failed | `"post-focus screenshot capture failed: <error>"` |
+| Captured successfully | `"post-focus screenshot captured (N bytes)"` where N is `size_bytes` |
+| Capture failed | Raw error from `capture_post_focus_screenshot` (e.g. `"capturing post-focus screenshot failed: scrot=..., import=..."`) |
 | Blocked by activation | `"blocked: window activation did not succeed"` |
 
 ## API surface
@@ -221,15 +221,16 @@ if options.scenario.requires_real_ui_actions() {
         .as_ref()
         .map(|a| a.size_bytes > 0)
         .unwrap_or(false);
+    let detail = match (&post_focus_screenshot, &post_focus_screenshot_error) {
+        (Some(a), _) if a.size_bytes > 0 => {
+            format!("post-focus screenshot captured ({} bytes)", a.size_bytes)
+        }
+        (_, Some(err)) => err.clone(),
+        _ => "post-focus screenshot capture failed".into(),
+    };
     assertions.insert(
         "post_focus_screenshot_captured".into(),
-        bool_assert(
-            ok,
-            post_focus_screenshot_error
-                .as_deref()
-                .unwrap_or("post-focus screenshot captured")
-                .to_string(),
-        ),
+        bool_assert(ok, detail),
     );
 }
 ```
