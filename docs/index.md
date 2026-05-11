@@ -40,6 +40,7 @@ Eatme has three layers:
 | Planning class activity | [Instructor Missions](instructor-missions.md) |
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
+| Reviewing post-focus screenshot evidence | [Post-focus Screenshot Evidence](post-focus-screenshot-evidence.md) |
 | Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 
 ## What eatme proves
