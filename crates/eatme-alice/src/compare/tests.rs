@@ -428,6 +428,8 @@ fn target_run_with_assertion(
             window_list_error: None,
             screenshot: None,
             screenshot_error: None,
+            post_focus_screenshot: None,
+            post_focus_screenshot_error: None,
             ui_action_contract: None,
             log: None,
             log_error: None,

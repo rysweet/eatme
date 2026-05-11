@@ -52,6 +52,10 @@ pub struct LaunchSmokeManifest {
     pub window_list_error: Option<String>,
     pub screenshot: Option<ArtifactInfo>,
     pub screenshot_error: Option<String>,
+    #[serde(default)]
+    pub post_focus_screenshot: Option<ArtifactInfo>,
+    #[serde(default)]
+    pub post_focus_screenshot_error: Option<String>,
     pub ui_action_contract: Option<ArtifactInfo>,
     pub log: Option<ArtifactInfo>,
     pub log_error: Option<String>,

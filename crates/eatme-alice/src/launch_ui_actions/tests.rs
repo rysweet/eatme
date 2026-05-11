@@ -213,3 +213,34 @@ fn artifact_if_passed(status: &str, path: &str) -> Option<ArtifactInfo> {
         sha256: format!("{path}-sha"),
     })
 }
+
+#[test]
+fn preflight_blockers_include_post_focus_screenshot_captured() {
+    let activation_probe = UiActionProbe {
+        id: "activate-specific-alice-window".into(),
+        status: "blocked".into(),
+        detail: "blocked: no Alice window".into(),
+        window_id: None,
+        command: None,
+        exit_status: None,
+        stdout: String::new(),
+        stderr: String::new(),
+    };
+    let place_object_probe =
+        probe_place_object_preconditions(false, false, false, Some(&activation_probe));
+    let mut assertions = std::collections::BTreeMap::new();
+    record_preflight_ui_action_blockers(&mut assertions, &place_object_probe);
+
+    let post_focus = assertions
+        .get("post_focus_screenshot_captured")
+        .expect("preflight blockers must include post_focus_screenshot_captured assertion");
+    assert!(
+        !post_focus.passed,
+        "post_focus_screenshot_captured must be failed in preflight blockers"
+    );
+    assert!(
+        post_focus.detail.contains("preflight blocked"),
+        "detail should explain preflight blocking: {}",
+        post_focus.detail
+    );
+}

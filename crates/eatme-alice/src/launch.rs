@@ -473,6 +473,8 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         window_list_error,
         screenshot,
         screenshot_error,
+        None,
+        None,
         ui_action_contract,
         log,
         log_error,
