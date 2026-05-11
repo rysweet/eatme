@@ -368,17 +368,24 @@ under the 500-line quality gate.
 
 ```text
 crates/eatme-assets/src/
-├── grading_report.rs             # Shared types (GradingReport, StepGrade,
-│                                 # StepStatus, GradingInput, LoopsGradingInput),
-│                                 # first-lesson + loops grading, shared helpers
-├── grading_report_events.rs      # EventsGradingInput, grade_events_and_collision,
-│                                 # event-specific AST helpers
-├── grading_report_tests.rs       # First-lesson grading unit tests
-├── grading_report_loops_tests.rs # Loops grading unit tests
-├── grading_report_events_tests.rs# Events grading unit tests
-└── lib.rs                        # pub(crate) mod grading_report_events;
-                                  # re-exports EventsGradingInput and
-                                  # grade_events_and_collision
+├── grading_report.rs                        # Shared types (GradingReport, StepGrade,
+│                                            # StepStatus, GradingInput, LoopsGradingInput),
+│                                            # first-lesson + loops grading, shared helpers
+├── grading_report_events.rs                 # EventsGradingInput, grade_events_and_collision,
+│                                            # event-specific AST helpers
+├── grading_report_tests.rs                  # First-lesson grading unit tests
+├── grading_report_loops_tests.rs            # Loops grading unit tests
+├── grading_report_events_tests.rs           # Events grading unit tests
+├── grading_report_extraction_tests.rs       # Extraction contract tests (25 tests):
+│                                            # quality-gate, helper accessibility,
+│                                            # structure, schema, dependency-chain,
+│                                            # complete-program behavior
+├── grading_report_extraction_edge_tests.rs  # Extraction edge-case tests (15 tests):
+│                                            # boundary inputs, cascade failures,
+│                                            # nested AST, JSON serialization
+└── lib.rs                                   # pub(crate) mod grading_report_events;
+                                             # re-exports EventsGradingInput and
+                                             # grade_events_and_collision
 ```
 
 ### Shared helpers
@@ -441,6 +448,34 @@ that are `pub` in the parent module.
 The `#[cfg(test)]` declaration for `grading_report_events_tests.rs` lives in
 `grading_report_events.rs` (not `grading_report.rs`), so `use super::*` in the
 test file resolves to the events module.
+
+### Extraction contract test split
+
+The extraction contract tests verify that the `grading_report_events` extraction
+preserves all behavioral contracts from the original `grading_report` module.
+These tests are split across two files to stay under the 500-line quality gate:
+
+| File | Lines | Tests | Responsibility |
+| --- | --- | --- | --- |
+| `grading_report_extraction_tests.rs` | ~277 | 25 | Core contracts: quality-gate line counts, `pub(crate)` helper accessibility, module structure, schema version, step names/order, dependency chain, and complete-program behavior. |
+| `grading_report_extraction_edge_tests.rs` | ~404 | 15 | Edge cases: no-program boundary, missing individual listeners, blocked assets/deps cascade, both-blocked cascade, nested AST constructs (event-inside-collision, collision-inside-event, empty program, multi-procedure, loops, if/else), and JSON serialization round-trip. |
+
+Both files import directly from `crate::grading_report` and
+`crate::grading_report_events` and duplicate their own fixture functions. This
+avoids coupling between the two test modules and keeps each independently
+compilable. The `lib.rs` registers both with `#[cfg(test)] mod` declarations.
+
+Run all extraction contract tests:
+
+```bash
+TMPDIR=/tmp cargo test -p eatme-assets -- grading_report_extraction
+```
+
+Run only the edge-case tests:
+
+```bash
+TMPDIR=/tmp cargo test -p eatme-assets -- grading_report_extraction_edge
+```
 
 ## API reference
 
@@ -792,6 +827,12 @@ Run the events grading unit tests:
 TMPDIR=/tmp cargo test -p eatme-assets grading_report_events -- --test-threads=1
 ```
 
+Run the extraction contract tests (core + edge):
+
+```bash
+TMPDIR=/tmp cargo test -p eatme-assets grading_report_extraction -- --test-threads=1
+```
+
 Run the events-and-collision E2E test:
 
 ```bash
@@ -894,6 +935,8 @@ limit. Expected file sizes after extraction:
 | `crates/eatme-assets/src/grading_report.rs` | ~350 | 500 |
 | `crates/eatme-assets/src/grading_report_events.rs` | ~180 | 500 |
 | `crates/eatme-assets/src/grading_report_events_tests.rs` | ~490 | 500 |
+| `crates/eatme-assets/src/grading_report_extraction_tests.rs` | ~277 | 500 |
+| `crates/eatme-assets/src/grading_report_extraction_edge_tests.rs` | ~404 | 500 |
 | `crates/eatme-alice/tests/events_and_collision_e2e.rs` | ~240 | 500 |
 
 If either `grading_report.rs` or `grading_report_events.rs` approaches the
