@@ -287,3 +287,35 @@ fn proof_artifact_invalid_json_sets_verified_false() {
     );
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn proof_artifact_large_json_is_truncated() {
+    let root = unique_test_dir("proof-artifact-truncated");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    // Build a valid JSON object larger than 500 bytes.
+    let large_value = "x".repeat(600);
+    let content = format!(r#"{{"padding":"{large_value}"}}"#);
+    assert!(content.len() > 500, "test fixture must exceed 500 bytes");
+    fs::write(run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT), &content).unwrap();
+
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(probe.edit_procedure_verified, "valid JSON must verify");
+    let detail = probe.proof_detail.as_deref().unwrap();
+    assert!(
+        detail.len() <= 501,
+        "proof_detail must be truncated to ~500 chars, got {}",
+        detail.len()
+    );
+    assert!(
+        detail.ends_with('…'),
+        "truncated proof_detail must end with ellipsis: {detail}"
+    );
+    let _ = fs::remove_dir_all(root);
+}

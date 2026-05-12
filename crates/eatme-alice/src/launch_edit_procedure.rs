@@ -37,11 +37,14 @@ pub struct UiActionEditProcedureProbe {
 
 impl UiActionEditProcedureProbe {
     pub fn proves_edit(&self) -> bool {
-        let hook_proved = self.status == "passed"
+        self.hook_proves_edit() || self.edit_procedure_verified
+    }
+
+    fn hook_proves_edit(&self) -> bool {
+        self.status == "passed"
             && self.edited_project_artifact.is_some()
             && self.procedure_or_code_diff.is_some()
-            && self.validation_errors.is_empty();
-        hook_proved || self.edit_procedure_verified
+            && self.validation_errors.is_empty()
     }
 
     /// Check for the proof artifact file in the run directory.
@@ -63,11 +66,7 @@ impl UiActionEditProcedureProbe {
                 } else {
                     content
                 };
-                let hook_proved = self.status == "passed"
-                    && self.edited_project_artifact.is_some()
-                    && self.procedure_or_code_diff.is_some()
-                    && self.validation_errors.is_empty();
-                if !hook_proved {
+                if !self.hook_proves_edit() {
                     self.detail =
                         format!("{} [proof artifact verified: {}]", self.detail, truncated);
                 }

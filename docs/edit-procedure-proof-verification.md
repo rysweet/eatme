@@ -46,9 +46,10 @@ subdirectories. The full path is:
 
 ### Schema
 
-The file must be valid JSON. The harness parses it as a generic
-`serde_json::Value` and extracts a summary for the `proof_detail` field.
-No specific schema version is required — any valid JSON object is accepted.
+The file must be valid JSON. The harness validates it using
+`serde::de::IgnoredAny` (no in-memory tree is built) and stores a
+summary in the `proof_detail` field.
+No specific schema version is required — any valid JSON value is accepted.
 
 A typical proof artifact:
 
@@ -66,7 +67,7 @@ A typical proof artifact:
 The harness does not validate individual fields beyond requiring valid JSON.
 All top-level keys and values are preserved in the proof summary up to 500
 characters. If the JSON is valid but has no recognizable fields, the proof
-still counts as verified — the artifact's existence and valid parse are
+still counts as verified — the artifact's existence and valid JSON syntax are
 sufficient.
 
 ### File states
@@ -76,7 +77,7 @@ sufficient.
 | Valid JSON file present | `true` | Summary of JSON contents (≤500 chars) | `proves_edit()` returns `true` even if the hook did not produce full proof |
 | File missing | `false` | `None` | No change to existing `proves_edit()` logic |
 | File present but not valid JSON | `false` | Error message describing the parse failure | No change to existing `proves_edit()` logic |
-| File present but empty | `false` | Error message: "proof artifact is empty" | No change to existing `proves_edit()` logic |
+| File present but empty | `false` | Error message describing the JSON parse failure (e.g., "EOF while parsing a value") | No change to existing `proves_edit()` logic |
 
 ## How verification works
 
@@ -86,7 +87,7 @@ After the `probe_edit_procedure_hook()` function returns the
 
 1. Constructs the proof artifact path: `run_dir.join("first-lesson-code-editor-action-proof.json")`
 2. Attempts to read the file.
-3. If the file exists, parses it as `serde_json::Value`.
+3. If the file exists, validates it as JSON using `serde::de::IgnoredAny`.
 4. On successful parse: sets `edit_procedure_verified = true`, stores a
    truncated JSON summary in `proof_detail`, and appends proof source
    information to the probe's `detail` field when the hook alone did not
@@ -105,11 +106,14 @@ artifact evidence:
 
 ```rust
 pub fn proves_edit(&self) -> bool {
-    let hook_proves = self.status == "passed"
+    self.hook_proves_edit() || self.edit_procedure_verified
+}
+
+fn hook_proves_edit(&self) -> bool {
+    self.status == "passed"
         && self.edited_project_artifact.is_some()
         && self.procedure_or_code_diff.is_some()
-        && self.validation_errors.is_empty();
-    hook_proves || self.edit_procedure_verified
+        && self.validation_errors.is_empty()
 }
 ```
 
