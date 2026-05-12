@@ -406,10 +406,11 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
     if result.edited_project_artifact.is_empty() {
         errors.push("edited_project_artifact must not be empty".into());
     }
-    if result
-        .procedure_or_code_diff
-        .as_ref()
-        .is_none_or(|s| s.is_empty())
+    if result.status != "proved"
+        && result
+            .procedure_or_code_diff
+            .as_ref()
+            .is_none_or(|s| s.is_empty())
     {
         errors.push("procedure_or_code_diff must not be empty".into());
     }
