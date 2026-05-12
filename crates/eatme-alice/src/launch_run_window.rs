@@ -418,12 +418,9 @@ fn command_text(stdout: &str, stderr: &str) -> String {
 }
 
 fn has_run_window_evidence(window_text: &str) -> bool {
-    window_text.lines().any(|line| {
-        let normalized = line.to_ascii_lowercase();
-        (normalized.contains(" run") || normalized.contains("\"run"))
-            && normalized.contains("org.alice")
-            && !normalized.contains("firefox")
-    })
+    window_text
+        .lines()
+        .any(crate::launch_run_window_poll::line_is_alice_run_window)
 }
 
 fn sentinel_content_indicates_run_window_created(content: &str) -> bool {

@@ -147,7 +147,7 @@ fn find_new_run_window(wmctrl_output: &str, main_window_id: Option<&str>) -> Opt
     None
 }
 
-fn line_is_alice_run_window(line: &str) -> bool {
+pub(crate) fn line_is_alice_run_window(line: &str) -> bool {
     let normalized = line.to_ascii_lowercase();
     (normalized.contains(" run") || normalized.contains("\"run"))
         && normalized.contains("org.alice")
