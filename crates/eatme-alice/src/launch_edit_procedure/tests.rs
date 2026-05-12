@@ -73,7 +73,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
     fs::write(edit_evidence_dir.join("edited-project.a3p"), "edited").unwrap();
     fs::write(
         edit_evidence_dir.join("procedure.diff.json"),
-        r#"{"edited":["scene.eatmeFirstLesson"]}"#,
+        r#"{"edited":["scene.myFirstMethod"]}"#,
     )
     .unwrap();
     let runner = FakeCommandRunner::default();

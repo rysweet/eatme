@@ -105,7 +105,7 @@ in the selected Alice checkout.
 | --- | --- |
 | Save hook | `tools/eatme-save-project` |
 | Reopen hook | `tools/eatme-reopen-project` |
-| Selector | `scene.eatmeFirstLessonStep` |
+| Selector | `scene.myFirstMethod` |
 | Save evidence directory | `project-save/` under the run directory |
 | Reopen evidence directory | `project-reopen/` under the run directory |
 | Hook timeout | 30 seconds |
@@ -170,7 +170,7 @@ Command shape:
 ```bash
 tools/eatme-save-project \
   --project runs/first-lessons-real-ui-actions/local-save-reopen-readiness/procedure-edit/edited-project.a3p \
-  --save-selector scene.eatmeFirstLessonStep \
+  --save-selector scene.myFirstMethod \
   --evidence-dir runs/first-lessons-real-ui-actions/local-save-reopen-readiness/project-save \
   --json
 ```
@@ -181,7 +181,7 @@ The hook prints:
 {
   "schema_version": "eatme.alice-project-save-result/v1",
   "status": "saved",
-  "save_selector": "scene.eatmeFirstLessonStep",
+  "save_selector": "scene.myFirstMethod",
   "saved_project_artifact": "saved-project.a3p",
   "save_artifact": "project-save.json"
 }
@@ -193,7 +193,7 @@ Validation rules:
 | --- | --- |
 | `schema_version` | Must be `eatme.alice-project-save-result/v1`. |
 | `status` | Must be `saved`. |
-| `save_selector` | Must be `scene.eatmeFirstLessonStep`. |
+| `save_selector` | Must be `scene.myFirstMethod`. |
 | `saved_project_artifact` | Must be a simple relative path under `project-save/` and must point to a non-empty file. |
 | `save_artifact` | Must be a simple relative path under `project-save/` and must point to a non-empty file. |
 
@@ -204,7 +204,7 @@ Command shape:
 ```bash
 tools/eatme-reopen-project \
   --saved-project runs/first-lessons-real-ui-actions/local-save-reopen-readiness/project-save/saved-project.a3p \
-  --reopen-selector scene.eatmeFirstLessonStep \
+  --reopen-selector scene.myFirstMethod \
   --evidence-dir runs/first-lessons-real-ui-actions/local-save-reopen-readiness/project-reopen \
   --json
 ```
@@ -216,7 +216,7 @@ The hook prints:
   "schema_version": "eatme.alice-project-reopen-result/v1",
   "status": "reopened",
   "source_saved_project_artifact": "project-save/saved-project.a3p",
-  "reopen_selector": "scene.eatmeFirstLessonStep",
+  "reopen_selector": "scene.myFirstMethod",
   "reopened_project_artifact": "reopened-project.a3p",
   "reopen_artifact": "project-reopen.json",
   "reopened_state_artifact": "reopened-state.json",
@@ -231,7 +231,7 @@ Validation rules:
 | `schema_version` | Must be `eatme.alice-project-reopen-result/v1`. |
 | `status` | Must be `reopened`. |
 | `source_saved_project_artifact` | Must be a simple relative path starting with `project-save/`, must resolve under the run's `project-save/` evidence directory to the same saved artifact from the same run, and must not point to the bundled starter project. |
-| `reopen_selector` | Must be `scene.eatmeFirstLessonStep`. |
+| `reopen_selector` | Must be `scene.myFirstMethod`. |
 | `reopened_project_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
 | `reopen_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
 | `reopened_state_artifact` | Must be a simple relative path under `project-reopen/` and must point to a non-empty file. |
@@ -295,7 +295,7 @@ Constructed by `probe_project_save_hook`. Fields:
 | `action_id` | `String` | Always `save-project`. |
 | `status` | `String` | `passed`, `blocked`, or `failed`. |
 | `detail` | `String` | Human-readable status explanation. |
-| `save_selector` | `String` | Always `scene.eatmeFirstLessonStep`. |
+| `save_selector` | `String` | Always `scene.myFirstMethod`. |
 | `candidate_hook_path` | `String` | Resolved path to the save hook in the Alice checkout. |
 | `command` | `Option<String>` | Full command line when the hook ran. |
 | `exit_status` | `Option<i32>` | Exit code when the hook ran. |
@@ -319,7 +319,7 @@ Constructed by `probe_project_reopen_hook`. Fields:
 | `action_id` | `String` | Always `reopen-project`. |
 | `status` | `String` | `passed`, `blocked`, or `failed`. |
 | `detail` | `String` | Human-readable status explanation. |
-| `reopen_selector` | `String` | Always `scene.eatmeFirstLessonStep`. |
+| `reopen_selector` | `String` | Always `scene.myFirstMethod`. |
 | `candidate_hook_path` | `String` | Resolved path to the reopen hook in the Alice checkout. |
 | `command` | `Option<String>` | Full command line when the hook ran. |
 | `exit_status` | `Option<i32>` | Exit code when the hook ran. |

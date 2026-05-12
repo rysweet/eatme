@@ -10,7 +10,7 @@ use std::path::{Component, Path};
 use std::time::Duration;
 
 pub(crate) const DEFAULT_WORLD_RUN_HOOK: &str = "tools/eatme-run-world";
-pub(crate) const DEFAULT_RUN_SELECTOR: &str = "scene.eatmeFirstLesson";
+pub(crate) const DEFAULT_RUN_SELECTOR: &str = "scene.myFirstMethod";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionRunWorldProbe {
