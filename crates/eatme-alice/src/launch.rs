@@ -16,6 +16,8 @@ use self::util::{
     artifact_or_error, capture_artifact_or_error, capture_text_or_error, combine_errors,
     git_commit, shutdown, validate_scenario_name, wait_for_start,
 };
+use crate::deps::check_dependencies;
+use crate::discover::discover_alice;
 use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
 use crate::launch_desktop_execution::probe_toolbar_run_and_execution;
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
@@ -32,7 +34,6 @@ use crate::launch_ui_actions::{
 use crate::launch_window_activation::ui_action_activation_failure_category;
 use crate::launch_window_targeting::alice_window_search;
 use crate::package::{PackageOptions, package_alice};
-use crate::{deps::check_dependencies, discover::discover_alice};
 use anyhow::Result;
 use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
 use std::collections::BTreeMap;

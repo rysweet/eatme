@@ -53,14 +53,15 @@ impl UiActionEditProcedureProbe {
             Ok(content) => content,
             Err(_) => return self,
         };
-        match serde_json::from_str::<serde_json::Value>(&content) {
-            Ok(value) => {
+        // Validate JSON without building an in-memory Value tree.
+        match serde_json::from_str::<serde::de::IgnoredAny>(&content) {
+            Ok(_) => {
                 self.edit_procedure_verified = true;
-                let summary = value.to_string();
-                let truncated = if summary.len() > 500 {
-                    format!("{}…", &summary[..497])
+                let truncated = if content.len() > 500 {
+                    let end = content.floor_char_boundary(497);
+                    format!("{}…", &content[..end])
                 } else {
-                    summary
+                    content
                 };
                 let hook_proved = self.status == "passed"
                     && self.edited_project_artifact.is_some()
