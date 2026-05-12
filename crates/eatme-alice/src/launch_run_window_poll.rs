@@ -350,6 +350,44 @@ mod tests {
         assert_eq!(result, None);
     }
 
+    // ── Test 11: wmctrl Err mid-poll is silently skipped, loop continues ──
+
+    #[test]
+    fn continues_polling_after_wmctrl_error() {
+        struct ErrorThenSuccess(std::cell::Cell<u32>);
+        impl CommandRunner for ErrorThenSuccess {
+            fn run(&self, _spec: &CommandSpec) -> anyhow::Result<CommandOutput> {
+                let n = self.0.get();
+                self.0.set(n + 1);
+                if n == 0 {
+                    anyhow::bail!("wmctrl: Display not found");
+                }
+                Ok(wmctrl_output(
+                    "0x600042 0 sun-awt-X11-XFramePeer.org.alice.stageide.EntryPoint host Run - Alice 3\n",
+                ))
+            }
+        }
+
+        let runner = ErrorThenSuccess(std::cell::Cell::new(0));
+        let result =
+            poll_for_run_window_inner(&runner, ":99", None, SHORT_DEADLINE, SHORT_INTERVAL);
+
+        match result {
+            RunWindowPollResult::Found {
+                window_id,
+                poll_count,
+                ..
+            } => {
+                assert_eq!(window_id, "0x600042");
+                assert!(
+                    poll_count >= 2,
+                    "should have polled at least twice (one error + one success)"
+                );
+            }
+            other => panic!("expected Found after error recovery, got {other:?}"),
+        }
+    }
+
     // ── helpers ──
 
     fn wmctrl_output(stdout: &str) -> CommandOutput {

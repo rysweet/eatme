@@ -292,7 +292,7 @@ cat "$RUN_DIR/manifest.json" \
 cargo test -p eatme-alice -- launch_run_window_poll --nocapture
 ```
 
-The polling module includes 10 inline unit tests using `FakeCommandRunner`:
+The polling module includes 11 inline unit tests:
 
 | Test | Verifies |
 | --- | --- |
@@ -306,6 +306,7 @@ The polling module includes 10 inline unit tests using `FakeCommandRunner`:
 | `extracts_window_id_from_wmctrl_line` | Correct `0x`-prefixed hex extraction from wmctrl output. |
 | `find_new_run_window_returns_first_new_run_window_id` | Multi-line scan returns the first new Run window ID. |
 | `find_new_run_window_returns_none_when_only_main_matches` | All Run window matches excluded when they share the main window ID. |
+| `continues_polling_after_wmctrl_error` | `wmctrl` returning `Err` mid-poll is silently skipped; loop recovers on the next successful poll. |
 
 ### Validate quality gates
 
