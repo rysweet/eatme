@@ -219,7 +219,12 @@ pub(crate) fn probe_edit_procedure_hook(
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let procedure_or_code_diff = if result.status == "proved" && result.procedure_or_code_diff.as_ref().is_none_or(|s| s.is_empty()) {
+    let procedure_or_code_diff = if result.status == "proved"
+        && result
+            .procedure_or_code_diff
+            .as_ref()
+            .is_none_or(|s| s.is_empty())
+    {
         None
     } else {
         hook_artifact(
