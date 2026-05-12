@@ -37,6 +37,7 @@ nav:
   - Code Editor First Run E2E Test: code-editor-first-run-e2e.md
   - Loops and Conditionals Grading: loops-and-conditionals-grading.md
   - Events and Collision Grading: events-and-collision-grading.md
+  - Grading Module Architecture: grading-module-architecture.md
   - Sharing Platform Readiness: sharing-platform-readiness.md
   - Student Lesson E2E Tests: student-lesson-e2e-tests.md
   - GitHub Pages: github-pages.md

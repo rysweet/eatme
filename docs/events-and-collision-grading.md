@@ -362,7 +362,9 @@ confirms structural readiness, not lesson completion.
 
 The events-and-collision grading code lives in a dedicated module,
 `grading_report_events`, extracted from `grading_report` to keep both files
-under the 500-line quality gate.
+under the 500-line quality gate. For the cross-cutting module map, shared
+helper contracts, import patterns, and how to add new lesson grading functions,
+see [Grading Module Architecture](grading-module-architecture.md).
 
 ### File layout
 
@@ -946,6 +948,8 @@ shared helpers to `pub(crate)`, and update `lib.rs` re-exports.
 
 ## Related documentation
 
+- [Grading Module Architecture](grading-module-architecture.md) — Module
+  layout, shared helpers, import patterns, and how to add new lesson grading.
 - [Loops and Conditionals Grading Report](loops-and-conditionals-grading.md) —
   the loops-and-conditionals lesson grading report that this feature mirrors.
 - [First-Lesson Grading Report](first-lesson-grading-report.md) — the original

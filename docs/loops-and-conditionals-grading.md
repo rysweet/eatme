@@ -625,24 +625,34 @@ must include a `"kind"` field with one of `"MethodCall"`, `"CountLoop"`, or
 
 ### Module too long (quality gate failure)
 
-All Rust source modules must stay at or below 500 lines. The files involved in
-this feature have the following expected sizes:
+All Rust source modules must stay at or below 500 lines. The grading code is
+split across `grading_report.rs` (357 lines) and `grading_report_events.rs`
+(189 lines). The loops grading function lives in `grading_report.rs` alongside
+the first-lesson function and shared helpers. For the full module map and how
+to add new lesson grading functions, see
+[Grading Module Architecture](grading-module-architecture.md).
 
 | File | Expected lines | Limit |
 | --- | --- | --- |
 | `crates/eatme-core/src/ast.rs` | ~50 | 500 |
-| `crates/eatme-core/src/ast_tests.rs` | ~100 | 500 |
-| `crates/eatme-assets/src/grading_report.rs` | ~230 | 500 |
-| `crates/eatme-assets/src/grading_report_loops_tests.rs` | ~200 | 500 |
-| `crates/eatme-alice/tests/loops_and_conditionals_e2e.rs` | ~200 | 500 |
+| `crates/eatme-core/src/ast_tests.rs` | ~417 | 500 |
+| `crates/eatme-assets/src/grading_report.rs` | ~357 | 500 |
+| `crates/eatme-assets/src/grading_report_events.rs` | ~189 | 500 |
+| `crates/eatme-assets/src/grading_report_loops_tests.rs` | ~497 | 500 |
+| `crates/eatme-alice/tests/loops_and_conditionals_e2e.rs` | ~238 | 500 |
 
 If `grading_report.rs` exceeds 500 lines, extract the loops grading function
-into a separate `grading_report_loops.rs` module.
+into a separate `grading_report_loops.rs` module following the same pattern
+used for the events extraction.
 
 ## Related documentation
 
+- [Grading Module Architecture](grading-module-architecture.md) — Module
+  layout, shared helpers, import patterns, and how to add new lesson grading.
 - [First-Lesson Grading Report](first-lesson-grading-report.md) — the original
   grading report for the Building a Scene first-lesson scenario.
+- [Events and Collision Grading](events-and-collision-grading.md) — the events
+  grading report extracted into its own module.
 - [Creative Assessment Boundary](creative-assessment-boundary.md) — the
   boundary between machine-assessable and human-review-needed aspects.
 - [Save/reopen Readiness](save-reopen-readiness.md) — the evidence contract for
