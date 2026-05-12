@@ -385,8 +385,11 @@ fn capture_window_text(
                 .retries(2, Duration::from_millis(100)),
         )
         .map_err(|error| format!("{error:#}"))?;
-    if wmctrl.exit_status == Some(0) && !command_text(&wmctrl.stdout, &wmctrl.stderr).is_empty() {
-        return Ok((wmctrl.command, command_text(&wmctrl.stdout, &wmctrl.stderr)));
+    if wmctrl.exit_status == Some(0) {
+        let text = command_text(&wmctrl.stdout, &wmctrl.stderr);
+        if !text.is_empty() {
+            return Ok((wmctrl.command, text));
+        }
     }
     let xwininfo = runner
         .run(

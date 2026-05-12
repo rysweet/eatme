@@ -139,25 +139,33 @@ fn find_new_run_window(wmctrl_output: &str, main_window_id: Option<&str>) -> Opt
             continue;
         }
         let id = extract_window_id(line)?;
-        if main_window_id == Some(id.as_str()) {
+        if main_window_id == Some(id) {
             continue;
         }
-        return Some(id);
+        return Some(id.to_string());
     }
     None
 }
 
 pub(crate) fn line_is_alice_run_window(line: &str) -> bool {
-    let normalized = line.to_ascii_lowercase();
-    (normalized.contains(" run") || normalized.contains("\"run"))
-        && normalized.contains("org.alice")
-        && !normalized.contains("firefox")
+    (contains_ascii_ci(line, " run") || contains_ascii_ci(line, "\"run"))
+        && contains_ascii_ci(line, "org.alice")
+        && !contains_ascii_ci(line, "firefox")
 }
 
-fn extract_window_id(line: &str) -> Option<String> {
+/// Case-insensitive ASCII substring check without heap allocation.
+fn contains_ascii_ci(haystack: &str, needle: &str) -> bool {
+    let n = needle.len();
+    n == 0
+        || haystack
+            .as_bytes()
+            .windows(n)
+            .any(|w| w.eq_ignore_ascii_case(needle.as_bytes()))
+}
+
+fn extract_window_id(line: &str) -> Option<&str> {
     line.split_whitespace()
         .find(|token| token.starts_with("0x"))
-        .map(String::from)
 }
 
 #[cfg(test)]
@@ -312,7 +320,7 @@ mod tests {
             extract_window_id(
                 "0x600042 0 sun-awt-X11-XFramePeer.org.alice.stageide.EntryPoint host Run"
             ),
-            Some("0x600042".into())
+            Some("0x600042")
         );
         assert_eq!(extract_window_id("no hex token here"), None);
     }
