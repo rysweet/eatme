@@ -47,7 +47,7 @@ subdirectories. The full path is:
 ### Schema
 
 The file must be valid JSON. The harness parses it as a generic
-`serde_json::Value` and extracts a summary for the `proof_detail` field.
+`serde::de::IgnoredAny` (validating without building a value tree) and extracts a summary for the `proof_detail` field.
 No specific schema version is required — any valid JSON object is accepted.
 
 A typical proof artifact:
@@ -76,7 +76,7 @@ sufficient.
 | Valid JSON file present | `true` | Summary of JSON contents (≤500 chars) | `proves_edit()` returns `true` even if the hook did not produce full proof |
 | File missing | `false` | `None` | No change to existing `proves_edit()` logic |
 | File present but not valid JSON | `false` | Error message describing the parse failure | No change to existing `proves_edit()` logic |
-| File present but empty | `false` | Error message: "proof artifact is empty" | No change to existing `proves_edit()` logic |
+| File present but empty | `false` | Parse error (e.g., "invalid JSON in <path>: EOF while parsing a value at line 1 column 0") | No change to existing `proves_edit()` logic |
 
 ## How verification works
 
@@ -86,7 +86,7 @@ After the `probe_edit_procedure_hook()` function returns the
 
 1. Constructs the proof artifact path: `run_dir.join("first-lesson-code-editor-action-proof.json")`
 2. Attempts to read the file.
-3. If the file exists, parses it as `serde_json::Value`.
+3. If the file exists, parses it with `serde::de::IgnoredAny` (validates JSON without building an in-memory value tree).
 4. On successful parse: sets `edit_procedure_verified = true`, stores a
    truncated JSON summary in `proof_detail`, and appends proof source
    information to the probe's `detail` field when the hook alone did not
