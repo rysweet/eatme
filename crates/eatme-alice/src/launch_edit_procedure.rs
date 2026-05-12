@@ -62,11 +62,15 @@ impl UiActionEditProcedureProbe {
                 } else {
                     summary
                 };
-                self.proof_detail = Some(truncated.clone());
-                if !self.proves_edit() || self.detail.contains("blocked") {
+                let hook_proved = self.status == "passed"
+                    && self.edited_project_artifact.is_some()
+                    && self.procedure_or_code_diff.is_some()
+                    && self.validation_errors.is_empty();
+                if !hook_proved {
                     self.detail =
                         format!("{} [proof artifact verified: {}]", self.detail, truncated);
                 }
+                self.proof_detail = Some(truncated);
             }
             Err(err) => {
                 self.edit_procedure_verified = false;
