@@ -12,6 +12,8 @@ use std::time::Duration;
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
 pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.eatmeFirstLessonStep";
 const DEFAULT_EDIT_SPEC: &str = "append-comment:eatme first lesson edit proof";
+#[allow(dead_code)] // used in tests now, wired into launch.rs in the implementation step
+pub(crate) const EDIT_PROCEDURE_PROOF_ARTIFACT: &str = "first-lesson-code-editor-action-proof.json";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionEditProcedureProbe {
@@ -30,6 +32,8 @@ pub struct UiActionEditProcedureProbe {
     pub procedure_or_code_diff: Option<ArtifactInfo>,
     pub validation_errors: Vec<String>,
     pub missing_affordance: Option<UiActionMissingAffordance>,
+    pub edit_procedure_verified: bool,
+    pub proof_detail: Option<String>,
 }
 
 impl UiActionEditProcedureProbe {
@@ -38,6 +42,15 @@ impl UiActionEditProcedureProbe {
             && self.edited_project_artifact.is_some()
             && self.procedure_or_code_diff.is_some()
             && self.validation_errors.is_empty()
+    }
+
+    /// Check for the proof artifact file in the run directory.
+    /// If found and valid JSON, sets `edit_procedure_verified=true` with proof details.
+    /// If missing or invalid, sets `edit_procedure_verified=false`.
+    #[allow(dead_code)] // used in tests now, wired into launch.rs in the implementation step
+    pub(crate) fn with_proof_artifact_check(self, _run_dir: &Path) -> Self {
+        // TDD stub — returns self unchanged so tests fail.
+        self
     }
 }
 
@@ -232,6 +245,8 @@ pub(crate) fn probe_edit_procedure_hook(
         procedure_or_code_diff,
         validation_errors,
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
@@ -303,6 +318,8 @@ fn blocked_edit_procedure_probe(
         procedure_or_code_diff: None,
         validation_errors: Vec::new(),
         missing_affordance,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
@@ -333,6 +350,8 @@ fn failed_edit_procedure_probe(
         procedure_or_code_diff: None,
         validation_errors,
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
