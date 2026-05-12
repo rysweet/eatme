@@ -81,7 +81,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
         command: "tools/eatme-edit-procedure --json".into(),
         exit_status: Some(0),
         stdout: serde_json::json!({
-            "schema_version": "eatme.alice-procedure-edit-result/v1",
+            "schema_version": "eatme.alice-first-lesson-code-editor-action-proof-result/v1",
             "status": "edited",
             "procedure_selector": DEFAULT_PROCEDURE_SELECTOR,
             "edited_project_artifact": "edited-project.a3p",
@@ -124,7 +124,7 @@ fn edit_procedure_hook_rejects_paths_outside_evidence_dir() {
         command: "tools/eatme-edit-procedure --json".into(),
         exit_status: Some(0),
         stdout: serde_json::json!({
-            "schema_version": "eatme.alice-procedure-edit-result/v1",
+            "schema_version": "eatme.alice-first-lesson-code-editor-action-proof-result/v1",
             "status": "edited",
             "procedure_selector": DEFAULT_PROCEDURE_SELECTOR,
             "edited_project_artifact": "../edited-project.a3p",
