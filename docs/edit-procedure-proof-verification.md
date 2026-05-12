@@ -58,7 +58,7 @@ A typical proof artifact:
   "schema_version": "eatme.code-editor-action-proof/v1",
   "status": "verified",
   "editor_action": "append-comment",
-  "procedure_selector": "scene.eatmeFirstLessonStep",
+  "procedure_selector": "scene.myFirstMethod",
   "timestamp": "2026-05-12T07:30:00Z",
   "detail": "Code editor action was observed and recorded by the external proof collector."
 }
@@ -215,7 +215,7 @@ cat > "$RUN_DIR/first-lesson-code-editor-action-proof.json" <<'EOF'
   "schema_version": "eatme.code-editor-action-proof/v1",
   "status": "verified",
   "editor_action": "append-comment",
-  "procedure_selector": "scene.eatmeFirstLessonStep",
+  "procedure_selector": "scene.myFirstMethod",
   "detail": "Code editor action was observed and recorded."
 }
 EOF
