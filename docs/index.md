@@ -47,6 +47,7 @@ Eatme has three layers:
 | Reviewing code editor first run E2E test evidence | [Code Editor First Run E2E Test](code-editor-first-run-e2e.md) |
 | Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 | Reviewing events and collision grading | [Events and Collision Grading](events-and-collision-grading.md) |
+| Understanding grading module layout and shared helpers | [Grading Module Architecture](grading-module-architecture.md) |
 
 ## What eatme proves
 

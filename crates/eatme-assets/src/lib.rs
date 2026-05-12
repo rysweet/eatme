@@ -28,6 +28,8 @@ mod grading_report_extraction_tests;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
+mod grading_report_module_split_contract_tests;
+#[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
 mod neighborhood_data_story_tests;

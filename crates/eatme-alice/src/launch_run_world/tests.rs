@@ -166,6 +166,8 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         procedure_or_code_diff: artifact_if_passed(status, "procedure-edit/procedure.diff.json"),
         validation_errors: Vec::new(),
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
