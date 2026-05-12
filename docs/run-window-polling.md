@@ -9,7 +9,7 @@ appeared within that narrow timing window.
 
 The polling logic lives in a dedicated module
 `crates/eatme-alice/src/launch_run_window_poll.rs`, keeping
-`launch_run_window.rs` (491 lines) under the 500-line quality gate.
+`launch_run_window.rs` (464 lines) under the 500-line quality gate.
 
 ## Contents
 
@@ -210,7 +210,7 @@ Registered in `lib.rs` as `mod launch_run_window_poll`.
 | `RunWindowPollResult` | `pub(crate)` | Enum with `Found` and `NotFound` variants. |
 | `poll_for_run_window(runner: &impl CommandRunner, display: &str, main_window_id: Option<&str>) -> RunWindowPollResult` | `pub(crate)` | Entry point. Runs the 10s polling loop. `main_window_id` is `toolbar_probe.window_id.as_deref()` passed by the caller. |
 | `find_new_run_window(wmctrl_output: &str, main_window_id: Option<&str>) -> Option<String>` | private | Scans `wmctrl -lx` output for a new Run window, excluding `main_window_id` when `Some`. When `None`, accepts any matching Run window. |
-| `line_is_alice_run_window(line: &str) -> bool` | private | Per-line heuristic extracted from `has_run_window_evidence()`. Returns `true` when the lowercased line contains (`" run"` or `"\"run"`) AND `"org.alice"` AND NOT `"firefox"`. |
+| `line_is_alice_run_window(line: &str) -> bool` | `pub(crate)` | Per-line heuristic extracted from `has_run_window_evidence()`. Returns `true` when the line contains (case-insensitive) (`" run"` or `"\"run"`) AND `"org.alice"` AND NOT `"firefox"`. Used by `launch_run_window::has_run_window_evidence()`. |
 
 ### Modified module: `launch_run_window`
 
@@ -292,7 +292,7 @@ cat "$RUN_DIR/manifest.json" \
 cargo test -p eatme-alice -- launch_run_window_poll --nocapture
 ```
 
-The polling module includes 8 inline unit tests using `FakeCommandRunner`:
+The polling module includes 10 inline unit tests using `FakeCommandRunner`:
 
 | Test | Verifies |
 | --- | --- |
@@ -304,6 +304,8 @@ The polling module includes 8 inline unit tests using `FakeCommandRunner`:
 | `line_heuristic_rejects_firefox` | Firefox windows are excluded even if they contain "alice". |
 | `line_heuristic_rejects_main_window_title` | Main window titles without "Run" are excluded. |
 | `extracts_window_id_from_wmctrl_line` | Correct `0x`-prefixed hex extraction from wmctrl output. |
+| `find_new_run_window_returns_first_new_run_window_id` | Multi-line scan returns the first new Run window ID. |
+| `find_new_run_window_returns_none_when_only_main_matches` | All Run window matches excluded when they share the main window ID. |
 
 ### Validate quality gates
 
