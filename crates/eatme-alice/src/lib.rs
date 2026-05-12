@@ -12,6 +12,7 @@ mod launch_options;
 mod launch_path_validation;
 mod launch_reopen_project;
 mod launch_run_window;
+mod launch_run_window_poll;
 mod launch_run_world;
 mod launch_save_project;
 #[cfg(test)]

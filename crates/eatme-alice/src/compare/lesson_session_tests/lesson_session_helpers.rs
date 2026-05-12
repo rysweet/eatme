@@ -2,6 +2,7 @@ use super::super::{AliceComparisonManifest, AliceComparisonOptions, run_launch_s
 use crate::scenario::LaunchSmokeScenario;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub(super) fn write_first_lesson_manifest(root: &Path) -> AliceComparisonManifest {
@@ -326,11 +327,13 @@ pub(super) fn assert_safe_blocker_text(text: &str) {
 }
 
 pub(super) fn unique_test_dir(prefix: &str) -> PathBuf {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
     let now_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
+    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../target/eatme-alice-comparison-tests")
-        .join(format!("{prefix}-{now_ms}"))
+        .join(format!("{prefix}-{now_ms}-{seq}"))
 }
