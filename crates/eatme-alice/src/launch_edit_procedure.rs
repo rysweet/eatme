@@ -386,9 +386,9 @@ fn failed_edit_procedure_probe(
 
 fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
     let mut errors = Vec::new();
-    if result.schema_version != "eatme.alice-procedure-edit-result/v1" {
+    if result.schema_version != "eatme.alice-first-lesson-code-editor-action-proof-result/v1" {
         errors.push(format!(
-            "schema_version must be eatme.alice-procedure-edit-result/v1, got {:?}",
+            "schema_version must be eatme.alice-first-lesson-code-editor-action-proof-result/v1, got {:?}",
             result.schema_version
         ));
     }
