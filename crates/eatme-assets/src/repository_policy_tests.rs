@@ -95,7 +95,7 @@ fn is_skipped_path(path: &Path) -> bool {
 }
 
 fn is_allowed_policy_document(root: &Path, path: &Path) -> bool {
-    path == root.join("docs/local-hook-artifacts.md")
+    path == root.join("docs/local-hook-artifacts.md") || path == root.join(".gitignore")
 }
 
 fn list_files(path: &Path) -> Vec<String> {
