@@ -10,7 +10,7 @@ use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROJECT_SAVE_HOOK: &str = "tools/eatme-save-project";
-pub(crate) const DEFAULT_SAVE_SELECTOR: &str = "scene.eatmeFirstLessonStep";
+pub(crate) const DEFAULT_SAVE_SELECTOR: &str = "scene.eatmeFirstLesson";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionSaveProjectProbe {

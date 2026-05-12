@@ -125,7 +125,7 @@ pub(super) fn ready_ui_action_contract() -> serde_json::Value {
                 "id": "alice-side-procedure-edit-command-hook",
                 "action_id": "edit-procedure-or-code-block",
                 "status": "passed",
-                "procedure_selector": "scene.eatmeFirstLessonStep",
+                "procedure_selector": "scene.eatmeFirstLesson",
                 "candidate_hook_path": "/alice/tools/eatme-edit-procedure",
                 "edited_project_artifact": {"size_bytes": 1},
                 "procedure_or_code_diff": {"size_bytes": 1}
@@ -134,7 +134,7 @@ pub(super) fn ready_ui_action_contract() -> serde_json::Value {
                 "id": "alice-side-world-run-command-hook",
                 "action_id": "run-world",
                 "status": "passed",
-                "run_selector": "scene.eatmeFirstLessonStep",
+                "run_selector": "scene.eatmeFirstLesson",
                 "candidate_hook_path": "/alice/tools/eatme-run-world",
                 "run_artifact": {"size_bytes": 1},
                 "runtime_or_log_evidence": {"size_bytes": 1}
@@ -143,7 +143,7 @@ pub(super) fn ready_ui_action_contract() -> serde_json::Value {
                 "id": "alice-side-project-save-command-hook",
                 "action_id": "save-project",
                 "status": "passed",
-                "save_selector": "scene.eatmeFirstLessonStep",
+                "save_selector": "scene.eatmeFirstLesson",
                 "candidate_hook_path": "/alice/tools/eatme-save-project",
                 "saved_project_artifact": {"size_bytes": 1},
                 "save_artifact": {"size_bytes": 1},
