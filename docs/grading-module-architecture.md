@@ -248,6 +248,7 @@ The repository enforces a 500-line limit on Rust source modules under `crates/`.
 | `grading_report_extraction_tests.rs` | 275 | ≤ 500 ✓ |
 | `grading_report_extraction_edge_tests.rs` | 404 | ≤ 500 ✓ |
 | `grading_report_integration_tests.rs` | 141 | ≤ 500 ✓ |
+| `grading_report_module_split_contract_tests.rs` | 370 | ≤ 500 ✓ |
 
 Run the quality gate check:
 
@@ -379,6 +380,7 @@ TMPDIR=/tmp ./scripts/quality-gates.sh
 | `grading_report_extraction_tests.rs` | `lib.rs` | 25 extraction contract tests | Quality-gate line counts, helper accessibility, module structure, schema, dependency chain, complete-program behavior |
 | `grading_report_extraction_edge_tests.rs` | `lib.rs` | 15 extraction edge cases | Boundary inputs, cascade failures, nested AST, JSON serialization |
 | `grading_report_integration_tests.rs` | `lib.rs` | Integration tests | Cross-module behavior |
+| `grading_report_module_split_contract_tests.rs` | `lib.rs` | 17 module-split contract tests | Re-export paths, cross-module consistency, edge cases, JSON shape |
 
 Run all grading tests:
 
