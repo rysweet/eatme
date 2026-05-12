@@ -319,3 +319,97 @@ fn proof_artifact_large_json_is_truncated() {
     );
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn validate_accepts_proved_without_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(errors.is_empty(), "Expected no errors, got: {:?}", errors);
+}
+
+#[test]
+fn validate_accepts_edited_with_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "edited".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: Some("some/diff.txt".into()),
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(errors.is_empty(), "Expected no errors, got: {:?}", errors);
+}
+
+#[test]
+fn validate_rejects_edited_without_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "edited".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("procedure_or_code_diff")),
+        "Expected diff error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_rejects_unknown_status() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "unknown".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("status must be")),
+        "Expected status error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_rejects_empty_edited_project() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("edited_project_artifact")),
+        "Expected artifact error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_proved_with_empty_diff_is_ok() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: Some("".into()),
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.is_empty(),
+        "Expected no errors for proved+empty diff, got: {:?}",
+        errors
+    );
+}
