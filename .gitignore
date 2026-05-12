@@ -7,3 +7,4 @@
 .claude/logs/
 worktrees/
 .cargo-tmp/
+.github/hooks/
