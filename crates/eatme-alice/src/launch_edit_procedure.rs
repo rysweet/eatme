@@ -88,7 +88,8 @@ struct ProcedureEditHookResult {
     status: String,
     procedure_selector: String,
     edited_project_artifact: String,
-    procedure_or_code_diff: String,
+    #[serde(default)]
+    procedure_or_code_diff: Option<String>,
 }
 
 pub(crate) fn probe_edit_procedure_hook(
@@ -221,7 +222,7 @@ pub(crate) fn probe_edit_procedure_hook(
     .ok();
     let procedure_or_code_diff = hook_artifact(
         &evidence_dir,
-        &result.procedure_or_code_diff,
+        &result.procedure_or_code_diff.as_deref().unwrap_or(""),
         "procedure_or_code_diff",
     )
     .map_err(|error| validation_errors.push(error))
