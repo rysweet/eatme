@@ -12,7 +12,6 @@ use std::time::Duration;
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
 pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.eatmeFirstLessonStep";
 const DEFAULT_EDIT_SPEC: &str = "append-comment:eatme first lesson edit proof";
-#[allow(dead_code)] // used in tests now, wired into launch.rs in the implementation step
 pub(crate) const EDIT_PROCEDURE_PROOF_ARTIFACT: &str = "first-lesson-code-editor-action-proof.json";
 
 #[derive(Clone, Debug, Serialize)]
@@ -38,18 +37,43 @@ pub struct UiActionEditProcedureProbe {
 
 impl UiActionEditProcedureProbe {
     pub fn proves_edit(&self) -> bool {
-        self.status == "passed"
+        let hook_proved = self.status == "passed"
             && self.edited_project_artifact.is_some()
             && self.procedure_or_code_diff.is_some()
-            && self.validation_errors.is_empty()
+            && self.validation_errors.is_empty();
+        hook_proved || self.edit_procedure_verified
     }
 
     /// Check for the proof artifact file in the run directory.
     /// If found and valid JSON, sets `edit_procedure_verified=true` with proof details.
     /// If missing or invalid, sets `edit_procedure_verified=false`.
-    #[allow(dead_code)] // used in tests now, wired into launch.rs in the implementation step
-    pub(crate) fn with_proof_artifact_check(self, _run_dir: &Path) -> Self {
-        // TDD stub — returns self unchanged so tests fail.
+    pub(crate) fn with_proof_artifact_check(mut self, run_dir: &Path) -> Self {
+        let proof_path = run_dir.join(EDIT_PROCEDURE_PROOF_ARTIFACT);
+        let content = match fs::read_to_string(&proof_path) {
+            Ok(content) => content,
+            Err(_) => return self,
+        };
+        match serde_json::from_str::<serde_json::Value>(&content) {
+            Ok(value) => {
+                self.edit_procedure_verified = true;
+                let summary = value.to_string();
+                let truncated = if summary.len() > 500 {
+                    format!("{}…", &summary[..497])
+                } else {
+                    summary
+                };
+                self.proof_detail = Some(truncated.clone());
+                if !self.proves_edit() || self.detail.contains("blocked") {
+                    self.detail =
+                        format!("{} [proof artifact verified: {}]", self.detail, truncated);
+                }
+            }
+            Err(err) => {
+                self.edit_procedure_verified = false;
+                self.proof_detail =
+                    Some(format!("invalid JSON in {}: {err}", proof_path.display()));
+            }
+        }
         self
     }
 }
