@@ -392,8 +392,11 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
             result.schema_version
         ));
     }
-    if result.status != "edited" {
-        errors.push(format!("status must be edited, got {:?}", result.status));
+    if result.status != "edited" && result.status != "proved" {
+        errors.push(format!(
+            "status must be edited or proved, got {:?}",
+            result.status
+        ));
     }
     if result.procedure_selector != DEFAULT_PROCEDURE_SELECTOR {
         errors.push(format!(
