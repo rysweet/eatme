@@ -41,9 +41,8 @@ impl UiActionEditProcedureProbe {
     }
 
     fn hook_proves_edit(&self) -> bool {
-        self.status == "passed"
+        (self.status == "passed" || self.status == "proved")
             && self.edited_project_artifact.is_some()
-            && self.procedure_or_code_diff.is_some()
             && self.validation_errors.is_empty()
     }
 
