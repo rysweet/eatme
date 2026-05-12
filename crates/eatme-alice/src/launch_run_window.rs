@@ -197,7 +197,6 @@ pub(crate) fn probe_run_window_after_toolbar_button(
             "blocked: desktop Run toolbar dispatch must pass before Run window observation",
         );
     }
-    std::thread::sleep(Duration::from_secs(2));
     if let Some(probe) = run_window_created_sentinel_probe(
         "observe-run-window-after-toolbar-button",
         "observed RabbitHole Run-window-created sentinel after Run toolbar click; this records Alice preparing the desktop Run frame, not world completion",
@@ -206,38 +205,12 @@ pub(crate) fn probe_run_window_after_toolbar_button(
     ) {
         return with_run_window_screenshot(runner, display, run_dir, probe);
     }
-    match capture_window_text(runner, display) {
-        Ok((command, text)) if has_run_window_evidence(&text) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "passed".into(),
-            detail: "observed a window listing consistent with an Alice Run window after Run toolbar click; this indicates desktop Run window opening, not world completion".into(),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some(command),
-            exit_status: Some(0),
-            stdout: text,
-            stderr: String::new(),
-        },
-        Ok((command, text)) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "failed".into(),
-            detail: "Run toolbar click succeeded, but no Alice Run window was observed".into(),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some(command),
-            exit_status: Some(0),
-            stdout: text,
-            stderr: String::new(),
-        },
-        Err(error) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "failed".into(),
-            detail: format!("could not inspect windows after Run toolbar click: {error}"),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some("wmctrl -lx; xwininfo -root -tree".into()),
-            exit_status: None,
-            stdout: String::new(),
-            stderr: String::new(),
-        },
-    }
+    crate::launch_run_window_poll::poll_for_run_window(
+        runner,
+        display,
+        toolbar_probe.window_id.as_deref(),
+    )
+    .into_toolbar_probe(toolbar_probe.window_id.clone())
 }
 
 fn run_window_created_sentinel_probe(

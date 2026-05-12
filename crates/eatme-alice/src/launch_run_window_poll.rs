@@ -1,8 +1,5 @@
-// TDD red phase: stubs only — called by tests, not yet by production code.
-#![allow(dead_code)]
-
-use eatme_core::CommandRunner;
-use std::time::Duration;
+use eatme_core::{CommandRunner, CommandSpec};
+use std::time::{Duration, Instant};
 
 const POLL_DEADLINE: Duration = Duration::from_secs(10);
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
@@ -22,6 +19,60 @@ pub(crate) enum RunWindowPollResult {
     },
 }
 
+impl RunWindowPollResult {
+    pub(crate) fn into_toolbar_probe(
+        self,
+        fallback_window_id: Option<String>,
+    ) -> crate::launch_ui_actions::UiActionProbe {
+        use crate::launch_ui_actions::UiActionProbe;
+        match self {
+            Self::Found {
+                window_id,
+                poll_count,
+                elapsed,
+            } => UiActionProbe {
+                id: "observe-run-window-after-toolbar-button".into(),
+                status: "passed".into(),
+                detail: format!(
+                    "observed a new Alice Run window {window_id} after Run toolbar click \
+                     (poll {poll_count}, {:.1}s); this indicates desktop Run window opening, \
+                     not world completion",
+                    elapsed.as_secs_f64(),
+                ),
+                window_id: Some(window_id),
+                command: Some("wmctrl -lx (polled)".into()),
+                exit_status: Some(0),
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+            Self::NotFound {
+                poll_count,
+                elapsed,
+                excluded_main_id,
+            } => {
+                let suffix = excluded_main_id
+                    .as_ref()
+                    .map(|id| format!("; excluded main window {id}"))
+                    .unwrap_or_default();
+                UiActionProbe {
+                    id: "observe-run-window-after-toolbar-button".into(),
+                    status: "failed".into(),
+                    detail: format!(
+                        "Run toolbar click succeeded, but no new Alice Run window was observed \
+                         after {poll_count} polls over {:.1}s{suffix}",
+                        elapsed.as_secs_f64(),
+                    ),
+                    window_id: fallback_window_id,
+                    command: Some("wmctrl -lx (polled)".into()),
+                    exit_status: Some(0),
+                    stdout: String::new(),
+                    stderr: String::new(),
+                }
+            }
+        }
+    }
+}
+
 pub(crate) fn poll_for_run_window(
     runner: &impl CommandRunner,
     display: &str,
@@ -37,25 +88,76 @@ pub(crate) fn poll_for_run_window(
 }
 
 fn poll_for_run_window_inner(
-    _runner: &impl CommandRunner,
-    _display: &str,
-    _main_window_id: Option<&str>,
-    _deadline: Duration,
-    _interval: Duration,
+    runner: &impl CommandRunner,
+    display: &str,
+    main_window_id: Option<&str>,
+    deadline: Duration,
+    interval: Duration,
 ) -> RunWindowPollResult {
-    todo!("implementation pending — polls wmctrl -lx every interval until deadline")
+    let start = Instant::now();
+    let mut poll_count: u32 = 0;
+
+    loop {
+        let output = runner.run(
+            &CommandSpec::new("wmctrl")
+                .args(["-lx"])
+                .env("DISPLAY", display)
+                .timeout(WMCTRL_TIMEOUT),
+        );
+        poll_count += 1;
+
+        if let Ok(output) = output
+            && output.exit_status == Some(0)
+            && let Some(id) = find_new_run_window(&output.stdout, main_window_id)
+        {
+            return RunWindowPollResult::Found {
+                window_id: id,
+                poll_count,
+                elapsed: start.elapsed(),
+            };
+        }
+
+        if start.elapsed() >= deadline {
+            break;
+        }
+        std::thread::sleep(interval);
+        if start.elapsed() >= deadline {
+            break;
+        }
+    }
+
+    RunWindowPollResult::NotFound {
+        poll_count,
+        elapsed: start.elapsed(),
+        excluded_main_id: main_window_id.map(String::from),
+    }
 }
 
-fn find_new_run_window(_wmctrl_output: &str, _main_window_id: Option<&str>) -> Option<String> {
-    todo!("implementation pending — scans lines for alice run window excluding main id")
+fn find_new_run_window(wmctrl_output: &str, main_window_id: Option<&str>) -> Option<String> {
+    for line in wmctrl_output.lines() {
+        if !line_is_alice_run_window(line) {
+            continue;
+        }
+        let id = extract_window_id(line)?;
+        if main_window_id == Some(id.as_str()) {
+            continue;
+        }
+        return Some(id);
+    }
+    None
 }
 
-fn line_is_alice_run_window(_line: &str) -> bool {
-    todo!("implementation pending — per-line heuristic matching has_run_window_evidence logic")
+fn line_is_alice_run_window(line: &str) -> bool {
+    let normalized = line.to_ascii_lowercase();
+    (normalized.contains(" run") || normalized.contains("\"run"))
+        && normalized.contains("org.alice")
+        && !normalized.contains("firefox")
 }
 
-fn extract_window_id(_line: &str) -> Option<String> {
-    todo!("implementation pending — extracts 0x-prefixed hex window id from wmctrl line")
+fn extract_window_id(line: &str) -> Option<String> {
+    line.split_whitespace()
+        .find(|token| token.starts_with("0x"))
+        .map(String::from)
 }
 
 #[cfg(test)]
