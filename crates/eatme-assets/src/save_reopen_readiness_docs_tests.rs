@@ -219,7 +219,7 @@ fn save_reopen_doc_documents_hook_api_contracts() {
             "tools/eatme-reopen-project",
             "eatme.alice-project-save-result/v1",
             "eatme.alice-project-reopen-result/v1",
-            "scene.eatmeFirstLessonStep",
+            "scene.eatmeFirstLesson",
         ],
     );
 }

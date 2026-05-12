@@ -10,7 +10,7 @@ use std::path::{Component, Path};
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
-pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.eatmeFirstLessonStep";
+pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.eatmeFirstLesson";
 const DEFAULT_EDIT_SPEC: &str = "append-comment:eatme first lesson edit proof";
 pub(crate) const EDIT_PROCEDURE_PROOF_ARTIFACT: &str = "first-lesson-code-editor-action-proof.json";
 

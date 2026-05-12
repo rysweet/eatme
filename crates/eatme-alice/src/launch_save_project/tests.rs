@@ -277,7 +277,7 @@ fn run_world_probe_with_status(status: &str) -> UiActionRunWorldProbe {
         action_id: "run-world".into(),
         status: status.into(),
         detail: "run probe detail".into(),
-        run_selector: "scene.eatmeFirstLessonStep".into(),
+        run_selector: "scene.eatmeFirstLesson".into(),
         candidate_hook_path: "tools/eatme-run-world".into(),
         command: Some("tools/eatme-run-world --json".into()),
         exit_status: Some(0),
