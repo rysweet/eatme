@@ -157,7 +157,7 @@ fn contract_after_edit_without_run_no_go() -> serde_json::Value {
                 "id": "alice-side-procedure-edit-command-hook",
                 "action_id": "edit-procedure-or-code-block",
                 "status": "passed",
-                "procedure_selector": "scene.eatmeFirstLessonStep",
+                "procedure_selector": "scene.eatmeFirstLesson",
                 "candidate_hook_path": "/alice/tools/eatme-edit-procedure",
                 "edited_project_artifact": {"path": "procedure-edit/edited-project.a3p", "size_bytes": 2},
                 "procedure_or_code_diff": {"path": "procedure-edit/procedure.diff.json", "size_bytes": 2}

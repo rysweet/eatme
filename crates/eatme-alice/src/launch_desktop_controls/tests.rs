@@ -435,3 +435,91 @@ fn fixed_geometry_output() -> CommandOutput {
         stderr: String::new(),
     }
 }
+
+fn scrot_ok() -> CommandOutput {
+    CommandOutput {
+        command: "scrot".into(),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    }
+}
+
+fn xdotool_click_ok() -> CommandOutput {
+    CommandOutput {
+        command: "xdotool click".into(),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    }
+}
+
+#[test]
+fn screenshots_differ_detects_byte_level_differences() {
+    let dir = unique_test_dir("screenshots-differ");
+    std::fs::create_dir_all(&dir).unwrap();
+    let (a, b) = (dir.join("a.png"), dir.join("b.png"));
+    std::fs::write(&a, b"before").unwrap();
+    std::fs::write(&b, b"after").unwrap();
+    assert!(
+        screenshots_differ(&a, &b),
+        "different content must be detected"
+    );
+    std::fs::write(&b, b"before").unwrap();
+    assert!(
+        !screenshots_differ(&a, &b),
+        "identical content must not be detected"
+    );
+    std::fs::remove_file(&b).unwrap();
+    assert!(
+        !screenshots_differ(&a, &b),
+        "missing file must not be detected"
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn run_window_after_toolbar_passes_via_screenshot_diff_without_sentinel() {
+    let runner = FakeCommandRunner::default();
+    let run_dir = unique_test_dir("toolbar-screenshot-diff");
+    let shots = run_dir.join("screenshots");
+    std::fs::create_dir_all(&shots).unwrap();
+    std::fs::write(shots.join("scene-before-run-click.png"), b"before").unwrap();
+    std::fs::write(shots.join("scene-after-run-click.png"), b"after-different").unwrap();
+    runner.push_output(scrot_ok());
+    let probe = probe_run_window_after_toolbar_button(
+        &runner,
+        ":99",
+        &run_dir,
+        &run_shortcut_probe("passed"),
+    );
+    assert_eq!(
+        probe.status, "passed",
+        "Bug 2 (#252): screenshot diff should detect Run animation in scene panel"
+    );
+    let _ = std::fs::remove_dir_all(run_dir);
+}
+
+#[test]
+fn run_toolbar_sequence_captures_before_screenshot() {
+    let runner = FakeCommandRunner::default();
+    let run_dir = unique_test_dir("toolbar-before-screenshot");
+    runner.push_output(scrot_ok());
+    runner.push_output(fixed_geometry_output());
+    runner.push_output(xdotool_click_ok());
+    let _probes = probe_run_toolbar_sequence(
+        &runner,
+        ":99",
+        &run_dir,
+        Some(&activation_probe("passed")),
+        &run_shortcut_probe("failed"),
+    );
+    assert!(
+        runner
+            .commands()
+            .iter()
+            .any(|cmd| cmd.contains("scene-before-run-click")),
+        "Bug 2 (#252): must capture before screenshot prior to toolbar click"
+    );
+    let _ = std::fs::remove_dir_all(run_dir);
+}

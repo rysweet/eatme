@@ -125,7 +125,7 @@ pub(super) fn ready_ui_action_contract() -> serde_json::Value {
                 "id": "alice-side-procedure-edit-command-hook",
                 "action_id": "edit-procedure-or-code-block",
                 "status": "passed",
-                "procedure_selector": "scene.eatmeFirstLessonStep",
+                "procedure_selector": "scene.eatmeFirstLesson",
                 "candidate_hook_path": "/alice/tools/eatme-edit-procedure",
                 "edited_project_artifact": {"size_bytes": 1},
                 "procedure_or_code_diff": {"size_bytes": 1}

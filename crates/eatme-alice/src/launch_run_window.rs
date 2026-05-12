@@ -174,6 +174,7 @@ pub(crate) fn probe_run_toolbar_sequence(
     activation_probe: Option<&UiActionProbe>,
     run_window_after_shortcut_probe: &UiActionProbe,
 ) -> (UiActionProbe, UiActionProbe) {
+    let _ = capture_run_window_screenshot(runner, display, run_dir, "scene-before-run-click.png");
     let toolbar_probe = probe_desktop_run_toolbar_button(
         runner,
         display,
@@ -206,33 +207,35 @@ pub(crate) fn probe_run_window_after_toolbar_button(
     ) {
         return with_run_window_screenshot(runner, display, run_dir, probe);
     }
-    match capture_window_text(runner, display) {
-        Ok((command, text)) if has_run_window_evidence(&text) => UiActionProbe {
+    let before_path = run_dir.join("screenshots/scene-before-run-click.png");
+    let after_path = run_dir.join("screenshots/scene-after-run-click.png");
+    match capture_run_window_screenshot(runner, display, run_dir, "scene-after-run-click.png") {
+        Ok(command) if screenshots_differ(&before_path, &after_path) => UiActionProbe {
             id: "observe-run-window-after-toolbar-button".into(),
             status: "passed".into(),
-            detail: "observed a window listing consistent with an Alice Run window after Run toolbar click; this indicates desktop Run window opening, not world completion".into(),
+            detail: "scene panel content changed after Run toolbar click; screenshot diff confirms the Run animation started in the existing scene panel".into(),
             window_id: toolbar_probe.window_id.clone(),
             command: Some(command),
             exit_status: Some(0),
-            stdout: text,
+            stdout: String::new(),
             stderr: String::new(),
         },
-        Ok((command, text)) => UiActionProbe {
+        Ok(command) => UiActionProbe {
             id: "observe-run-window-after-toolbar-button".into(),
             status: "failed".into(),
-            detail: "Run toolbar click succeeded, but no Alice Run window was observed".into(),
+            detail: "Run toolbar click succeeded, but scene panel screenshot did not change; no Run animation detected".into(),
             window_id: toolbar_probe.window_id.clone(),
             command: Some(command),
             exit_status: Some(0),
-            stdout: text,
+            stdout: String::new(),
             stderr: String::new(),
         },
         Err(error) => UiActionProbe {
             id: "observe-run-window-after-toolbar-button".into(),
             status: "failed".into(),
-            detail: format!("could not inspect windows after Run toolbar click: {error}"),
+            detail: format!("could not capture scene panel screenshot after Run toolbar click: {error}"),
             window_id: toolbar_probe.window_id.clone(),
-            command: Some("wmctrl -lx; xwininfo -root -tree".into()),
+            command: None,
             exit_status: None,
             stdout: String::new(),
             stderr: String::new(),
@@ -269,7 +272,7 @@ fn with_run_window_screenshot(
     run_dir: &Path,
     mut probe: UiActionProbe,
 ) -> UiActionProbe {
-    match capture_run_window_screenshot(runner, display, run_dir) {
+    match capture_run_window_screenshot(runner, display, run_dir, "run-window-after-dispatch.png") {
         Ok(command) => {
             probe.detail.push_str(
                 "; captured screenshot artifact screenshots/run-window-after-dispatch.png",
@@ -359,10 +362,11 @@ fn capture_run_window_screenshot(
     runner: &impl CommandRunner,
     display: &str,
     run_dir: &Path,
+    filename: &str,
 ) -> Result<String, String> {
     let screenshot_dir = run_dir.join("screenshots");
     fs::create_dir_all(&screenshot_dir).map_err(|error| error.to_string())?;
-    let path = screenshot_dir.join("run-window-after-dispatch.png");
+    let path = screenshot_dir.join(filename);
     let scrot = runner
         .run(
             &CommandSpec::new("scrot")
@@ -395,7 +399,7 @@ fn capture_run_window_screenshot(
 
 fn non_empty_file(path: &Path) -> bool {
     fs::metadata(path)
-        .map(|metadata| metadata.is_file() && metadata.len() > 0)
+        .map(|m| m.is_file() && m.len() > 0)
         .unwrap_or(false)
 }
 
@@ -474,7 +478,15 @@ fn shell_value(text: &str, key: &str) -> Option<u32> {
 fn has_license_modal_evidence(window_text: &str) -> bool {
     window_text
         .lines()
-        .any(|line| line.to_ascii_lowercase().contains("license agreement"))
+        .any(|l| l.to_ascii_lowercase().contains("license agreement"))
+}
+
+// Byte-level screenshot comparison for before/after Run animation detection.
+pub(crate) fn screenshots_differ(before: &Path, after: &Path) -> bool {
+    match (fs::read(before), fs::read(after)) {
+        (Ok(a), Ok(b)) => a != b,
+        _ => false,
+    }
 }
 
 fn blocked_probe(id: &str, detail: &str) -> UiActionProbe {

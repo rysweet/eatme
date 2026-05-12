@@ -198,7 +198,10 @@ runs/first-lessons-real-ui-actions/student-first-lessons-real-ui-actions/
 |-- run-window-evidence/
 |   `-- desktop-first-lesson-next-action.json
 `-- screenshots/
-    `-- startup.png
+    |-- startup.png
+    |-- scene-before-run-click.png
+    |-- scene-after-run-click.png
+    `-- run-window-after-dispatch.png
 ```
 
 This tree is the internal artifact layout for audit and troubleshooting. Alice

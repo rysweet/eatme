@@ -4,8 +4,8 @@ use std::time::Duration;
 
 #[cfg(test)]
 pub(crate) use crate::launch_run_window::{
-    RUN_WINDOW_CREATED_SENTINEL, probe_desktop_run_toolbar_button, probe_run_window_after_shortcut,
-    probe_run_window_after_toolbar_button,
+    RUN_WINDOW_CREATED_SENTINEL, probe_desktop_run_toolbar_button, probe_run_toolbar_sequence,
+    probe_run_window_after_shortcut, probe_run_window_after_toolbar_button, screenshots_differ,
 };
 
 pub(crate) fn probe_desktop_save_shortcut(

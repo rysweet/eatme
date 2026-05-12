@@ -73,7 +73,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
     fs::write(edit_evidence_dir.join("edited-project.a3p"), "edited").unwrap();
     fs::write(
         edit_evidence_dir.join("procedure.diff.json"),
-        r#"{"edited":["scene.eatmeFirstLessonStep"]}"#,
+        r#"{"edited":["scene.eatmeFirstLesson"]}"#,
     )
     .unwrap();
     let runner = FakeCommandRunner::default();
@@ -190,4 +190,12 @@ fn unique_test_dir(prefix: &str) -> PathBuf {
         .join("target")
         .join("eatme-alice-edit-procedure-tests")
         .join(format!("{prefix}-{nonce}"))
+}
+
+#[test]
+fn default_procedure_selector_is_scene_eatme_first_lesson() {
+    assert_eq!(
+        DEFAULT_PROCEDURE_SELECTOR, "scene.eatmeFirstLesson",
+        "Bug 1 (#252): EatmeEditProcedure hook requires scene.eatmeFirstLesson (no Step suffix)"
+    );
 }
