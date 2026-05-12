@@ -205,8 +205,8 @@ Registered in `lib.rs` as `mod launch_run_window_poll`.
 | --- | --- | --- |
 | `RunWindowPollResult` | `pub(crate)` | Enum with `Found` and `NotFound` variants. |
 | `poll_for_run_window(runner, display, main_window_id) -> RunWindowPollResult` | `pub(crate)` | Entry point. Runs the 10s polling loop. |
-| `find_new_run_window(wmctrl_output, main_window_id) -> Option<String>` | private | Scans `wmctrl -lx` output for a new Run window, excluding `main_window_id`. |
-| `line_is_alice_run_window(line) -> bool` | private | Per-line heuristic: `true` when the line contains Alice Run window markers. Extracted from the existing `has_run_window_evidence()` logic. |
+| `find_new_run_window(wmctrl_output: &str, main_window_id: Option<&str>) -> Option<String>` | private | Scans `wmctrl -lx` output for a new Run window, excluding `main_window_id` when `Some`. When `None`, accepts any matching Run window. |
+| `line_is_alice_run_window(line: &str) -> bool` | private | Per-line heuristic: `true` when the line contains Alice Run window markers. Extracted from the existing `has_run_window_evidence()` logic. |
 
 ### Modified module: `launch_run_window`
 
@@ -215,7 +215,7 @@ Registered in `lib.rs` as `mod launch_run_window_poll`.
 | Removed `std::thread::sleep(Duration::from_secs(2))` | The 2-second sleep in `probe_run_window_after_toolbar_button` is removed. The first poll is immediate. |
 | Added `use crate::launch_run_window_poll` | Imports the polling module. |
 | Delegation to poller | After the sentinel fast-path check, `probe_run_window_after_toolbar_button` calls `poll_for_run_window()` and maps the result to a `UiActionProbe`. |
-| Passed probe gets new window ID | When polling succeeds, the probe's `window_id` is set to the **new** Run window ID (from the poller), not the main window ID. This is a behavior change from the previous code which always echoed `toolbar_probe.window_id`. |
+| Passed probe gets new window ID (polling path) | When polling succeeds, the probe's `window_id` is set to the **new** Run window ID (from the poller), not the main window ID. This is a behavior change from the previous code which always echoed `toolbar_probe.window_id`. On the sentinel fast-path, the probe still uses `toolbar_probe.window_id` (unchanged). |
 | Failed probe includes statistics | The detail string includes poll count, elapsed time, and the excluded main window ID. |
 
 ### Unchanged: shortcut path
@@ -335,7 +335,7 @@ If the detail says "20 polls, excluded main window 0x...":
    windows were visible:
    ```bash
    cat "$RUN_DIR/manifest.json" \
-     | jq '.assertions.run_world_desktop_toolbar_window_observed.detail'
+     | jq '.assertions.run_world_desktop_toolbar_window_observed.stdout'
    ```
 
 ### Toolbar dispatch is blocked
