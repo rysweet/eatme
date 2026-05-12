@@ -245,7 +245,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if !process_started {
         failure_category = Some("alice_process_exited".into());
     }
-
     let (window_text, window_list_error) =
         capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));
     let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
@@ -337,7 +336,6 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     } else if !fatal_log_scan.is_empty() && failure_category.is_none() {
         failure_category = Some("fatal_log".into());
     }
-
     let (log, log_artifact_error) = artifact_or_error(&log_path);
     let log_error = combine_errors([log_scan_error, log_artifact_error]);
     let log_ok = log
