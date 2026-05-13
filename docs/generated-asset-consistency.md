@@ -52,12 +52,12 @@ and any hand-authored Gadugi regression scenarios. Directories named
 inputs, not scenario assets, and do not contribute to `scenario_asset_count`.
 See [Step Block Composition](step-block-composition.md) for details.
 
-The current committed inventory has 93 scenario YAML files:
+The current committed inventory has 101 scenario YAML files:
 
 | Scenario asset type | Count |
 | --- | --- |
-| Canonical eatme scenarios | 46 |
-| Generated Gadugi adapters | 46 |
+| Canonical eatme scenarios | 50 |
+| Generated Gadugi adapters | 50 |
 | Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
@@ -68,7 +68,7 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 93'
+    - '"scenario_asset_count": 101'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
@@ -254,14 +254,14 @@ The Rust asset validation and generator commands do not require Node. Keeping
 
 ### Valid generated count
 
-For the current 93-file inventory, validation output
+For the current 101-file inventory, validation output
 includes:
 
 ```json
 {
   "schema_version": "eatme.assets/validation/v1",
   "passed": true,
-  "scenario_asset_count": 93,
+  "scenario_asset_count": 101,
   "errors": []
 }
 ```
@@ -272,7 +272,7 @@ count:
 ```yaml
 stdout_contains:
   - '"passed": true'
-  - '"scenario_asset_count": 93'
+  - '"scenario_asset_count": 101'
 ```
 
 ### Stale adapter check
