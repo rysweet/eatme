@@ -271,8 +271,8 @@ fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
         return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
     }
 
-    let text =
-        format!("{}\n{}", scenario.purpose, scenario.unsupported_policy).to_ascii_lowercase();
+    let mut text = format!("{}\n{}", scenario.purpose, scenario.unsupported_policy);
+    text.make_ascii_lowercase();
     if text.contains("not full ui automation")
         && text.contains("not creative assessment")
         && text.contains("not learner-world grading")
@@ -291,8 +291,10 @@ fn read_eatme_scenario(path: &Path) -> Result<EatmeScenarioAsset> {
 }
 
 fn render_yaml(adapter: GeneratedGadugiAdapter) -> Result<String> {
-    let mut yaml = GENERATED_FILE_HEADER.to_string();
-    yaml.push_str(&serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?);
+    let serialized = serde_yaml::to_string(&adapter).context("serializing gadugi adapter YAML")?;
+    let mut yaml = String::with_capacity(GENERATED_FILE_HEADER.len() + serialized.len() + 1);
+    yaml.push_str(GENERATED_FILE_HEADER);
+    yaml.push_str(&serialized);
     if !yaml.ends_with('\n') {
         yaml.push('\n');
     }
@@ -393,17 +395,20 @@ fn repository_command(command: &str, run_id: &str) -> String {
 }
 
 fn step_title(id: &str) -> String {
-    id.split('-')
-        .filter(|part| !part.is_empty())
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                Some(first) => format!("{}{}", first.to_uppercase(), chars.as_str()),
-                None => String::new(),
+    let mut result = String::with_capacity(id.len());
+    for (i, part) in id.split('-').filter(|p| !p.is_empty()).enumerate() {
+        if i > 0 {
+            result.push(' ');
+        }
+        let mut chars = part.chars();
+        if let Some(first) = chars.next() {
+            for c in first.to_uppercase() {
+                result.push(c);
             }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+            result.push_str(chars.as_str());
+        }
+    }
+    result
 }
 
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
@@ -459,7 +464,8 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
 }
 
 fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioStep) -> Vec<String> {
-    let evidence = step.evidence.join("\n").to_lowercase();
+    let mut evidence = step.evidence.join("\n");
+    evidence.make_ascii_lowercase();
     let mut expected = vec![format!("\"scenario_id\": \"{}\"", scenario.id)];
     if scenario.kind == "alice_real_ui_action_contract" {
         expected.push("\"failure_category\":".into());
