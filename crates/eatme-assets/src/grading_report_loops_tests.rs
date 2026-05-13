@@ -66,7 +66,7 @@ fn program_with_conditional_only() -> Program {
 fn loops_input_all_ready(program: Option<Program>) -> LoopsGradingInput {
     LoopsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
         student_program: program,
@@ -85,7 +85,7 @@ fn loops_input_blocked_assets(program: Option<Program>) -> LoopsGradingInput {
 fn loops_input_blocked_deps(program: Option<Program>) -> LoopsGradingInput {
     LoopsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: false,
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
         student_program: program,
@@ -239,7 +239,7 @@ fn all_ready_reasons_propagate() {
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(complete_program())));
     assert_eq!(
         report.steps[0].reason,
-        "All 93 scenario assets passed validation"
+        "All 101 scenario assets passed validation"
     );
     assert_eq!(report.steps[1].reason, "All required tools available");
 }

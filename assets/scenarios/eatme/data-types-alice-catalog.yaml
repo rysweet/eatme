@@ -1,0 +1,89 @@
+schema_version: eatme.scenario/v1
+id: data-types-alice-catalog
+title: Data Types Alice Catalog
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+- name: Alice.org Data Types lesson
+  url: https://www.alice.org/resources/lessons/data-types/
+- name: Alice.org Alice 3 lessons
+  url: https://www.alice.org/resources/alice-3-lessons/
+purpose: Cover the Data Types alice.org lesson where students learn about Integer, Double, Boolean, String types in Alice.
+launcher:
+  command: alice launch-smoke
+  scenario: data-types-alice-catalog
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+  - concept-cartographer
+  - assessment-curator
+  students:
+  - systems-puzzle-solver
+  - reflective-debugger
+  - data-detective
+capabilities:
+  required:
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - screenshot-tool
+  optional:
+  - glxinfo
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+smoke_ready:
+  evidence:
+  - manifest_assertions
+  - captured_logs
+  - screenshot_or_window_evidence
+  - scenario_id
+acceptance_criteria:
+- given: Alice launch smoke dependencies are available
+  when: the variables-scorekeeper-timekeeper scenario is launched through eatme
+  then: the manifest identifies scenario_id variables-scorekeeper-timekeeper
+- given: students need state evidence
+  when: agentic follow-on evaluates this scenario
+  then: it judges visible state changes, data-type explanation, and score/timer rules rather than private code names
+- given: gadugi needs to exercise the scenario
+  when: the gadugi adapter runs commands for this scenario
+  then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+steps:
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes this scenario asset
+- id: check-dependencies
+  command: cargo run -q -p eatme-cli -- deps check --json
+  evidence:
+  - stdout JSON has all_required_available=true
+- id: launch-smoke
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID}
+    --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario data-types-alice-catalog
+  evidence:
+  - manifest scenario_id equals data-types-alice-catalog
+  - manifest failure_category is null
+  - manifest assertions include real_alice_execution_evidence passed=true
+  - manifest assertions all pass
+  - screenshot or window evidence exists and is non-empty
+  - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#data-types-alice-catalog
+  deterministic_gate: Run this smoke scenario before asking agents to assess whether a learner used variables, data types,
+    and visible state changes in a scorekeeper or timer.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/variables-scorekeeper-timekeeper/${RUN_ID}/manifest.json
+  screenshot: runs/variables-scorekeeper-timekeeper/${RUN_ID}/screenshots/startup.png
+  log: runs/variables-scorekeeper-timekeeper/${RUN_ID}/alice.log
+  window_list: runs/variables-scorekeeper-timekeeper/${RUN_ID}/window-list.txt
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing,
+  fail loudly. Do not silently skip or substitute a mocked Alice runtime.

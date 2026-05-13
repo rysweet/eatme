@@ -66,7 +66,7 @@ fn program_with_collision_only() -> Program {
 fn events_input_all_ready(program: Option<Program>) -> EventsGradingInput {
     EventsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
         student_program: program,
@@ -86,7 +86,7 @@ fn events_input_blocked_assets(program: Option<Program>) -> EventsGradingInput {
 fn events_input_blocked_deps(program: Option<Program>) -> EventsGradingInput {
     EventsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: false,
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
         student_program: program,
