@@ -179,33 +179,17 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     }
 
     // use: alice-preflight — shared preflight steps from step-block template
+    let remaining_steps = |skip: usize| {
+        scenario.steps.iter().skip(skip).map(|step| {
+            generated_step(scenario, step, &run_id, launch_timeout, expected_scenario_asset_count)
+        })
+    };
     let steps = if has_preflight_steps(scenario) {
-        let mut steps =
-            preflight_steps_from_template(&run_id, expected_scenario_asset_count)?;
-        for step in scenario.steps.iter().skip(2) {
-            steps.push(generated_step(
-                scenario,
-                step,
-                &run_id,
-                launch_timeout,
-                expected_scenario_asset_count,
-            ));
-        }
+        let mut steps = preflight_steps_from_template(&run_id, expected_scenario_asset_count)?;
+        steps.extend(remaining_steps(2));
         steps
     } else {
-        scenario
-            .steps
-            .iter()
-            .map(|step| {
-                generated_step(
-                    scenario,
-                    step,
-                    &run_id,
-                    launch_timeout,
-                    expected_scenario_asset_count,
-                )
-            })
-            .collect::<Vec<_>>()
+        remaining_steps(0).collect()
     };
     let assertions = scenario
         .steps
