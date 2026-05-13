@@ -96,7 +96,7 @@ fn grade_committed_assets_all_ready_path() {
 fn grading_report_json_round_trips_cleanly() {
     let input = GradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
     };
