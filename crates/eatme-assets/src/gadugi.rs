@@ -181,7 +181,13 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     // use: alice-preflight — shared preflight steps from step-block template
     let remaining_steps = |skip: usize| {
         scenario.steps.iter().skip(skip).map(|step| {
-            generated_step(scenario, step, &run_id, launch_timeout, expected_scenario_asset_count)
+            generated_step(
+                scenario,
+                step,
+                &run_id,
+                launch_timeout,
+                expected_scenario_asset_count,
+            )
         })
     };
     let steps = if has_preflight_steps(scenario) {
@@ -312,12 +318,10 @@ fn preflight_steps_from_template(
     run_id: &str,
     expected_scenario_asset_count: usize,
 ) -> Result<Vec<GeneratedStep>> {
-    let yaml = PREFLIGHT_STEP_BLOCK
-        .replace("{{run-id}}", run_id)
-        .replace(
-            "{{expected-scenario-asset-count}}",
-            &expected_scenario_asset_count.to_string(),
-        );
+    let yaml = PREFLIGHT_STEP_BLOCK.replace("{{run-id}}", run_id).replace(
+        "{{expected-scenario-asset-count}}",
+        &expected_scenario_asset_count.to_string(),
+    );
     serde_yaml::from_str(&yaml).context("parsing preflight step block template")
 }
 
