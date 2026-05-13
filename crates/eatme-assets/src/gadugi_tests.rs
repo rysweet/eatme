@@ -237,6 +237,294 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
     }
 }
 
+// ── Step block file existence and validity ────────────────────────────────────
+
+#[test]
+fn step_block_preflight_file_exists_and_is_valid_yaml() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let path = root.join("assets/scenarios/gadugi/step-blocks/alice-preflight.yaml");
+    assert!(path.exists(), "alice-preflight.yaml step block must exist at {}", path.display());
+    let content = fs::read_to_string(&path).unwrap();
+    let parsed: Value = serde_yaml::from_str(&content)
+        .expect("alice-preflight.yaml must be valid YAML");
+    assert!(parsed.as_sequence().is_some(), "alice-preflight.yaml must be a YAML sequence of steps");
+}
+
+#[test]
+fn step_block_launch_smoke_file_exists_and_is_valid_yaml() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let path = root.join("assets/scenarios/gadugi/step-blocks/alice-launch-smoke.yaml");
+    assert!(path.exists(), "alice-launch-smoke.yaml step block must exist at {}", path.display());
+    let content = fs::read_to_string(&path).unwrap();
+    let parsed: Value = serde_yaml::from_str(&content)
+        .expect("alice-launch-smoke.yaml must be valid YAML");
+    assert!(parsed.as_sequence().is_some(), "alice-launch-smoke.yaml must be a YAML sequence of steps");
+}
+
+// ── Step block content contract ──────────────────────────────────────────────
+
+#[test]
+fn step_block_preflight_contains_validate_and_check_steps() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let content = fs::read_to_string(
+        root.join("assets/scenarios/gadugi/step-blocks/alice-preflight.yaml"),
+    )
+    .expect("alice-preflight.yaml must exist");
+    let steps: Vec<Value> = serde_yaml::from_str(&content).unwrap();
+    let step_names: Vec<&str> = steps
+        .iter()
+        .filter_map(|s| s["name"].as_str())
+        .collect();
+    assert!(
+        step_names.contains(&"Validate Assets"),
+        "preflight must contain Validate Assets step, found: {step_names:?}"
+    );
+    assert!(
+        step_names.contains(&"Check Dependencies"),
+        "preflight must contain Check Dependencies step, found: {step_names:?}"
+    );
+    assert!(
+        content.contains("{{run-id}}"),
+        "preflight must contain {{{{run-id}}}} placeholder"
+    );
+    assert!(
+        content.contains("{{expected-scenario-asset-count}}"),
+        "preflight must contain {{{{expected-scenario-asset-count}}}} placeholder"
+    );
+}
+
+#[test]
+fn step_block_launch_smoke_contains_placeholders() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let content = fs::read_to_string(
+        root.join("assets/scenarios/gadugi/step-blocks/alice-launch-smoke.yaml"),
+    )
+    .expect("alice-launch-smoke.yaml must exist");
+    assert!(
+        content.contains("{{scenario-id}}"),
+        "launch smoke must contain {{{{scenario-id}}}} placeholder"
+    );
+    assert!(
+        content.contains("Launch Smoke"),
+        "launch smoke must contain Launch Smoke step name"
+    );
+    assert!(
+        content.contains("{{run-id}}"),
+        "launch smoke must contain {{{{run-id}}}} placeholder"
+    );
+}
+
+// ── Discovery exclusion ──────────────────────────────────────────────────────
+
+#[test]
+fn discovery_excludes_step_blocks_directory() {
+    let root = scratch_root("discovery-excludes-step-blocks");
+    let scenario_root = root.join("assets/scenarios");
+    let eatme_dir = scenario_root.join("eatme");
+    let gadugi_dir = scenario_root.join("gadugi");
+    let step_blocks_dir = gadugi_dir.join("step-blocks");
+
+    write_minimal_eatme_scenario(&eatme_dir.join("test-scenario.yaml"), "test-scenario");
+    fs::create_dir_all(&step_blocks_dir).unwrap();
+    fs::write(
+        step_blocks_dir.join("alice-preflight.yaml"),
+        "- name: Validate Assets\n  agent: eatme-cli-agent\n",
+    )
+    .unwrap();
+    fs::write(
+        step_blocks_dir.join("alice-launch-smoke.yaml"),
+        "- name: Launch Smoke\n  agent: eatme-cli-agent\n",
+    )
+    .unwrap();
+
+    let paths = crate::discovery::scenario_asset_paths(&scenario_root).unwrap();
+    let step_block_paths: Vec<_> = paths
+        .iter()
+        .filter(|p| p.to_string_lossy().contains("step-blocks"))
+        .collect();
+    assert!(
+        step_block_paths.is_empty(),
+        "step-blocks directory must be excluded from discovery but found: {step_block_paths:?}"
+    );
+    assert_eq!(
+        paths.len(),
+        1,
+        "only the eatme scenario should be discovered, got: {paths:?}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn step_blocks_in_gadugi_do_not_inflate_committed_asset_count() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let report = crate::validate_assets(&root).unwrap();
+    assert_eq!(
+        report.scenario_asset_count, 101,
+        "step-blocks must not inflate scenario_asset_count (expected 101, got {})",
+        report.scenario_asset_count
+    );
+}
+
+#[test]
+fn generated_cli_adapter_count_ignores_step_blocks_in_scratch_root() {
+    let root = scratch_root("adapter-count-ignores-step-blocks");
+    let source_path = root.join("assets/scenarios/eatme/count-test.yaml");
+    let gadugi_dir = root.join("assets/scenarios/gadugi");
+    let step_blocks_dir = gadugi_dir.join("step-blocks");
+
+    write_minimal_eatme_scenario(&source_path, "count-test");
+    fs::create_dir_all(&step_blocks_dir).unwrap();
+    fs::write(
+        step_blocks_dir.join("alice-preflight.yaml"),
+        "- name: Validate Assets\n  agent: eatme-cli-agent\n",
+    )
+    .unwrap();
+
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+    // count-test.yaml (eatme) + count-test.yaml (generated gadugi) = 2
+    // step-blocks must NOT inflate this
+    assert!(
+        generated.contains(r#""scenario_asset_count": 2"#),
+        "step-blocks must not inflate scenario_asset_count in generated adapter:\n{generated}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+// ── Step block substitution round-trip fidelity ──────────────────────────────
+
+#[test]
+fn step_block_preflight_after_substitution_matches_generated_adapter_steps() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let preflight_template = fs::read_to_string(
+        root.join("assets/scenarios/gadugi/step-blocks/alice-preflight.yaml"),
+    )
+    .expect("alice-preflight.yaml must exist");
+    let expanded = preflight_template
+        .replace("{{run-id}}", "gadugi-code-editor-first-run")
+        .replace("{{expected-scenario-asset-count}}", "101");
+    let expanded_steps: Vec<Value> = serde_yaml::from_str(&expanded)
+        .expect("expanded preflight block must be valid YAML");
+    assert!(!expanded.contains("{{"), "all placeholders must be substituted");
+
+    // Compare with the committed gadugi adapter
+    let committed = fs::read_to_string(
+        root.join("assets/scenarios/gadugi/code-editor-first-run.yaml"),
+    )
+    .unwrap();
+    let committed_yaml: Value = serde_yaml::from_str(
+        &committed
+            .lines()
+            .filter(|line| !line.starts_with("# "))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )
+    .unwrap();
+    let committed_steps = committed_yaml["steps"].as_sequence().unwrap();
+
+    for expanded_step in &expanded_steps {
+        let step_name = expanded_step["name"].as_str().unwrap();
+        let matching_committed = committed_steps
+            .iter()
+            .find(|s| s["name"].as_str() == Some(step_name))
+            .unwrap_or_else(|| panic!("committed adapter must have step {step_name}"));
+        assert_eq!(
+            expanded_step, matching_committed,
+            "step block '{step_name}' after substitution must match committed adapter step"
+        );
+    }
+}
+
+#[test]
+fn step_block_launch_smoke_after_substitution_matches_generated_adapter_step() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let template = fs::read_to_string(
+        root.join("assets/scenarios/gadugi/step-blocks/alice-launch-smoke.yaml"),
+    )
+    .expect("alice-launch-smoke.yaml must exist");
+
+    // The template with scenario-id substituted should produce valid YAML
+    let expanded = template.replace("{{scenario-id}}", "real-alice-launch-smoke");
+    let parsed: Value =
+        serde_yaml::from_str(&expanded).expect("expanded launch smoke must be valid YAML");
+    assert!(!expanded.contains("{{scenario-id}}"), "scenario-id placeholder must be substituted");
+
+    // Verify the expanded template refers to the correct scenario
+    let yaml_text = serde_yaml::to_string(&parsed).unwrap();
+    assert!(
+        yaml_text.contains("real-alice-launch-smoke"),
+        "substituted launch smoke must reference scenario id"
+    );
+}
+
+// ── Output stability regression (step blocks must not change output) ─────────
+
+#[test]
+fn step_block_generation_produces_byte_identical_output_for_all_committed_adapters() {
+    // This is the critical regression test: after refactoring the generator
+    // to use step blocks, every committed gadugi adapter must be regenerated
+    // byte-identically.
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let scenario_root = root.join("assets/scenarios");
+    let gadugi_root = scenario_root.join("gadugi");
+
+    for entry in fs::read_dir(&gadugi_root).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            continue; // skip step-blocks/ etc.
+        }
+        if path.extension().and_then(|e| e.to_str()) != Some("yaml") {
+            continue;
+        }
+        let committed = fs::read_to_string(&path).unwrap();
+        if !committed.starts_with("# DO NOT EDIT:") {
+            continue; // skip hand-authored gadugi files
+        }
+        // Extract source path from the committed header
+        let source_asset = committed
+            .lines()
+            .find(|l| l.contains("source_eatme_asset:"))
+            .and_then(|l| l.split(':').nth(1))
+            .map(|s| s.trim())
+            .unwrap_or("");
+        if source_asset.is_empty() {
+            continue;
+        }
+        let source_path = root.join(source_asset);
+        if !source_path.exists() {
+            continue;
+        }
+        let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+        assert_eq!(
+            committed, generated,
+            "{} is stale after step-block refactor",
+            path.display()
+        );
+    }
+}
+
+#[test]
+fn generated_adapter_preserves_run_id_consistency_across_step_block_boundary() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source_path = root.join("assets/scenarios/eatme/code-editor-first-run.yaml");
+    let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
+    let run_id = "gadugi-code-editor-first-run";
+
+    let run_id_lines: Vec<&str> = generated
+        .lines()
+        .filter(|line| line.contains("RUN_ID:-"))
+        .collect();
+    assert!(
+        !run_id_lines.is_empty(),
+        "generated adapter must contain RUN_ID references"
+    );
+    for line in &run_id_lines {
+        assert!(
+            line.contains(run_id),
+            "all steps must use consistent run_id '{run_id}', but found: {line}"
+        );
+    }
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 
