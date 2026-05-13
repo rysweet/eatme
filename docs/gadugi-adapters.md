@@ -106,6 +106,28 @@ Readiness consumers should inspect the normalized `status`,
 `lesson_session_readiness`, and `no_go_contracts` fields documented in
 [Lesson Session Readiness](lesson-session-readiness.md).
 
+## Step block composition
+
+Generated adapters share common preflight steps (Validate Assets, Check
+Dependencies, and optionally Discover Alice). These steps are defined once in
+YAML templates under `assets/scenarios/gadugi/step-blocks/` and embedded at
+compile time by the generator. The generated output is self-contained and
+byte-identical to direct inlining.
+
+| Step block file | Steps included |
+| --- | --- |
+| `preflight-steps.yaml` | Validate Assets, Check Dependencies |
+| `preflight-alice-steps.yaml` | Validate Assets, Check Dependencies, Discover Alice |
+
+Step blocks use `{{placeholder}}` syntax for scenario-specific values like
+`{{run-id}}` and `{{expected-scenario-asset-count}}`. The generator substitutes
+these before emitting the adapter YAML.
+
+Step block files are excluded from scenario asset discovery and do not affect
+`scenario_asset_count`. See [Step Block Composition](step-block-composition.md)
+for the full reference, placeholder table, and tutorial for adding new shared
+steps.
+
 ## Editing policy
 
 Do not hand-edit generated Gadugi adapters to change mission intent. If a prompt,

@@ -13,6 +13,7 @@ nav:
   - CLI Usage: cli-usage.md
   - Scenario Authoring: scenario-authoring.md
   - Gadugi Adapters: gadugi-adapters.md
+  - Step Block Composition: step-block-composition.md
   - Generated Asset Consistency: generated-asset-consistency.md
   - Validation and Quality Gates: validation-quality-gates.md
   - Outside-in Alice Test Modules: outside-in-alice-test-modules.md

@@ -47,7 +47,10 @@ assets/scenarios/
 
 Discovery is recursive and deterministic. The count includes every scenario
 asset validated by eatme: canonical eatme scenarios, generated Gadugi adapters,
-and any hand-authored Gadugi regression scenarios.
+and any hand-authored Gadugi regression scenarios. Directories named
+`step-blocks` are excluded from discovery — step block templates are generator
+inputs, not scenario assets, and do not contribute to `scenario_asset_count`.
+See [Step Block Composition](step-block-composition.md) for details.
 
 The current committed inventory has 93 scenario YAML files:
 

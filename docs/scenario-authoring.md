@@ -105,6 +105,23 @@ unsupported_policy: >-
   rather than substituting a mocked runtime.
 ```
 
+## Step blocks
+
+Common preflight steps (Validate Assets, Check Dependencies, and optionally
+Discover Alice) are defined as shared YAML templates in
+`assets/scenarios/gadugi/step-blocks/`. The gadugi adapter generator embeds
+these at compile time and substitutes `{{placeholder}}` values per scenario.
+
+Scenario authors do not need to interact with step blocks directly. When you
+add or edit a canonical eatme scenario, the generator automatically selects the
+correct step block based on the scenario's steps. If the scenario includes a
+`discover-alice` step, the generator uses `preflight-alice-steps.yaml`;
+otherwise it uses `preflight-steps.yaml`.
+
+To add a new shared step that should appear in all generated adapters, edit the
+step block YAML and regenerate. See
+[Step Block Composition](step-block-composition.md) for details.
+
 ## Validation workflow
 
 Validate all assets:
