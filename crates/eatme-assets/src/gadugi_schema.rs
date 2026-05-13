@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Serialize)]
@@ -50,7 +50,7 @@ pub(super) struct GeneratedAgentConfig {
     pub(super) scenario_asset: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub(super) struct GeneratedStep {
     pub(super) name: String,
     pub(super) agent: String,
@@ -60,13 +60,13 @@ pub(super) struct GeneratedStep {
     pub(super) timeout: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub(super) struct GeneratedExpect {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub(super) exit_code: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub(super) stdout_contains: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub(super) output_contains: Option<Vec<String>>,
 }
 

@@ -1,0 +1,15 @@
+- name: Launch Smoke
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-{{run-id}}}"
+      cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario {{scenario-id}}
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - '"scenario_id": "{{scenario-id}}"'
+    - '"failure_category": null'
+    - '"real_alice_execution_evidence": {'
+  timeout: 900000

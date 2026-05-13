@@ -340,7 +340,7 @@ fn discovery_excludes_step_blocks_directory() {
     let paths = crate::discovery::scenario_asset_paths(&scenario_root).unwrap();
     let step_block_paths: Vec<_> = paths
         .iter()
-        .filter(|p| p.to_string_lossy().contains("step-blocks"))
+        .filter(|p| p.components().any(|c| c.as_os_str() == "step-blocks"))
         .collect();
     assert!(
         step_block_paths.is_empty(),

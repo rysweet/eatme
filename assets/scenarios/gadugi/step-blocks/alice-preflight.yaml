@@ -1,0 +1,27 @@
+- name: Validate Assets
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-{{run-id}}}"
+      cargo run -q -p eatme-cli -- assets validate --json
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - '"passed": true'
+    - '"scenario_asset_count": {{expected-scenario-asset-count}}'
+  timeout: 60000
+- name: Check Dependencies
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-{{run-id}}}"
+      cargo run -q -p eatme-cli -- deps check --json
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - '"all_required_available": true'
+  timeout: 60000
