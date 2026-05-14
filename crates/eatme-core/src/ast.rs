@@ -63,6 +63,15 @@ pub enum Statement {
         function: String,
         arguments: Vec<String>,
     },
+    VariableDeclaration {
+        name: String,
+        var_type: String,
+        initial_value: String,
+    },
+    VariableAssignment {
+        name: String,
+        value: String,
+    },
 }
 
 #[cfg(test)]

@@ -30,6 +30,7 @@ pub(crate) mod grading_report_functions;
 mod grading_report_integration_tests;
 #[cfg(test)]
 mod grading_report_module_split_contract_tests;
+pub(crate) mod grading_report_variables;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
@@ -63,6 +64,7 @@ pub use grading_report::{
 };
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
 pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
+pub use grading_report_variables::{VariablesGradingInput, grade_variables};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };
