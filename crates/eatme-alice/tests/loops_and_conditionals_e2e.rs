@@ -9,34 +9,32 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // --- Shared fixtures ---
 
 fn complete_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::CountLoop {
-                    count: 3,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec!["FORWARD".into(), "1.0".into()],
-                    }],
-                },
-                Statement::IfElse {
-                    condition: "this.cat isCloseTo this.dog".into(),
-                    if_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello!\"".into()],
-                    }],
-                    else_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "think".into(),
-                        arguments: vec!["\"Hmm...\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        body: vec![
+            Statement::CountLoop {
+                count: 3,
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "walk".into(),
+                    arguments: vec!["FORWARD".into(), "1.0".into()],
+                }],
+            },
+            Statement::IfElse {
+                condition: "this.cat isCloseTo this.dog".into(),
+                if_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Hello!\"".into()],
+                }],
+                else_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "think".into(),
+                    arguments: vec!["\"Hmm...\"".into()],
+                }],
+            },
+        ],
+    }])
 }
 
 fn all_ready_input(program: Option<Program>) -> LoopsGradingInput {
@@ -132,16 +130,14 @@ fn loops_grading_blocked_without_program() {
 
 #[test]
 fn loops_grading_missing_loop_blocks_downstream() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "conditionalOnly".into(),
-            body: vec![Statement::IfElse {
-                condition: "this.cat isCloseTo this.dog".into(),
-                if_body: vec![],
-                else_body: vec![],
-            }],
+    let program = Program::new(vec![Procedure {
+        name: "conditionalOnly".into(),
+        body: vec![Statement::IfElse {
+            condition: "this.cat isCloseTo this.dog".into(),
+            if_body: vec![],
+            else_body: vec![],
         }],
-    };
+    }]);
     let report = grade_loops_and_conditionals(all_ready_input(Some(program)));
 
     // build-counting-loop: no CountLoop → blocked
@@ -164,19 +160,17 @@ fn loops_grading_missing_loop_blocks_downstream() {
 
 #[test]
 fn loops_grading_missing_conditional_blocks_downstream() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "loopOnly".into(),
-            body: vec![Statement::CountLoop {
-                count: 5,
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "walk".into(),
-                    arguments: vec!["FORWARD".into()],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "loopOnly".into(),
+        body: vec![Statement::CountLoop {
+            count: 5,
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into()],
             }],
         }],
-    };
+    }]);
     let report = grade_loops_and_conditionals(all_ready_input(Some(program)));
 
     // build-counting-loop found CountLoop → ready
