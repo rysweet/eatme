@@ -14,53 +14,18 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // ── Fixtures ──────────────────────────────────────────────────
 
 fn complete_events_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello world!\"".into()],
-                    }],
-                },
-                Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Ouch!\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
-}
-
-fn event_only_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "eventOnly".into(),
-            body: vec![Statement::EventListener {
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        body: vec![
+            Statement::EventListener {
                 event: "SceneActivated".into(),
                 body: vec![Statement::MethodCall {
                     object: "this.cat".into(),
                     method: "say".into(),
-                    arguments: vec!["\"Hello!\"".into()],
+                    arguments: vec!["\"Hello world!\"".into()],
                 }],
-            }],
-        }],
-    }
-}
-
-fn collision_only_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "collisionOnly".into(),
-            body: vec![Statement::CollisionListener {
+            },
+            Statement::CollisionListener {
                 object_a: "this.cat".into(),
                 object_b: "this.dog".into(),
                 body: vec![Statement::MethodCall {
@@ -68,9 +33,38 @@ fn collision_only_program() -> Program {
                     method: "say".into(),
                     arguments: vec!["\"Ouch!\"".into()],
                 }],
+            },
+        ],
+    }])
+}
+
+fn event_only_program() -> Program {
+    Program::new(vec![Procedure {
+        name: "eventOnly".into(),
+        body: vec![Statement::EventListener {
+            event: "SceneActivated".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Hello!\"".into()],
             }],
         }],
-    }
+    }])
+}
+
+fn collision_only_program() -> Program {
+    Program::new(vec![Procedure {
+        name: "collisionOnly".into(),
+        body: vec![Statement::CollisionListener {
+            object_a: "this.cat".into(),
+            object_b: "this.dog".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Ouch!\"".into()],
+            }],
+        }],
+    }])
 }
 
 fn all_ready_input(program: Option<Program>) -> EventsGradingInput {
@@ -220,19 +214,17 @@ fn both_blocked_launch_smoke_mentions_both_blockers() {
 
 #[test]
 fn nested_event_inside_collision_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nested".into(),
-            body: vec![Statement::CollisionListener {
-                object_a: "this.cat".into(),
-                object_b: "this.dog".into(),
-                body: vec![Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "nested".into(),
+        body: vec![Statement::CollisionListener {
+            object_a: "this.cat".into(),
+            object_b: "this.dog".into(),
+            body: vec![Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -248,19 +240,17 @@ fn nested_event_inside_collision_detected() {
 
 #[test]
 fn nested_collision_inside_event_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nested".into(),
-            body: vec![Statement::EventListener {
-                event: "SceneActivated".into(),
-                body: vec![Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "nested".into(),
+        body: vec![Statement::EventListener {
+            event: "SceneActivated".into(),
+            body: vec![Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -276,7 +266,7 @@ fn nested_collision_inside_event_detected() {
 
 #[test]
 fn empty_program_blocks_all_ast_steps() {
-    let program = Program { procedures: vec![] };
+    let program = Program::new(vec![]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -294,25 +284,23 @@ fn empty_program_blocks_all_ast_steps() {
 
 #[test]
 fn constructs_found_across_multiple_procedures() {
-    let program = Program {
-        procedures: vec![
-            Procedure {
-                name: "proc1".into(),
-                body: vec![Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![],
-                }],
-            },
-            Procedure {
-                name: "proc2".into(),
-                body: vec![Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![],
-                }],
-            },
-        ],
-    };
+    let program = Program::new(vec![
+        Procedure {
+            name: "proc1".into(),
+            body: vec![Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![],
+            }],
+        },
+        Procedure {
+            name: "proc2".into(),
+            body: vec![Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![],
+            }],
+        },
+    ]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -328,25 +316,23 @@ fn constructs_found_across_multiple_procedures() {
 
 #[test]
 fn event_listener_inside_count_loop_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "looped".into(),
-            body: vec![Statement::CountLoop {
-                count: 5,
-                body: vec![
-                    Statement::EventListener {
-                        event: "SceneActivated".into(),
-                        body: vec![],
-                    },
-                    Statement::CollisionListener {
-                        object_a: "this.cat".into(),
-                        object_b: "this.dog".into(),
-                        body: vec![],
-                    },
-                ],
-            }],
+    let program = Program::new(vec![Procedure {
+        name: "looped".into(),
+        body: vec![Statement::CountLoop {
+            count: 5,
+            body: vec![
+                Statement::EventListener {
+                    event: "SceneActivated".into(),
+                    body: vec![],
+                },
+                Statement::CollisionListener {
+                    object_a: "this.cat".into(),
+                    object_b: "this.dog".into(),
+                    body: vec![],
+                },
+            ],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(report.steps[3].status, StepStatus::Ready);
     assert_eq!(report.steps[4].status, StepStatus::Ready);
@@ -354,23 +340,21 @@ fn event_listener_inside_count_loop_detected() {
 
 #[test]
 fn event_listener_inside_if_else_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "conditional".into(),
-            body: vec![Statement::IfElse {
-                condition: "true".into(),
-                if_body: vec![Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![],
-                }],
-                else_body: vec![Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "conditional".into(),
+        body: vec![Statement::IfElse {
+            condition: "true".into(),
+            if_body: vec![Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![],
+            }],
+            else_body: vec![Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,

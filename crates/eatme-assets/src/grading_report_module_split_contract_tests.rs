@@ -46,23 +46,21 @@ fn grade_all_three(
 }
 
 fn method_call_only_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myMethod".into(),
-            body: vec![
-                Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "say".into(),
-                    arguments: vec!["\"Hello!\"".into()],
-                },
-                Statement::MethodCall {
-                    object: "this.dog".into(),
-                    method: "walk".into(),
-                    arguments: vec!["FORWARD".into(), "2.0".into()],
-                },
-            ],
-        }],
-    }
+    Program::new(vec![Procedure {
+        name: "myMethod".into(),
+        body: vec![
+            Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Hello!\"".into()],
+            },
+            Statement::MethodCall {
+                object: "this.dog".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into(), "2.0".into()],
+            },
+        ],
+    }])
 }
 
 // ── Re-export path verification ───────────────────────────────
@@ -228,22 +226,20 @@ fn loops_method_call_only_blocks_all_ast_steps() {
 
 #[test]
 fn events_with_loops_and_conditionals_only_blocks() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "wrongLesson".into(),
-            body: vec![
-                Statement::CountLoop {
-                    count: 3,
-                    body: vec![],
-                },
-                Statement::IfElse {
-                    condition: "true".into(),
-                    if_body: vec![],
-                    else_body: vec![],
-                },
-            ],
-        }],
-    };
+    let program = Program::new(vec![Procedure {
+        name: "wrongLesson".into(),
+        body: vec![
+            Statement::CountLoop {
+                count: 3,
+                body: vec![],
+            },
+            Statement::IfElse {
+                condition: "true".into(),
+                if_body: vec![],
+                else_body: vec![],
+            },
+        ],
+    }]);
     let report = grade_events_and_collision(EventsGradingInput {
         assets_valid: true,
         asset_reason: "ok".into(),
@@ -265,22 +261,20 @@ fn events_with_loops_and_conditionals_only_blocks() {
 
 #[test]
 fn loops_with_listeners_only_blocks() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "wrongLesson".into(),
-            body: vec![
-                Statement::EventListener {
-                    event: "X".into(),
-                    body: vec![],
-                },
-                Statement::CollisionListener {
-                    object_a: "a".into(),
-                    object_b: "b".into(),
-                    body: vec![],
-                },
-            ],
-        }],
-    };
+    let program = Program::new(vec![Procedure {
+        name: "wrongLesson".into(),
+        body: vec![
+            Statement::EventListener {
+                event: "X".into(),
+                body: vec![],
+            },
+            Statement::CollisionListener {
+                object_a: "a".into(),
+                object_b: "b".into(),
+                body: vec![],
+            },
+        ],
+    }]);
     let report = grade_loops_and_conditionals(LoopsGradingInput {
         assets_valid: true,
         asset_reason: "ok".into(),

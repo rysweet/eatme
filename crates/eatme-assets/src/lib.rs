@@ -25,6 +25,7 @@ pub(crate) mod grading_report_events;
 mod grading_report_extraction_edge_tests;
 #[cfg(test)]
 mod grading_report_extraction_tests;
+pub(crate) mod grading_report_functions;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
@@ -61,6 +62,7 @@ pub use grading_report::{
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
+pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };

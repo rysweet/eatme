@@ -9,30 +9,28 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // --- Shared fixtures ---
 
 fn complete_events_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello world!\"".into()],
-                    }],
-                },
-                Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Ouch!\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        body: vec![
+            Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Hello world!\"".into()],
+                }],
+            },
+            Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Ouch!\"".into()],
+                }],
+            },
+        ],
+    }])
 }
 
 fn all_ready_input(program: Option<Program>) -> EventsGradingInput {
@@ -128,20 +126,18 @@ fn events_grading_blocked_without_program() {
 
 #[test]
 fn events_grading_missing_event_listener_blocks_downstream() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "collisionOnly".into(),
-            body: vec![Statement::CollisionListener {
-                object_a: "this.cat".into(),
-                object_b: "this.dog".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "say".into(),
-                    arguments: vec!["\"Ouch!\"".into()],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "collisionOnly".into(),
+        body: vec![Statement::CollisionListener {
+            object_a: "this.cat".into(),
+            object_b: "this.dog".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Ouch!\"".into()],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
 
     // add-event-listener: no EventListener → blocked
@@ -164,19 +160,17 @@ fn events_grading_missing_event_listener_blocks_downstream() {
 
 #[test]
 fn events_grading_missing_collision_listener_blocks_downstream() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "eventOnly".into(),
-            body: vec![Statement::EventListener {
-                event: "SceneActivated".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "say".into(),
-                    arguments: vec!["\"Hello!\"".into()],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "eventOnly".into(),
+        body: vec![Statement::EventListener {
+            event: "SceneActivated".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Hello!\"".into()],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(all_ready_input(Some(program)));
 
     // add-event-listener found EventListener → ready
