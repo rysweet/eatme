@@ -15,3 +15,4 @@ serde_yaml.workspace = true
 [dev-dependencies]
 eatme-assets = { path = "../eatme-assets" }
 eatme-test-support = { path = "../eatme-test-support" }
+ureq = { version = "2", features = ["json"] }
