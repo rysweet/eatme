@@ -332,7 +332,9 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
             }
             Statement::MethodCall { .. }
             | Statement::ReturnStatement { .. }
-            | Statement::FunctionCall { .. } => {}
+            | Statement::FunctionCall { .. }
+            | Statement::VariableDeclaration { .. }
+            | Statement::VariableAssignment { .. } => {}
             Statement::EventListener { body, .. } => {
                 if !(*has_loop && *has_cond) {
                     stmt_find_constructs(body, has_loop, has_cond);
