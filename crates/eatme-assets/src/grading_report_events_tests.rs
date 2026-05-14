@@ -6,6 +6,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_events_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::EventListener {
                 event: "SceneActivated".into(),
@@ -31,6 +32,7 @@ fn complete_events_program() -> Program {
 fn program_with_event_only() -> Program {
     Program::new(vec![Procedure {
         name: "eventOnly".into(),
+        parameters: vec![],
         body: vec![Statement::EventListener {
             event: "SceneActivated".into(),
             body: vec![Statement::MethodCall {
@@ -45,6 +47,7 @@ fn program_with_event_only() -> Program {
 fn program_with_collision_only() -> Program {
     Program::new(vec![Procedure {
         name: "collisionOnly".into(),
+        parameters: vec![],
         body: vec![Statement::CollisionListener {
             object_a: "this.cat".into(),
             object_b: "this.dog".into(),
@@ -407,6 +410,7 @@ fn both_blocked_all_steps_blocked() {
 fn nested_event_inside_collision_listener_is_detected() {
     let program = Program::new(vec![Procedure {
         name: "eventInsideCollision".into(),
+        parameters: vec![],
         body: vec![Statement::CollisionListener {
             object_a: "this.cat".into(),
             object_b: "this.dog".into(),
@@ -433,6 +437,7 @@ fn nested_event_inside_collision_listener_is_detected() {
 fn nested_collision_inside_event_listener_is_detected() {
     let program = Program::new(vec![Procedure {
         name: "collisionInsideEvent".into(),
+        parameters: vec![],
         body: vec![Statement::EventListener {
             event: "SceneActivated".into(),
             body: vec![Statement::CollisionListener {

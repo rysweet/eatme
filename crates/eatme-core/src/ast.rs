@@ -19,7 +19,15 @@ impl Program {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Procedure {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<Parameter>,
     pub body: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Parameter {
+    pub name: String,
+    pub param_type: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

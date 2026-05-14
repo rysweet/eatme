@@ -17,6 +17,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_events_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::EventListener {
                 event: "SceneActivated".into(),

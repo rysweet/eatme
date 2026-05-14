@@ -48,6 +48,7 @@ fn grade_all_three(
 fn method_call_only_program() -> Program {
     Program::new(vec![Procedure {
         name: "myMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::MethodCall {
                 object: "this.cat".into(),
@@ -228,6 +229,7 @@ fn loops_method_call_only_blocks_all_ast_steps() {
 fn events_with_loops_and_conditionals_only_blocks() {
     let program = Program::new(vec![Procedure {
         name: "wrongLesson".into(),
+        parameters: vec![],
         body: vec![
             Statement::CountLoop {
                 count: 3,
@@ -263,6 +265,7 @@ fn events_with_loops_and_conditionals_only_blocks() {
 fn loops_with_listeners_only_blocks() {
     let program = Program::new(vec![Procedure {
         name: "wrongLesson".into(),
+        parameters: vec![],
         body: vec![
             Statement::EventListener {
                 event: "X".into(),

@@ -16,6 +16,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_events_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::EventListener {
                 event: "SceneActivated".into(),
@@ -41,6 +42,7 @@ fn complete_events_program() -> Program {
 fn event_only_program() -> Program {
     Program::new(vec![Procedure {
         name: "eventOnly".into(),
+        parameters: vec![],
         body: vec![Statement::EventListener {
             event: "SceneActivated".into(),
             body: vec![Statement::MethodCall {
@@ -55,6 +57,7 @@ fn event_only_program() -> Program {
 fn collision_only_program() -> Program {
     Program::new(vec![Procedure {
         name: "collisionOnly".into(),
+        parameters: vec![],
         body: vec![Statement::CollisionListener {
             object_a: "this.cat".into(),
             object_b: "this.dog".into(),
@@ -216,6 +219,7 @@ fn both_blocked_launch_smoke_mentions_both_blockers() {
 fn nested_event_inside_collision_detected() {
     let program = Program::new(vec![Procedure {
         name: "nested".into(),
+        parameters: vec![],
         body: vec![Statement::CollisionListener {
             object_a: "this.cat".into(),
             object_b: "this.dog".into(),
@@ -242,6 +246,7 @@ fn nested_event_inside_collision_detected() {
 fn nested_collision_inside_event_detected() {
     let program = Program::new(vec![Procedure {
         name: "nested".into(),
+        parameters: vec![],
         body: vec![Statement::EventListener {
             event: "SceneActivated".into(),
             body: vec![Statement::CollisionListener {
@@ -287,6 +292,7 @@ fn constructs_found_across_multiple_procedures() {
     let program = Program::new(vec![
         Procedure {
             name: "proc1".into(),
+            parameters: vec![],
             body: vec![Statement::EventListener {
                 event: "SceneActivated".into(),
                 body: vec![],
@@ -294,6 +300,7 @@ fn constructs_found_across_multiple_procedures() {
         },
         Procedure {
             name: "proc2".into(),
+            parameters: vec![],
             body: vec![Statement::CollisionListener {
                 object_a: "this.cat".into(),
                 object_b: "this.dog".into(),
@@ -318,6 +325,7 @@ fn constructs_found_across_multiple_procedures() {
 fn event_listener_inside_count_loop_detected() {
     let program = Program::new(vec![Procedure {
         name: "looped".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 5,
             body: vec![
@@ -342,6 +350,7 @@ fn event_listener_inside_count_loop_detected() {
 fn event_listener_inside_if_else_detected() {
     let program = Program::new(vec![Procedure {
         name: "conditional".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "true".into(),
             if_body: vec![Statement::EventListener {
