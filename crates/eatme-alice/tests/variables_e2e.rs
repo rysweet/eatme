@@ -7,6 +7,7 @@ fn complete_variables_program() -> Program {
     Program {
         procedures: vec![Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: vec![
                 Statement::VariableDeclaration {
                     name: "speed".into(),
@@ -61,6 +62,7 @@ fn variables_grading_missing_assignment_blocks() {
     let program = Program {
         procedures: vec![Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: vec![
                 Statement::VariableDeclaration {
                     name: "speed".into(),

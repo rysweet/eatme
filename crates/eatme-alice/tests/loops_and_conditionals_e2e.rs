@@ -11,6 +11,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::CountLoop {
                 count: 3,
@@ -132,6 +133,7 @@ fn loops_grading_blocked_without_program() {
 fn loops_grading_missing_loop_blocks_downstream() {
     let program = Program::new(vec![Procedure {
         name: "conditionalOnly".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "this.cat isCloseTo this.dog".into(),
             if_body: vec![],
@@ -162,6 +164,7 @@ fn loops_grading_missing_loop_blocks_downstream() {
 fn loops_grading_missing_conditional_blocks_downstream() {
     let program = Program::new(vec![Procedure {
         name: "loopOnly".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 5,
             body: vec![Statement::MethodCall {

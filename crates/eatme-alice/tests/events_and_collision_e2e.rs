@@ -11,6 +11,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_events_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::EventListener {
                 event: "SceneActivated".into(),
@@ -128,6 +129,7 @@ fn events_grading_blocked_without_program() {
 fn events_grading_missing_event_listener_blocks_downstream() {
     let program = Program::new(vec![Procedure {
         name: "collisionOnly".into(),
+        parameters: vec![],
         body: vec![Statement::CollisionListener {
             object_a: "this.cat".into(),
             object_b: "this.dog".into(),
@@ -162,6 +164,7 @@ fn events_grading_missing_event_listener_blocks_downstream() {
 fn events_grading_missing_collision_listener_blocks_downstream() {
     let program = Program::new(vec![Procedure {
         name: "eventOnly".into(),
+        parameters: vec![],
         body: vec![Statement::EventListener {
             event: "SceneActivated".into(),
             body: vec![Statement::MethodCall {

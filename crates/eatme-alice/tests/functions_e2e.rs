@@ -10,6 +10,7 @@ fn complete_functions_program() -> Program {
     Program {
         procedures: vec![Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: vec![Statement::FunctionCall {
                 object: "this".into(),
                 function: "computeDistance".into(),
@@ -52,6 +53,7 @@ fn program_with_function_no_call() -> Program {
     Program {
         procedures: vec![Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: vec![Statement::MethodCall {
                 object: "this.cat".into(),
                 method: "say".into(),

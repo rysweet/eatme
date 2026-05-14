@@ -6,6 +6,7 @@ use eatme_core::ast::{Procedure, Program, Statement};
 fn complete_program() -> Program {
     Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::CountLoop {
                 count: 3,
@@ -35,6 +36,7 @@ fn complete_program() -> Program {
 fn program_with_loop_only() -> Program {
     Program::new(vec![Procedure {
         name: "loopOnly".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 5,
             body: vec![Statement::MethodCall {
@@ -49,6 +51,7 @@ fn program_with_loop_only() -> Program {
 fn program_with_conditional_only() -> Program {
     Program::new(vec![Procedure {
         name: "conditionalOnly".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "this.cat isCloseTo this.dog".into(),
             if_body: vec![],
@@ -417,6 +420,7 @@ fn both_blocked_all_steps_blocked() {
 fn nested_count_loop_inside_if_else_is_detected() {
     let program = Program::new(vec![Procedure {
         name: "nestedLoop".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "true".into(),
             if_body: vec![Statement::CountLoop {
@@ -442,6 +446,7 @@ fn nested_count_loop_inside_if_else_is_detected() {
 fn nested_if_else_inside_count_loop_is_detected() {
     let program = Program::new(vec![Procedure {
         name: "nestedConditional".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 3,
             body: vec![Statement::IfElse {

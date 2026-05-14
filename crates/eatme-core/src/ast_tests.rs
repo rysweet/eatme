@@ -6,6 +6,7 @@ use super::*;
 fn program_with_all_variants_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "myFirstMethod".into(),
+        parameters: vec![],
         body: vec![
             Statement::MethodCall {
                 object: "this.cat".into(),
@@ -69,6 +70,7 @@ fn empty_program_round_trips() {
 fn empty_procedure_body_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "emptyMethod".into(),
+        parameters: vec![],
         body: vec![],
     }]);
     let json = serde_json::to_string(&program).unwrap();
@@ -81,6 +83,7 @@ fn multiple_procedures_round_trip() {
     let program = Program::new(vec![
         Procedure {
             name: "methodOne".into(),
+            parameters: vec![],
             body: vec![Statement::MethodCall {
                 object: "this.cat".into(),
                 method: "walk".into(),
@@ -89,6 +92,7 @@ fn multiple_procedures_round_trip() {
         },
         Procedure {
             name: "methodTwo".into(),
+            parameters: vec![],
             body: vec![Statement::MethodCall {
                 object: "this.dog".into(),
                 method: "run".into(),
@@ -107,6 +111,7 @@ fn multiple_procedures_round_trip() {
 fn count_loop_containing_method_call_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "loopMethod".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 5,
             body: vec![Statement::MethodCall {
@@ -125,6 +130,7 @@ fn count_loop_containing_method_call_round_trips() {
 fn if_else_containing_count_loop_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "nestedMethod".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "this.cat isCloseTo this.dog".into(),
             if_body: vec![Statement::CountLoop {
@@ -147,6 +153,7 @@ fn if_else_containing_count_loop_round_trips() {
 fn deeply_nested_three_levels_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "deepMethod".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 2,
             body: vec![Statement::IfElse {
@@ -360,6 +367,7 @@ fn collision_listener_with_empty_body_round_trips() {
 fn event_listener_nested_in_count_loop_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "nestedEvent".into(),
+        parameters: vec![],
         body: vec![Statement::CountLoop {
             count: 2,
             body: vec![Statement::EventListener {
@@ -381,6 +389,7 @@ fn event_listener_nested_in_count_loop_round_trips() {
 fn collision_listener_nested_in_if_else_round_trips() {
     let program = Program::new(vec![Procedure {
         name: "nestedCollision".into(),
+        parameters: vec![],
         body: vec![Statement::IfElse {
             condition: "true".into(),
             if_body: vec![Statement::CollisionListener {
