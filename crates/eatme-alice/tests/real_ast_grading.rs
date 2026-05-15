@@ -601,12 +601,12 @@ fn parse_a3p_parses_in_memory_zip_with_xml_and_binary_entries() {
     let finished = zip_writer.finish().expect("finish zip");
     let bytes = finished.into_inner();
 
-    // Write to a temp file and parse
-    let tmp = std::env::temp_dir().join("test_parse_a3p_mixed_entries.a3p");
+    // Write to a unique temp file (avoid predictable names in shared /tmp)
+    let tmp = std::env::temp_dir().join(format!("test_parse_a3p_{}.a3p", std::process::id()));
     std::fs::write(&tmp, &bytes).expect("write temp zip");
 
     let program = parse_a3p_program(&tmp);
-    std::fs::remove_file(&tmp).ok();
+    let _ = std::fs::remove_file(&tmp);
 
     let program = program.expect("should parse ZIP despite binary entries");
     assert!(!program.procedures.is_empty());
