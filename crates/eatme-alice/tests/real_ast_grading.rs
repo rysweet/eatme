@@ -22,11 +22,55 @@
 use std::env;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_assets::{EventsGradingInput, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
 use regex::Regex;
+
+// ---------------------------------------------------------------------------
+// Compiled regex cache — each pattern compiled once across all test runs
+// ---------------------------------------------------------------------------
+
+fn re_user_method_type_first() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"UserMethod"[^>]*name\s*=\s*"([^"]+)""#).unwrap())
+}
+
+fn re_user_method_name_first() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"UserMethod""#).unwrap())
+}
+
+fn re_method_invocation() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r#"type\s*=\s*"MethodInvocation"[^>]*method\s*=\s*"([^"]*)"#).unwrap()
+    })
+}
+
+fn re_conditional() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap())
+}
+
+fn re_count_loop() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CountLoop""#).unwrap())
+}
+
+fn re_event_listener() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r#"type\s*=\s*"AddEventListener"[^>]*event\s*=\s*"([^"]*)"#).unwrap()
+    })
+}
+
+fn re_collision_listener() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CollisionStart(?:Event)?Listener""#).unwrap())
+}
 
 // ---------------------------------------------------------------------------
 // Environment helpers (matching launch_smoke_real.rs pattern)
@@ -69,7 +113,8 @@ fn parse_a3p_program(path: &Path) -> Option<Program> {
     let file = std::fs::File::open(path).ok()?;
     let mut archive = zip::ZipArchive::new(file).ok()?;
 
-    let mut all_xml = String::new();
+    let mut all_xml = String::with_capacity(128 * 1024);
+    let mut content_buf = String::new();
     for i in 0..archive.len() {
         // Skip entries that can't be read (e.g., corrupt binary assets) rather
         // than aborting the entire parse — we only need the XML content.
@@ -78,9 +123,9 @@ fn parse_a3p_program(path: &Path) -> Option<Program> {
         };
         let name = entry.name().to_string();
         if name.ends_with(".xml") {
-            let mut content = String::new();
-            if entry.read_to_string(&mut content).is_ok() {
-                all_xml.push_str(&content);
+            content_buf.clear();
+            if entry.read_to_string(&mut content_buf).is_ok() {
+                all_xml.push_str(&content_buf);
                 all_xml.push('\n');
             }
         }
@@ -99,12 +144,7 @@ fn extract_procedures(xml: &str) -> Vec<Procedure> {
     let mut procedures = Vec::new();
     let mut seen_names = std::collections::HashSet::new();
 
-    // Match UserMethod: handles both attribute orderings (type-first is
-    // more common in Alice XML, so check it first to preserve document order)
-    for re in &[
-        Regex::new(r#"type\s*=\s*"UserMethod"[^>]*name\s*=\s*"([^"]+)""#).unwrap(),
-        Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"UserMethod""#).unwrap(),
-    ] {
+    for re in [re_user_method_type_first(), re_user_method_name_first()] {
         for cap in re.captures_iter(xml) {
             let name = cap[1].to_string();
             if seen_names.insert(name.clone()) {
@@ -136,8 +176,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     let mut stmts = Vec::new();
 
     // MethodInvocation → MethodCall
-    let mc_re = Regex::new(r#"type\s*=\s*"MethodInvocation"[^>]*method\s*=\s*"([^"]*)"#).unwrap();
-    for cap in mc_re.captures_iter(xml) {
+    for cap in re_method_invocation().captures_iter(xml) {
         stmts.push(Statement::MethodCall {
             object: "this".into(),
             method: cap[1].to_string(),
@@ -146,8 +185,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     }
 
     // ConditionalStatement → IfElse
-    let cond_re = Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap();
-    for _ in cond_re.find_iter(xml) {
+    for _ in re_conditional().find_iter(xml) {
         stmts.push(Statement::IfElse {
             condition: String::new(),
             if_body: vec![],
@@ -156,8 +194,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     }
 
     // CountLoop → CountLoop
-    let loop_re = Regex::new(r#"type\s*=\s*"CountLoop""#).unwrap();
-    for _ in loop_re.find_iter(xml) {
+    for _ in re_count_loop().find_iter(xml) {
         stmts.push(Statement::CountLoop {
             count: 1,
             body: vec![],
@@ -165,8 +202,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     }
 
     // AddEventListener → EventListener
-    let event_re = Regex::new(r#"type\s*=\s*"AddEventListener"[^>]*event\s*=\s*"([^"]*)"#).unwrap();
-    for cap in event_re.captures_iter(xml) {
+    for cap in re_event_listener().captures_iter(xml) {
         stmts.push(Statement::EventListener {
             event: cap[1].to_string(),
             body: vec![],
@@ -174,8 +210,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     }
 
     // CollisionStartListener → CollisionListener
-    let collision_re = Regex::new(r#"type\s*=\s*"CollisionStart(?:Event)?Listener""#).unwrap();
-    for _ in collision_re.find_iter(xml) {
+    for _ in re_collision_listener().find_iter(xml) {
         stmts.push(Statement::CollisionListener {
             object_a: "unknown".into(),
             object_b: "unknown".into(),
