@@ -136,7 +136,10 @@ fn parse_a3p_program(path: &Path) -> Option<Program> {
     }
 
     let procedures = extract_procedures(&all_xml);
-    Some(Program { procedures })
+    Some(Program {
+        procedures,
+        functions: vec![],
+    })
 }
 
 /// Extract `Procedure` definitions from Alice XML content.
@@ -150,6 +153,7 @@ fn extract_procedures(xml: &str) -> Vec<Procedure> {
             if seen_names.insert(name.clone()) {
                 procedures.push(Procedure {
                     name,
+                    parameters: vec![],
                     body: Vec::new(),
                 });
             }
@@ -164,6 +168,7 @@ fn extract_procedures(xml: &str) -> Vec<Procedure> {
     } else if !stmts.is_empty() {
         procedures.push(Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: stmts,
         });
     }
