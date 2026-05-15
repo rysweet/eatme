@@ -118,8 +118,7 @@ fn extract_procedures(xml: &str) -> Vec<Procedure> {
 
     let stmts = extract_statements(xml);
 
-    // Assign all statements to the first procedure (flat model).
-    // A full implementation would scope statements per-method.
+    // Flat model: assign all statements to the first procedure.
     if let Some(first) = procedures.first_mut() {
         first.body = stmts;
     } else if !stmts.is_empty() {
@@ -150,7 +149,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
     let cond_re = Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap();
     for _ in cond_re.find_iter(xml) {
         stmts.push(Statement::IfElse {
-            condition: "parsed-from-xml".into(),
+            condition: String::new(),
             if_body: vec![],
             else_body: vec![],
         });
