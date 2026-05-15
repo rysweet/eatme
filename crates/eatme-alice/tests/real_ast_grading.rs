@@ -71,7 +71,11 @@ fn parse_a3p_program(path: &Path) -> Option<Program> {
 
     let mut all_xml = String::new();
     for i in 0..archive.len() {
-        let mut entry = archive.by_index(i).ok()?;
+        // Skip entries that can't be read (e.g., corrupt binary assets) rather
+        // than aborting the entire parse — we only need the XML content.
+        let Ok(mut entry) = archive.by_index(i) else {
+            continue;
+        };
         let name = entry.name().to_string();
         if name.ends_with(".xml") {
             let mut content = String::new();
@@ -442,7 +446,6 @@ fn extract_statements_returns_empty_for_no_constructs() {
 
 #[test]
 fn starter_project_path_uses_alice_home() {
-    // Verify path construction without requiring real files
     let path = starter_project_path("amazonMinimum");
     assert!(
         path.to_string_lossy().contains("amazonMinimum.a3p"),
@@ -453,6 +456,130 @@ fn starter_project_path_uses_alice_home() {
         path.to_string_lossy().contains("starter-projects"),
         "path should include starter-projects directory: {}",
         path.display()
+    );
+}
+
+#[test]
+fn extract_procedures_handles_realistic_nested_alice_xml() {
+    // Simulates real Alice 3 XML with nested methods, invocations, conditionals,
+    // loops, and event listeners — all interleaved the way Alice serialises them.
+    let xml = r#"
+        <root>
+          <element type="UserMethod" isDefault="true" name="myFirstMethod">
+            <children>
+              <child type="MethodInvocation" method="say" isParameter="false" />
+              <child type="ConditionalStatement">
+                <condition type="RelationalTest" />
+                <ifBody>
+                  <child type="MethodInvocation" method="turn" />
+                </ifBody>
+              </child>
+              <child type="CountLoop" count="5">
+                <body>
+                  <child type="MethodInvocation" method="move" />
+                </body>
+              </child>
+            </children>
+          </element>
+          <element type="UserMethod" name="helperProcedure" isDefault="false" />
+          <element type="AddEventListener" event="SceneActivated" />
+          <element type="CollisionStartEventListener" />
+        </root>
+    "#;
+
+    let procs = extract_procedures(xml);
+    assert_eq!(
+        procs.len(),
+        2,
+        "should find myFirstMethod and helperProcedure"
+    );
+    assert_eq!(procs[0].name, "myFirstMethod");
+    assert_eq!(procs[1].name, "helperProcedure");
+
+    // All statements go to the first procedure (flat model)
+    let body = &procs[0].body;
+
+    let method_calls: Vec<_> = body
+        .iter()
+        .filter(|s| matches!(s, Statement::MethodCall { .. }))
+        .collect();
+    assert!(
+        method_calls.len() >= 3,
+        "should find at least 3 MethodInvocations (say, turn, move): got {}",
+        method_calls.len()
+    );
+
+    assert!(
+        body.iter().any(|s| matches!(s, Statement::IfElse { .. })),
+        "should find ConditionalStatement"
+    );
+    assert!(
+        body.iter()
+            .any(|s| matches!(s, Statement::CountLoop { .. })),
+        "should find CountLoop"
+    );
+    assert!(
+        body.iter().any(
+            |s| matches!(s, Statement::EventListener { event, .. } if event == "SceneActivated")
+        ),
+        "should find AddEventListener"
+    );
+    assert!(
+        body.iter()
+            .any(|s| matches!(s, Statement::CollisionListener { .. })),
+        "should find CollisionStartEventListener"
+    );
+}
+
+#[test]
+fn parse_a3p_parses_in_memory_zip_with_xml_and_binary_entries() {
+    use std::io::{Cursor, Write};
+    use zip::write::FileOptions;
+
+    // Build a minimal .a3p ZIP in memory with both XML and binary content
+    let buf = Vec::new();
+    let cursor = Cursor::new(buf);
+    let mut zip_writer = zip::ZipWriter::new(cursor);
+
+    let options = FileOptions::default();
+
+    // XML entry with Alice-like content
+    zip_writer
+        .start_file("programType.xml", options)
+        .expect("start xml file");
+    zip_writer
+        .write_all(
+            br#"<root>
+                <element type="UserMethod" name="testMethod" />
+                <child type="MethodInvocation" method="walk" />
+            </root>"#,
+        )
+        .expect("write xml");
+
+    // Binary entry (image placeholder) — parser should skip this
+    zip_writer
+        .start_file("textures/grass.png", options)
+        .expect("start binary file");
+    zip_writer
+        .write_all(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A])
+        .expect("write binary");
+
+    let finished = zip_writer.finish().expect("finish zip");
+    let bytes = finished.into_inner();
+
+    // Write to a temp file and parse
+    let tmp = std::env::temp_dir().join("test_parse_a3p_mixed_entries.a3p");
+    std::fs::write(&tmp, &bytes).expect("write temp zip");
+
+    let program = parse_a3p_program(&tmp);
+    std::fs::remove_file(&tmp).ok();
+
+    let program = program.expect("should parse ZIP despite binary entries");
+    assert!(!program.procedures.is_empty());
+    assert_eq!(program.procedures[0].name, "testMethod");
+    assert!(
+        !program.procedures[0].body.is_empty(),
+        "should extract MethodInvocation from XML"
     );
 }
 
