@@ -9,15 +9,9 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{alice_home, real_alice_enabled};
 
 #[test]
 fn real_alice_launch_smoke_produces_deterministic_evidence() {

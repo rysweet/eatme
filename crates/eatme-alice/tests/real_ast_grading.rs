@@ -19,15 +19,18 @@
 //! | 7      | Parameters            | 🔴 TDD contract (behind feature gate)  |
 //! | 8      | Creative Project      | 🔴 TDD contract (behind feature gate)  |
 
-use std::env;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::OnceLock;
 
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_assets::{EventsGradingInput, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
 use regex::Regex;
+
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{real_alice_enabled, starter_project_path};
 
 // ---------------------------------------------------------------------------
 // Compiled regex cache — each pattern compiled once across all test runs
@@ -70,26 +73,6 @@ fn re_event_listener() -> &'static Regex {
 fn re_collision_listener() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CollisionStart(?:Event)?Listener""#).unwrap())
-}
-
-// ---------------------------------------------------------------------------
-// Environment helpers (matching launch_smoke_real.rs pattern)
-// ---------------------------------------------------------------------------
-
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
-
-fn starter_project_path(name: &str) -> PathBuf {
-    alice_home()
-        .join("starter-projects")
-        .join(format!("{name}.a3p"))
 }
 
 // ---------------------------------------------------------------------------

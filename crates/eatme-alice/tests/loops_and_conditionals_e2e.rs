@@ -5,12 +5,16 @@
 // Test 8 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::OnceLock;
 
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_core::ast::{Procedure, Program, Statement};
 use regex::Regex;
+
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{alice_home, real_alice_enabled, starter_project_path};
 
 // --- Shared fixtures ---
 
@@ -243,22 +247,6 @@ fn grading_report_has_seven_steps() {
 // ===================================================================
 // Real-Alice integration tests — gated behind EATME_REAL_ALICE=1
 // ===================================================================
-
-fn real_alice_enabled() -> bool {
-    std::env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(std::env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
-
-fn starter_project_path(name: &str) -> PathBuf {
-    alice_home()
-        .join("starter-projects")
-        .join(format!("{name}.a3p"))
-}
 
 // ---------------------------------------------------------------------------
 // Compiled regex cache
