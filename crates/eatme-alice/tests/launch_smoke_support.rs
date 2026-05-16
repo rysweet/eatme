@@ -399,3 +399,26 @@ impl Drop for TestFixture {
         let _ = fs::remove_dir_all(&self.root);
     }
 }
+
+// ---------------------------------------------------------------------------
+// Real-Alice environment helpers (shared across integration test files)
+// ---------------------------------------------------------------------------
+
+#[allow(dead_code)]
+pub fn real_alice_enabled() -> bool {
+    env::var("EATME_REAL_ALICE")
+        .map(|v| v == "1")
+        .unwrap_or(false)
+}
+
+#[allow(dead_code)]
+pub fn alice_home() -> PathBuf {
+    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
+}
+
+#[allow(dead_code)]
+pub fn starter_project_path(name: &str) -> PathBuf {
+    alice_home()
+        .join("starter-projects")
+        .join(format!("{name}.a3p"))
+}

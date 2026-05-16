@@ -278,7 +278,7 @@ dependencies = [
 
 [[package]]
 name = "eatme-alice"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "eatme-assets",
@@ -294,7 +294,7 @@ dependencies = [
 
 [[package]]
 name = "eatme-assets"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "eatme-core",
@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "eatme-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "eatme-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "eatme-test-support"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "eatme-core",
