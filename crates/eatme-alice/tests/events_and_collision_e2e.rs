@@ -4,7 +4,7 @@
 // save/reopen round-trip.
 
 use eatme_alice::{LaunchSmokeOptions, LaunchSmokeScenario, run_launch_smoke};
-use eatme_assets::{EventsGradingInput, StepStatus, grade_events_and_collision};
+use eatme_assets::{EventsGradingInput, GradingReport, StepStatus, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
 use std::env;
 use std::fs;
@@ -48,6 +48,40 @@ fn all_ready_input(program: Option<Program>) -> EventsGradingInput {
     }
 }
 
+// --- Shared assertion helpers ---
+
+#[track_caller]
+fn assert_preconditions_ready(report: &GradingReport) {
+    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
+    assert_eq!(
+        report.steps[1].status,
+        StepStatus::Ready,
+        "check-dependencies"
+    );
+    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+}
+
+#[track_caller]
+fn assert_all_interaction_steps_blocked(report: &GradingReport) {
+    for i in 3..=6 {
+        assert_eq!(
+            report.steps[i].status,
+            StepStatus::Blocked,
+            "step {} ({}) should be Blocked without student program",
+            i,
+            report.steps[i].name
+        );
+        assert!(
+            report.steps[i]
+                .reason
+                .contains("No student program provided"),
+            "step {} reason should mention no program: {}",
+            i,
+            report.steps[i].reason
+        );
+    }
+}
+
 // -------------------------------------------------------------------
 // Test 1: Complete program — all preconditions ready, AST checks pass
 // -------------------------------------------------------------------
@@ -56,14 +90,7 @@ fn all_ready_input(program: Option<Program>) -> EventsGradingInput {
 fn events_grading_all_ready_with_complete_program() {
     let report = grade_events_and_collision(all_ready_input(Some(complete_events_program())));
 
-    // Precondition steps
-    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
-    assert_eq!(
-        report.steps[1].status,
-        StepStatus::Ready,
-        "check-dependencies"
-    );
-    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+    assert_preconditions_ready(&report);
 
     // AST-aware steps
     assert_eq!(
@@ -99,29 +126,8 @@ fn events_grading_all_ready_with_complete_program() {
 fn events_grading_blocked_without_program() {
     let report = grade_events_and_collision(all_ready_input(None));
 
-    // Preconditions still pass
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    // All 4 interaction steps blocked
-    for i in 3..=6 {
-        assert_eq!(
-            report.steps[i].status,
-            StepStatus::Blocked,
-            "step {} ({}) should be blocked when no program provided",
-            i,
-            report.steps[i].name
-        );
-        assert!(
-            report.steps[i]
-                .reason
-                .contains("No student program provided"),
-            "step {} reason should mention no program: {}",
-            i,
-            report.steps[i].reason
-        );
-    }
+    assert_preconditions_ready(&report);
+    assert_all_interaction_steps_blocked(&report);
     assert!(!report.passed);
 }
 
@@ -380,33 +386,8 @@ fn real_alice_events_grading_baseline_no_program() {
 
     let report = grade_events_and_collision(all_ready_input(None));
 
-    // Precondition steps pass (assets + deps + launch-smoke are synthetic-ready)
-    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
-    assert_eq!(
-        report.steps[1].status,
-        StepStatus::Ready,
-        "check-dependencies"
-    );
-    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
-
-    // All 4 interaction steps blocked without a program
-    for i in 3..=6 {
-        assert_eq!(
-            report.steps[i].status,
-            StepStatus::Blocked,
-            "step {} ({}) should be Blocked without student program",
-            i,
-            report.steps[i].name
-        );
-        assert!(
-            report.steps[i]
-                .reason
-                .contains("No student program provided"),
-            "step {} reason should mention no program: {}",
-            i,
-            report.steps[i].reason
-        );
-    }
+    assert_preconditions_ready(&report);
+    assert_all_interaction_steps_blocked(&report);
     assert!(!report.passed, "report should not pass without a program");
 }
 
@@ -427,14 +408,7 @@ fn real_alice_events_grading_complete_program() {
     let program = complete_events_program();
     let report = grade_events_and_collision(all_ready_input(Some(program.clone())));
 
-    // Precondition steps
-    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
-    assert_eq!(
-        report.steps[1].status,
-        StepStatus::Ready,
-        "check-dependencies"
-    );
-    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+    assert_preconditions_ready(&report);
 
     // AST-aware steps: both event constructs found
     assert_eq!(
