@@ -113,9 +113,10 @@ input.
 1. **Open the ZIP** — uses the `zip` crate's `ZipArchive::new()` to open the
    `.a3p` file as an in-memory ZIP archive.
 
-2. **Find programType.xml** — searches for the entry matching
-   `programType.xml` by name within the archive. Alice projects store scene
-   program data in this XML file.
+2. **Collect all XML entries** — iterates every entry in the ZIP archive using
+   `ZipArchive::by_index()` and collects the content of all `.xml` files into
+   a single string. Alice projects store scene program data across multiple
+   XML files; the parser concatenates them for regex matching.
 
 3. **Regex extraction** — applies regex patterns against the XML content to
    identify Alice AST nodes. The parser does not use a full XML parser; it uses
@@ -147,7 +148,7 @@ input.
 ### Signature
 
 ```rust
-fn parse_a3p_program(path: &std::path::Path) -> anyhow::Result<Program>
+fn parse_a3p_program(path: &std::path::Path) -> Option<Program>
 ```
 
 ### Design decisions
@@ -158,9 +159,8 @@ fn parse_a3p_program(path: &std::path::Path) -> anyhow::Result<Program>
   pipelines only need to know "does this construct exist?" — not the full AST
   tree structure.
 
-- **In-memory ZIP reading.** The `ZipArchive::by_name()` method reads the
-  target entry directly. No files are extracted to disk, eliminating zip-slip
-  risk.
+- **In-memory ZIP reading.** The `ZipArchive::by_index()` method iterates
+  entries without extracting to disk, eliminating zip-slip risk.
 
 - **No `unwrap()` on IO/ZIP operations.** All fallible operations use `?` or
   `.ok()` to produce clean test failure messages rather than panics.

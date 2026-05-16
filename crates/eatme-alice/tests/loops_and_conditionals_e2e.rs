@@ -4,17 +4,16 @@
 // save/reopen round-trip.
 // Test 8 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
-use std::io::Read;
-use std::path::Path;
-use std::sync::OnceLock;
-
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_core::ast::{Procedure, Program, Statement};
-use regex::Regex;
 
 #[allow(dead_code)]
 mod launch_smoke_support;
 use launch_smoke_support::{alice_home, real_alice_enabled, starter_project_path};
+
+#[allow(dead_code)]
+mod a3p_parser_support;
+use a3p_parser_support::parse_a3p_program;
 
 // --- Shared fixtures ---
 
@@ -247,132 +246,6 @@ fn grading_report_has_seven_steps() {
 // ===================================================================
 // Real-Alice integration tests — gated behind EATME_REAL_ALICE=1
 // ===================================================================
-
-// ---------------------------------------------------------------------------
-// Compiled regex cache
-// ---------------------------------------------------------------------------
-
-fn re_user_method_type_first() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"UserMethod"[^>]*name\s*=\s*"([^"]+)""#).unwrap())
-}
-
-fn re_user_method_name_first() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"UserMethod""#).unwrap())
-}
-
-fn re_method_invocation() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r#"type\s*=\s*"MethodInvocation"[^>]*method\s*=\s*"([^"]*)"#).unwrap()
-    })
-}
-
-fn re_conditional() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap())
-}
-
-fn re_count_loop() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CountLoop""#).unwrap())
-}
-
-// ---------------------------------------------------------------------------
-// .a3p ZIP parser — regex-based XML extraction
-// ---------------------------------------------------------------------------
-
-fn parse_a3p_program(path: &Path) -> Option<Program> {
-    let file = std::fs::File::open(path).ok()?;
-    let mut archive = zip::ZipArchive::new(file).ok()?;
-
-    let mut all_xml = String::with_capacity(128 * 1024);
-    let mut content_buf = String::new();
-    for i in 0..archive.len() {
-        let Ok(mut entry) = archive.by_index(i) else {
-            continue;
-        };
-        if entry.name().ends_with(".xml") {
-            content_buf.clear();
-            if entry.read_to_string(&mut content_buf).is_ok() {
-                all_xml.push_str(&content_buf);
-                all_xml.push('\n');
-            }
-        }
-    }
-
-    if all_xml.is_empty() {
-        return None;
-    }
-
-    let procedures = extract_procedures(&all_xml);
-    Some(Program {
-        procedures,
-        functions: vec![],
-    })
-}
-
-fn extract_procedures(xml: &str) -> Vec<Procedure> {
-    let mut procedures = Vec::new();
-    let mut seen_names = std::collections::HashSet::with_capacity(8);
-
-    for re in [re_user_method_type_first(), re_user_method_name_first()] {
-        for cap in re.captures_iter(xml) {
-            let name = cap[1].to_string();
-            if seen_names.insert(name.clone()) {
-                procedures.push(Procedure {
-                    name,
-                    parameters: vec![],
-                    body: Vec::new(),
-                });
-            }
-        }
-    }
-
-    let stmts = extract_statements(xml);
-
-    if let Some(first) = procedures.first_mut() {
-        first.body = stmts;
-    } else if !stmts.is_empty() {
-        procedures.push(Procedure {
-            name: "myFirstMethod".into(),
-            parameters: vec![],
-            body: stmts,
-        });
-    }
-
-    procedures
-}
-
-fn extract_statements(xml: &str) -> Vec<Statement> {
-    let mut stmts = Vec::new();
-
-    for cap in re_method_invocation().captures_iter(xml) {
-        stmts.push(Statement::MethodCall {
-            object: "this".into(),
-            method: cap[1].to_string(),
-            arguments: vec![],
-        });
-    }
-
-    if re_conditional().is_match(xml) {
-        stmts.push(Statement::IfElse {
-            condition: "condition".into(),
-            if_body: vec![],
-            else_body: vec![],
-        });
-    }
-
-    if re_count_loop().is_match(xml) {
-        stmts.push(Statement::CountLoop {
-            count: 1,
-            body: vec![],
-        });
-    }
-
-    stmts
-}
 
 // -------------------------------------------------------------------
 // Test 8: Real Alice launch + grading pipeline integration

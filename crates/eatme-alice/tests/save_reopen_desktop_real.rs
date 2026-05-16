@@ -11,20 +11,14 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{alice_home, real_alice_enabled};
+
 const REOPEN_DISPLAY: &str = ":98";
 const REOPEN_SELECTOR: &str = "scene.myFirstMethod";
 const REOPEN_HOOK: &str = "tools/eatme-reopen-project";
 const SCENARIO_ID: &str = "first-lessons-real-ui-actions";
-
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
 
 // ── Xvfb lifecycle guard ──────────────────────────────────────────────────
 
