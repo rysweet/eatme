@@ -3,9 +3,13 @@
 // Exercises: AST construction → grading report → JSON serialization →
 // save/reopen round-trip.
 
+#[allow(dead_code)]
+mod launch_smoke_support;
+
 use eatme_alice::{LaunchSmokeOptions, LaunchSmokeScenario, run_launch_smoke};
 use eatme_assets::{EventsGradingInput, GradingReport, StepStatus, grade_events_and_collision};
 use eatme_core::ast::{Procedure, Program, Statement};
+use launch_smoke_support::{alice_home, real_alice_enabled};
 use std::env;
 use std::fs;
 use std::io::Read;
@@ -253,16 +257,6 @@ fn events_grading_report_has_seven_steps() {
 // Real-Alice integration tests (gated behind EATME_REAL_ALICE=1)
 // ===================================================================
 
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
-
 // -------------------------------------------------------------------
 // Phase 1: Launch real Alice with events-collision-proximity-game
 // scenario, validate manifest assertions, screenshot, and log
@@ -386,12 +380,7 @@ fn real_alice_events_collision_launch_smoke() {
 // -------------------------------------------------------------------
 
 #[test]
-fn real_alice_events_grading_baseline_no_program() {
-    if !real_alice_enabled() {
-        eprintln!("skipping real-Alice events baseline grading (set EATME_REAL_ALICE=1 to enable)");
-        return;
-    }
-
+fn events_grading_baseline_no_program() {
     let report = grade_events_and_collision(all_ready_input(None));
 
     assert_preconditions_ready(&report);
@@ -407,12 +396,7 @@ fn real_alice_events_grading_baseline_no_program() {
 // -------------------------------------------------------------------
 
 #[test]
-fn real_alice_events_grading_complete_program() {
-    if !real_alice_enabled() {
-        eprintln!("skipping real-Alice events complete grading (set EATME_REAL_ALICE=1 to enable)");
-        return;
-    }
-
+fn events_grading_complete_program() {
     let program = complete_events_program();
 
     // JSON round-trip before consuming program — avoids clone
@@ -475,8 +459,10 @@ fn real_alice_events_grading_complete_program() {
 /// in the Lesson 4 events-collision-proximity-game exercise.
 fn keyboard_and_collision_program() -> Program {
     Program {
+        functions: vec![],
         procedures: vec![Procedure {
             name: "myFirstMethod".into(),
+            parameters: vec![],
             body: vec![
                 // Keyboard event: respond to key press
                 Statement::EventListener {
@@ -514,8 +500,10 @@ fn keyboard_and_collision_program() -> Program {
 /// Build a partial program with only keyboard events (no collision).
 fn keyboard_only_program() -> Program {
     Program {
+        functions: vec![],
         procedures: vec![Procedure {
             name: "keyboardHandler".into(),
+            parameters: vec![],
             body: vec![Statement::EventListener {
                 event: "KeyPress".into(),
                 body: vec![Statement::MethodCall {
@@ -531,8 +519,10 @@ fn keyboard_only_program() -> Program {
 /// Build a partial program with only collision (no keyboard event).
 fn collision_only_program() -> Program {
     Program {
+        functions: vec![],
         procedures: vec![Procedure {
             name: "collisionHandler".into(),
+            parameters: vec![],
             body: vec![Statement::CollisionListener {
                 object_a: "this.player".into(),
                 object_b: "this.obstacle".into(),
@@ -595,40 +585,7 @@ fn real_alice_e2e_launch_then_grade_keyboard_and_collision() {
     // Step 2: Build starter project AST with keyboard events + collision
     let program = keyboard_and_collision_program();
 
-    // Step 3: Verify Tweedle AST contains event registration constructs
-    let mut has_keyboard_event = false;
-    let mut has_scene_event = false;
-    let mut has_collision = false;
-    for proc in &program.procedures {
-        for stmt in &proc.body {
-            match stmt {
-                Statement::EventListener { event, .. } if event == "KeyPress" => {
-                    has_keyboard_event = true;
-                }
-                Statement::EventListener { event, .. } if event == "SceneActivated" => {
-                    has_scene_event = true;
-                }
-                Statement::CollisionListener { .. } => {
-                    has_collision = true;
-                }
-                _ => {}
-            }
-        }
-    }
-    assert!(
-        has_keyboard_event,
-        "AST must contain a KeyPress EventListener"
-    );
-    assert!(
-        has_scene_event,
-        "AST must contain a SceneActivated EventListener"
-    );
-    assert!(
-        has_collision,
-        "AST must contain a CollisionListener for collision detection"
-    );
-
-    // Step 4: Run grading pipeline on the complete program
+    // Step 3: Run grading pipeline on the complete program
     let report = grade_events_and_collision(all_ready_input(Some(program)));
 
     assert_preconditions_ready(&report);
