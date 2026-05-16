@@ -4,8 +4,13 @@
 // save/reopen round-trip.
 // Test 8 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_core::ast::{Procedure, Program, Statement};
+use regex::Regex;
 
 // --- Shared fixtures ---
 
@@ -245,8 +250,140 @@ fn real_alice_enabled() -> bool {
         .unwrap_or(false)
 }
 
-fn alice_home() -> std::path::PathBuf {
-    std::path::PathBuf::from(std::env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
+fn alice_home() -> PathBuf {
+    PathBuf::from(std::env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
+}
+
+fn starter_project_path(name: &str) -> PathBuf {
+    alice_home()
+        .join("starter-projects")
+        .join(format!("{name}.a3p"))
+}
+
+// ---------------------------------------------------------------------------
+// Compiled regex cache
+// ---------------------------------------------------------------------------
+
+fn re_user_method_type_first() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"UserMethod"[^>]*name\s*=\s*"([^"]+)""#).unwrap())
+}
+
+fn re_user_method_name_first() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"UserMethod""#).unwrap())
+}
+
+fn re_method_invocation() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r#"type\s*=\s*"MethodInvocation"[^>]*method\s*=\s*"([^"]*)"#).unwrap()
+    })
+}
+
+fn re_conditional() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap())
+}
+
+fn re_count_loop() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CountLoop""#).unwrap())
+}
+
+// ---------------------------------------------------------------------------
+// .a3p ZIP parser — regex-based XML extraction
+// ---------------------------------------------------------------------------
+
+fn parse_a3p_program(path: &Path) -> Option<Program> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut archive = zip::ZipArchive::new(file).ok()?;
+
+    let mut all_xml = String::with_capacity(128 * 1024);
+    let mut content_buf = String::new();
+    for i in 0..archive.len() {
+        let Ok(mut entry) = archive.by_index(i) else {
+            continue;
+        };
+        if entry.name().ends_with(".xml") {
+            content_buf.clear();
+            if entry.read_to_string(&mut content_buf).is_ok() {
+                all_xml.push_str(&content_buf);
+                all_xml.push('\n');
+            }
+        }
+    }
+
+    if all_xml.is_empty() {
+        return None;
+    }
+
+    let procedures = extract_procedures(&all_xml);
+    Some(Program {
+        procedures,
+        functions: vec![],
+    })
+}
+
+fn extract_procedures(xml: &str) -> Vec<Procedure> {
+    let mut procedures = Vec::new();
+    let mut seen_names = std::collections::HashSet::with_capacity(8);
+
+    for re in [re_user_method_type_first(), re_user_method_name_first()] {
+        for cap in re.captures_iter(xml) {
+            let name = cap[1].to_string();
+            if seen_names.insert(name.clone()) {
+                procedures.push(Procedure {
+                    name,
+                    parameters: vec![],
+                    body: Vec::new(),
+                });
+            }
+        }
+    }
+
+    let stmts = extract_statements(xml);
+
+    if let Some(first) = procedures.first_mut() {
+        first.body = stmts;
+    } else if !stmts.is_empty() {
+        procedures.push(Procedure {
+            name: "myFirstMethod".into(),
+            parameters: vec![],
+            body: stmts,
+        });
+    }
+
+    procedures
+}
+
+fn extract_statements(xml: &str) -> Vec<Statement> {
+    let mut stmts = Vec::new();
+
+    for cap in re_method_invocation().captures_iter(xml) {
+        stmts.push(Statement::MethodCall {
+            object: "this".into(),
+            method: cap[1].to_string(),
+            arguments: vec![],
+        });
+    }
+
+    if re_conditional().is_match(xml) {
+        stmts.push(Statement::IfElse {
+            condition: "condition".into(),
+            if_body: vec![],
+            else_body: vec![],
+        });
+    }
+
+    if re_count_loop().is_match(xml) {
+        stmts.push(Statement::CountLoop {
+            count: 1,
+            body: vec![],
+        });
+    }
+
+    stmts
 }
 
 // -------------------------------------------------------------------
@@ -306,49 +443,62 @@ fn real_alice_loops_and_conditionals_grading_integration() {
         assert!(result.passed, "assertion {key} failed: {}", result.detail);
     }
 
-    // --- Phase 2: Verify AST with loop + conditional constructs ---
+    // --- Phase 2: Parse real starter project and verify baseline AST ---
+    //
+    // The starter project (amazonMinimum.a3p) contains IfElse constructs
+    // but NO CountLoop — the student must add loops. We verify this baseline,
+    // then augment with student-added constructs for Phase 3.
 
-    let student_program = Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::CountLoop {
-                    count: 3,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec!["FORWARD".into(), "1.0".into()],
-                    }],
-                },
-                Statement::IfElse {
-                    condition: "this.cat isCloseTo this.dog".into(),
-                    if_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello!\"".into()],
-                    }],
-                    else_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "think".into(),
-                        arguments: vec!["\"Hmm...\"".into()],
-                    }],
-                },
-            ],
-        }],
-    };
+    let a3p_path = starter_project_path("amazonMinimum");
+    assert!(
+        a3p_path.exists(),
+        "starter project not found at {}",
+        a3p_path.display()
+    );
 
-    // Verify the AST contains a CountLoop and an IfElse.
-    let has_loop = student_program.procedures.iter().any(|p| {
-        p.body
-            .iter()
-            .any(|s| matches!(s, Statement::CountLoop { .. }))
-    });
-    let has_conditional = student_program
+    let starter_program = parse_a3p_program(&a3p_path)
+        .unwrap_or_else(|| panic!("failed to parse {}", a3p_path.display()));
+
+    assert!(
+        !starter_program.procedures.is_empty(),
+        "parsed starter project should have at least one procedure"
+    );
+
+    let all_stmts: Vec<&Statement> = starter_program
         .procedures
         .iter()
-        .any(|p| p.body.iter().any(|s| matches!(s, Statement::IfElse { .. })));
-    assert!(has_loop, "student program must contain a CountLoop");
-    assert!(has_conditional, "student program must contain an IfElse");
+        .flat_map(|p| p.body.iter())
+        .collect();
+
+    let has_if_else = all_stmts
+        .iter()
+        .any(|s| matches!(s, Statement::IfElse { .. }));
+    let has_count_loop = all_stmts
+        .iter()
+        .any(|s| matches!(s, Statement::CountLoop { .. }));
+
+    assert!(
+        has_if_else,
+        "amazonMinimum.a3p should contain at least one IfElse construct"
+    );
+    assert!(
+        !has_count_loop,
+        "amazonMinimum.a3p starter should NOT contain any CountLoop (student adds these)"
+    );
+
+    // Augment the starter with student-added CountLoop to simulate a
+    // completed student program for the grading pipeline.
+    let mut student_program = starter_program;
+    if let Some(first_proc) = student_program.procedures.first_mut() {
+        first_proc.body.push(Statement::CountLoop {
+            count: 3,
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into(), "1.0".into()],
+            }],
+        });
+    }
 
     // --- Phase 3: Run grading pipeline and verify pass/fail signals ---
 
@@ -357,7 +507,7 @@ fn real_alice_loops_and_conditionals_grading_integration() {
         asset_reason: "Real Alice launch succeeded; assets validated".into(),
         deps_available: true,
         deps_reason: "All dependencies available (verified via real launch)".into(),
-        student_program: Some(student_program.clone()),
+        student_program: Some(student_program),
     });
 
     // Schema and lesson must match.
