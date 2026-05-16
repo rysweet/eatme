@@ -2,6 +2,7 @@
 // of the loops-and-conditionals-mini-challenge grading pipeline.
 // Exercises: AST construction → grading report → JSON serialization →
 // save/reopen round-trip.
+// Test 8 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use eatme_assets::grading_report::{LoopsGradingInput, StepStatus, grade_loops_and_conditionals};
 use eatme_core::ast::{Procedure, Program, Statement};
@@ -231,5 +232,197 @@ fn grading_report_has_seven_steps() {
             "run-world",
             "save-project",
         ]
+    );
+}
+
+// ===================================================================
+// Real-Alice integration tests — gated behind EATME_REAL_ALICE=1
+// ===================================================================
+
+fn real_alice_enabled() -> bool {
+    std::env::var("EATME_REAL_ALICE")
+        .map(|v| v == "1")
+        .unwrap_or(false)
+}
+
+fn alice_home() -> std::path::PathBuf {
+    std::path::PathBuf::from(std::env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
+}
+
+// -------------------------------------------------------------------
+// Test 8: Real Alice launch + grading pipeline integration
+// -------------------------------------------------------------------
+//
+// Launches real Alice with the loops-and-conditionals-mini-challenge
+// scenario, verifies the launch succeeds, then feeds a representative
+// student program through the grading pipeline and asserts the full
+// pass/fail signal chain.
+
+#[test]
+fn real_alice_loops_and_conditionals_grading_integration() {
+    if !real_alice_enabled() {
+        eprintln!("skipping real-Alice loops integration test (set EATME_REAL_ALICE=1 to enable)");
+        return;
+    }
+
+    // --- Phase 1: Launch real Alice with the lesson-3 scenario ---
+
+    let runs_dir = std::env::current_dir()
+        .unwrap()
+        .join("target/test-work/loops-and-conditionals-real");
+    let run_id = format!(
+        "real-loops-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
+    let manifest = eatme_alice::run_launch_smoke(&eatme_alice::LaunchSmokeOptions {
+        alice_home: alice_home(),
+        run_id: run_id.clone(),
+        runs_dir: runs_dir.clone(),
+        timeout_seconds: 90,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: eatme_alice::LaunchSmokeScenario::new("loops-and-conditionals-mini-challenge"),
+    })
+    .expect("run_launch_smoke should succeed for loops-and-conditionals");
+
+    // Launch must not have a fatal failure category.
+    assert!(
+        manifest.failure_category.is_none(),
+        "expected no failure category for loops scenario, got: {:?}",
+        manifest.failure_category,
+    );
+
+    // Core assertions (deps, display, process) should pass.
+    for key in ["dependencies_available", "process_started"] {
+        let result = manifest
+            .assertions
+            .get(key)
+            .unwrap_or_else(|| panic!("manifest missing assertion: {key}"));
+        assert!(result.passed, "assertion {key} failed: {}", result.detail);
+    }
+
+    // --- Phase 2: Verify AST with loop + conditional constructs ---
+
+    let student_program = Program {
+        procedures: vec![Procedure {
+            name: "myFirstMethod".into(),
+            body: vec![
+                Statement::CountLoop {
+                    count: 3,
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "walk".into(),
+                        arguments: vec!["FORWARD".into(), "1.0".into()],
+                    }],
+                },
+                Statement::IfElse {
+                    condition: "this.cat isCloseTo this.dog".into(),
+                    if_body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec!["\"Hello!\"".into()],
+                    }],
+                    else_body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "think".into(),
+                        arguments: vec!["\"Hmm...\"".into()],
+                    }],
+                },
+            ],
+        }],
+    };
+
+    // Verify the AST contains a CountLoop and an IfElse.
+    let has_loop = student_program.procedures.iter().any(|p| {
+        p.body
+            .iter()
+            .any(|s| matches!(s, Statement::CountLoop { .. }))
+    });
+    let has_conditional = student_program
+        .procedures
+        .iter()
+        .any(|p| p.body.iter().any(|s| matches!(s, Statement::IfElse { .. })));
+    assert!(has_loop, "student program must contain a CountLoop");
+    assert!(has_conditional, "student program must contain an IfElse");
+
+    // --- Phase 3: Run grading pipeline and verify pass/fail signals ---
+
+    let report = grade_loops_and_conditionals(LoopsGradingInput {
+        assets_valid: true,
+        asset_reason: "Real Alice launch succeeded; assets validated".into(),
+        deps_available: true,
+        deps_reason: "All dependencies available (verified via real launch)".into(),
+        student_program: Some(student_program.clone()),
+    });
+
+    // Schema and lesson must match.
+    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
+    assert_eq!(report.lesson, "loops-and-conditionals-mini-challenge");
+
+    // Preconditions: validate-assets, check-dependencies, launch-smoke → Ready
+    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
+    assert_eq!(
+        report.steps[1].status,
+        StepStatus::Ready,
+        "check-dependencies"
+    );
+    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+
+    // AST steps: build-counting-loop → Ready, add-conditional-branch → Ready
+    assert_eq!(
+        report.steps[3].status,
+        StepStatus::Ready,
+        "build-counting-loop must be Ready when CountLoop present"
+    );
+    assert_eq!(
+        report.steps[4].status,
+        StepStatus::Ready,
+        "add-conditional-branch must be Ready when IfElse present"
+    );
+
+    // run-world is NotYetTested (requires human interaction).
+    assert_eq!(
+        report.steps[5].status,
+        StepStatus::NotYetTested,
+        "run-world must be NotYetTested"
+    );
+
+    // save-project is Ready (doesn't cascade from NotYetTested).
+    assert_eq!(
+        report.steps[6].status,
+        StepStatus::Ready,
+        "save-project must be Ready"
+    );
+
+    // Overall: passed is false because run-world is not-yet-tested.
+    assert!(
+        !report.passed,
+        "report.passed must be false when run-world is not-yet-tested"
+    );
+
+    // Grading report must survive JSON round-trip.
+    let json = serde_json::to_string(&report).unwrap();
+    assert!(
+        json.contains("loops-and-conditionals-mini-challenge"),
+        "JSON must contain lesson name"
+    );
+    assert!(
+        json.contains("eatme.assets/grading/v1"),
+        "JSON must contain schema version"
+    );
+
+    // Manifest round-trip: verify the launch manifest was persisted.
+    let manifest_dir = runs_dir
+        .join("loops-and-conditionals-mini-challenge")
+        .join(&run_id);
+    assert!(
+        manifest_dir.is_dir(),
+        "run directory should exist at {}",
+        manifest_dir.display()
     );
 }
