@@ -7,13 +7,74 @@
 // Parser unit tests (at the bottom) always run.
 
 use eatme_assets::{
-    EventsGradingInput, FunctionsGradingInput, LoopsGradingInput, ParametersGradingInput,
-    StepStatus, VariablesGradingInput, grade_events_and_collision, grade_functions,
-    grade_loops_and_conditionals, grade_parameters, grade_variables,
+    EventsGradingInput, FunctionsGradingInput, GradingReport, LoopsGradingInput,
+    ParametersGradingInput, StepStatus, VariablesGradingInput, grade_events_and_collision,
+    grade_functions, grade_loops_and_conditionals, grade_parameters, grade_variables,
 };
 use eatme_core::ast::{Function, Parameter, Procedure, Program, Statement, VariableDeclaration};
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+
+// ---------------------------------------------------------------------------
+// Cached regex patterns — compiled once, reused across all parser calls
+// ---------------------------------------------------------------------------
+
+struct Patterns {
+    procedure: regex::Regex,
+    parameter: regex::Regex,
+    function: regex::Regex,
+    local_decl: regex::Regex,
+    count_loop: regex::Regex,
+    if_else: regex::Regex,
+    event_listener: regex::Regex,
+    collision_listener: regex::Regex,
+    method_call: regex::Regex,
+    func_call: regex::Regex,
+    return_stmt: regex::Regex,
+    assignment: regex::Regex,
+}
+
+static RE: LazyLock<Patterns> = LazyLock::new(|| {
+    Patterns {
+    procedure: regex::Regex::new(
+        r#"<procedure\s+name="([^"]+)"[^>]*>([\s\S]*?)</procedure>"#,
+    ).unwrap(),
+    parameter: regex::Regex::new(
+        r#"<parameter\s+name="([^"]+)"\s+type="([^"]+)""#,
+    ).unwrap(),
+    function: regex::Regex::new(
+        r#"<function\s+name="([^"]+)"[^>]*returnType="([^"]+)"[^>]*>([\s\S]*?)</function>"#,
+    ).unwrap(),
+    local_decl: regex::Regex::new(
+        r#"<localDeclaration\s+name="([^"]+)"\s+type="([^"]+)"[^>]*initialValue="([^"]*)"#,
+    ).unwrap(),
+    count_loop: regex::Regex::new(
+        r#"<countLoop\s+count="(\d+)"[^>]*>([\s\S]*?)</countLoop>"#,
+    ).unwrap(),
+    if_else: regex::Regex::new(
+        r#"<ifElse\s+condition="([^"]+)"[^>]*>([\s\S]*?)</ifElse>"#,
+    ).unwrap(),
+    event_listener: regex::Regex::new(
+        r#"<eventListener\s+event="([^"]+)"[^>]*>([\s\S]*?)</eventListener>"#,
+    ).unwrap(),
+    collision_listener: regex::Regex::new(
+        r#"<collisionListener\s+objectA="([^"]+)"\s+objectB="([^"]+)"[^>]*>([\s\S]*?)</collisionListener>"#,
+    ).unwrap(),
+    method_call: regex::Regex::new(
+        r#"<methodInvocation\s+object="([^"]+)"\s+method="([^"]+)"[^>]*/>"#,
+    ).unwrap(),
+    func_call: regex::Regex::new(
+        r#"<functionInvocation\s+name="([^"]+)"[^>]*/>"#,
+    ).unwrap(),
+    return_stmt: regex::Regex::new(
+        r#"<returnStatement\s+value="([^"]+)"[^>]*/>"#,
+    ).unwrap(),
+    assignment: regex::Regex::new(
+        r#"<assignmentExpression\s+variable="([^"]+)"\s+value="([^"]+)"[^>]*/>"#,
+    ).unwrap(),
+}
+});
 
 // ---------------------------------------------------------------------------
 // A3P Parser — regex-based extraction of AST from Alice .a3p ZIP/XML files
@@ -23,7 +84,6 @@ use std::path::{Path, PathBuf};
 fn alice_starter_projects_dir() -> PathBuf {
     let alice_home = std::env::var("ALICE_HOME").expect("ALICE_HOME must be set");
     let base = PathBuf::from(alice_home);
-    // Common locations: gallery/starterProjects or installed/share/alice3/gallery
     let candidates = [
         base.join("gallery/starterProjects"),
         base.join("installed/share/alice3/gallery/starterProjects"),
@@ -54,9 +114,7 @@ fn read_a3p_entry(a3p_path: &Path, entry_name: &str) -> Option<String> {
 /// Strategy: read the project XML, extract procedure/function/variable
 /// definitions using regex, and build the AST structs.
 fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
-    // The main project XML is typically at the root of the ZIP
     let xml = read_a3p_entry(a3p_path, "project.xml").or_else(|| {
-        // Try to find any .xml entry
         let file = std::fs::File::open(a3p_path).ok()?;
         let mut archive = zip::ZipArchive::new(file).ok()?;
         let xml_index = (0..archive.len()).find(|&i| {
@@ -71,78 +129,50 @@ fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
         Some(contents)
     })?;
 
-    let procedures = extract_procedures(&xml);
-    let functions = extract_functions(&xml);
-    let variable_declarations = extract_variable_declarations(&xml);
-
     Some(Program {
-        procedures,
-        functions,
-        variable_declarations,
+        procedures: extract_procedures(&xml),
+        functions: extract_functions(&xml),
+        variable_declarations: extract_variable_declarations(&xml),
     })
 }
 
-/// Extract procedure definitions from Alice XML using regex.
+/// Extract procedure definitions from Alice XML.
 fn extract_procedures(xml: &str) -> Vec<Procedure> {
-    let proc_re =
-        regex::Regex::new(r#"<procedure\s+name="([^"]+)"[^>]*>([\s\S]*?)</procedure>"#).unwrap();
-
-    let param_re = regex::Regex::new(r#"<parameter\s+name="([^"]+)"\s+type="([^"]+)""#).unwrap();
-
-    let mut procedures = Vec::new();
-    for cap in proc_re.captures_iter(xml) {
-        let name = cap[1].to_string();
-        let body_xml = &cap[2];
-
-        let parameters: Vec<Parameter> = param_re
-            .captures_iter(body_xml)
-            .map(|p| Parameter {
-                name: p[1].to_string(),
-                param_type: p[2].to_string(),
-            })
-            .collect();
-
-        let body = extract_statements(body_xml);
-
-        procedures.push(Procedure {
-            name,
-            parameters,
-            body,
-        });
-    }
-    procedures
+    RE.procedure
+        .captures_iter(xml)
+        .map(|cap| {
+            let body_xml = &cap[2];
+            Procedure {
+                name: cap[1].to_string(),
+                parameters: RE
+                    .parameter
+                    .captures_iter(body_xml)
+                    .map(|p| Parameter {
+                        name: p[1].to_string(),
+                        param_type: p[2].to_string(),
+                    })
+                    .collect(),
+                body: extract_statements(body_xml),
+            }
+        })
+        .collect()
 }
 
-/// Extract function definitions from Alice XML using regex.
+/// Extract function definitions from Alice XML.
 fn extract_functions(xml: &str) -> Vec<Function> {
-    let func_re = regex::Regex::new(
-        r#"<function\s+name="([^"]+)"[^>]*returnType="([^"]+)"[^>]*>([\s\S]*?)</function>"#,
-    )
-    .unwrap();
-
-    let mut functions = Vec::new();
-    for cap in func_re.captures_iter(xml) {
-        let name = cap[1].to_string();
-        let return_type = cap[2].to_string();
-        let body_xml = &cap[3];
-        let body = extract_statements(body_xml);
-        functions.push(Function {
-            name,
-            return_type,
-            body,
-        });
-    }
-    functions
+    RE.function
+        .captures_iter(xml)
+        .map(|cap| Function {
+            name: cap[1].to_string(),
+            return_type: cap[2].to_string(),
+            body: extract_statements(&cap[3]),
+        })
+        .collect()
 }
 
-/// Extract variable declarations from Alice XML using regex.
+/// Extract variable declarations from Alice XML.
 fn extract_variable_declarations(xml: &str) -> Vec<VariableDeclaration> {
-    let var_re = regex::Regex::new(
-        r#"<localDeclaration\s+name="([^"]+)"\s+type="([^"]+)"[^>]*initialValue="([^"]*)"#,
-    )
-    .unwrap();
-
-    var_re
+    RE.local_decl
         .captures_iter(xml)
         .map(|cap| VariableDeclaration {
             name: cap[1].to_string(),
@@ -152,31 +182,27 @@ fn extract_variable_declarations(xml: &str) -> Vec<VariableDeclaration> {
         .collect()
 }
 
-/// Extract statements from an XML fragment using regex patterns.
-/// Only extracts top-level statements; nested statements are handled recursively
-/// by container elements (countLoop, ifElse, eventListener, collisionListener).
+/// Extract statements from an XML fragment.
+/// Top-level only; nested statements are handled recursively via containers.
 fn extract_statements(xml: &str) -> Vec<Statement> {
     let mut statements: Vec<(usize, Statement)> = Vec::new();
-
-    // Container elements: extract them and record their byte ranges so we can
-    // skip simple statements that fall inside a container.
     let mut container_ranges: Vec<(usize, usize)> = Vec::new();
 
-    // CountLoop
-    let loop_re =
-        regex::Regex::new(r#"<countLoop\s+count="(\d+)"[^>]*>([\s\S]*?)</countLoop>"#).unwrap();
-    for cap in loop_re.captures_iter(xml) {
+    // --- Container elements (record ranges to exclude nested leaves) ---
+
+    for cap in RE.count_loop.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         container_ranges.push((m.start(), m.end()));
-        let count: u32 = cap[1].parse().unwrap_or(0);
-        let body = extract_statements(&cap[2]);
-        statements.push((m.start(), Statement::CountLoop { count, body }));
+        statements.push((
+            m.start(),
+            Statement::CountLoop {
+                count: cap[1].parse().unwrap_or(0),
+                body: extract_statements(&cap[2]),
+            },
+        ));
     }
 
-    // IfElse
-    let if_re =
-        regex::Regex::new(r#"<ifElse\s+condition="([^"]+)"[^>]*>([\s\S]*?)</ifElse>"#).unwrap();
-    for cap in if_re.captures_iter(xml) {
+    for cap in RE.if_else.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         container_ranges.push((m.start(), m.end()));
         statements.push((
@@ -189,11 +215,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         ));
     }
 
-    // EventListener
-    let event_re =
-        regex::Regex::new(r#"<eventListener\s+event="([^"]+)"[^>]*>([\s\S]*?)</eventListener>"#)
-            .unwrap();
-    for cap in event_re.captures_iter(xml) {
+    for cap in RE.event_listener.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         container_ranges.push((m.start(), m.end()));
         statements.push((
@@ -205,11 +227,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         ));
     }
 
-    // CollisionListener
-    let collision_re = regex::Regex::new(
-        r#"<collisionListener\s+objectA="([^"]+)"\s+objectB="([^"]+)"[^>]*>([\s\S]*?)</collisionListener>"#
-    ).unwrap();
-    for cap in collision_re.captures_iter(xml) {
+    for cap in RE.collision_listener.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         container_ranges.push((m.start(), m.end()));
         statements.push((
@@ -228,11 +246,9 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
             .any(|&(start, end)| pos > start && pos < end)
     };
 
-    // Simple (leaf) statements — only match if not inside a container element
-    let method_re =
-        regex::Regex::new(r#"<methodInvocation\s+object="([^"]+)"\s+method="([^"]+)"[^>]*/>"#)
-            .unwrap();
-    for cap in method_re.captures_iter(xml) {
+    // --- Leaf statements (skip if inside a container) ---
+
+    for cap in RE.method_call.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         if !is_inside_container(m.start()) {
             statements.push((
@@ -246,8 +262,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         }
     }
 
-    let func_call_re = regex::Regex::new(r#"<functionInvocation\s+name="([^"]+)"[^>]*/>"#).unwrap();
-    for cap in func_call_re.captures_iter(xml) {
+    for cap in RE.func_call.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         if !is_inside_container(m.start()) {
             statements.push((
@@ -259,8 +274,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         }
     }
 
-    let return_re = regex::Regex::new(r#"<returnStatement\s+value="([^"]+)"[^>]*/>"#).unwrap();
-    for cap in return_re.captures_iter(xml) {
+    for cap in RE.return_stmt.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         if !is_inside_container(m.start()) {
             statements.push((
@@ -272,10 +286,7 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         }
     }
 
-    let assign_re =
-        regex::Regex::new(r#"<assignmentExpression\s+variable="([^"]+)"\s+value="([^"]+)"[^>]*/>"#)
-            .unwrap();
-    for cap in assign_re.captures_iter(xml) {
+    for cap in RE.assignment.captures_iter(xml) {
         let m = cap.get(0).unwrap();
         if !is_inside_container(m.start()) {
             statements.push((
@@ -288,23 +299,16 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         }
     }
 
-    // Sort by position to preserve document order
     statements.sort_by_key(|(pos, _)| *pos);
     statements.into_iter().map(|(_, s)| s).collect()
 }
 
 // ---------------------------------------------------------------------------
-// Helper: should this test run?
+// Helpers
 // ---------------------------------------------------------------------------
 
 fn should_run_real_alice() -> bool {
-    std::env::var("EATME_REAL_ALICE").map_or(false, |v| v == "1")
-}
-
-fn skip_unless_real_alice() {
-    if !should_run_real_alice() {
-        eprintln!("EATME_REAL_ALICE not set — skipping real-Alice test");
-    }
+    std::env::var("EATME_REAL_ALICE").is_ok_and(|v| v == "1")
 }
 
 fn find_a3p(name: &str) -> PathBuf {
@@ -318,13 +322,35 @@ fn find_a3p(name: &str) -> PathBuf {
     path
 }
 
-fn grading_input_ready() -> (bool, String, bool, String) {
-    (
-        true,
-        "All 93 scenario assets passed validation".into(),
-        true,
-        "All required tools available".into(),
-    )
+/// Parse amazonMinimum.a3p, grade it, and assert structural validity.
+fn assert_grading_report_valid(report: &GradingReport, lesson: &str, step_count: usize) {
+    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
+    assert_eq!(report.lesson, lesson);
+    assert_eq!(report.steps.len(), step_count);
+
+    // Preconditions always pass with valid inputs
+    for i in 0..3 {
+        assert_eq!(report.steps[i].status, StepStatus::Ready);
+    }
+
+    // All steps must have a valid status
+    for step in &report.steps {
+        assert!(
+            matches!(
+                step.status,
+                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
+            ),
+            "step {} has unexpected status: {:?}",
+            step.name,
+            step.status
+        );
+    }
+}
+
+/// Load amazonMinimum.a3p and parse it into a Program.
+fn load_amazon_minimum() -> Program {
+    let a3p_path = find_a3p("amazonMinimum.a3p");
+    parse_a3p_program(&a3p_path).expect("Failed to parse amazonMinimum.a3p")
 }
 
 // ---------------------------------------------------------------------------
@@ -334,17 +360,10 @@ fn grading_input_ready() -> (bool, String, bool, String) {
 #[test]
 #[ignore]
 fn real_alice_a3p_parses_without_error() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path);
-    assert!(
-        program.is_some(),
-        "Failed to parse amazonMinimum.a3p into a Program"
-    );
-    let program = program.unwrap();
+    let program = load_amazon_minimum();
     assert!(
         !program.procedures.is_empty(),
         "Parsed program should have at least one procedure"
@@ -354,12 +373,10 @@ fn real_alice_a3p_parses_without_error() {
 #[test]
 #[ignore]
 fn real_alice_a3p_round_trip() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
+    let program = load_amazon_minimum();
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored, "Program should survive JSON round-trip");
@@ -368,205 +385,86 @@ fn real_alice_a3p_round_trip() {
 #[test]
 #[ignore]
 fn real_alice_loops_grading() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
-    let (assets_valid, asset_reason, deps_available, deps_reason) = grading_input_ready();
-
+    let program = load_amazon_minimum();
     let report = grade_loops_and_conditionals(LoopsGradingInput {
-        assets_valid,
-        asset_reason,
-        deps_available,
-        deps_reason,
+        assets_valid: true,
+        asset_reason: "All 93 scenario assets passed validation".into(),
+        deps_available: true,
+        deps_reason: "All required tools available".into(),
         student_program: Some(program),
     });
-
-    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
-    assert_eq!(report.lesson, "loops-and-conditionals-mini-challenge");
-    assert_eq!(report.steps.len(), 7);
-
-    // Preconditions always pass with valid inputs
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    // The actual grading results depend on amazonMinimum.a3p content.
-    // We assert the report is structurally valid — actual pass/block
-    // status depends on whether the starter project has loops/conditionals.
-    for step in &report.steps {
-        assert!(
-            matches!(
-                step.status,
-                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
-            ),
-            "step {} has unexpected status: {:?}",
-            step.name,
-            step.status
-        );
-    }
+    assert_grading_report_valid(&report, "loops-and-conditionals-mini-challenge", 7);
 }
 
 #[test]
 #[ignore]
 fn real_alice_events_grading() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
-    let (assets_valid, asset_reason, deps_available, deps_reason) = grading_input_ready();
-
+    let program = load_amazon_minimum();
     let report = grade_events_and_collision(EventsGradingInput {
-        assets_valid,
-        asset_reason,
-        deps_available,
-        deps_reason,
+        assets_valid: true,
+        asset_reason: "All 93 scenario assets passed validation".into(),
+        deps_available: true,
+        deps_reason: "All required tools available".into(),
         student_program: Some(program),
     });
-
-    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
-    assert_eq!(report.lesson, "events-collision-proximity-game");
-    assert_eq!(report.steps.len(), 7);
-
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    for step in &report.steps {
-        assert!(
-            matches!(
-                step.status,
-                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
-            ),
-            "step {} has unexpected status: {:?}",
-            step.name,
-            step.status
-        );
-    }
+    assert_grading_report_valid(&report, "events-collision-proximity-game", 7);
 }
 
 #[test]
 #[ignore]
 fn real_alice_functions_grading() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
-    let (assets_valid, asset_reason, deps_available, deps_reason) = grading_input_ready();
-
+    let program = load_amazon_minimum();
     let report = grade_functions(FunctionsGradingInput {
-        assets_valid,
-        asset_reason,
-        deps_available,
-        deps_reason,
+        assets_valid: true,
+        asset_reason: "All 93 scenario assets passed validation".into(),
+        deps_available: true,
+        deps_reason: "All required tools available".into(),
         student_program: Some(program),
     });
-
-    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
-    assert_eq!(report.lesson, "functions-mini-challenge");
-    assert_eq!(report.steps.len(), 8);
-
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    for step in &report.steps {
-        assert!(
-            matches!(
-                step.status,
-                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
-            ),
-            "step {} has unexpected status: {:?}",
-            step.name,
-            step.status
-        );
-    }
+    assert_grading_report_valid(&report, "functions-mini-challenge", 8);
 }
 
 #[test]
 #[ignore]
 fn real_alice_variables_grading() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
-    let (assets_valid, asset_reason, deps_available, deps_reason) = grading_input_ready();
-
+    let program = load_amazon_minimum();
     let report = grade_variables(VariablesGradingInput {
-        assets_valid,
-        asset_reason,
-        deps_available,
-        deps_reason,
+        assets_valid: true,
+        asset_reason: "All 93 scenario assets passed validation".into(),
+        deps_available: true,
+        deps_reason: "All required tools available".into(),
         student_program: Some(program),
     });
-
-    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
-    assert_eq!(report.lesson, "variables-scorekeeper-timekeeper");
-    assert_eq!(report.steps.len(), 8);
-
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    for step in &report.steps {
-        assert!(
-            matches!(
-                step.status,
-                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
-            ),
-            "step {} has unexpected status: {:?}",
-            step.name,
-            step.status
-        );
-    }
+    assert_grading_report_valid(&report, "variables-scorekeeper-timekeeper", 8);
 }
 
 #[test]
 #[ignore]
 fn real_alice_parameters_grading() {
-    skip_unless_real_alice();
     if !should_run_real_alice() {
         return;
     }
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    let program = parse_a3p_program(&a3p_path).expect("Failed to parse .a3p");
-    let (assets_valid, asset_reason, deps_available, deps_reason) = grading_input_ready();
-
+    let program = load_amazon_minimum();
     let report = grade_parameters(ParametersGradingInput {
-        assets_valid,
-        asset_reason,
-        deps_available,
-        deps_reason,
+        assets_valid: true,
+        asset_reason: "All 93 scenario assets passed validation".into(),
+        deps_available: true,
+        deps_reason: "All required tools available".into(),
         student_program: Some(program),
     });
-
-    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
-    assert_eq!(report.lesson, "parameters-procedure-generalization");
-    assert_eq!(report.steps.len(), 7);
-
-    assert_eq!(report.steps[0].status, StepStatus::Ready);
-    assert_eq!(report.steps[1].status, StepStatus::Ready);
-    assert_eq!(report.steps[2].status, StepStatus::Ready);
-
-    for step in &report.steps {
-        assert!(
-            matches!(
-                step.status,
-                StepStatus::Ready | StepStatus::Blocked | StepStatus::NotYetTested
-            ),
-            "step {} has unexpected status: {:?}",
-            step.name,
-            step.status
-        );
-    }
+    assert_grading_report_valid(&report, "parameters-procedure-generalization", 7);
 }
 
 // ---------------------------------------------------------------------------
