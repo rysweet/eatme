@@ -19,6 +19,14 @@ The suite proves that the grading pipelines produce correct `StepStatus` values
 when faced with real Alice scene data — including correctly identifying missing
 constructs as `Blocked` rather than false-positive `Ready`.
 
+In addition to pipeline-level grading tests, the suite includes **independent
+AST structure tests** that verify the parsed `Program` contains (or lacks)
+specific `Statement` variants before passing it through the grading pipeline.
+These AST-shape assertions catch parser regressions that a grading-only test
+might miss — for example, a parser bug that silently drops `IfElse` nodes would
+still produce the same `Blocked` cascade in the grading test but would fail the
+AST structure test.
+
 ## Contents
 
 - [Usage](#usage)
@@ -46,6 +54,13 @@ Run a single pipeline test by name:
 ```bash
 EATME_REAL_ALICE=1 cargo test -p eatme-alice --test real_ast_grading \
   real_alice_loops_grading_with_starter_project
+```
+
+Run the AST structure test for Lesson 3:
+
+```bash
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test real_ast_grading \
+  real_alice_ast_structure_loops_and_conditionals
 ```
 
 Run the full `eatme-alice` crate test suite (real tests auto-skip when
@@ -179,10 +194,20 @@ All tests share the same structure:
 
 ### Implementable now (grading functions exist)
 
-| Test | Grading function | Lesson | Import path |
-| --- | --- | --- | --- |
-| `real_alice_loops_grading_with_starter_project` | `grade_loops_and_conditionals` | `loops-and-conditionals-mini-challenge` | `eatme_assets::grade_loops_and_conditionals` |
-| `real_alice_events_grading_with_starter_project` | `grade_events_and_collision` | `events-collision-proximity-game` | `eatme_assets::grade_events_and_collision` |
+| Test | Type | Grading function | Lesson | Import path |
+| --- | --- | --- | --- | --- |
+| `real_alice_loops_grading_with_starter_project` | Grading | `grade_loops_and_conditionals` | `loops-and-conditionals-mini-challenge` | `eatme_assets::grade_loops_and_conditionals` |
+| `real_alice_ast_structure_loops_and_conditionals` | AST + Grading | `grade_loops_and_conditionals` | `loops-and-conditionals-mini-challenge` | `eatme_assets::grade_loops_and_conditionals` |
+| `real_alice_events_grading_with_starter_project` | Grading | `grade_events_and_collision` | `events-collision-proximity-game` | `eatme_assets::grade_events_and_collision` |
+
+**Test type distinction:**
+
+- **Grading** — feeds the parsed program through the grading pipeline and
+  asserts `StepStatus` values. Validates the grading function's output contract.
+- **AST + Grading** — first performs independent AST-level assertions
+  (`Statement::IfElse` present, `Statement::CountLoop` absent) directly against
+  the parsed `Program`, then runs the same grading pipeline assertions. This
+  catches parser regressions that a grading-only test would mask.
 
 ### Requires new grading functions + AST extensions
 
@@ -200,7 +225,7 @@ procedures with method calls and conditional statements. It does **not** contain
 counting loops, event listeners, or collision listeners. The tests validate
 that pipelines correctly identify these missing constructs.
 
-### Loops and conditionals (verified against `grade_loops_and_conditionals`)
+### Loops and conditionals — grading test (`real_alice_loops_grading_with_starter_project`)
 
 | Step | Expected status | Reason |
 | --- | --- | --- |
@@ -217,6 +242,30 @@ blocked first (no `CountLoop`), the conditional check is never reached due to
 cascade blocking. This is verified in the source: `evaluate_loops_steps()`
 checks `CountLoop` first, and if blocked, calls `cascade_blocked()` on
 `add-conditional-branch`.
+
+### Loops and conditionals — AST structure test (`real_alice_ast_structure_loops_and_conditionals`)
+
+This test complements the grading test with independent AST-level assertions
+before running the same grading pipeline.
+
+**Phase 1: AST shape assertions**
+
+| Assertion | Expected | Rationale |
+| --- | --- | --- |
+| `Statement::IfElse` present in procedure bodies | ✅ Yes | `amazonMinimum.a3p` contains `ConditionalStatement` nodes |
+| `Statement::CountLoop` present in procedure bodies | ❌ No | Starter project has no counting loops |
+
+The AST assertions walk all procedure bodies via `flat_map` and use `matches!`
+to check for variant presence. This validates that the regex-based `.a3p`
+parser correctly extracts conditional constructs from the real XML data.
+
+**Phase 2: Grading pipeline verification**
+
+Identical to the grading-only test above — all 7 steps are asserted with the
+same expected `StepStatus` values. The grading assertions are repeated
+intentionally: the primary value of this test is the AST-level checks, but
+verifying grading consistency after those checks confirms the pipeline
+behavior is stable across both test paths.
 
 ### Events and collision (verified against `grade_events_and_collision`)
 
@@ -374,14 +423,15 @@ export ALICE_HOME=/opt/alice3
 EATME_REAL_ALICE=1 cargo test -p eatme-alice --test real_ast_grading -- --nocapture
 ```
 
-Expected output (initially 2 tests, growing to 6 as pipelines are added):
+Expected output (initially 3 tests, growing as pipelines are added):
 
 ```text
-running 2 tests
+running 3 tests
 test real_alice_loops_grading_with_starter_project ... ok
+test real_alice_ast_structure_loops_and_conditionals ... ok
 test real_alice_events_grading_with_starter_project ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
 ### Run without Alice (tests auto-skip)
@@ -393,14 +443,27 @@ cargo test -p eatme-alice --test real_ast_grading -- --nocapture
 Output:
 
 ```text
-running 2 tests
+running 3 tests
 test real_alice_loops_grading_with_starter_project ... ok
+test real_alice_ast_structure_loops_and_conditionals ... ok
 test real_alice_events_grading_with_starter_project ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 ```
 
-Each test prints `skipping real-Alice grading test (set EATME_REAL_ALICE=1 to enable)` before returning.
+Each test prints a skip message (e.g., `skipping real-Alice AST structure test
+(set EATME_REAL_ALICE=1 to enable)`) before returning.
+
+### Run only the AST structure test
+
+```bash
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test real_ast_grading \
+  real_alice_ast_structure_loops_and_conditionals -- --nocapture
+```
+
+This is useful when debugging parser regressions — the AST assertions will
+pinpoint whether a construct is being dropped by the regex parser, independent
+of grading pipeline behavior.
 
 ### Verify a specific pipeline against a different starter project
 
@@ -435,9 +498,11 @@ starter project.
    accept an input struct with `student_program: Option<Program>` and return
    `GradingReport`.
 
-2. **Add the test to `real_ast_grading.rs`.** Follow the six-step structure:
-   gate check → resolve path → parse `.a3p` → build input → call grader →
-   assert steps.
+2. **Add the test to `real_ast_grading.rs`.** Follow the structure used by
+   existing tests. For grading-only tests: gate check → resolve path →
+   parse `.a3p` → build input → call grader → assert steps. For AST structure
+   tests: add an AST-assertion phase between parsing and grading (see
+   `real_alice_ast_structure_loops_and_conditionals` for the pattern).
 
 3. **Determine expected outcomes.** Open the `.a3p` file manually (it's a ZIP)
    and inspect `programType.xml` to identify which AST constructs are present.

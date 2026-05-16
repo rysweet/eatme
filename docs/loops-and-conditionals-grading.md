@@ -598,6 +598,23 @@ TMPDIR=/tmp cargo test -p eatme-alice --test loops_and_conditionals_e2e -- --tes
 The E2E test does not launch Alice or require a display server. It exercises the
 Rust API in-process using constructed AST fixtures.
 
+### Real-Alice AST structure test
+
+In addition to synthetic-fixture E2E tests, the
+`real_alice_ast_structure_loops_and_conditionals` test in
+`crates/eatme-alice/tests/real_ast_grading.rs` validates the loops pipeline
+against a real `.a3p` starter project. This test independently asserts that the
+parsed AST contains `IfElse` and lacks `CountLoop` before running the grading
+pipeline — catching parser regressions that synthetic fixtures cannot.
+
+```bash
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test real_ast_grading \
+  real_alice_ast_structure_loops_and_conditionals -- --nocapture
+```
+
+For full details, see
+[Real-Alice Grading Integration Tests](real-alice-grading-integration-tests.md).
+
 ## Troubleshooting
 
 ### `cargo test` fails with "unresolved import `eatme_core::ast`"

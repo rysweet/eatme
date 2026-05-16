@@ -10,10 +10,10 @@
 //!
 //! # Covered pipelines
 //!
-//! | Lesson | Pipeline              | Status                                  |
+//! | Lesson | Pipeline              | Tests                                   |
 //! |--------|-----------------------|-----------------------------------------|
-//! | 3      | Loops & Conditionals  | ✅ Active                               |
-//! | 4      | Events & Collision    | ✅ Active                               |
+//! | 3      | Loops & Conditionals  | ✅ Grading + AST structure              |
+//! | 4      | Events & Collision    | ✅ Grading                              |
 //! | 5      | Functions             | 🔴 TDD contract (behind feature gate)  |
 //! | 6      | Variables             | 🔴 TDD contract (behind feature gate)  |
 //! | 7      | Parameters            | 🔴 TDD contract (behind feature gate)  |
@@ -306,6 +306,81 @@ fn real_alice_loops_grading_with_starter_project() {
     assert_eq!(report.steps[6].status, StepStatus::Blocked);
 
     // Overall: not passed (blocked steps)
+    assert!(!report.passed);
+}
+
+#[test]
+fn real_alice_ast_structure_loops_and_conditionals() {
+    if !real_alice_enabled() {
+        eprintln!("skipping real-Alice AST structure test (set EATME_REAL_ALICE=1 to enable)");
+        return;
+    }
+
+    let a3p_path = starter_project_path("amazonMinimum");
+    assert!(
+        a3p_path.exists(),
+        "starter project not found at {}",
+        a3p_path.display()
+    );
+
+    let program = parse_a3p_program(&a3p_path)
+        .unwrap_or_else(|| panic!("failed to parse {}", a3p_path.display()));
+
+    assert!(
+        !program.procedures.is_empty(),
+        "parsed program should have at least one procedure"
+    );
+
+    // --- Independent AST-level assertions ---
+    let all_stmts: Vec<&Statement> = program
+        .procedures
+        .iter()
+        .flat_map(|p| p.body.iter())
+        .collect();
+
+    let has_if_else = all_stmts
+        .iter()
+        .any(|s| matches!(s, Statement::IfElse { .. }));
+    let has_count_loop = all_stmts
+        .iter()
+        .any(|s| matches!(s, Statement::CountLoop { .. }));
+
+    assert!(
+        has_if_else,
+        "amazonMinimum.a3p AST should contain at least one IfElse construct"
+    );
+    assert!(
+        !has_count_loop,
+        "amazonMinimum.a3p AST should NOT contain any CountLoop construct"
+    );
+
+    // --- Grading pipeline verification ---
+    let report = grade_loops_and_conditionals(loops_input(program));
+
+    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
+    assert_eq!(report.lesson, "loops-and-conditionals-mini-challenge");
+    assert_eq!(report.steps.len(), 7);
+
+    // Precondition steps: Ready
+    assert_eq!(report.steps[0].name, "validate-assets");
+    assert_eq!(report.steps[0].status, StepStatus::Ready);
+    assert_eq!(report.steps[1].name, "check-dependencies");
+    assert_eq!(report.steps[1].status, StepStatus::Ready);
+    assert_eq!(report.steps[2].name, "launch-smoke");
+    assert_eq!(report.steps[2].status, StepStatus::Ready);
+
+    // No CountLoop → build-counting-loop Blocked
+    assert_eq!(report.steps[3].name, "build-counting-loop");
+    assert_eq!(report.steps[3].status, StepStatus::Blocked);
+
+    // Cascade: all downstream steps Blocked
+    assert_eq!(report.steps[4].name, "add-conditional-branch");
+    assert_eq!(report.steps[4].status, StepStatus::Blocked);
+    assert_eq!(report.steps[5].name, "run-world");
+    assert_eq!(report.steps[5].status, StepStatus::Blocked);
+    assert_eq!(report.steps[6].name, "save-project");
+    assert_eq!(report.steps[6].status, StepStatus::Blocked);
+
     assert!(!report.passed);
 }
 
