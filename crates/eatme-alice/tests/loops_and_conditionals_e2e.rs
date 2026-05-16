@@ -35,7 +35,9 @@ fn complete_program() -> Program {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -140,7 +142,9 @@ fn loops_grading_missing_loop_blocks_downstream() {
                 if_body: vec![],
                 else_body: vec![],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_loops_and_conditionals(all_ready_input(Some(program)));
 
@@ -175,7 +179,9 @@ fn loops_grading_missing_conditional_blocks_downstream() {
                     arguments: vec!["FORWARD".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_loops_and_conditionals(all_ready_input(Some(program)));
 

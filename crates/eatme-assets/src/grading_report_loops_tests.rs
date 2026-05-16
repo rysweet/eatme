@@ -30,7 +30,9 @@ fn complete_program() -> Program {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -46,7 +48,9 @@ fn program_with_loop_only() -> Program {
                     arguments: vec!["FORWARD".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -59,7 +63,9 @@ fn program_with_conditional_only() -> Program {
                 if_body: vec![],
                 else_body: vec![],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -436,7 +442,9 @@ fn nested_count_loop_inside_if_else_is_detected() {
                 }],
                 else_body: vec![],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(program)));
     assert_eq!(
@@ -459,7 +467,9 @@ fn nested_if_else_inside_count_loop_is_detected() {
                     else_body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(program)));
     assert_eq!(

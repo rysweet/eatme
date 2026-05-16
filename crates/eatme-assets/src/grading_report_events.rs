@@ -177,6 +177,9 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                 }
             }
             Statement::MethodCall { .. } => {}
+            Statement::FunctionCall { .. }
+            | Statement::ReturnStatement { .. }
+            | Statement::VariableAssignment { .. } => {}
         }
         if *has_event && *has_collision {
             return;

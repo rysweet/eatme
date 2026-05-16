@@ -36,7 +36,9 @@ fn complete_events_program() -> Program {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -52,7 +54,9 @@ fn event_only_program() -> Program {
                     arguments: vec!["\"Hello!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -69,7 +73,9 @@ fn collision_only_program() -> Program {
                     arguments: vec!["\"Ouch!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -231,7 +237,9 @@ fn nested_event_inside_collision_detected() {
                     body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
@@ -259,7 +267,9 @@ fn nested_collision_inside_event_detected() {
                     body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
@@ -276,7 +286,10 @@ fn nested_collision_inside_event_detected() {
 
 #[test]
 fn empty_program_blocks_all_ast_steps() {
-    let program = Program { procedures: vec![] };
+    let program = Program {
+        procedures: vec![],
+        ..Default::default()
+    };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -302,6 +315,7 @@ fn constructs_found_across_multiple_procedures() {
                     event: "SceneActivated".into(),
                     body: vec![],
                 }],
+                ..Default::default()
             },
             Procedure {
                 name: "proc2".into(),
@@ -310,8 +324,10 @@ fn constructs_found_across_multiple_procedures() {
                     object_b: "this.dog".into(),
                     body: vec![],
                 }],
+                ..Default::default()
             },
         ],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(
@@ -345,7 +361,9 @@ fn event_listener_inside_count_loop_detected() {
                     },
                 ],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(report.steps[3].status, StepStatus::Ready);
@@ -369,7 +387,9 @@ fn event_listener_inside_if_else_detected() {
                     body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
     assert_eq!(

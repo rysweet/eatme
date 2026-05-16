@@ -31,7 +31,9 @@ fn complete_events_program() -> Program {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -140,7 +142,9 @@ fn events_grading_missing_event_listener_blocks_downstream() {
                     arguments: vec!["\"Ouch!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
 
@@ -175,7 +179,9 @@ fn events_grading_missing_collision_listener_blocks_downstream() {
                     arguments: vec!["\"Hello!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(all_ready_input(Some(program)));
 

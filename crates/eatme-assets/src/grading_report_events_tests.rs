@@ -26,7 +26,9 @@ fn complete_events_program() -> Program {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -42,7 +44,9 @@ fn program_with_event_only() -> Program {
                     arguments: vec!["\"Hello!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -59,7 +63,9 @@ fn program_with_collision_only() -> Program {
                     arguments: vec!["\"Ouch!\"".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
@@ -422,7 +428,9 @@ fn nested_event_inside_collision_listener_is_detected() {
                     body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(events_input_all_ready(Some(program)));
     assert_eq!(
@@ -450,7 +458,9 @@ fn nested_collision_inside_event_listener_is_detected() {
                     body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let report = grade_events_and_collision(events_input_all_ready(Some(program)));
     assert_eq!(

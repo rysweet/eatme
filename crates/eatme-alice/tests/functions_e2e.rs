@@ -4,7 +4,7 @@
 // save/reopen round-trip.
 
 use eatme_assets::{FunctionsGradingInput, StepStatus, grade_functions};
-use eatme_core::ast::{Function, Parameter, Procedure, Program, Statement};
+use eatme_core::ast::{Function, Procedure, Program, Statement};
 
 // --- Shared fixtures ---
 

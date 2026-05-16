@@ -1,5 +1,5 @@
 use super::*;
-use eatme_core::ast::{Function, Parameter, Procedure, Program, Statement};
+use eatme_core::ast::{Parameter, Procedure, Program, Statement};
 
 // --- Test fixtures ---
 
@@ -274,9 +274,7 @@ fn all_ready_complete_program_call_with_argument_ready() {
     )));
     assert_eq!(report.steps[4].status, StepStatus::Ready);
     assert!(
-        report.steps[4]
-            .reason
-            .contains("call with argument found"),
+        report.steps[4].reason.contains("call with argument found"),
         "reason: {}",
         report.steps[4].reason
     );
@@ -342,8 +340,9 @@ fn no_program_all_interaction_steps_mention_no_student_program() {
 
 #[test]
 fn missing_parameterized_procedure_blocked() {
-    let report =
-        grade_parameters(parameters_input_all_ready(Some(program_with_no_parameters())));
+    let report = grade_parameters(parameters_input_all_ready(Some(
+        program_with_no_parameters(),
+    )));
     assert_eq!(report.steps[3].status, StepStatus::Blocked);
     assert!(
         report.steps[3]
@@ -356,8 +355,9 @@ fn missing_parameterized_procedure_blocked() {
 
 #[test]
 fn missing_parameterized_procedure_cascades_downstream() {
-    let report =
-        grade_parameters(parameters_input_all_ready(Some(program_with_no_parameters())));
+    let report = grade_parameters(parameters_input_all_ready(Some(
+        program_with_no_parameters(),
+    )));
     assert_eq!(
         report.steps[4].status,
         StepStatus::Blocked,

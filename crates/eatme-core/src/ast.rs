@@ -1,14 +1,40 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Program {
     pub procedures: Vec<Procedure>,
+    #[serde(default)]
+    pub functions: Vec<Function>,
+    #[serde(default)]
+    pub variable_declarations: Vec<VariableDeclaration>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Procedure {
     pub name: String,
+    #[serde(default)]
+    pub parameters: Vec<Parameter>,
     pub body: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Function {
+    pub name: String,
+    pub return_type: String,
+    pub body: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Parameter {
+    pub name: String,
+    pub param_type: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub var_type: String,
+    pub initial_value: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -36,6 +62,16 @@ pub enum Statement {
         object_a: String,
         object_b: String,
         body: Vec<Statement>,
+    },
+    FunctionCall {
+        function_name: String,
+    },
+    ReturnStatement {
+        value: String,
+    },
+    VariableAssignment {
+        variable: String,
+        value: String,
     },
 }
 

@@ -1,5 +1,5 @@
 use super::*;
-use eatme_core::ast::{Function, Parameter, Procedure, Program, Statement};
+use eatme_core::ast::{Function, Procedure, Program, Statement};
 
 // --- Test fixtures ---
 
@@ -134,25 +134,33 @@ fn functions_input_both_blocked(program: Option<Program>) -> FunctionsGradingInp
 
 #[test]
 fn schema_version_is_grading_v1() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.schema_version, "eatme.assets/grading/v1");
 }
 
 #[test]
 fn lesson_is_functions_mini_challenge() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.lesson, "functions-mini-challenge");
 }
 
 #[test]
 fn always_produces_eight_steps() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps.len(), 8);
 }
 
 #[test]
 fn step_names_in_order() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     let names: Vec<&str> = report.steps.iter().map(|s| s.name.as_str()).collect();
     assert_eq!(
         names,
@@ -173,14 +181,18 @@ fn step_names_in_order() {
 
 #[test]
 fn root_steps_have_empty_dependencies() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert!(report.steps[0].depends_on.is_empty(), "validate-assets");
     assert!(report.steps[1].depends_on.is_empty(), "check-dependencies");
 }
 
 #[test]
 fn launch_smoke_depends_on_first_two() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(
         report.steps[2].depends_on,
         vec!["validate-assets", "check-dependencies"]
@@ -189,25 +201,33 @@ fn launch_smoke_depends_on_first_two() {
 
 #[test]
 fn create_function_depends_on_launch_smoke() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[3].depends_on, vec!["launch-smoke"]);
 }
 
 #[test]
 fn add_return_statement_depends_on_create_function() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[4].depends_on, vec!["create-function"]);
 }
 
 #[test]
 fn call_function_from_procedure_depends_on_add_return_statement() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[5].depends_on, vec!["add-return-statement"]);
 }
 
 #[test]
 fn run_world_depends_on_call_function_from_procedure() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(
         report.steps[6].depends_on,
         vec!["call-function-from-procedure"]
@@ -216,7 +236,9 @@ fn run_world_depends_on_call_function_from_procedure() {
 
 #[test]
 fn save_project_depends_on_run_world() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[7].depends_on, vec!["run-world"]);
 }
 
@@ -224,7 +246,9 @@ fn save_project_depends_on_run_world() {
 
 #[test]
 fn all_ready_complete_program_report_does_not_pass() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert!(
         !report.passed,
         "report should not pass because run-world is not-yet-tested"
@@ -233,7 +257,9 @@ fn all_ready_complete_program_report_does_not_pass() {
 
 #[test]
 fn all_ready_complete_program_preconditions_ready() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
     assert_eq!(
         report.steps[1].status,
@@ -245,7 +271,9 @@ fn all_ready_complete_program_preconditions_ready() {
 
 #[test]
 fn all_ready_complete_program_create_function_ready() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[3].status, StepStatus::Ready);
     assert!(
         report.steps[3].reason.contains("Function found"),
@@ -256,7 +284,9 @@ fn all_ready_complete_program_create_function_ready() {
 
 #[test]
 fn all_ready_complete_program_add_return_statement_ready() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[4].status, StepStatus::Ready);
     assert!(
         report.steps[4].reason.contains("ReturnStatement found"),
@@ -267,7 +297,9 @@ fn all_ready_complete_program_add_return_statement_ready() {
 
 #[test]
 fn all_ready_complete_program_call_function_from_procedure_ready() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[5].status, StepStatus::Ready);
     assert!(
         report.steps[5].reason.contains("FunctionCall found"),
@@ -278,13 +310,17 @@ fn all_ready_complete_program_call_function_from_procedure_ready() {
 
 #[test]
 fn all_ready_complete_program_run_world_not_yet_tested() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[6].status, StepStatus::NotYetTested);
 }
 
 #[test]
 fn all_ready_complete_program_save_project_ready() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     assert_eq!(report.steps[7].status, StepStatus::Ready);
     assert!(
         report.steps[7].reason.contains("round-trip"),
@@ -340,8 +376,7 @@ fn no_program_preconditions_still_ready() {
 
 #[test]
 fn missing_function_create_function_blocked() {
-    let report =
-        grade_functions(functions_input_all_ready(Some(program_with_no_functions())));
+    let report = grade_functions(functions_input_all_ready(Some(program_with_no_functions())));
     assert_eq!(report.steps[3].status, StepStatus::Blocked);
     assert!(
         report.steps[3].reason.contains("No Function found"),
@@ -352,8 +387,7 @@ fn missing_function_create_function_blocked() {
 
 #[test]
 fn missing_function_cascades_downstream() {
-    let report =
-        grade_functions(functions_input_all_ready(Some(program_with_no_functions())));
+    let report = grade_functions(functions_input_all_ready(Some(program_with_no_functions())));
     assert_eq!(
         report.steps[4].status,
         StepStatus::Blocked,
@@ -372,8 +406,9 @@ fn missing_function_cascades_downstream() {
 
 #[test]
 fn missing_return_add_return_statement_blocked() {
-    let report =
-        grade_functions(functions_input_all_ready(Some(program_with_function_no_return())));
+    let report = grade_functions(functions_input_all_ready(Some(
+        program_with_function_no_return(),
+    )));
     assert_eq!(
         report.steps[3].status,
         StepStatus::Ready,
@@ -381,9 +416,7 @@ fn missing_return_add_return_statement_blocked() {
     );
     assert_eq!(report.steps[4].status, StepStatus::Blocked);
     assert!(
-        report.steps[4]
-            .reason
-            .contains("No ReturnStatement found"),
+        report.steps[4].reason.contains("No ReturnStatement found"),
         "reason: {}",
         report.steps[4].reason
     );
@@ -391,8 +424,9 @@ fn missing_return_add_return_statement_blocked() {
 
 #[test]
 fn missing_return_cascades_downstream() {
-    let report =
-        grade_functions(functions_input_all_ready(Some(program_with_function_no_return())));
+    let report = grade_functions(functions_input_all_ready(Some(
+        program_with_function_no_return(),
+    )));
     assert_eq!(
         report.steps[5].status,
         StepStatus::Blocked,
@@ -409,11 +443,7 @@ fn missing_call_call_function_from_procedure_blocked() {
     let report = grade_functions(functions_input_all_ready(Some(
         program_with_function_and_return_no_call(),
     )));
-    assert_eq!(
-        report.steps[3].status,
-        StepStatus::Ready,
-        "create-function"
-    );
+    assert_eq!(report.steps[3].status, StepStatus::Ready, "create-function");
     assert_eq!(
         report.steps[4].status,
         StepStatus::Ready,
@@ -440,8 +470,9 @@ fn missing_call_cascades_downstream() {
 
 #[test]
 fn blocked_assets_cascades_all_downstream() {
-    let report =
-        grade_functions(functions_input_blocked_assets(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_blocked_assets(Some(
+        complete_functions_program(),
+    )));
     assert_eq!(report.steps[0].status, StepStatus::Blocked);
     assert_eq!(
         report.steps[0].reason,
@@ -464,8 +495,9 @@ fn blocked_assets_cascades_all_downstream() {
 
 #[test]
 fn blocked_deps_cascades_all_downstream() {
-    let report =
-        grade_functions(functions_input_blocked_deps(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_blocked_deps(Some(
+        complete_functions_program(),
+    )));
     assert_eq!(report.steps[0].status, StepStatus::Ready);
     assert_eq!(report.steps[1].status, StepStatus::Blocked);
     assert_eq!(
@@ -493,8 +525,9 @@ fn blocked_deps_cascades_all_downstream() {
 
 #[test]
 fn both_blocked_launch_smoke_mentions_both_blockers() {
-    let report =
-        grade_functions(functions_input_both_blocked(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_both_blocked(Some(
+        complete_functions_program(),
+    )));
     let reason = &report.steps[2].reason;
     assert!(
         reason.contains("validate-assets") && reason.contains("check-dependencies"),
@@ -504,8 +537,9 @@ fn both_blocked_launch_smoke_mentions_both_blockers() {
 
 #[test]
 fn both_blocked_all_steps_blocked() {
-    let report =
-        grade_functions(functions_input_both_blocked(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_both_blocked(Some(
+        complete_functions_program(),
+    )));
     assert_eq!(report.steps[0].status, StepStatus::Blocked);
     assert_eq!(report.steps[1].status, StepStatus::Blocked);
     for i in 2..=7 {
@@ -523,7 +557,9 @@ fn both_blocked_all_steps_blocked() {
 
 #[test]
 fn report_serializes_to_expected_json_shape() {
-    let report = grade_functions(functions_input_all_ready(Some(complete_functions_program())));
+    let report = grade_functions(functions_input_all_ready(
+        Some(complete_functions_program()),
+    ));
     let json: serde_json::Value = serde_json::to_value(&report).unwrap();
 
     assert_eq!(json["schema_version"], "eatme.assets/grading/v1");

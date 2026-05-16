@@ -59,16 +59,16 @@ fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
         // Try to find any .xml entry
         let file = std::fs::File::open(a3p_path).ok()?;
         let mut archive = zip::ZipArchive::new(file).ok()?;
-        for i in 0..archive.len() {
-            let entry = archive.by_index(i).ok()?;
-            if entry.name().ends_with(".xml") {
-                let mut contents = String::new();
-                let mut entry = archive.by_index(i).ok()?;
-                entry.read_to_string(&mut contents).ok()?;
-                return Some(contents);
-            }
-        }
-        None
+        let xml_index = (0..archive.len()).find(|&i| {
+            archive
+                .by_index(i)
+                .ok()
+                .is_some_and(|e| e.name().ends_with(".xml"))
+        })?;
+        let mut entry = archive.by_index(xml_index).ok()?;
+        let mut contents = String::new();
+        entry.read_to_string(&mut contents).ok()?;
+        Some(contents)
     })?;
 
     let procedures = extract_procedures(&xml);
@@ -153,92 +153,144 @@ fn extract_variable_declarations(xml: &str) -> Vec<VariableDeclaration> {
 }
 
 /// Extract statements from an XML fragment using regex patterns.
+/// Only extracts top-level statements; nested statements are handled recursively
+/// by container elements (countLoop, ifElse, eventListener, collisionListener).
 fn extract_statements(xml: &str) -> Vec<Statement> {
-    let mut statements = Vec::new();
+    let mut statements: Vec<(usize, Statement)> = Vec::new();
 
-    // MethodCall: <methodInvocation object="X" method="Y">
-    let method_re =
-        regex::Regex::new(r#"<methodInvocation\s+object="([^"]+)"\s+method="([^"]+)"[^>]*/>"#)
-            .unwrap();
-    for cap in method_re.captures_iter(xml) {
-        statements.push(Statement::MethodCall {
-            object: cap[1].to_string(),
-            method: cap[2].to_string(),
-            arguments: vec![],
-        });
-    }
+    // Container elements: extract them and record their byte ranges so we can
+    // skip simple statements that fall inside a container.
+    let mut container_ranges: Vec<(usize, usize)> = Vec::new();
 
-    // CountLoop: <countLoop count="N">
+    // CountLoop
     let loop_re =
         regex::Regex::new(r#"<countLoop\s+count="(\d+)"[^>]*>([\s\S]*?)</countLoop>"#).unwrap();
     for cap in loop_re.captures_iter(xml) {
+        let m = cap.get(0).unwrap();
+        container_ranges.push((m.start(), m.end()));
         let count: u32 = cap[1].parse().unwrap_or(0);
         let body = extract_statements(&cap[2]);
-        statements.push(Statement::CountLoop { count, body });
+        statements.push((m.start(), Statement::CountLoop { count, body }));
     }
 
-    // IfElse: <ifElse condition="X">
+    // IfElse
     let if_re =
         regex::Regex::new(r#"<ifElse\s+condition="([^"]+)"[^>]*>([\s\S]*?)</ifElse>"#).unwrap();
     for cap in if_re.captures_iter(xml) {
-        statements.push(Statement::IfElse {
-            condition: cap[1].to_string(),
-            if_body: extract_statements(&cap[2]),
-            else_body: vec![],
-        });
+        let m = cap.get(0).unwrap();
+        container_ranges.push((m.start(), m.end()));
+        statements.push((
+            m.start(),
+            Statement::IfElse {
+                condition: cap[1].to_string(),
+                if_body: extract_statements(&cap[2]),
+                else_body: vec![],
+            },
+        ));
     }
 
-    // EventListener: <eventListener event="X">
+    // EventListener
     let event_re =
         regex::Regex::new(r#"<eventListener\s+event="([^"]+)"[^>]*>([\s\S]*?)</eventListener>"#)
             .unwrap();
     for cap in event_re.captures_iter(xml) {
-        statements.push(Statement::EventListener {
-            event: cap[1].to_string(),
-            body: extract_statements(&cap[2]),
-        });
+        let m = cap.get(0).unwrap();
+        container_ranges.push((m.start(), m.end()));
+        statements.push((
+            m.start(),
+            Statement::EventListener {
+                event: cap[1].to_string(),
+                body: extract_statements(&cap[2]),
+            },
+        ));
     }
 
-    // CollisionListener: <collisionListener objectA="X" objectB="Y">
+    // CollisionListener
     let collision_re = regex::Regex::new(
         r#"<collisionListener\s+objectA="([^"]+)"\s+objectB="([^"]+)"[^>]*>([\s\S]*?)</collisionListener>"#
     ).unwrap();
     for cap in collision_re.captures_iter(xml) {
-        statements.push(Statement::CollisionListener {
-            object_a: cap[1].to_string(),
-            object_b: cap[2].to_string(),
-            body: extract_statements(&cap[3]),
-        });
+        let m = cap.get(0).unwrap();
+        container_ranges.push((m.start(), m.end()));
+        statements.push((
+            m.start(),
+            Statement::CollisionListener {
+                object_a: cap[1].to_string(),
+                object_b: cap[2].to_string(),
+                body: extract_statements(&cap[3]),
+            },
+        ));
     }
 
-    // FunctionCall: <functionInvocation name="X"/>
+    let is_inside_container = |pos: usize| -> bool {
+        container_ranges
+            .iter()
+            .any(|&(start, end)| pos > start && pos < end)
+    };
+
+    // Simple (leaf) statements — only match if not inside a container element
+    let method_re =
+        regex::Regex::new(r#"<methodInvocation\s+object="([^"]+)"\s+method="([^"]+)"[^>]*/>"#)
+            .unwrap();
+    for cap in method_re.captures_iter(xml) {
+        let m = cap.get(0).unwrap();
+        if !is_inside_container(m.start()) {
+            statements.push((
+                m.start(),
+                Statement::MethodCall {
+                    object: cap[1].to_string(),
+                    method: cap[2].to_string(),
+                    arguments: vec![],
+                },
+            ));
+        }
+    }
+
     let func_call_re = regex::Regex::new(r#"<functionInvocation\s+name="([^"]+)"[^>]*/>"#).unwrap();
     for cap in func_call_re.captures_iter(xml) {
-        statements.push(Statement::FunctionCall {
-            function_name: cap[1].to_string(),
-        });
+        let m = cap.get(0).unwrap();
+        if !is_inside_container(m.start()) {
+            statements.push((
+                m.start(),
+                Statement::FunctionCall {
+                    function_name: cap[1].to_string(),
+                },
+            ));
+        }
     }
 
-    // ReturnStatement: <returnStatement value="X"/>
     let return_re = regex::Regex::new(r#"<returnStatement\s+value="([^"]+)"[^>]*/>"#).unwrap();
     for cap in return_re.captures_iter(xml) {
-        statements.push(Statement::ReturnStatement {
-            value: cap[1].to_string(),
-        });
+        let m = cap.get(0).unwrap();
+        if !is_inside_container(m.start()) {
+            statements.push((
+                m.start(),
+                Statement::ReturnStatement {
+                    value: cap[1].to_string(),
+                },
+            ));
+        }
     }
 
-    // VariableAssignment: <assignmentExpression variable="X" value="Y"/>
     let assign_re =
         regex::Regex::new(r#"<assignmentExpression\s+variable="([^"]+)"\s+value="([^"]+)"[^>]*/>"#)
             .unwrap();
     for cap in assign_re.captures_iter(xml) {
-        statements.push(Statement::VariableAssignment {
-            variable: cap[1].to_string(),
-            value: cap[2].to_string(),
-        });
+        let m = cap.get(0).unwrap();
+        if !is_inside_container(m.start()) {
+            statements.push((
+                m.start(),
+                Statement::VariableAssignment {
+                    variable: cap[1].to_string(),
+                    value: cap[2].to_string(),
+                },
+            ));
+        }
     }
 
-    statements
+    // Sort by position to preserve document order
+    statements.sort_by_key(|(pos, _)| *pos);
+    statements.into_iter().map(|(_, s)| s).collect()
 }
 
 // ---------------------------------------------------------------------------

@@ -52,7 +52,9 @@ fn program_with_all_variants_round_trips() {
                     }],
                 },
             ],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -61,7 +63,10 @@ fn program_with_all_variants_round_trips() {
 
 #[test]
 fn empty_program_round_trips() {
-    let program = Program { procedures: vec![] };
+    let program = Program {
+        procedures: vec![],
+        ..Default::default()
+    };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -73,7 +78,9 @@ fn empty_procedure_body_round_trips() {
         procedures: vec![Procedure {
             name: "emptyMethod".into(),
             body: vec![],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -91,6 +98,7 @@ fn multiple_procedures_round_trip() {
                     method: "walk".into(),
                     arguments: vec![],
                 }],
+                ..Default::default()
             },
             Procedure {
                 name: "methodTwo".into(),
@@ -99,8 +107,10 @@ fn multiple_procedures_round_trip() {
                     method: "run".into(),
                     arguments: vec!["FAST".into()],
                 }],
+                ..Default::default()
             },
         ],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -122,7 +132,9 @@ fn count_loop_containing_method_call_round_trips() {
                     arguments: vec!["FORWARD".into(), "1.0".into()],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -146,7 +158,9 @@ fn if_else_containing_count_loop_round_trips() {
                 }],
                 else_body: vec![],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -173,7 +187,9 @@ fn deeply_nested_three_levels_round_trips() {
                     else_body: vec![],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -384,7 +400,9 @@ fn event_listener_nested_in_count_loop_round_trips() {
                     }],
                 }],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
@@ -409,7 +427,9 @@ fn collision_listener_nested_in_if_else_round_trips() {
                 }],
                 else_body: vec![],
             }],
+            ..Default::default()
         }],
+        ..Default::default()
     };
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
