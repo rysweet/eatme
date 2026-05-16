@@ -8,6 +8,7 @@ use eatme_assets::{EventsGradingInput, GradingReport, StepStatus, grade_events_a
 use eatme_core::ast::{Procedure, Program, Statement};
 use std::env;
 use std::fs;
+use std::io::Read;
 use std::path::PathBuf;
 
 // --- Shared fixtures ---
@@ -335,10 +336,17 @@ fn real_alice_events_collision_launch_smoke() {
         "screenshot file should exist at {}",
         screenshot_path.display(),
     );
-    let screenshot_bytes = fs::read(&screenshot_path)
-        .unwrap_or_else(|e| panic!("reading screenshot {}: {e}", screenshot_path.display()));
+    let mut png_header = [0u8; 4];
+    fs::File::open(&screenshot_path)
+        .and_then(|mut f| f.read_exact(&mut png_header).map(|_| ()))
+        .unwrap_or_else(|e| {
+            panic!(
+                "reading screenshot header {}: {e}",
+                screenshot_path.display()
+            )
+        });
     assert!(
-        screenshot_bytes.starts_with(&[0x89, b'P', b'N', b'G']),
+        png_header.starts_with(&[0x89, b'P', b'N', b'G']),
         "screenshot should have PNG magic bytes",
     );
 
@@ -406,7 +414,14 @@ fn real_alice_events_grading_complete_program() {
     }
 
     let program = complete_events_program();
-    let report = grade_events_and_collision(all_ready_input(Some(program.clone())));
+
+    // JSON round-trip before consuming program — avoids clone
+    let json = serde_json::to_string(&program).expect("program should serialize");
+    let restored: Program =
+        serde_json::from_str(&json).expect("program should deserialize from JSON");
+    assert_eq!(program, restored, "AST must survive JSON round-trip");
+
+    let report = grade_events_and_collision(all_ready_input(Some(program)));
 
     assert_preconditions_ready(&report);
 
@@ -431,12 +446,6 @@ fn real_alice_events_grading_complete_program() {
 
     // save-project: round-trip verified
     assert_eq!(report.steps[6].status, StepStatus::Ready, "save-project");
-
-    // JSON round-trip of the complete AST
-    let json = serde_json::to_string(&program).expect("program should serialize");
-    let restored: Program =
-        serde_json::from_str(&json).expect("program should deserialize from JSON");
-    assert_eq!(program, restored, "AST must survive JSON round-trip");
 
     // Grading report serializes to valid JSON with expected structure
     let report_json =
