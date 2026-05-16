@@ -80,8 +80,8 @@ static RE: LazyLock<Patterns> = LazyLock::new(|| {
 // A3P Parser — regex-based extraction of AST from Alice .a3p ZIP/XML files
 // ---------------------------------------------------------------------------
 
-/// Locate the Alice starter project directory from ALICE_HOME.
-fn alice_starter_projects_dir() -> PathBuf {
+/// Cached starter projects directory — resolved once from ALICE_HOME.
+static STARTER_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let alice_home = std::env::var("ALICE_HOME").expect("ALICE_HOME must be set");
     let base = PathBuf::from(alice_home);
     let candidates = [
@@ -97,26 +97,20 @@ fn alice_starter_projects_dir() -> PathBuf {
         "Could not find starterProjects directory under ALICE_HOME. Tried: {:?}",
         candidates
     );
-}
-
-/// Read a specific XML entry from a .a3p ZIP file by entry name.
-fn read_a3p_entry(a3p_path: &Path, entry_name: &str) -> Option<String> {
-    let file = std::fs::File::open(a3p_path).ok()?;
-    let mut archive = zip::ZipArchive::new(file).ok()?;
-    let mut entry = archive.by_name(entry_name).ok()?;
-    let mut contents = String::new();
-    entry.read_to_string(&mut contents).ok()?;
-    Some(contents)
-}
+});
 
 /// Parse a .a3p file into our AST Program representation.
 ///
-/// Strategy: read the project XML, extract procedure/function/variable
-/// definitions using regex, and build the AST structs.
+/// Opens the ZIP once, tries "project.xml" then falls back to first .xml entry.
 fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
-    let xml = read_a3p_entry(a3p_path, "project.xml").or_else(|| {
-        let file = std::fs::File::open(a3p_path).ok()?;
-        let mut archive = zip::ZipArchive::new(file).ok()?;
+    let file = std::fs::File::open(a3p_path).ok()?;
+    let mut archive = zip::ZipArchive::new(file).ok()?;
+
+    let xml = if let Ok(mut entry) = archive.by_name("project.xml") {
+        let mut buf = String::with_capacity(entry.size() as usize);
+        entry.read_to_string(&mut buf).ok()?;
+        buf
+    } else {
         let xml_index = (0..archive.len()).find(|&i| {
             archive
                 .by_index(i)
@@ -124,10 +118,10 @@ fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
                 .is_some_and(|e| e.name().ends_with(".xml"))
         })?;
         let mut entry = archive.by_index(xml_index).ok()?;
-        let mut contents = String::new();
-        entry.read_to_string(&mut contents).ok()?;
-        Some(contents)
-    })?;
+        let mut buf = String::with_capacity(entry.size() as usize);
+        entry.read_to_string(&mut buf).ok()?;
+        buf
+    };
 
     Some(Program {
         procedures: extract_procedures(&xml),
@@ -240,10 +234,14 @@ fn extract_statements(xml: &str) -> Vec<Statement> {
         ));
     }
 
+    container_ranges.sort_unstable();
     let is_inside_container = |pos: usize| -> bool {
-        container_ranges
+        // Binary search: skip ranges starting at/after pos, check remainder in reverse
+        let idx = container_ranges.partition_point(|&(start, _)| start < pos);
+        container_ranges[..idx]
             .iter()
-            .any(|&(start, end)| pos > start && pos < end)
+            .rev()
+            .any(|&(_, end)| pos < end)
     };
 
     // --- Leaf statements (skip if inside a container) ---
@@ -312,8 +310,7 @@ fn should_run_real_alice() -> bool {
 }
 
 fn find_a3p(name: &str) -> PathBuf {
-    let dir = alice_starter_projects_dir();
-    let path = dir.join(name);
+    let path = STARTER_DIR.join(name);
     assert!(
         path.exists(),
         "Starter project not found: {}",
@@ -347,10 +344,14 @@ fn assert_grading_report_valid(report: &GradingReport, lesson: &str, step_count:
     }
 }
 
-/// Load amazonMinimum.a3p and parse it into a Program.
+/// Cached parse of amazonMinimum.a3p — parsed once, cloned per test.
+static AMAZON_MINIMUM: LazyLock<Program> = LazyLock::new(|| {
+    let path = find_a3p("amazonMinimum.a3p");
+    parse_a3p_program(&path).expect("Failed to parse amazonMinimum.a3p")
+});
+
 fn load_amazon_minimum() -> Program {
-    let a3p_path = find_a3p("amazonMinimum.a3p");
-    parse_a3p_program(&a3p_path).expect("Failed to parse amazonMinimum.a3p")
+    AMAZON_MINIMUM.clone()
 }
 
 // ---------------------------------------------------------------------------
