@@ -103,10 +103,16 @@ static STARTER_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 ///
 /// Opens the ZIP once, tries "project.xml" then falls back to first .xml entry.
 fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
+    // Cap decompressed XML at 50 MB — Alice projects are typically < 5 MB.
+    const MAX_XML_SIZE: u64 = 50 * 1024 * 1024;
+
     let file = std::fs::File::open(a3p_path).ok()?;
     let mut archive = zip::ZipArchive::new(file).ok()?;
 
     let xml = if let Ok(mut entry) = archive.by_name("project.xml") {
+        if entry.size() > MAX_XML_SIZE {
+            return None;
+        }
         let mut buf = String::with_capacity(entry.size() as usize);
         entry.read_to_string(&mut buf).ok()?;
         buf
@@ -118,6 +124,9 @@ fn parse_a3p_program(a3p_path: &Path) -> Option<Program> {
                 .is_some_and(|e| e.name().ends_with(".xml"))
         })?;
         let mut entry = archive.by_index(xml_index).ok()?;
+        if entry.size() > MAX_XML_SIZE {
+            return None;
+        }
         let mut buf = String::with_capacity(entry.size() as usize);
         entry.read_to_string(&mut buf).ok()?;
         buf
