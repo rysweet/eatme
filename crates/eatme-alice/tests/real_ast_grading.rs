@@ -338,20 +338,34 @@ fn real_alice_ast_structure_loops_and_conditionals() {
         .flat_map(|p| p.body.iter())
         .collect();
 
-    let has_if_else = all_stmts
+    let if_else_count = all_stmts
         .iter()
-        .any(|s| matches!(s, Statement::IfElse { .. }));
-    let has_count_loop = all_stmts
+        .filter(|s| matches!(s, Statement::IfElse { .. }))
+        .count();
+    let count_loop_count = all_stmts
         .iter()
-        .any(|s| matches!(s, Statement::CountLoop { .. }));
+        .filter(|s| matches!(s, Statement::CountLoop { .. }))
+        .count();
+
+    eprintln!(
+        "AST structure: {} procedures, {} top-level statements, {} IfElse, {} CountLoop",
+        program.procedures.len(),
+        all_stmts.len(),
+        if_else_count,
+        count_loop_count
+    );
 
     assert!(
-        has_if_else,
-        "amazonMinimum.a3p AST should contain at least one IfElse construct"
+        if_else_count > 0,
+        "amazonMinimum.a3p AST should contain at least one IfElse construct \
+         (found {} top-level statements across {} procedures)",
+        all_stmts.len(),
+        program.procedures.len()
     );
-    assert!(
-        !has_count_loop,
-        "amazonMinimum.a3p AST should NOT contain any CountLoop construct"
+    // Starter project has no loops — the student must add them
+    assert_eq!(
+        count_loop_count, 0,
+        "amazonMinimum.a3p starter AST should NOT contain any CountLoop construct"
     );
 
     // --- Grading pipeline verification ---
@@ -372,6 +386,11 @@ fn real_alice_ast_structure_loops_and_conditionals() {
     // No CountLoop → build-counting-loop Blocked
     assert_eq!(report.steps[3].name, "build-counting-loop");
     assert_eq!(report.steps[3].status, StepStatus::Blocked);
+    assert!(
+        report.steps[3].reason.contains("No CountLoop found"),
+        "reason should explain missing construct: {}",
+        report.steps[3].reason
+    );
 
     // Cascade: all downstream steps Blocked
     assert_eq!(report.steps[4].name, "add-conditional-branch");
