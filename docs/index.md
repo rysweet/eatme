@@ -51,7 +51,6 @@ Eatme has three layers:
 | Running the real-Alice events-and-collision integration test | [Events and Collision Grading — Real-Alice Integration Test](events-and-collision-grading.md#real-alice-integration-test) |
 | Running real-Alice lesson grading tests (L5–L8) | [Real-Alice Lesson Grading Tests](real-alice-lesson-grading-tests.md) |
 
-
 ## What eatme proves
 
 Eatme proves that Alice-facing assets and adapter scenarios are coherent before

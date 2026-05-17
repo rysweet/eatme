@@ -196,7 +196,7 @@ statement inside an existing procedure's body.
 - `program.procedures` contains at least one `Procedure`
 - No `VariableDeclaration` statements exist in any procedure body
 - No `VariableAssignment` statements exist in any procedure body
-- `MethodCall` arguments do not reference variables (all start with `"`)
+- `MethodCall` arguments are empty (the a3p parser does not extract arguments)
 
 **Student augmentation:** Adds a `VariableDeclaration` statement, a
 `MethodCall` with a non-literal (variable) argument, and a
@@ -226,7 +226,7 @@ statement inside an existing procedure's body.
 **Baseline AST expectations:**
 - `program.procedures` contains at least one `Procedure`
 - All `Procedure::parameters` fields are empty
-- `MethodCall::arguments` are empty or contain only literal values
+- `MethodCall::arguments` are empty (the a3p parser does not extract arguments)
 
 **Student augmentation:** Adds a `Parameter` to one procedure's `parameters`
 field and includes a `MethodCall` statement with non-empty `arguments`.
@@ -296,7 +296,7 @@ project and add constructs during the lesson.
 | `VariableAssignment` | | ✓ added | | |
 | `Parameter` (struct) | | | ✓ added to `procedure.parameters` | may be present |
 | `EventListener` | | | | ✓ added |
-| `CollisionListener` | | | | ✓ added |
+| `CollisionListener` | | | | alternative to EventListener |
 | `CountLoop` | | | | ✓ present or added |
 | `IfElse` | | | | may be present |
 | `MethodCall` | present | ✓ with non-literal arg | ✓ with non-empty arguments | ✓ ≥2 required |
@@ -338,17 +338,16 @@ infrastructure and add a new `.a3p` parser module:
 
 | Module | Import | Purpose |
 | --- | --- | --- |
-| `launch_smoke_support` | `mod launch_smoke_support;` | `PathOverride` for `$PATH` management, `TestFixture` for fake toolchains (used by synthetic tests). The real-Alice tests also use `run_launch_smoke` from `eatme_alice` directly. |
+| `launch_smoke_support` | `mod launch_smoke_support;` | `PathOverride` for `$PATH` management, `TestFixture` for fake toolchains (used by synthetic tests). Also provides `real_alice_enabled()`, `alice_home()`, and `starter_project_path()` for the real-Alice integration tests. |
 | `a3p_parser_support` | `mod a3p_parser_support;` | `parse_a3p_program(project_path)` parses a `.a3p` file and returns a `Program` AST. Uses regex parsing to extract `Procedure` bodies from Tweedle source. **New module** created alongside these tests. |
 
 The real-Alice environment gate (`real_alice_enabled()`) and Alice home
-resolution (`alice_home()`) are defined inline in each test file, following
-the pattern from `launch_smoke_real.rs`.
+resolution (`alice_home()`) are imported from `launch_smoke_support`, the
+shared test helper module.
 
 Note: The L3 (`loops_and_conditionals_e2e.rs`) and L4
-(`events_and_collision_e2e.rs`) tests do not currently have real-Alice
-variants — they only contain synthetic fixture tests. The L5–L8 tests are the
-first lesson-grading tests to include the full real-Alice pipeline.
+(`events_collision_pass_fail_e2e.rs`) tests also include real-Alice integration
+variants using the same pattern.
 
 ### `launch_smoke_support` helpers
 
@@ -358,27 +357,22 @@ let fixture = launch_smoke_support::TestFixture::new();
 let _path_override = launch_smoke_support::PathOverride::prepend(&fixture.bin);
 ```
 
-### Environment gate (inline per test file)
+### Environment gate (from `launch_smoke_support`)
 
 ```rust
-fn real_alice_enabled() -> bool {
-    std::env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> std::path::PathBuf {
-    std::path::PathBuf::from(
-        std::env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()),
-    )
-}
+// Imported from launch_smoke_support module:
+use launch_smoke_support::{alice_home, real_alice_enabled, starter_project_path};
 ```
+
+The `real_alice_enabled()` function checks `std::env::var("EATME_REAL_ALICE") == Ok("1")`.
+The `alice_home()` function resolves `ALICE_HOME` or defaults to `/opt/alice3`.
 
 ### `a3p_parser_support` helpers
 
 ```rust
 // Parse a starter project's .a3p file into an AST
-let program = a3p_parser_support::parse_a3p_program(&starter_project_path);
+let a3p_path = starter_project_path("amazonMinimum");
+let program = a3p_parser_support::parse_a3p_program(&a3p_path);
 ```
 
 ## Configuration
@@ -391,9 +385,9 @@ Each real-Alice test configures `LaunchSmokeOptions` with:
 | --- | --- | --- |
 | `alice_home` | `alice_home()` | Resolved from `ALICE_HOME` or default `/opt/alice3`. |
 | `scenario` | `LaunchSmokeScenario::new("<scenario-id>")` | Lesson-specific scenario from `assets/scenarios/eatme/`. Uses the default starter project (`africa.a3p`). Override `starter_project` if the lesson needs a different `.a3p`. |
-| `run_id` | `<lesson>-real` | Kebab-case identifier (e.g., `functions-real`). |
-| `runs_dir` | `target/test-work/<lesson>-real/runs` | Isolated under `target/` to avoid polluting project root. |
-| `timeout_seconds` | `900` | 15-minute timeout for cold Maven builds and slow Java startup. |
+| `run_id` | `real-<lesson>-<nanos>` | Dynamic identifier with nanosecond suffix to avoid collisions (e.g., `real-functions-1234567890`). |
+| `runs_dir` | `target/test-work/<lesson>-real` | Isolated under `target/` to avoid polluting project root. |
+| `timeout_seconds` | `90` | 90-second timeout for Alice startup. |
 | `json` | `true` | Machine-readable output. |
 | `no_memory` | `true` | No persistent memory side effects from test runs. |
 | `offline_package` | `true` | Uses cached Maven dependencies, no network access. |
@@ -527,10 +521,10 @@ after adding real-Alice tests:
 
 | File | Expected lines | Limit |
 | --- | --- | --- |
-| `crates/eatme-alice/tests/functions_e2e.rs` | ~330 | 500 |
-| `crates/eatme-alice/tests/variables_e2e.rs` | ~230 | 500 |
-| `crates/eatme-alice/tests/parameters_e2e.rs` | ~200 | 500 |
-| `crates/eatme-alice/tests/creative_project_e2e.rs` | ~250 | 500 |
+| `crates/eatme-alice/tests/functions_e2e.rs` | ~425 | 500 |
+| `crates/eatme-alice/tests/variables_e2e.rs` | ~326 | 500 |
+| `crates/eatme-alice/tests/parameters_e2e.rs` | ~308 | 500 |
+| `crates/eatme-alice/tests/creative_project_e2e.rs` | ~342 | 500 |
 
 If any file approaches 500 lines, extract the real-Alice test into a separate
 `<lesson>_e2e_real.rs` test file.
