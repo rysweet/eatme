@@ -135,7 +135,7 @@ Each real-Alice test follows the same 6-phase pipeline:
 └────────┬─────────┘
          │ manifest.failure_category.is_none()
 ┌────────▼─────────┐
-│ 3. Parse .a3p    │  a3p_parser_support::parse_starter_a3p()
+│ 3. Parse .a3p    │  a3p_parser_support::parse_a3p_program()
 └────────┬─────────┘
          │ Program { procedures }
 ┌────────▼─────────┐
@@ -339,7 +339,7 @@ infrastructure and add a new `.a3p` parser module:
 | Module | Import | Purpose |
 | --- | --- | --- |
 | `launch_smoke_support` | `mod launch_smoke_support;` | `PathOverride` for `$PATH` management, `TestFixture` for fake toolchains (used by synthetic tests). The real-Alice tests also use `run_launch_smoke` from `eatme_alice` directly. |
-| `a3p_parser_support` | `mod a3p_parser_support;` | `parse_starter_a3p(project_path)` parses a `.a3p` file and returns a `Program` AST. Uses regex parsing to extract `Procedure` bodies from Tweedle source. **New module** created alongside these tests. |
+| `a3p_parser_support` | `mod a3p_parser_support;` | `parse_a3p_program(project_path)` parses a `.a3p` file and returns a `Program` AST. Uses regex parsing to extract `Procedure` bodies from Tweedle source. **New module** created alongside these tests. |
 
 The real-Alice environment gate (`real_alice_enabled()`) and Alice home
 resolution (`alice_home()`) are defined inline in each test file, following
@@ -378,7 +378,7 @@ fn alice_home() -> std::path::PathBuf {
 
 ```rust
 // Parse a starter project's .a3p file into an AST
-let program = a3p_parser_support::parse_starter_a3p(&starter_project_path);
+let program = a3p_parser_support::parse_a3p_program(&starter_project_path);
 ```
 
 ## Configuration
