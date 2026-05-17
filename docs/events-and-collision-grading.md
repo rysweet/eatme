@@ -874,11 +874,16 @@ complete program is provided, the result is still `NOT READY` because
 
 ## E2E test
 
-The end-to-end test at `crates/eatme-alice/tests/events_and_collision_e2e.rs`
-validates the full pipeline: AST construction → grading report → JSON
-serialization → save/reopen round-trip.
+The end-to-end tests at `crates/eatme-alice/tests/events_and_collision_e2e.rs`
+and `crates/eatme-alice/tests/events_collision_pass_fail_e2e.rs` validate the
+full pipeline: AST construction → grading report → JSON serialization →
+save/reopen round-trip. Shared fixtures live in `events_collision_support.rs`.
 
 ### Test inventory
+
+Tests are split across two test files:
+
+**`events_and_collision_e2e.rs`** (synthetic + Phase 1):
 
 | Test | What it validates |
 | --- | --- |
@@ -889,36 +894,42 @@ serialization → save/reopen round-trip.
 | `ast_with_events_survives_json_round_trip` | Serialize a `Program` with event and collision listeners to JSON and deserialize it. The restored AST equals the original. |
 | `events_grading_report_schema_version_and_lesson` | Schema version is `eatme.assets/grading/v1` and lesson is `events-collision-proximity-game`. |
 | `events_grading_report_has_seven_steps` | Report always contains exactly 7 steps in the expected order. |
+| `events_grading_report_survives_json_round_trip` | Grading report serializes to JSON and deserializes with correct lesson and step count. |
 | `real_alice_events_collision_launch_smoke` | **Real-Alice gated (Phase 1).** Launches real Alice via `run_launch_smoke` with `events-collision-proximity-game` scenario, validates 6 manifest assertions, screenshot PNG, manifest.json round-trip, and alice.log. |
-| `real_alice_events_grading_baseline_no_program` | **Real-Alice gated (Phase 2).** Calls `grade_events_and_collision` with `None` program, asserts steps 3–6 are `Blocked`. |
-| `real_alice_events_grading_complete_program` | **Real-Alice gated (Phase 3).** Constructs synthetic AST with `EventListener` + `CollisionListener`, grades, asserts all steps `Ready` (except `run-world` = `NotYetTested`), JSON round-trip. |
+
+**`events_collision_pass_fail_e2e.rs`** (Phase 4 pass/fail signals):
+
+| Test | What it validates |
+| --- | --- |
+| `real_alice_e2e_launch_then_grade_keyboard_and_collision` | **Real-Alice gated (Phase 4a).** Launches real Alice, then grades a keyboard+collision AST. All grading steps pass. JSON round-trip verified. |
+| `real_alice_e2e_keyboard_only_fails_collision_detection` | **Real-Alice gated (Phase 4b).** Keyboard-only program passes event-listener step but fails collision-listener step. Downstream steps cascade to blocked. |
+| `real_alice_e2e_collision_only_fails_event_listener` | **Real-Alice gated (Phase 4c).** Collision-only program fails event-listener step. All downstream steps cascade to blocked. |
 
 ### Running the E2E test
 
 ```bash
-TMPDIR=/tmp cargo test -p eatme-alice --test events_and_collision_e2e -- --test-threads=1
+TMPDIR=/tmp cargo test -p eatme-alice --test events_and_collision_e2e --test events_collision_pass_fail_e2e -- --test-threads=1
 ```
 
 The synthetic E2E tests do not launch Alice or require a display server. They
 exercise the Rust API in-process using constructed AST fixtures. The real-Alice
-integration tests (`real_alice_events_collision_launch_smoke`,
-`real_alice_events_grading_baseline_no_program`,
-`real_alice_events_grading_complete_program`) are gated behind
-`EATME_REAL_ALICE=1` and skip automatically when the environment variable is
-absent.
+integration tests (`real_alice_events_collision_launch_smoke` and the Phase 4
+tests) are gated behind `EATME_REAL_ALICE=1` and skip automatically when the
+environment variable is absent.
 
 ## Real-Alice integration test
 
-Three gated test functions validate the complete events-and-collision pipeline
+Four gated test functions validate the complete events-and-collision pipeline
 against a real Alice installation:
 
-| Test | Phase | What it validates |
-| --- | --- | --- |
-| `real_alice_events_collision_launch_smoke` | 1 | Real Alice launch with `events-collision-proximity-game` scenario. |
-| `real_alice_events_grading_baseline_no_program` | 2 | Baseline grading produces `Blocked` for all interaction steps when no program is provided. |
-| `real_alice_events_grading_complete_program` | 3 | Complete grading with synthetic `EventListener` + `CollisionListener` AST. |
+| Test | Phase | File | What it validates |
+| --- | --- | --- | --- |
+| `real_alice_events_collision_launch_smoke` | 1 | `events_and_collision_e2e.rs` | Real Alice launch with `events-collision-proximity-game` scenario. |
+| `real_alice_e2e_launch_then_grade_keyboard_and_collision` | 4a | `events_collision_pass_fail_e2e.rs` | Launch + grade keyboard+collision program end-to-end. |
+| `real_alice_e2e_keyboard_only_fails_collision_detection` | 4b | `events_collision_pass_fail_e2e.rs` | Keyboard-only program: event step passes, collision step fails. |
+| `real_alice_e2e_collision_only_fails_event_listener` | 4c | `events_collision_pass_fail_e2e.rs` | Collision-only program: event step fails, all downstream blocked. |
 
-All three are gated behind `EATME_REAL_ALICE=1` and skip automatically when the
+All four are gated behind `EATME_REAL_ALICE=1` and skip automatically when the
 environment variable is absent.
 
 ### Usage
@@ -927,14 +938,14 @@ Run the real-Alice events-and-collision integration tests:
 
 ```bash
 EATME_REAL_ALICE=1 cargo test -p eatme-alice --test events_and_collision_e2e \
-  real_alice -- --nocapture
+  --test events_collision_pass_fail_e2e -- real_alice --nocapture
 ```
 
-Run all events-and-collision tests (the real-Alice test skips automatically when
+Run all events-and-collision tests (the real-Alice tests skip automatically when
 `EATME_REAL_ALICE` is unset):
 
 ```bash
-cargo test -p eatme-alice --test events_and_collision_e2e
+cargo test -p eatme-alice --test events_and_collision_e2e --test events_collision_pass_fail_e2e
 ```
 
 ### Environment gate
@@ -950,11 +961,12 @@ attribute. This matches the pattern established by the
 The test always compiles, always appears in the test binary, and returns early
 when the gate is not satisfied.
 
-### Three-phase test design
+### Test design
 
-The real-Alice integration tests are split into three independent `#[test]`
-functions that share `real_alice_enabled()` and `alice_home()` helpers (same
-pattern as `launch_smoke_real.rs`):
+The real-Alice integration tests are split across two test files with four
+gated `#[test]` functions that share `real_alice_enabled()` and `alice_home()`
+helpers from `launch_smoke_support.rs`, plus shared fixtures from
+`events_collision_support.rs`:
 
 #### Phase 1: `real_alice_events_collision_launch_smoke`
 
@@ -988,83 +1000,32 @@ Phase 1 validates:
 | Manifest JSON round-trips | Serialize → deserialize produces identical manifest. |
 | `alice.log` artifact is non-empty | Log evidence was captured. |
 
-#### Phase 2: `real_alice_events_grading_baseline_no_program`
+#### Phase 4: Pass/fail signal tests (`events_collision_pass_fail_e2e.rs`)
 
-Verifies that when no student program is provided (`student_program: None`), all
-interaction steps (3–6) are correctly `Blocked`. This confirms the grading
-pipeline does not produce false positives when no AST is available:
+Three additional gated tests in `events_collision_pass_fail_e2e.rs` validate
+pass/fail signals for partial AST programs:
 
-```rust
-let baseline = grade_events_and_collision(EventsGradingInput {
-    assets_valid: true,
-    asset_reason: "Assets valid".into(),
-    deps_available: true,
-    deps_reason: "Deps available".into(),
-    student_program: None,
-});
+- **Phase 4a** (`real_alice_e2e_launch_then_grade_keyboard_and_collision`):
+  Launches real Alice, then grades a complete keyboard+collision AST. All
+  grading steps pass. JSON round-trip verified.
+- **Phase 4b** (`real_alice_e2e_keyboard_only_fails_collision_detection`):
+  Keyboard-only program passes `add-event-listener` but fails
+  `add-collision-listener`. Downstream steps cascade to `Blocked`.
+- **Phase 4c** (`real_alice_e2e_collision_only_fails_event_listener`):
+  Collision-only program fails `add-event-listener`. All downstream steps
+  cascade to `Blocked`.
 
-// No program provided — all interaction steps blocked
-assert_eq!(baseline.steps[3].status, StepStatus::Blocked);
-assert_eq!(baseline.steps[4].status, StepStatus::Blocked);
-```
+### What the tests prove end-to-end
 
-#### Phase 3: `real_alice_events_grading_complete_program`
-
-Constructs a synthetic program with both `EventListener` and
-`CollisionListener` and verifies the grading pipeline recognizes them:
-
-```rust
-let augmented_program = Program {
-    procedures: vec![Procedure {
-        name: "myFirstMethod".into(),
-        body: vec![
-            Statement::EventListener {
-                event: "SceneActivated".into(),
-                body: vec![/* ... */],
-            },
-            Statement::CollisionListener {
-                object_a: "this.cat".into(),
-                object_b: "this.dog".into(),
-                body: vec![/* ... */],
-            },
-        ],
-    }],
-};
-
-let augmented = grade_events_and_collision(EventsGradingInput {
-    student_program: Some(augmented_program),
-    // ... same precondition fields ...
-});
-
-assert_eq!(augmented.steps[3].status, StepStatus::Ready);
-assert_eq!(augmented.steps[4].status, StepStatus::Ready);
-```
-
-Phase 3 also validates evidence persistence:
-
-| Check | What it proves |
-| --- | --- |
-| All 7 step names in order | Step dependency graph is intact. |
-| `validate-assets` and `check-dependencies` are `Ready` | Preconditions pass. |
-| `launch-smoke` is `Ready` | Both preconditions satisfied. |
-| `add-event-listener` is `Ready` | `EventListener` found in student AST. |
-| `add-collision-listener` is `Ready` | `CollisionListener` found in student AST. |
-| `run-world` is `NotYetTested` | Runtime execution not performed (expected). |
-| `save-project` is `Ready` | AST round-trip passed. |
-| JSON round-trip | `serde_json::to_string` → `serde_json::from_str` produces identical report. |
-| Manifest persisted | `manifest.json` written to `target/test-work/events-collision-real/runs/`. |
-
-### What the test proves end-to-end
-
-When run against a real Alice installation, the integration test proves:
+When run against a real Alice installation, the integration tests prove:
 
 1. **Real launch works for Lesson 4.** The `events-collision-proximity-game`
    scenario launches through the same harness used by all other lesson smokes.
-2. **Baseline blocks without a program.** When no student program is provided,
-   all interaction steps correctly report `Blocked`, confirming no false
-   positives.
-3. **Grading recognizes augmented ASTs.** After adding event and collision
-   listener constructs, all AST-aware grading steps report `Ready`.
+2. **Grading recognizes complete ASTs.** Programs with both event and collision
+   listener constructs pass all AST-aware grading steps.
+3. **Partial ASTs produce correct pass/fail signals.** Keyboard-only programs
+   pass event steps but fail collision steps; collision-only programs fail event
+   steps and cascade to block all downstream steps.
 4. **Evidence persists.** Both the launch manifest and the grading report survive
    JSON serialization and can be written to disk for CI artifact collection.
 5. **No false positives.** The `run-world` step correctly reports `NotYetTested`
@@ -1076,8 +1037,8 @@ When run against a real Alice installation, the integration test proves:
 | --- | --- | --- |
 | `alice_home` | `ALICE_HOME` env var or `/opt/alice3` | Standard Alice checkout location (matches `launch_smoke_real.rs`). |
 | `scenario` | `events-collision-proximity-game` | Lesson 4 scenario from the committed roster. |
-| `run_id` | `real-alice-events-collision` | Kebab-case identifier for the evidence directory. |
-| `runs_dir` | `target/test-work/events-collision-real/runs` | Isolated under `target/` to avoid polluting project root. |
+| `run_id` | `events-collision-{nanos}` | Timestamped identifier for the evidence directory. |
+| `runs_dir` | `target/test-work/launch-smoke-real` | Isolated under `target/` to avoid polluting project root. |
 | `timeout_seconds` | `90` | Covers cold Maven builds and slow Java startup. |
 | `json` | `true` | Machine-readable output. |
 | `no_memory` | `true` | No persistent memory side effects from test runs. |
@@ -1107,20 +1068,21 @@ The real-Alice integration test requires the same Linux host dependencies as the
 ```bash
 export ALICE_HOME=/opt/alice3
 EATME_REAL_ALICE=1 cargo test -p eatme-alice --test events_and_collision_e2e \
-  real_alice -- --nocapture
+  --test events_collision_pass_fail_e2e -- real_alice --nocapture
 ```
 
 #### Inspect evidence after a real run
 
 ```bash
-cat target/test-work/events-collision-real/runs/*/manifest.json \
+cat target/test-work/launch-smoke-real/real-alice-launch-smoke/*/manifest.json \
   | jq '.assertions | to_entries[] | {key, passed: .value.passed}'
 ```
 
-#### Run all tests including the real-Alice test
+#### Run all tests including the real-Alice tests
 
 ```bash
-EATME_REAL_ALICE=1 cargo test -p eatme-alice --test events_and_collision_e2e -- --nocapture
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test events_and_collision_e2e \
+  --test events_collision_pass_fail_e2e -- --nocapture
 ```
 
 Output includes both synthetic and real-Alice tests:
@@ -1133,15 +1095,18 @@ test events_grading_missing_collision_listener_blocks_downstream ... ok
 test ast_with_events_survives_json_round_trip ... ok
 test events_grading_report_schema_version_and_lesson ... ok
 test events_grading_report_has_seven_steps ... ok
+test events_grading_report_survives_json_round_trip ... ok
 test real_alice_events_collision_launch_smoke ... ok
-test real_alice_events_grading_baseline_no_program ... ok
-test real_alice_events_grading_complete_program ... ok
+test real_alice_e2e_launch_then_grade_keyboard_and_collision ... ok
+test real_alice_e2e_keyboard_only_fails_collision_detection ... ok
+test real_alice_e2e_collision_only_fails_event_listener ... ok
 ```
 
 #### Run without the real-Alice gate (test auto-skips)
 
 ```bash
-cargo test -p eatme-alice --test events_and_collision_e2e
+cargo test -p eatme-alice --test events_and_collision_e2e \
+  --test events_collision_pass_fail_e2e
 ```
 
 The real-Alice tests print skip messages to stderr and pass without
@@ -1149,8 +1114,9 @@ exercising Alice:
 
 ```text
 skipping real-Alice events-collision launch smoke (set EATME_REAL_ALICE=1 to enable)
-skipping real-Alice events-collision baseline grading (set EATME_REAL_ALICE=1 to enable)
-skipping real-Alice events-collision complete grading (set EATME_REAL_ALICE=1 to enable)
+skipping real-Alice e2e keyboard+collision test (set EATME_REAL_ALICE=1 to enable)
+skipping real-Alice e2e keyboard-only test (set EATME_REAL_ALICE=1 to enable)
+skipping real-Alice e2e collision-only test (set EATME_REAL_ALICE=1 to enable)
 ```
 
 ## Troubleshooting
@@ -1230,7 +1196,9 @@ limit. Expected file sizes after extraction:
 | `crates/eatme-assets/src/grading_report_events_tests.rs` | ~490 | 500 |
 | `crates/eatme-assets/src/grading_report_extraction_tests.rs` | ~277 | 500 |
 | `crates/eatme-assets/src/grading_report_extraction_edge_tests.rs` | ~404 | 500 |
-| `crates/eatme-alice/tests/events_and_collision_e2e.rs` | ~440 | 500 |
+| `crates/eatme-alice/tests/events_and_collision_e2e.rs` | ~335 | 500 |
+| `crates/eatme-alice/tests/events_collision_pass_fail_e2e.rs` | ~310 | 500 |
+| `crates/eatme-alice/tests/events_collision_support.rs` | ~80 | 500 |
 
 If either `grading_report.rs` or `grading_report_events.rs` approaches the
 500-line limit again, follow the same extraction pattern: identify the
