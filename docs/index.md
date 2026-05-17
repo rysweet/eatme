@@ -49,6 +49,7 @@ Eatme has three layers:
 | Reviewing events and collision grading | [Events and Collision Grading](events-and-collision-grading.md) |
 | Understanding grading module layout and shared helpers | [Grading Module Architecture](grading-module-architecture.md) |
 | Running the real-Alice events-and-collision integration test | [Events and Collision Grading — Real-Alice Integration Test](events-and-collision-grading.md#real-alice-integration-test) |
+| Running real-Alice lesson grading tests (L5–L8) | [Real-Alice Lesson Grading Tests](real-alice-lesson-grading-tests.md) |
 
 ## What eatme proves
 
