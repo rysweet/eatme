@@ -2,9 +2,18 @@
 // of the functions grading pipeline.
 // Exercises: AST construction → grading report → JSON serialization →
 // save/reopen round-trip.
+// Test 8 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use eatme_assets::{FunctionsGradingInput, StepStatus, grade_functions};
 use eatme_core::ast::{Function, Procedure, Program, Statement};
+
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{alice_home, real_alice_enabled, starter_project_path};
+
+#[allow(dead_code)]
+mod a3p_parser_support;
+use a3p_parser_support::parse_a3p_program;
 
 fn complete_functions_program() -> Program {
     Program {
@@ -209,4 +218,208 @@ fn ast_with_functions_survives_json_round_trip() {
     let json = serde_json::to_string_pretty(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
+}
+
+// ===================================================================
+// Real-Alice integration tests — gated behind EATME_REAL_ALICE=1
+// ===================================================================
+
+// -------------------------------------------------------------------
+// Test 8: Real Alice launch + functions grading pipeline integration
+// -------------------------------------------------------------------
+//
+// Launches real Alice with the functions-as-questions-about-the-world
+// scenario, verifies the launch succeeds, then parses the starter
+// project, augments it with student-added Function/ReturnStatement/
+// FunctionCall constructs, and feeds it through the grading pipeline.
+
+#[test]
+fn real_alice_functions_grading_integration() {
+    if !real_alice_enabled() {
+        eprintln!(
+            "skipping real-Alice functions integration test (set EATME_REAL_ALICE=1 to enable)"
+        );
+        return;
+    }
+
+    // --- Phase 1: Launch real Alice with the lesson-5 scenario ---
+
+    let runs_dir = std::env::current_dir()
+        .unwrap()
+        .join("target/test-work/functions-real");
+    let run_id = format!(
+        "real-functions-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
+    let manifest = eatme_alice::run_launch_smoke(&eatme_alice::LaunchSmokeOptions {
+        alice_home: alice_home(),
+        run_id: run_id.clone(),
+        runs_dir: runs_dir.clone(),
+        timeout_seconds: 90,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: eatme_alice::LaunchSmokeScenario::new("functions-as-questions-about-the-world"),
+    })
+    .expect("run_launch_smoke should succeed for functions scenario");
+
+    assert!(
+        manifest.failure_category.is_none(),
+        "expected no failure category for functions scenario, got: {:?}",
+        manifest.failure_category,
+    );
+
+    for key in ["dependencies_available", "process_started"] {
+        let result = manifest
+            .assertions
+            .get(key)
+            .unwrap_or_else(|| panic!("manifest missing assertion: {key}"));
+        assert!(result.passed, "assertion {key} failed: {}", result.detail);
+    }
+
+    // --- Phase 2: Parse real starter project and verify baseline AST ---
+    //
+    // The starter project (amazonMinimum.a3p) has procedures with MethodCall
+    // but NO Function, ReturnStatement, or FunctionCall — the student adds
+    // those. We verify this baseline, then augment for Phase 3.
+
+    let a3p_path = starter_project_path("amazonMinimum");
+    assert!(
+        a3p_path.exists(),
+        "starter project not found at {}",
+        a3p_path.display()
+    );
+
+    let starter_program = parse_a3p_program(&a3p_path)
+        .unwrap_or_else(|| panic!("failed to parse {}", a3p_path.display()));
+
+    assert!(
+        !starter_program.procedures.is_empty(),
+        "parsed starter project should have at least one procedure"
+    );
+
+    // Baseline: the a3p parser always produces functions: vec![] (never
+    // extracts Function/ReturnStatement/FunctionCall from XML).
+    assert!(
+        starter_program.functions.is_empty(),
+        "amazonMinimum.a3p starter should NOT contain any Function definitions"
+    );
+
+    let has_function_call = starter_program
+        .procedures
+        .iter()
+        .flat_map(|p| p.body.iter())
+        .any(|s| matches!(s, Statement::FunctionCall { .. }));
+    assert!(
+        !has_function_call,
+        "amazonMinimum.a3p starter should NOT contain any FunctionCall statements"
+    );
+
+    // Augment the starter with student-added constructs to simulate a
+    // completed student program for the grading pipeline.
+    let mut student_program = starter_program;
+    student_program.functions.push(Function {
+        name: "computeDistance".into(),
+        return_type: "DecimalNumber".into(),
+        body: vec![
+            Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "getDistanceTo".into(),
+                arguments: vec!["this.dog".into()],
+            },
+            Statement::ReturnStatement {
+                expression: "this.cat getDistanceTo this.dog".into(),
+            },
+        ],
+    });
+    if let Some(first_proc) = student_program.procedures.first_mut() {
+        first_proc.body.push(Statement::FunctionCall {
+            object: "this".into(),
+            function: "computeDistance".into(),
+            arguments: vec!["this.cat".into(), "this.dog".into()],
+        });
+    }
+
+    // --- Phase 3: Run grading pipeline and verify pass/fail signals ---
+
+    let report = grade_functions(FunctionsGradingInput {
+        assets_valid: true,
+        asset_reason: "Real Alice launch succeeded; assets validated".into(),
+        deps_available: true,
+        deps_reason: "All dependencies available (verified via real launch)".into(),
+        student_program: Some(student_program),
+    });
+
+    assert_eq!(report.schema_version, "eatme.assets/grading/v1");
+    assert_eq!(report.lesson, "using-functions-mini-challenge");
+
+    // Preconditions: validate-assets, check-dependencies, launch-smoke → Ready
+    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
+    assert_eq!(
+        report.steps[1].status,
+        StepStatus::Ready,
+        "check-dependencies"
+    );
+    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+
+    // AST steps: create-function, add-return-statement,
+    // call-function-from-procedure → all Ready
+    assert_eq!(
+        report.steps[3].status,
+        StepStatus::Ready,
+        "create-function must be Ready when Function present"
+    );
+    assert_eq!(
+        report.steps[4].status,
+        StepStatus::Ready,
+        "add-return-statement must be Ready when ReturnStatement present"
+    );
+    assert_eq!(
+        report.steps[5].status,
+        StepStatus::Ready,
+        "call-function-from-procedure must be Ready when FunctionCall present"
+    );
+
+    // run-world and save-project → Ready (all AST checks passed)
+    assert_eq!(
+        report.steps[6].status,
+        StepStatus::Ready,
+        "run-world must be Ready when all function steps pass"
+    );
+    assert_eq!(
+        report.steps[7].status,
+        StepStatus::Ready,
+        "save-project must be Ready"
+    );
+
+    // Overall: passed is true because all steps are Ready.
+    assert!(
+        report.passed,
+        "report.passed must be true when all function constructs present"
+    );
+
+    // Grading report must survive JSON round-trip.
+    let json = serde_json::to_string(&report).unwrap();
+    assert!(
+        json.contains("using-functions-mini-challenge"),
+        "JSON must contain lesson name"
+    );
+    assert!(
+        json.contains("eatme.assets/grading/v1"),
+        "JSON must contain schema version"
+    );
+
+    // Manifest round-trip: verify the launch manifest was persisted.
+    let manifest_dir = runs_dir
+        .join("functions-as-questions-about-the-world")
+        .join(&run_id);
+    assert!(
+        manifest_dir.is_dir(),
+        "run directory should exist at {}",
+        manifest_dir.display()
+    );
 }
