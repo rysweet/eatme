@@ -1,6 +1,6 @@
 // Creative/Design project E2E tests: validates the student-facing contract
 // of the creative project grading pipeline.
-// Test 4 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
+// Test 6 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use eatme_assets::{CreativeProjectGradingInput, StepStatus, grade_creative_project};
 use eatme_core::ast::{Parameter, Procedure, Program, Statement};

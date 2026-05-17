@@ -1,6 +1,6 @@
 // Parameters E2E tests: validates the student-facing contract
 // of the parameters grading pipeline.
-// Test 6 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
+// Test 7 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use eatme_assets::{ParametersGradingInput, StepStatus, grade_parameters};
 use eatme_core::ast::{Parameter, Procedure, Program, Statement};

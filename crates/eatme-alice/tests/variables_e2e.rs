@@ -1,6 +1,6 @@
 // Using Variables E2E tests: validates the student-facing contract
 // of the variables grading pipeline.
-// Test 6 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
+// Test 7 (below) adds a real-Alice integration path gated by EATME_REAL_ALICE=1.
 
 use eatme_assets::{StepStatus, VariablesGradingInput, grade_variables};
 use eatme_core::ast::{Procedure, Program, Statement};
@@ -203,21 +203,24 @@ fn real_alice_variables_grading_integration() {
     );
 
     // Baseline: the a3p parser never extracts VariableDeclaration or
-    // VariableAssignment from XML.
-    let has_var_decl = starter_program
+    // VariableAssignment from XML. Collect once, check twice (matches
+    // the loops_and_conditionals reference pattern).
+    let all_stmts: Vec<&Statement> = starter_program
         .procedures
         .iter()
         .flat_map(|p| p.body.iter())
+        .collect();
+
+    let has_var_decl = all_stmts
+        .iter()
         .any(|s| matches!(s, Statement::VariableDeclaration { .. }));
     assert!(
         !has_var_decl,
         "amazonMinimum.a3p starter should NOT contain VariableDeclaration"
     );
 
-    let has_var_assign = starter_program
-        .procedures
+    let has_var_assign = all_stmts
         .iter()
-        .flat_map(|p| p.body.iter())
         .any(|s| matches!(s, Statement::VariableAssignment { .. }));
     assert!(
         !has_var_assign,
