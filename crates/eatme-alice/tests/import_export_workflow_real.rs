@@ -23,19 +23,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-// ---------------------------------------------------------------------------
-// Environment gate
-// ---------------------------------------------------------------------------
+#[allow(dead_code)]
+mod launch_smoke_support;
+use launch_smoke_support::{alice_home, real_alice_enabled};
 
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
-}
+const REOPEN_SELECTOR: &str = "scene.eatmeFirstLessonStep";
 
 // ---------------------------------------------------------------------------
 // Inline typed deserialization structs — define the hook contracts
@@ -131,16 +123,30 @@ fn start_xvfb_for_workflow(runs_dir: &Path) -> XvfbGuard {
         {
             Ok(_) => {
                 let display = format!(":{port}");
-                let child = Command::new("Xvfb")
+                let child = match Command::new("Xvfb")
                     .args([&display, "-screen", "0", "1280x1024x24", "-ac"])
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .spawn()
-                    .unwrap_or_else(|e| panic!("start Xvfb on {display}: {e}"));
+                {
+                    Ok(c) => c,
+                    Err(e) => {
+                        let _ = fs::remove_file(&lock_path);
+                        panic!("start Xvfb on {display}: {e}");
+                    }
+                };
 
                 let deadline = Instant::now() + Duration::from_secs(5);
                 loop {
                     if Instant::now() > deadline {
+                        // Return the guard so Drop cleans up both the child
+                        // process and lock file before the panic unwinds.
+                        let guard = XvfbGuard {
+                            child,
+                            display: display.clone(),
+                            lock_path: lock_path.clone(),
+                        };
+                        drop(guard);
                         panic!("Xvfb {display} did not become ready within 5s");
                     }
                     let probe = Command::new("xdpyinfo")
@@ -257,17 +263,30 @@ fn extract_saved_project_path(ui_action_contract_path: &Path, run_dir: &Path) ->
 }
 
 // ---------------------------------------------------------------------------
-// Artifact validation helper
+// Path safety + artifact validation helpers
 // ---------------------------------------------------------------------------
 
-/// Validates an evidence artifact: file must exist and be non-empty.
-/// Uses a single `metadata()` call instead of separate `is_file()` + `metadata()`.
+/// Rejects absolute paths, parent traversal (`..`), and empty strings.
+/// Matches the documented contract: "Absolute paths, parent traversal, symlink
+/// escapes … are not accepted as proof."
+fn is_safe_relative_path(p: &str) -> bool {
+    !p.is_empty() && !Path::new(p).is_absolute() && !p.split(['/', '\\']).any(|seg| seg == "..")
+}
+
+/// Validates an evidence artifact: path must be a safe relative path,
+/// file must exist and be non-empty.
 fn validate_evidence_artifact(
     dir: &Path,
     relative: &str,
     label: &str,
     errors: &mut Vec<String>,
 ) -> Option<PathBuf> {
+    if !is_safe_relative_path(relative) {
+        errors.push(format!(
+            "{label} has unsafe path (absolute or parent traversal): {relative}"
+        ));
+        return None;
+    }
     let path = dir.join(relative);
     match fs::metadata(&path) {
         Ok(m) if m.is_file() && m.len() > 0 => Some(path),
@@ -384,7 +403,9 @@ fn probe_export_hook(
                 r.export_format
             ));
         }
-        if !r.source_saved_project_artifact.starts_with("project-save/") {
+        if !r.source_saved_project_artifact.starts_with("project-save/")
+            || !is_safe_relative_path(&r.source_saved_project_artifact)
+        {
             validation_errors.push(format!(
                 "source must reference project-save/ dir, got: {}",
                 r.source_saved_project_artifact
@@ -559,7 +580,7 @@ fn save_reopen_export_round_trip() {
             "--saved-project",
             &saved_project_str,
             "--reopen-selector",
-            "scene.eatmeFirstLessonStep",
+            REOPEN_SELECTOR,
             "--evidence-dir",
             &reopen_evidence_str,
             "--json",
