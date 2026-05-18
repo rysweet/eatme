@@ -104,18 +104,18 @@ fn extract_xml_entries<R: Read + std::io::Seek>(
     archive: &mut zip::ZipArchive<R>,
     max_bytes: usize,
 ) -> String {
-    let mut all_xml = String::new();
+    let mut all_xml = String::with_capacity(4096);
     for i in 0..archive.len() {
         let mut entry = match archive.by_index(i) {
             Ok(e) => e,
             Err(_) => continue,
         };
-        let name = entry.name().to_string();
-        // Path-traversal guard: skip entries with ".." or absolute paths
-        if name.contains("..") || name.starts_with('/') {
-            continue;
-        }
-        if !name.ends_with(".xml") {
+        // Check name without heap-allocating a String per entry.
+        let skip = {
+            let name = entry.name();
+            name.contains("..") || name.starts_with('/') || !name.ends_with(".xml")
+        };
+        if skip {
             continue;
         }
         let mut content = String::new();
@@ -173,3 +173,21 @@ pub static SCENE_ENTITY_PATTERN: LazyLock<Regex> =
 
 pub static RESOURCE_DECL_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"resourceReference|ModelResourceReference").unwrap());
+
+// ===================================================================
+// Gallery cache — extracts every starter-project ZIP exactly once
+// ===================================================================
+
+/// Pre-extracted gallery data shared by all integration tests.
+/// Each entry is `(path, concatenated_xml)`. Computed once per process
+/// on first access, eliminating redundant ZIP reads across tests.
+pub static GALLERY_CACHE: LazyLock<Vec<(PathBuf, String)>> = LazyLock::new(|| {
+    let dir = starter_projects_dir();
+    discover_a3p_files(&dir)
+        .into_iter()
+        .map(|p| {
+            let xml = extract_all_xml(&p);
+            (p, xml)
+        })
+        .collect()
+});

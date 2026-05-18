@@ -4,6 +4,9 @@
 //! with the `starter-projects/` directory populated. Tests use aggregate
 //! assertions ("at least one project contains X") to accommodate variety
 //! across starter projects.
+//!
+//! All tests share a single [`GALLERY_CACHE`] that extracts every ZIP
+//! exactly once, avoiding redundant I/O when many pattern tests run.
 
 #[allow(dead_code)]
 mod a3p_content_support;
@@ -17,11 +20,6 @@ fn skip_unless_real_alice() -> bool {
     false
 }
 
-fn gallery_files() -> Vec<std::path::PathBuf> {
-    let dir = starter_projects_dir();
-    discover_a3p_files(&dir)
-}
-
 // ===================================================================
 // Gallery discovery
 // ===================================================================
@@ -31,9 +29,8 @@ fn gallery_is_not_empty() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
     assert!(
-        !files.is_empty(),
+        !GALLERY_CACHE.is_empty(),
         "expected at least one .a3p in {}",
         starter_projects_dir().display()
     );
@@ -44,10 +41,8 @@ fn every_a3p_contains_xml() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    assert!(!files.is_empty(), "gallery must not be empty");
-    for path in &files {
-        let xml = extract_all_xml(path);
+    assert!(!GALLERY_CACHE.is_empty(), "gallery must not be empty");
+    for (path, xml) in GALLERY_CACHE.iter() {
         assert!(
             !xml.is_empty(),
             "{} contains no XML entries",
@@ -65,13 +60,10 @@ fn scene_entity_types_present() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| SCENE_ENTITY_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| SCENE_ENTITY_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain scene entity XML (SScene/SModel/SGround)"
     );
 }
@@ -81,13 +73,10 @@ fn resource_declarations_present() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| RESOURCE_DECL_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| RESOURCE_DECL_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain resource declarations"
     );
 }
@@ -101,13 +90,10 @@ fn joint_hierarchy_in_gallery() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| JOINT_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| JOINT_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain joint/skeleton XML patterns"
     );
 }
@@ -117,13 +103,10 @@ fn bounding_box_in_gallery() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| BOUNDING_BOX_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| BOUNDING_BOX_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain bounding box XML patterns"
     );
 }
@@ -137,13 +120,10 @@ fn camera_controls_in_gallery() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| CAMERA_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| CAMERA_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain camera XML patterns"
     );
 }
@@ -153,13 +133,10 @@ fn audio_references_in_gallery() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| AUDIO_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| AUDIO_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain audio resource references"
     );
 }
@@ -169,13 +146,10 @@ fn billboard_elements_in_gallery() {
     if skip_unless_real_alice() {
         return;
     }
-    let files = gallery_files();
-    let matches: Vec<_> = files
-        .iter()
-        .filter(|p| BILLBOARD_PATTERN.is_match(&extract_all_xml(p)))
-        .collect();
     assert!(
-        !matches.is_empty(),
+        GALLERY_CACHE
+            .iter()
+            .any(|(_, xml)| BILLBOARD_PATTERN.is_match(xml)),
         "expected at least one .a3p to contain billboard/text overlay XML patterns"
     );
 }
