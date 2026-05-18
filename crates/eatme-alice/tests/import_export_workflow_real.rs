@@ -67,6 +67,39 @@ struct ProjectExportHookResult {
     export_artifact: String,
 }
 
+/// Export probe struct matching the save/reopen probe pattern.
+///
+/// Constructed inline after running the export hook. `proves_export()` returns
+/// `true` only when the hook succeeded, the JSON contract is valid, and the
+/// exported `build.xml` exists as a non-empty file on disk.
+#[allow(dead_code)]
+struct UiActionExportProjectProbe {
+    id: String,
+    action_id: String,
+    status: String,
+    detail: String,
+    export_format: String,
+    candidate_hook_path: String,
+    command: Option<String>,
+    exit_status: Option<i32>,
+    stdout: String,
+    stderr: String,
+    source_saved_project_artifact: String,
+    exported_build_file: Option<PathBuf>,
+    export_artifact: Option<PathBuf>,
+    validation_errors: Vec<String>,
+}
+
+impl UiActionExportProjectProbe {
+    fn proves_export(&self) -> bool {
+        self.status == "passed"
+            && !self.source_saved_project_artifact.is_empty()
+            && self.exported_build_file.is_some()
+            && self.export_artifact.is_some()
+            && self.validation_errors.is_empty()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Xvfb display management with Drop-based cleanup
 // ---------------------------------------------------------------------------
@@ -224,6 +257,175 @@ fn extract_saved_project_path(ui_action_contract_path: &Path, run_dir: &Path) ->
 }
 
 // ---------------------------------------------------------------------------
+// Export probe constructor
+// ---------------------------------------------------------------------------
+
+/// Runs the export hook and returns a validated `UiActionExportProjectProbe`.
+/// All validation is captured in the probe — callers assert via `proves_export()`.
+fn probe_export_hook(
+    alice_home: &Path,
+    saved_project: &Path,
+    export_evidence_dir: &Path,
+    display: &str,
+) -> UiActionExportProjectProbe {
+    let export_hook = alice_home.join("tools/eatme-export-project");
+    let hook_path_str = export_hook.display().to_string();
+
+    if !export_hook.is_file() {
+        return UiActionExportProjectProbe {
+            id: "alice-side-project-export-command-hook".into(),
+            action_id: "export-project".into(),
+            status: "blocked".into(),
+            detail: format!(
+                "blocked: Alice checkout does not expose tools/eatme-export-project at {}",
+                export_hook.display()
+            ),
+            export_format: "netbeans".into(),
+            candidate_hook_path: hook_path_str,
+            command: None,
+            exit_status: None,
+            stdout: String::new(),
+            stderr: String::new(),
+            source_saved_project_artifact: String::new(),
+            exported_build_file: None,
+            export_artifact: None,
+            validation_errors: vec![format!(
+                "export hook not found at {}",
+                export_hook.display()
+            )],
+        };
+    }
+
+    fs::create_dir_all(export_evidence_dir).expect("create export evidence dir");
+    let saved_project_str = saved_project.display().to_string();
+    let evidence_str = export_evidence_dir.display().to_string();
+
+    let output = run_hook_with_timeout(
+        &export_hook,
+        &[
+            "--saved-project",
+            &saved_project_str,
+            "--export-format",
+            "netbeans",
+            "--evidence-dir",
+            &evidence_str,
+            "--json",
+        ],
+        alice_home,
+        display,
+        Duration::from_secs(60),
+    );
+
+    let stdout_str = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr_str = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code();
+    let mut validation_errors = Vec::new();
+
+    if !output.status.success() {
+        validation_errors.push(format!("export hook exited with {exit_code:?}"));
+    }
+
+    let result: Option<ProjectExportHookResult> = serde_json::from_slice(&output.stdout)
+        .map_err(|e| {
+            validation_errors.push(format!("export hook stdout is not valid JSON: {e}"));
+        })
+        .ok();
+
+    let mut source = String::new();
+    let mut exported_build_file: Option<PathBuf> = None;
+    let mut export_artifact: Option<PathBuf> = None;
+
+    if let Some(ref r) = result {
+        if r.schema_version != "eatme.alice-project-export-result/v1" {
+            validation_errors.push(format!(
+                "schema_version must be eatme.alice-project-export-result/v1, got {:?}",
+                r.schema_version
+            ));
+        }
+        if r.status != "exported" {
+            validation_errors.push(format!("status must be exported, got {:?}", r.status));
+        }
+        if r.export_format != "netbeans" {
+            validation_errors.push(format!(
+                "export_format must be netbeans, got {:?}",
+                r.export_format
+            ));
+        }
+        if !r.source_saved_project_artifact.starts_with("project-save/") {
+            validation_errors.push(format!(
+                "source must reference project-save/ dir, got: {}",
+                r.source_saved_project_artifact
+            ));
+        }
+        source = r.source_saved_project_artifact.clone();
+
+        let build_path = export_evidence_dir.join(&r.exported_build_file);
+        if build_path.is_file() {
+            if fs::metadata(&build_path).map(|m| m.len()).unwrap_or(0) == 0 {
+                validation_errors.push("exported build.xml must be non-empty".into());
+            } else {
+                exported_build_file = Some(build_path);
+            }
+        } else {
+            validation_errors.push(format!(
+                "exported build.xml not found at {}",
+                build_path.display()
+            ));
+        }
+
+        let artifact_path = export_evidence_dir.join(&r.export_artifact);
+        if artifact_path.is_file() {
+            if fs::metadata(&artifact_path).map(|m| m.len()).unwrap_or(0) == 0 {
+                validation_errors.push("export_artifact must be non-empty".into());
+            } else {
+                export_artifact = Some(artifact_path);
+            }
+        } else {
+            validation_errors.push(format!(
+                "export_artifact not found at {}",
+                artifact_path.display()
+            ));
+        }
+    }
+
+    let status = if validation_errors.is_empty() {
+        "passed"
+    } else {
+        "failed"
+    };
+    let detail = if validation_errors.is_empty() {
+        "export hook produced valid NetBeans project with build.xml".into()
+    } else {
+        format!(
+            "export hook did not prove export: {}",
+            validation_errors.join("; ")
+        )
+    };
+
+    UiActionExportProjectProbe {
+        id: "alice-side-project-export-command-hook".into(),
+        action_id: "export-project".into(),
+        status: status.into(),
+        detail,
+        export_format: "netbeans".into(),
+        candidate_hook_path: hook_path_str,
+        command: Some(format!(
+            "{} --saved-project {} --export-format netbeans --evidence-dir {} --json",
+            export_hook.display(),
+            saved_project_str,
+            evidence_str
+        )),
+        exit_status: exit_code,
+        stdout: stdout_str,
+        stderr: stderr_str,
+        source_saved_project_artifact: source,
+        exported_build_file,
+        export_artifact,
+        validation_errors,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Test
 // ---------------------------------------------------------------------------
 
@@ -247,6 +449,7 @@ fn save_reopen_export_round_trip() {
     );
 
     // ── Phase 1: Launch smoke ──────────────────────────────────────────
+    eprintln!("phase 1: launch smoke (first-lessons scenario, run_id={run_id})");
     //
     // Opens the starter project, runs place-object → edit-procedure →
     // run-world → save-project probe chain. The manifest captures all
@@ -281,6 +484,7 @@ fn save_reopen_export_round_trip() {
     }
 
     // ── Phase 2: Extract saved project path ────────────────────────────
+    eprintln!("phase 2: extract saved project path from ui-action-contract.json");
     let run_dir = runs_dir.join("first-lessons-real-ui-actions").join(&run_id);
     let ui_action_contract_path = run_dir.join("ui-action-contract.json");
     assert!(
@@ -310,9 +514,12 @@ fn save_reopen_export_round_trip() {
     );
 
     // ── Start Xvfb for reopen/export phases ────────────────────────────
+    eprintln!("starting Xvfb for reopen/export phases");
     let xvfb = start_xvfb_for_workflow(&runs_dir);
+    eprintln!("Xvfb started on display {}", xvfb.display);
 
     // ── Phase 3: Reopen the saved project ──────────────────────────────
+    eprintln!("phase 3: reopen saved project via eatme-reopen-project hook");
     let reopen_hook = alice.join("tools/eatme-reopen-project");
     if !reopen_hook.is_file() {
         eprintln!(
@@ -402,96 +609,50 @@ fn save_reopen_export_round_trip() {
         "reopened state artifact should be non-empty",
     );
 
-    // ── Phase 4: Export to NetBeans project format ─────────────────────
-    let export_hook = alice.join("tools/eatme-export-project");
-    if !export_hook.is_file() {
+    // ── Phase 4-5: Export and verify via probe ───────────────────────────
+    eprintln!("phase 4: export to NetBeans project format via eatme-export-project hook");
+    let export_evidence_dir = run_dir.join("project-export");
+
+    let export_probe =
+        probe_export_hook(&alice, &saved_project, &export_evidence_dir, &xvfb.display);
+
+    if export_probe.status == "blocked" {
         eprintln!(
-            "export hook not found at {} — phases 4-5 blocked \
-             (contract-first: hook not yet implemented)",
-            export_hook.display()
+            "export hook blocked — phases 4-5 skipped (contract-first): {}",
+            export_probe.detail
         );
         drop(xvfb);
         return;
     }
 
-    let export_evidence_dir = run_dir.join("project-export");
-    fs::create_dir_all(&export_evidence_dir).expect("create export evidence dir");
-    let export_evidence_str = export_evidence_dir.display().to_string();
-
-    let export_output = run_hook_with_timeout(
-        &export_hook,
-        &[
-            "--saved-project",
-            &saved_project_str,
-            "--export-format",
-            "netbeans",
-            "--evidence-dir",
-            &export_evidence_str,
-            "--json",
-        ],
-        &alice,
-        &xvfb.display,
-        Duration::from_secs(60),
+    eprintln!("phase 5: verify exported build.xml exists");
+    assert!(
+        export_probe.proves_export(),
+        "export probe must prove export — status={}, errors: {:?}\ndetail: {}\nstdout: {}\nstderr: {}",
+        export_probe.status,
+        export_probe.validation_errors,
+        export_probe.detail,
+        export_probe.stdout,
+        export_probe.stderr,
     );
 
     assert!(
-        export_output.status.success(),
-        "export hook should exit 0, got: {:?}\nstderr: {}",
-        export_output.status.code(),
-        String::from_utf8_lossy(&export_output.stderr),
+        export_probe.exported_build_file.as_ref().unwrap().is_file(),
+        "exported Ant build.xml should exist at {:?}",
+        export_probe.exported_build_file,
+    );
+    assert!(
+        export_probe.export_artifact.as_ref().unwrap().is_file(),
+        "export evidence artifact should exist at {:?}",
+        export_probe.export_artifact,
     );
 
-    let export_result: ProjectExportHookResult = serde_json::from_slice(&export_output.stdout)
-        .unwrap_or_else(|e| {
-            panic!(
-                "export hook stdout should be valid JSON: {e}\nstdout: {}",
-                String::from_utf8_lossy(&export_output.stdout),
-            )
-        });
-
-    assert_eq!(
-        export_result.schema_version, "eatme.alice-project-export-result/v1",
-        "export schema version mismatch",
-    );
-    assert_eq!(
-        export_result.status, "exported",
-        "export status must be 'exported'",
-    );
-    assert_eq!(
-        export_result.export_format, "netbeans",
-        "export format must be 'netbeans'",
-    );
-    assert!(
-        export_result
-            .source_saved_project_artifact
-            .starts_with("project-save/"),
-        "export source must reference project-save/ dir, got: {}",
-        export_result.source_saved_project_artifact,
-    );
-
-    // ── Phase 5: Verify build.xml exists ───────────────────────────────
-    let build_xml = export_evidence_dir.join(&export_result.exported_build_file);
-    assert!(
-        build_xml.is_file(),
-        "exported Ant build.xml should exist at {}",
-        build_xml.display(),
-    );
-    assert!(
-        fs::metadata(&build_xml).unwrap().len() > 0,
-        "exported Ant build.xml should be non-empty",
-    );
-
-    let export_evidence = export_evidence_dir.join(&export_result.export_artifact);
-    assert!(
-        export_evidence.is_file(),
-        "export evidence artifact should exist at {}",
-        export_evidence.display(),
-    );
-    assert!(
-        fs::metadata(&export_evidence).unwrap().len() > 0,
-        "export evidence artifact should be non-empty",
+    eprintln!(
+        "phase 5: export proof validated — build.xml at {:?}",
+        export_probe.exported_build_file
     );
 
     // ── Phase 6: Cleanup (XvfbGuard Drop) ──────────────────────────────
+    eprintln!("phase 6: cleanup (dropping Xvfb guard)");
     drop(xvfb);
 }
