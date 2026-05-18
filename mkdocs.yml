@@ -24,6 +24,7 @@ nav:
   - Creative Assessment Boundary: creative-assessment-boundary.md
   - First-Lesson Vertical Slice: first-lesson-vertical-slice.md
   - Post-focus Screenshot Evidence: post-focus-screenshot-evidence.md
+  - Run Window Polling: run-window-polling.md
   - Evidence Artifact Contract: evidence-artifact-contract.md
   - Lesson Readiness Module Boundary: lesson-readiness-module-boundary.md
   - Starter Project Preflight Evidence: starter-project-preflight-evidence.md
@@ -34,9 +35,12 @@ nav:
   - Live Studio Workshop Evidence Contract: live-studio-workshop-evidence.md
   - Instructor Missions: instructor-missions.md
   - Student Missions: student-missions.md
+  - Edit Procedure Proof Verification: edit-procedure-proof-verification.md
   - Code Editor First Run E2E Test: code-editor-first-run-e2e.md
   - Loops and Conditionals Grading: loops-and-conditionals-grading.md
   - Events and Collision Grading: events-and-collision-grading.md
+  - Grading Module Architecture: grading-module-architecture.md
+  - Real-Alice Grading Integration Tests: real-alice-grading-integration-tests.md
   - Sharing Platform Readiness: sharing-platform-readiness.md
   - Alice Content Coverage Tests: alice-content-coverage-tests.md
   - Student Lesson E2E Tests: student-lesson-e2e-tests.md

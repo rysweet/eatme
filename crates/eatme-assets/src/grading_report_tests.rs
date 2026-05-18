@@ -3,7 +3,7 @@ use super::*;
 fn input_all_ready() -> GradingInput {
     GradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
     }
@@ -21,7 +21,7 @@ fn input_blocked_assets() -> GradingInput {
 fn input_blocked_deps() -> GradingInput {
     GradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: false,
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
     }
@@ -169,7 +169,7 @@ fn all_ready_reasons_propagate() {
     let report = grade_first_lesson_readiness(input_all_ready());
     assert_eq!(
         report.steps[0].reason,
-        "All 93 scenario assets passed validation"
+        "All 101 scenario assets passed validation"
     );
     assert_eq!(report.steps[1].reason, "All required tools available");
 }

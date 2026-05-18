@@ -20,13 +20,19 @@ mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 pub mod grading_report;
+pub(crate) mod grading_report_creative;
 pub(crate) mod grading_report_events;
 #[cfg(test)]
 mod grading_report_extraction_edge_tests;
 #[cfg(test)]
 mod grading_report_extraction_tests;
+pub(crate) mod grading_report_functions;
 #[cfg(test)]
 mod grading_report_integration_tests;
+#[cfg(test)]
+mod grading_report_module_split_contract_tests;
+pub(crate) mod grading_report_parameters;
+pub(crate) mod grading_report_variables;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
@@ -58,7 +64,11 @@ pub use grading_report::{
     GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
+pub use grading_report_creative::{CreativeProjectGradingInput, grade_creative_project};
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
+pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
+pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
+pub use grading_report_variables::{VariablesGradingInput, grade_variables};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };
@@ -156,7 +166,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 93);
+        assert_eq!(report.scenario_asset_count, 101);
     }
 
     #[test]

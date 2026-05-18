@@ -47,7 +47,7 @@ fn rejects_save_project_candidate_with_validation_errors_as_unproven() {
             "id": "alice-side-project-save-command-hook",
             "action_id": "save-project",
             "status": "passed",
-            "save_selector": "scene.eatmeFirstLessonStep",
+            "save_selector": "scene.myFirstMethod",
             "candidate_hook_path": "/alice/tools/eatme-save-project",
             "saved_project_artifact": {"path": "project-save/saved-project.a3p", "size_bytes": 2},
             "save_artifact": {"path": "project-save/project-save.json", "size_bytes": 2},
@@ -157,7 +157,7 @@ fn contract_after_edit_without_run_no_go() -> serde_json::Value {
                 "id": "alice-side-procedure-edit-command-hook",
                 "action_id": "edit-procedure-or-code-block",
                 "status": "passed",
-                "procedure_selector": "scene.eatmeFirstLessonStep",
+                "procedure_selector": "scene.myFirstMethod",
                 "candidate_hook_path": "/alice/tools/eatme-edit-procedure",
                 "edited_project_artifact": {"path": "procedure-edit/edited-project.a3p", "size_bytes": 2},
                 "procedure_or_code_diff": {"path": "procedure-edit/procedure.diff.json", "size_bytes": 2}
@@ -176,7 +176,7 @@ fn contract_after_run_without_save_no_go() -> serde_json::Value {
             "id": "alice-side-world-run-command-hook",
             "action_id": "run-world",
             "status": "passed",
-            "run_selector": "scene.eatmeFirstLessonStep",
+            "run_selector": "scene.myFirstMethod",
             "candidate_hook_path": "/alice/tools/eatme-run-world",
             "run_artifact": {"path": "world-run/world-run.json", "size_bytes": 2},
             "runtime_or_log_evidence": {"path": "world-run/runtime.log", "size_bytes": 2}

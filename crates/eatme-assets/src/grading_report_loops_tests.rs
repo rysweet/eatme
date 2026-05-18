@@ -4,69 +4,66 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // --- Test fixtures ---
 
 fn complete_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::CountLoop {
-                    count: 3,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec!["FORWARD".into(), "1.0".into()],
-                    }],
-                },
-                Statement::IfElse {
-                    condition: "this.cat isCloseTo this.dog".into(),
-                    if_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello!\"".into()],
-                    }],
-                    else_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "think".into(),
-                        arguments: vec!["\"Hmm...\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
-}
-
-fn program_with_loop_only() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "loopOnly".into(),
-            body: vec![Statement::CountLoop {
-                count: 5,
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![
+            Statement::CountLoop {
+                count: 3,
                 body: vec![Statement::MethodCall {
                     object: "this.cat".into(),
                     method: "walk".into(),
-                    arguments: vec!["FORWARD".into()],
+                    arguments: vec!["FORWARD".into(), "1.0".into()],
                 }],
+            },
+            Statement::IfElse {
+                condition: "this.cat isCloseTo this.dog".into(),
+                if_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Hello!\"".into()],
+                }],
+                else_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "think".into(),
+                    arguments: vec!["\"Hmm...\"".into()],
+                }],
+            },
+        ],
+    }])
+}
+
+fn program_with_loop_only() -> Program {
+    Program::new(vec![Procedure {
+        name: "loopOnly".into(),
+        parameters: vec![],
+        body: vec![Statement::CountLoop {
+            count: 5,
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into()],
             }],
         }],
-    }
+    }])
 }
 
 fn program_with_conditional_only() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "conditionalOnly".into(),
-            body: vec![Statement::IfElse {
-                condition: "this.cat isCloseTo this.dog".into(),
-                if_body: vec![],
-                else_body: vec![],
-            }],
+    Program::new(vec![Procedure {
+        name: "conditionalOnly".into(),
+        parameters: vec![],
+        body: vec![Statement::IfElse {
+            condition: "this.cat isCloseTo this.dog".into(),
+            if_body: vec![],
+            else_body: vec![],
         }],
-    }
+    }])
 }
 
 fn loops_input_all_ready(program: Option<Program>) -> LoopsGradingInput {
     LoopsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
         student_program: program,
@@ -85,7 +82,7 @@ fn loops_input_blocked_assets(program: Option<Program>) -> LoopsGradingInput {
 fn loops_input_blocked_deps(program: Option<Program>) -> LoopsGradingInput {
     LoopsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: false,
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
         student_program: program,
@@ -239,7 +236,7 @@ fn all_ready_reasons_propagate() {
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(complete_program())));
     assert_eq!(
         report.steps[0].reason,
-        "All 93 scenario assets passed validation"
+        "All 101 scenario assets passed validation"
     );
     assert_eq!(report.steps[1].reason, "All required tools available");
 }
@@ -421,23 +418,22 @@ fn both_blocked_all_steps_blocked() {
 
 #[test]
 fn nested_count_loop_inside_if_else_is_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nestedLoop".into(),
-            body: vec![Statement::IfElse {
-                condition: "true".into(),
-                if_body: vec![Statement::CountLoop {
-                    count: 2,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec![],
-                    }],
+    let program = Program::new(vec![Procedure {
+        name: "nestedLoop".into(),
+        parameters: vec![],
+        body: vec![Statement::IfElse {
+            condition: "true".into(),
+            if_body: vec![Statement::CountLoop {
+                count: 2,
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "walk".into(),
+                    arguments: vec![],
                 }],
-                else_body: vec![],
             }],
+            else_body: vec![],
         }],
-    };
+    }]);
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -448,19 +444,18 @@ fn nested_count_loop_inside_if_else_is_detected() {
 
 #[test]
 fn nested_if_else_inside_count_loop_is_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nestedConditional".into(),
-            body: vec![Statement::CountLoop {
-                count: 3,
-                body: vec![Statement::IfElse {
-                    condition: "true".into(),
-                    if_body: vec![],
-                    else_body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "nestedConditional".into(),
+        parameters: vec![],
+        body: vec![Statement::CountLoop {
+            count: 3,
+            body: vec![Statement::IfElse {
+                condition: "true".into(),
+                if_body: vec![],
+                else_body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_loops_and_conditionals(loops_input_all_ready(Some(program)));
     assert_eq!(
         report.steps[3].status,

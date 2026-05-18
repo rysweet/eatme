@@ -13,9 +13,9 @@ from real `.a3p` ZIP archives without launching the Alice desktop.
 - [Module layout](#module-layout)
 - [Shared helper API](#shared-helper-api)
 - [Test categories](#test-categories)
-  - [Parser robustness (a3p_parser_support)](#parser-robustness-a3p_parser_support)
-  - [Content pattern matching (a3p_parser_support)](#content-pattern-matching-a3p_parser_support)
-  - [Round-trip (import_export_support)](#round-trip-import_export_support)
+  - [Parser robustness (a3p_content_coverage)](#parser-robustness-a3p_parser_support)
+  - [Content pattern matching (a3p_content_coverage)](#content-pattern-matching-a3p_parser_support)
+  - [Round-trip (a3p_roundtrip_coverage)](#round-trip-import_export_support)
   - [Starter project gallery](#starter-project-gallery)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -31,15 +31,15 @@ from real `.a3p` ZIP archives without launching the Alice desktop.
 Run all content coverage unit tests (always available, no Alice required):
 
 ```bash
-cargo test -p eatme-alice --test a3p_parser_support
-cargo test -p eatme-alice --test import_export_support
+cargo test -p eatme-alice --test a3p_content_coverage
+cargo test -p eatme-alice --test a3p_roundtrip_coverage
 ```
 
 Run the integration tests that scan real `.a3p` archives (requires
 `EATME_REAL_ALICE=1` and a packaged Alice checkout):
 
 ```bash
-EATME_REAL_ALICE=1 cargo test -p eatme-alice --test starter_project_gallery
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test a3p_gallery_coverage
 ```
 
 Run all `eatme-alice` tests (integration tests skip automatically when the
@@ -56,7 +56,7 @@ cargo test -p eatme-alice
 | `EATME_REAL_ALICE` | `1` | Enables integration tests that scan real `.a3p` starter projects. Any other value or absence causes those tests to skip with a message. |
 | `ALICE_HOME` | Path to Alice checkout | The Alice checkout directory. Defaults to `../alice3-modernization` when not set. Used to locate the `starter-projects/` directory inside the packaged distribution. |
 
-Unit tests in `a3p_parser_support` and `import_export_support` use synthetic
+Unit tests in `a3p_content_coverage` and `a3p_roundtrip_coverage` use synthetic
 in-memory ZIPs and always run regardless of environment variables.
 
 The gate is a runtime `std::env::var` check via the shared `real_alice_enabled()`
@@ -70,9 +70,9 @@ All test files live in `crates/eatme-alice/tests/`:
 | File | Category | Gate |
 | --- | --- | --- |
 | `a3p_content_support.rs` | Shared helper module | N/A (not a test binary) |
-| `a3p_parser_support.rs` | Unit tests | Always runs |
-| `import_export_support.rs` | Unit tests | Always runs |
-| `starter_project_gallery.rs` | Integration tests | `EATME_REAL_ALICE=1` |
+| `a3p_content_coverage.rs` | Unit tests | Always runs |
+| `a3p_roundtrip_coverage.rs` | Unit tests | Always runs |
+| `a3p_gallery_coverage.rs` | Integration tests | `EATME_REAL_ALICE=1` |
 
 The shared helper module `a3p_content_support.rs` is imported by the test files
 using `#[path]` or `mod` declarations. It is not a standalone test binary.
@@ -104,9 +104,9 @@ found inside `.a3p` project archives.
 
 ## Test categories
 
-### Parser robustness (a3p_parser_support)
+### Parser robustness (a3p_content_coverage)
 
-**File:** `a3p_parser_support.rs`
+**File:** `a3p_content_coverage.rs`
 
 Core unit tests that validate the ZIP extraction pipeline handles edge cases
 correctly. These always run — no environment gate required.
@@ -121,9 +121,9 @@ correctly. These always run — no environment gate required.
 | `nested_directory_handling` | XML files inside nested subdirectories within the ZIP are discovered. |
 | `filename_filtering` | Only `.xml` entries are extracted; other file types are ignored. |
 
-### Content pattern matching (a3p_parser_support)
+### Content pattern matching (a3p_content_coverage)
 
-**File:** `a3p_parser_support.rs`
+**File:** `a3p_content_coverage.rs`
 
 Additional unit tests that build synthetic `.a3p` archives containing specific
 Alice XML element families, then verify the regex patterns match. These
@@ -139,9 +139,9 @@ complement the parser robustness tests and always run without gating.
 | `synthetic_a3p_with_billboard_extracts` | A synthetic `.a3p` containing billboard XML can be extracted and matched. |
 | `synthetic_a3p_with_scene_entities_extracts` | A synthetic `.a3p` containing scene entity XML (`SScene`, `SModel`) can be extracted and matched. |
 
-### Round-trip (import_export_support)
+### Round-trip (a3p_roundtrip_coverage)
 
-**File:** `import_export_support.rs`
+**File:** `a3p_roundtrip_coverage.rs`
 
 Unit tests that validate the `build_synthetic_a3p()` → `extract_all_xml_bytes()`
 round-trip. These always run without gating.
@@ -154,7 +154,7 @@ round-trip. These always run without gating.
 
 ### Starter project gallery
 
-**File:** `starter_project_gallery.rs`
+**File:** `a3p_gallery_coverage.rs`
 
 Integration tests that scan every `.a3p` file in the Alice starter-projects
 directory. All gated behind `EATME_REAL_ALICE=1`.
@@ -200,21 +200,21 @@ required.
 ### Run only unit tests (no Alice needed)
 
 ```bash
-cargo test -p eatme-alice --test a3p_parser_support
-cargo test -p eatme-alice --test import_export_support
+cargo test -p eatme-alice --test a3p_content_coverage
+cargo test -p eatme-alice --test a3p_roundtrip_coverage
 ```
 
 ### Run gallery integration tests
 
 ```bash
 export ALICE_HOME=../alice3-modernization
-EATME_REAL_ALICE=1 cargo test -p eatme-alice --test starter_project_gallery
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test a3p_gallery_coverage
 ```
 
 ### Run a single gallery test
 
 ```bash
-EATME_REAL_ALICE=1 cargo test -p eatme-alice --test starter_project_gallery \
+EATME_REAL_ALICE=1 cargo test -p eatme-alice --test a3p_gallery_coverage \
   camera_controls_in_gallery
 ```
 
@@ -233,7 +233,7 @@ EATME_REAL_ALICE=1 cargo test -p eatme-alice
 ### Check that unit tests pass in CI (no real Alice)
 
 ```bash
-cargo test -p eatme-alice --test a3p_parser_support --test import_export_support
+cargo test -p eatme-alice --test a3p_content_coverage --test a3p_roundtrip_coverage
 ```
 
 Unit tests build synthetic `.a3p` archives in memory and validate extraction,
@@ -247,9 +247,9 @@ Use this workflow when adding a new Alice content pattern test.
 
    | Test type | File |
    | --- | --- |
-   | Unit test with synthetic ZIP | `a3p_parser_support.rs` |
-   | Round-trip build→extract test | `import_export_support.rs` |
-   | Integration test scanning real `.a3p` files | `starter_project_gallery.rs` |
+   | Unit test with synthetic ZIP | `a3p_content_coverage.rs` |
+   | Round-trip build→extract test | `a3p_roundtrip_coverage.rs` |
+   | Integration test scanning real `.a3p` files | `a3p_gallery_coverage.rs` |
 
 2. **Add a regex pattern** to `a3p_content_support.rs` if the new test targets
    a new XML element family. Use a compile-time string literal to avoid ReDoS.
@@ -298,9 +298,9 @@ Use this workflow when adding a new Alice content pattern test.
 7. **Run the focused tests and clippy:**
 
    ```bash
-   cargo test -p eatme-alice --test a3p_parser_support
-   cargo test -p eatme-alice --test import_export_support
-   EATME_REAL_ALICE=1 cargo test -p eatme-alice --test starter_project_gallery
+   cargo test -p eatme-alice --test a3p_content_coverage
+   cargo test -p eatme-alice --test a3p_roundtrip_coverage
+   EATME_REAL_ALICE=1 cargo test -p eatme-alice --test a3p_gallery_coverage
    cargo clippy -p eatme-alice -- -D warnings
    ```
 
@@ -341,8 +341,8 @@ Before merging a change that touches content coverage tests:
 | Check | Command |
 | --- | --- |
 | Format Rust files | `cargo fmt --check` |
-| Run unit tests | `cargo test -p eatme-alice --test a3p_parser_support --test import_export_support` |
-| Run integration tests | `EATME_REAL_ALICE=1 cargo test -p eatme-alice --test starter_project_gallery` |
+| Run unit tests | `cargo test -p eatme-alice --test a3p_content_coverage --test a3p_roundtrip_coverage` |
+| Run integration tests | `EATME_REAL_ALICE=1 cargo test -p eatme-alice --test a3p_gallery_coverage` |
 | Run all eatme-alice tests | `cargo test -p eatme-alice` |
 | Clippy lint | `cargo clippy -p eatme-alice -- -D warnings` |
 | Enforce module size | `find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \| awk '$2 != "total" && $1 > 500 { print; bad=1 } END { exit bad }'` |

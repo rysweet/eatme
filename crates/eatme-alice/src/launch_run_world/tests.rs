@@ -155,7 +155,7 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         action_id: "edit-procedure-or-code-block".into(),
         status: status.into(),
         detail: "edit probe detail".into(),
-        procedure_selector: "scene.eatmeFirstLessonStep".into(),
+        procedure_selector: "scene.myFirstMethod".into(),
         edit_spec: "append-comment:eatme first lesson edit proof".into(),
         candidate_hook_path: "tools/eatme-edit-procedure".into(),
         command: Some("tools/eatme-edit-procedure --json".into()),
@@ -166,6 +166,8 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         procedure_or_code_diff: artifact_if_passed(status, "procedure-edit/procedure.diff.json"),
         validation_errors: Vec::new(),
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 

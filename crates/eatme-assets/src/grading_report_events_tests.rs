@@ -4,53 +4,19 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // --- Test fixtures ---
 
 fn complete_events_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello world!\"".into()],
-                    }],
-                },
-                Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Ouch!\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
-}
-
-fn program_with_event_only() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "eventOnly".into(),
-            body: vec![Statement::EventListener {
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![
+            Statement::EventListener {
                 event: "SceneActivated".into(),
                 body: vec![Statement::MethodCall {
                     object: "this.cat".into(),
                     method: "say".into(),
-                    arguments: vec!["\"Hello!\"".into()],
+                    arguments: vec!["\"Hello world!\"".into()],
                 }],
-            }],
-        }],
-    }
-}
-
-fn program_with_collision_only() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "collisionOnly".into(),
-            body: vec![Statement::CollisionListener {
+            },
+            Statement::CollisionListener {
                 object_a: "this.cat".into(),
                 object_b: "this.dog".into(),
                 body: vec![Statement::MethodCall {
@@ -58,15 +24,46 @@ fn program_with_collision_only() -> Program {
                     method: "say".into(),
                     arguments: vec!["\"Ouch!\"".into()],
                 }],
+            },
+        ],
+    }])
+}
+
+fn program_with_event_only() -> Program {
+    Program::new(vec![Procedure {
+        name: "eventOnly".into(),
+        parameters: vec![],
+        body: vec![Statement::EventListener {
+            event: "SceneActivated".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Hello!\"".into()],
             }],
         }],
-    }
+    }])
+}
+
+fn program_with_collision_only() -> Program {
+    Program::new(vec![Procedure {
+        name: "collisionOnly".into(),
+        parameters: vec![],
+        body: vec![Statement::CollisionListener {
+            object_a: "this.cat".into(),
+            object_b: "this.dog".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Ouch!\"".into()],
+            }],
+        }],
+    }])
 }
 
 fn events_input_all_ready(program: Option<Program>) -> EventsGradingInput {
     EventsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
         student_program: program,
@@ -86,7 +83,7 @@ fn events_input_blocked_assets(program: Option<Program>) -> EventsGradingInput {
 fn events_input_blocked_deps(program: Option<Program>) -> EventsGradingInput {
     EventsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: false,
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
         student_program: program,
@@ -411,19 +408,18 @@ fn both_blocked_all_steps_blocked() {
 
 #[test]
 fn nested_event_inside_collision_listener_is_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "eventInsideCollision".into(),
-            body: vec![Statement::CollisionListener {
-                object_a: "this.cat".into(),
-                object_b: "this.dog".into(),
-                body: vec![Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "eventInsideCollision".into(),
+        parameters: vec![],
+        body: vec![Statement::CollisionListener {
+            object_a: "this.cat".into(),
+            object_b: "this.dog".into(),
+            body: vec![Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(events_input_all_ready(Some(program)));
     assert_eq!(
         report.steps[3].status,
@@ -439,19 +435,18 @@ fn nested_event_inside_collision_listener_is_detected() {
 
 #[test]
 fn nested_collision_inside_event_listener_is_detected() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "collisionInsideEvent".into(),
-            body: vec![Statement::EventListener {
-                event: "SceneActivated".into(),
-                body: vec![Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "collisionInsideEvent".into(),
+        parameters: vec![],
+        body: vec![Statement::EventListener {
+            event: "SceneActivated".into(),
+            body: vec![Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![],
             }],
         }],
-    };
+    }]);
     let report = grade_events_and_collision(events_input_all_ready(Some(program)));
     assert_eq!(
         report.steps[3].status,
