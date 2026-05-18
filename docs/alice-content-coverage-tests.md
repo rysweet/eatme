@@ -165,7 +165,6 @@ directory. All gated behind `EATME_REAL_ALICE=1`.
 | `every_a3p_contains_xml` | Every discovered `.a3p` archive contains at least one `.xml` entry. |
 | `scene_entity_types_present` | At least one project contains `SScene`, `SModel`, or `SGround` XML elements. |
 | `resource_declarations_present` | At least one project contains `resourceReference` or `ModelResourceReference` patterns. |
-| `object_declarations_present` | Aggregate assertion: objects/methods/events across the full gallery. |
 | `joint_hierarchy_in_gallery` | At least one project contains joint/skeleton XML patterns. |
 | `bounding_box_in_gallery` | At least one project contains bounding box XML patterns. |
 | `camera_controls_in_gallery` | At least one project contains camera transform XML patterns. |
