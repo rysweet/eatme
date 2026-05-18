@@ -16,7 +16,7 @@ mod launch_smoke_support;
 use launch_smoke_support::{alice_home, real_alice_enabled};
 
 const REOPEN_DISPLAY: &str = ":98";
-const REOPEN_SELECTOR: &str = "scene.myFirstMethod";
+const REOPEN_SELECTOR: &str = "scene.eatmeFirstLessonStep";
 const REOPEN_HOOK: &str = "tools/eatme-reopen-project";
 const SCENARIO_ID: &str = "first-lessons-real-ui-actions";
 
