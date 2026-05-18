@@ -42,21 +42,26 @@ fn no_xml_zip() {
 }
 
 #[test]
-fn path_traversal_guard_allows_safe_nested_entries() {
-    // The extraction helper skips entries whose names contain ".." or start
-    // with "/". We verify that legitimately nested entries still extract.
+fn path_traversal_rejection() {
+    // Entries with ".." or leading "/" must be silently skipped to prevent
+    // directory-traversal attacks in malformed archives.
     let zip_bytes = build_synthetic_a3p(vec![
+        ("../etc/passwd.xml", "<evil/>"),
+        ("/absolute/path.xml", "<root/>"),
         ("safe/nested.xml", "<safe/>"),
-        ("deep/sub/dir/leaf.xml", "<leaf/>"),
     ]);
     let extracted = extract_all_xml_bytes(&zip_bytes);
     assert!(
-        extracted.contains("<safe/>"),
-        "nested entry must be extracted"
+        !extracted.contains("<evil/>"),
+        "entry with '..' must be rejected"
     );
     assert!(
-        extracted.contains("<leaf/>"),
-        "deeply nested entry must be extracted"
+        !extracted.contains("<root/>"),
+        "entry with leading '/' must be rejected"
+    );
+    assert!(
+        extracted.contains("<safe/>"),
+        "safe nested entry must still be extracted"
     );
 }
 
