@@ -122,7 +122,7 @@ fn extract_xml_entries<R: Read + std::io::Seek>(
         if entry.read_to_string(&mut content).is_ok() {
             if all_xml.len() + content.len() > max_bytes {
                 let remaining = max_bytes.saturating_sub(all_xml.len());
-                all_xml.push_str(&content[..remaining]);
+                all_xml.push_str(content.get(..remaining).unwrap_or(&content));
                 break;
             }
             all_xml.push_str(&content);
