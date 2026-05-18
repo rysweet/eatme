@@ -257,6 +257,29 @@ fn extract_saved_project_path(ui_action_contract_path: &Path, run_dir: &Path) ->
 }
 
 // ---------------------------------------------------------------------------
+// Artifact validation helper
+// ---------------------------------------------------------------------------
+
+/// Validates an evidence artifact: file must exist and be non-empty.
+fn validate_evidence_artifact(
+    dir: &Path,
+    relative: &str,
+    label: &str,
+    errors: &mut Vec<String>,
+) -> Option<PathBuf> {
+    let path = dir.join(relative);
+    if !path.is_file() {
+        errors.push(format!("{label} not found at {}", path.display()));
+        return None;
+    }
+    if fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
+        errors.push(format!("{label} must be non-empty"));
+        return None;
+    }
+    Some(path)
+}
+
+// ---------------------------------------------------------------------------
 // Export probe constructor
 // ---------------------------------------------------------------------------
 
@@ -359,33 +382,18 @@ fn probe_export_hook(
         }
         source = r.source_saved_project_artifact.clone();
 
-        let build_path = export_evidence_dir.join(&r.exported_build_file);
-        if build_path.is_file() {
-            if fs::metadata(&build_path).map(|m| m.len()).unwrap_or(0) == 0 {
-                validation_errors.push("exported build.xml must be non-empty".into());
-            } else {
-                exported_build_file = Some(build_path);
-            }
-        } else {
-            validation_errors.push(format!(
-                "exported build.xml not found at {}",
-                build_path.display()
-            ));
-        }
-
-        let artifact_path = export_evidence_dir.join(&r.export_artifact);
-        if artifact_path.is_file() {
-            if fs::metadata(&artifact_path).map(|m| m.len()).unwrap_or(0) == 0 {
-                validation_errors.push("export_artifact must be non-empty".into());
-            } else {
-                export_artifact = Some(artifact_path);
-            }
-        } else {
-            validation_errors.push(format!(
-                "export_artifact not found at {}",
-                artifact_path.display()
-            ));
-        }
+        exported_build_file = validate_evidence_artifact(
+            export_evidence_dir,
+            &r.exported_build_file,
+            "exported build.xml",
+            &mut validation_errors,
+        );
+        export_artifact = validate_evidence_artifact(
+            export_evidence_dir,
+            &r.export_artifact,
+            "export_artifact",
+            &mut validation_errors,
+        );
     }
 
     let status = if validation_errors.is_empty() {
@@ -634,17 +642,6 @@ fn save_reopen_export_round_trip() {
         export_probe.detail,
         export_probe.stdout,
         export_probe.stderr,
-    );
-
-    assert!(
-        export_probe.exported_build_file.as_ref().unwrap().is_file(),
-        "exported Ant build.xml should exist at {:?}",
-        export_probe.exported_build_file,
-    );
-    assert!(
-        export_probe.export_artifact.as_ref().unwrap().is_file(),
-        "export evidence artifact should exist at {:?}",
-        export_probe.export_artifact,
     );
 
     eprintln!(
