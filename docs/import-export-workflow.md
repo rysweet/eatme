@@ -78,7 +78,7 @@ cargo test -p eatme-alice
 | Variable | Required value | Effect |
 | --- | --- | --- |
 | `EATME_REAL_ALICE` | `1` | Enables the import/export workflow integration test. Any other value or absence causes the test to skip. |
-| `ALICE_HOME` | Path to Alice checkout | The Alice checkout directory. Defaults to `../alice3-modernization` when not set. |
+| `ALICE_HOME` | Path to Alice checkout | The Alice checkout directory. Defaults to `/opt/alice3` when not set (matching the existing `launch_smoke_real` test). |
 
 The gate is a runtime `std::env::var` check, not a compile-time `cfg`
 attribute. This means:
@@ -110,8 +110,8 @@ save→reopen→export path with a real Alice installation:
    export evidence directory as a non-empty file.
 
 The test uses a single Xvfb virtual display on a dynamically reserved port
-(`:97` by default, with lock-file scan over `:90`–`:129`) for both the
-reopen and export phases.
+(lock-file scan over `:90`–`:129`; the actual port depends on which displays
+are already locked) for both the reopen and export phases.
 
 ## Workflow phases
 
@@ -256,11 +256,11 @@ The import/export workflow test uses these options:
 
 | Option | Value | Rationale |
 | --- | --- | --- |
-| `alice_home` | `ALICE_HOME` env var or `../alice3-modernization` | Standard Alice checkout location. |
+| `alice_home` | `ALICE_HOME` env var or `/opt/alice3` | Standard Alice checkout location (matches `launch_smoke_real`). |
 | `scenario` | `first-lessons-real-ui-actions` | The first-lesson scenario with real UI action probes. |
 | `run_id` | `ie-{nanos}` | Unique run id using nanosecond timestamp to prevent collisions. |
 | `runs_dir` | `target/test-work/import-export-workflow-real/runs` | Isolated under `target/` to avoid polluting project root. |
-| `display` | `:97` (dynamic, `:90`–`:129` range) | Reserved display avoids collision with save/reopen's `:98`. |
+| `display` | Dynamic (`:90`–`:129` range) | `reserve_display()` scans for an unlocked port via lock files. |
 | `timeout_seconds` | `900` | 15-minute timeout for cold Maven builds and slow Java startup. |
 | `export_timeout_seconds` | `60` | Export-specific timeout (2× save/reopen hook timeout). |
 | `json` | `true` | Machine-readable output. |
@@ -430,8 +430,8 @@ the export phase is blocked.
 ### Display collision
 
 The test reserves a virtual display in the `:90`–`:129` range using lock-file
-scanning. If another test (such as `save_reopen_desktop_real`) is running
-concurrently on the same machine, each test gets a different display.
+scanning. If another eatme-alice real test (such as `launch_smoke_real`) is
+running concurrently on the same machine, each test gets a different display.
 
 If all ports are taken:
 
