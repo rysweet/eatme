@@ -138,3 +138,11 @@ must accept the opened project, named object identifier, and evidence directory,
 then return JSON with non-empty `placement_artifact` and
 `scene_or_project_diff` files before eatme marks object placement as proven.
 Absent or invalid hook evidence remains an explicit blocked result.
+
+The [import/export workflow](import-export-workflow.md) extends the save/reopen
+contract with a deterministic export phase. After save and reopen succeed, the
+`tools/eatme-export-project` hook exports the saved `.a3p` to NetBeans project
+format and the test verifies the Ant `build.xml` exists on disk. The export hook
+contract uses `eatme.alice-project-export-result/v1` JSON schema. A missing
+export hook produces a bounded `blocked` result without failing the save/reopen
+evidence.
