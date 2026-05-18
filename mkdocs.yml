@@ -38,6 +38,7 @@ nav:
   - Loops and Conditionals Grading: loops-and-conditionals-grading.md
   - Events and Collision Grading: events-and-collision-grading.md
   - Sharing Platform Readiness: sharing-platform-readiness.md
+  - Alice Content Coverage Tests: alice-content-coverage-tests.md
   - Student Lesson E2E Tests: student-lesson-e2e-tests.md
   - GitHub Pages: github-pages.md
   - Existing Guides:

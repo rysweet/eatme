@@ -45,6 +45,7 @@ Eatme has three layers:
 | Completing a learner journey | [Student Missions](student-missions.md) |
 | Publishing docs | [GitHub Pages](github-pages.md) |
 | Reviewing code editor first run E2E test evidence | [Code Editor First Run E2E Test](code-editor-first-run-e2e.md) |
+| Validating Alice content coverage (starter gallery, models, camera, audio, billboards) | [Alice Content Coverage Tests](alice-content-coverage-tests.md) |
 | Auditing real Alice lesson scenario evidence | [Alice Lesson Smoke](alice-lesson-smoke.md) |
 | Reviewing events and collision grading | [Events and Collision Grading](events-and-collision-grading.md) |
 
