@@ -261,6 +261,7 @@ fn extract_saved_project_path(ui_action_contract_path: &Path, run_dir: &Path) ->
 // ---------------------------------------------------------------------------
 
 /// Validates an evidence artifact: file must exist and be non-empty.
+/// Uses a single `metadata()` call instead of separate `is_file()` + `metadata()`.
 fn validate_evidence_artifact(
     dir: &Path,
     relative: &str,
@@ -268,15 +269,24 @@ fn validate_evidence_artifact(
     errors: &mut Vec<String>,
 ) -> Option<PathBuf> {
     let path = dir.join(relative);
-    if !path.is_file() {
-        errors.push(format!("{label} not found at {}", path.display()));
-        return None;
+    match fs::metadata(&path) {
+        Ok(m) if m.is_file() && m.len() > 0 => Some(path),
+        Ok(m) if !m.is_file() => {
+            errors.push(format!(
+                "{label} at {} is not a regular file",
+                path.display()
+            ));
+            None
+        }
+        Ok(_) => {
+            errors.push(format!("{label} at {} is empty", path.display()));
+            None
+        }
+        Err(_) => {
+            errors.push(format!("{label} not found at {}", path.display()));
+            None
+        }
     }
-    if fs::metadata(&path).map(|m| m.len()).unwrap_or(0) == 0 {
-        errors.push(format!("{label} must be non-empty"));
-        return None;
-    }
-    Some(path)
 }
 
 // ---------------------------------------------------------------------------
@@ -339,8 +349,8 @@ fn probe_export_hook(
         Duration::from_secs(60),
     );
 
-    let stdout_str = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr_str = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout_str = String::from_utf8_lossy(&output.stdout).into_owned();
+    let stderr_str = String::from_utf8_lossy(&output.stderr).into_owned();
     let exit_code = output.status.code();
     let mut validation_errors = Vec::new();
 
@@ -511,15 +521,24 @@ fn save_reopen_export_round_trip() {
             return;
         }
     };
-    assert!(
-        saved_project.is_file(),
-        "saved .a3p should exist at {}",
-        saved_project.display(),
-    );
-    assert!(
-        fs::metadata(&saved_project).unwrap().len() > 0,
-        "saved .a3p should be non-empty",
-    );
+    let saved_meta = fs::metadata(&saved_project).unwrap_or_else(|e| {
+        panic!(
+            "saved .a3p should exist at {}: {e}",
+            saved_project.display()
+        )
+    });
+    assert!(saved_meta.is_file(), "saved .a3p should be a regular file");
+    assert!(saved_meta.len() > 0, "saved .a3p should be non-empty");
+
+    // ── Pre-check reopen hook before expensive Xvfb startup ────────────
+    let reopen_hook = alice.join("tools/eatme-reopen-project");
+    if !reopen_hook.is_file() {
+        eprintln!(
+            "reopen hook not found at {} — phases 3-5 blocked (contract-first)",
+            reopen_hook.display()
+        );
+        return;
+    }
 
     // ── Start Xvfb for reopen/export phases ────────────────────────────
     eprintln!("starting Xvfb for reopen/export phases");
@@ -528,15 +547,6 @@ fn save_reopen_export_round_trip() {
 
     // ── Phase 3: Reopen the saved project ──────────────────────────────
     eprintln!("phase 3: reopen saved project via eatme-reopen-project hook");
-    let reopen_hook = alice.join("tools/eatme-reopen-project");
-    if !reopen_hook.is_file() {
-        eprintln!(
-            "reopen hook not found at {} — phases 3-5 blocked (contract-first)",
-            reopen_hook.display()
-        );
-        drop(xvfb);
-        return;
-    }
 
     let reopen_evidence_dir = run_dir.join("project-reopen");
     fs::create_dir_all(&reopen_evidence_dir).expect("create reopen evidence dir");
@@ -594,27 +604,24 @@ fn save_reopen_export_round_trip() {
         reopen_result.source_saved_project_artifact,
     );
 
-    // Verify reopen evidence artifacts exist and are non-empty.
-    let reopened_project = reopen_evidence_dir.join(&reopen_result.reopened_project_artifact);
-    assert!(
-        reopened_project.is_file(),
-        "reopened project artifact should exist at {}",
-        reopened_project.display(),
+    // Verify reopen evidence artifacts via shared validator (single stat each).
+    let mut reopen_errors = Vec::new();
+    validate_evidence_artifact(
+        &reopen_evidence_dir,
+        &reopen_result.reopened_project_artifact,
+        "reopened project artifact",
+        &mut reopen_errors,
+    );
+    validate_evidence_artifact(
+        &reopen_evidence_dir,
+        &reopen_result.reopened_state_artifact,
+        "reopened state artifact",
+        &mut reopen_errors,
     );
     assert!(
-        fs::metadata(&reopened_project).unwrap().len() > 0,
-        "reopened project artifact should be non-empty",
-    );
-
-    let reopened_state = reopen_evidence_dir.join(&reopen_result.reopened_state_artifact);
-    assert!(
-        reopened_state.is_file(),
-        "reopened state artifact should exist at {}",
-        reopened_state.display(),
-    );
-    assert!(
-        fs::metadata(&reopened_state).unwrap().len() > 0,
-        "reopened state artifact should be non-empty",
+        reopen_errors.is_empty(),
+        "reopen evidence validation failed: {:?}",
+        reopen_errors,
     );
 
     // ── Phase 4-5: Export and verify via probe ───────────────────────────
