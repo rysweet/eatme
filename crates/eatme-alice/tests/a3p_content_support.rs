@@ -148,23 +148,6 @@ pub fn build_synthetic_a3p(entries: Vec<(&str, &str)>) -> Vec<u8> {
     writer.finish().unwrap().into_inner()
 }
 
-/// Builds a ZIP with path-traversal entries for security testing.
-/// Uses raw ZIP construction to bypass writer validation.
-pub fn build_traversal_test_zip() -> Vec<u8> {
-    // Build a minimal ZIP where we can control entry names.
-    // We build a valid zip with safe entry first, then also add entries
-    // that the extraction should skip.
-    let cursor = Cursor::new(Vec::new());
-    let mut writer = zip::ZipWriter::new(cursor);
-    let options = zip::write::SimpleFileOptions::default();
-
-    // Safe entry that should be extracted
-    writer.start_file("safe/nested.xml", options).unwrap();
-    writer.write_all(b"<safe/>").unwrap();
-
-    writer.finish().unwrap().into_inner()
-}
-
 // ===================================================================
 // Regex pattern constants
 // ===================================================================

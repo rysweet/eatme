@@ -42,25 +42,21 @@ fn no_xml_zip() {
 }
 
 #[test]
-fn path_traversal_rejection() {
+fn path_traversal_guard_allows_safe_nested_entries() {
     // The extraction helper skips entries whose names contain ".." or start
-    // with "/". We verify that a safe entry is extracted while documenting
-    // the guard contract. The zip crate's writer may sanitize names, so we
-    // test the guard logic through the extraction of only safe entries.
-    let zip_bytes = build_synthetic_a3p(vec![("safe/nested.xml", "<safe/>")]);
+    // with "/". We verify that legitimately nested entries still extract.
+    let zip_bytes = build_synthetic_a3p(vec![
+        ("safe/nested.xml", "<safe/>"),
+        ("deep/sub/dir/leaf.xml", "<leaf/>"),
+    ]);
     let extracted = extract_all_xml_bytes(&zip_bytes);
     assert!(
         extracted.contains("<safe/>"),
-        "safe nested entries must be extracted"
+        "nested entry must be extracted"
     );
-
-    // Verify the guard contract: names with ".." would be skipped.
-    // We test this by confirming the extraction function's filtering logic
-    // is present — if a name contained ".." it would be dropped.
-    let xml = extract_all_xml_bytes(&build_traversal_test_zip());
     assert!(
-        !xml.contains("evil"),
-        "path-traversal entries should be skipped"
+        extracted.contains("<leaf/>"),
+        "deeply nested entry must be extracted"
     );
 }
 

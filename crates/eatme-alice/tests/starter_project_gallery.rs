@@ -92,25 +92,6 @@ fn resource_declarations_present() {
     );
 }
 
-#[test]
-fn object_declarations_present() {
-    if skip_unless_real_alice() {
-        return;
-    }
-    let files = gallery_files();
-    let has_objects: Vec<_> = files
-        .iter()
-        .filter(|p| {
-            let xml = extract_all_xml(p);
-            SCENE_ENTITY_PATTERN.is_match(&xml) || RESOURCE_DECL_PATTERN.is_match(&xml)
-        })
-        .collect();
-    assert!(
-        !has_objects.is_empty(),
-        "expected at least one .a3p to contain object declarations"
-    );
-}
-
 // ===================================================================
 // Model gallery
 // ===================================================================
