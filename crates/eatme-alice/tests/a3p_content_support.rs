@@ -122,7 +122,8 @@ fn extract_xml_entries<R: Read + std::io::Seek>(
         if entry.read_to_string(&mut content).is_ok() {
             if all_xml.len() + content.len() > max_bytes {
                 let remaining = max_bytes.saturating_sub(all_xml.len());
-                all_xml.push_str(content.get(..remaining).unwrap_or(&content));
+                let safe_end = content.floor_char_boundary(remaining);
+                all_xml.push_str(&content[..safe_end]);
                 break;
             }
             all_xml.push_str(&content);
@@ -166,7 +167,7 @@ pub static AUDIO_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"PlayAudio|AudioSource|\.mp3|\.wav").unwrap());
 
 pub static BILLBOARD_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"Billboard|TextModel|Marker|TextString").unwrap());
+    LazyLock::new(|| Regex::new(r"Billboard|TextModel|TextString").unwrap());
 
 pub static SCENE_ENTITY_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"SScene|SModel|SGround").unwrap());

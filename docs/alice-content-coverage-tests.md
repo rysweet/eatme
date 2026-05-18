@@ -94,7 +94,7 @@ implementation details and are not part of the public crate API.
 | `BOUNDING_BOX_PATTERN` | Compiled regex: `BoundingBox\|boundingBox` |
 | `CAMERA_PATTERN` | Compiled regex: `CameraMarker\|VantagePoint\|SymmetricPerspectiveCamera\|fieldOfView` |
 | `AUDIO_PATTERN` | Compiled regex: `PlayAudio\|AudioSource\|\.mp3\|\.wav` |
-| `BILLBOARD_PATTERN` | Compiled regex: `Billboard\|TextModel\|Marker\|TextString` |
+| `BILLBOARD_PATTERN` | Compiled regex: `Billboard\|TextModel\|TextString` |
 | `SCENE_ENTITY_PATTERN` | Compiled regex: `SScene\|SModel\|SGround` |
 | `RESOURCE_DECL_PATTERN` | Compiled regex: `resourceReference\|ModelResourceReference` |
 
@@ -255,16 +255,15 @@ Use this workflow when adding a new Alice content pattern test.
    a new XML element family. Use a compile-time string literal to avoid ReDoS.
 
 3. **Use aggregate assertions** for integration tests. Assert that at least one
-   project in the gallery matches, not that every project matches:
+   project in the gallery matches, not that every project matches. Use the
+   shared `GALLERY_CACHE` to avoid re-extracting ZIPs:
 
    ```rust
-   let matches: Vec<_> = a3p_files
-       .iter()
-       .filter(|p| NEW_PATTERN.is_match(&extract_all_xml(p)))
-       .collect();
    assert!(
-       !matches.is_empty(),
-       "expected at least one .a3p to contain new-element XML, found none"
+       GALLERY_CACHE
+           .iter()
+           .any(|(_, xml)| NEW_PATTERN.is_match(xml)),
+       "expected at least one .a3p to contain new-element XML"
    );
    ```
 
@@ -316,7 +315,7 @@ archives. Patterns use alternation (`|`) for related elements.
 | `BOUNDING_BOX_PATTERN` | `BoundingBox\|boundingBox` | Object spatial bounds used for collision and layout. |
 | `CAMERA_PATTERN` | `CameraMarker\|VantagePoint\|SymmetricPerspectiveCamera\|fieldOfView` | Camera placement, orbit, and perspective settings. |
 | `AUDIO_PATTERN` | `PlayAudio\|AudioSource\|\.mp3\|\.wav` | Audio playback actions and sound resource files. |
-| `BILLBOARD_PATTERN` | `Billboard\|TextModel\|Marker\|TextString` | 2D text overlays and billboard rendering elements. |
+| `BILLBOARD_PATTERN` | `Billboard\|TextModel\|TextString` | 2D text overlays and billboard rendering elements. |
 | `SCENE_ENTITY_PATTERN` | `SScene\|SModel\|SGround` | Top-level scene structure: scene root, models, ground plane. |
 | `RESOURCE_DECL_PATTERN` | `resourceReference\|ModelResourceReference` | Resource declarations linking models to gallery entries. |
 
