@@ -7,11 +7,12 @@
 //! - `real_ast_grading.rs`
 //! - `loops_and_conditionals_e2e.rs`
 
-use std::io::Read;
-use std::path::Path;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use eatme_core::ast::{Procedure, Program, Statement};
+use eatme_core::ast::{ArithmeticOperator, Procedure, Program, Statement};
 use regex::Regex;
 
 // ---------------------------------------------------------------------------
@@ -55,6 +56,61 @@ pub fn re_event_listener() -> &'static Regex {
 pub fn re_collision_listener() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CollisionStart(?:Event)?Listener""#).unwrap())
+}
+
+pub fn re_array_declaration() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"type\s*=\s*"ArrayDeclaration"[^>]*name\s*=\s*"([^"]+)"[^>]*elementType\s*=\s*"([^"]+)"[^>]*elements\s*=\s*"([^"]*)""#,
+        )
+        .unwrap()
+    })
+}
+
+pub fn re_array_access() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"type\s*=\s*"ArrayAccess"[^>]*array\s*=\s*"([^"]+)"[^>]*index\s*=\s*"([^"]+)"[^>]*target\s*=\s*"([^"]+)""#,
+        )
+        .unwrap()
+    })
+}
+
+pub fn re_for_each_array() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"type\s*=\s*"ForEachArray"[^>]*item\s*=\s*"([^"]+)"[^>]*array\s*=\s*"([^"]+)""#,
+        )
+        .unwrap()
+    })
+}
+
+pub fn re_arithmetic_expression() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"type\s*=\s*"ArithmeticExpression"[^>]*operator\s*=\s*"([^"]+)"[^>]*left\s*=\s*"([^"]+)"[^>]*right\s*=\s*"([^"]+)"[^>]*result\s*=\s*"([^"]+)""#,
+        )
+        .unwrap()
+    })
+}
+
+pub fn re_comment() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"Comment"[^>]*text\s*=\s*"([^"]+)""#).unwrap())
+}
+
+pub fn re_user_type() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"type\s*=\s*"UserType"[^>]*name\s*=\s*"([^"]+)"(?:[^>]*extends\s*=\s*"([^"]*)")?(?:[^>]*methods\s*=\s*"([^"]*)")?"#,
+        )
+        .unwrap()
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +161,28 @@ pub fn parse_a3p_program(path: &Path) -> Option<Program> {
         procedures,
         functions: vec![],
     })
+}
+
+pub fn write_synthetic_a3p(fixture_name: &str, xml: &str) -> PathBuf {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("target/test-work/synthetic-a3p")
+        .join(format!("{fixture_name}-{nonce}"));
+    std::fs::create_dir_all(&root).unwrap();
+
+    let path = root.join(format!("{fixture_name}.a3p"));
+    let file = std::fs::File::create(&path).unwrap();
+    let mut writer = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+
+    writer.start_file("programType.xml", options).unwrap();
+    writer.write_all(xml.as_bytes()).unwrap();
+    writer.finish().unwrap();
+
+    path
 }
 
 /// Extract `Procedure` definitions from Alice XML content.
@@ -188,7 +266,100 @@ pub fn extract_statements(xml: &str) -> Vec<Statement> {
         });
     }
 
+    // ArrayDeclaration → ArrayDeclaration
+    for cap in re_array_declaration().captures_iter(xml) {
+        let elements = cap[3]
+            .split(',')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+            .collect();
+        stmts.push(Statement::ArrayDeclaration {
+            name: cap[1].to_string(),
+            element_type: cap[2].to_string(),
+            elements,
+        });
+    }
+
+    // ArrayAccess → ArrayAccess
+    for cap in re_array_access().captures_iter(xml) {
+        stmts.push(Statement::ArrayAccess {
+            array: cap[1].to_string(),
+            index: cap[2].to_string(),
+            target: cap[3].to_string(),
+        });
+    }
+
+    // ForEachArray → ForEachArray
+    for cap in re_for_each_array().captures_iter(xml) {
+        stmts.push(Statement::ForEachArray {
+            item_name: cap[1].to_string(),
+            array: cap[2].to_string(),
+            body: vec![],
+        });
+    }
+
+    // ArithmeticExpression → ArithmeticExpression
+    for cap in re_arithmetic_expression().captures_iter(xml) {
+        let Some(operator) = parse_arithmetic_operator(&cap[1]) else {
+            continue;
+        };
+        stmts.push(Statement::ArithmeticExpression {
+            operator,
+            left: cap[2].to_string(),
+            right: cap[3].to_string(),
+            result: cap[4].to_string(),
+        });
+    }
+
+    // Comment → Comment
+    for cap in re_comment().captures_iter(xml) {
+        stmts.push(Statement::Comment {
+            text: cap[1].to_string(),
+        });
+    }
+
+    // UserType → UserTypeDeclaration
+    for cap in re_user_type().captures_iter(xml) {
+        let extends = cap.get(2).and_then(|value| {
+            let text = value.as_str().trim();
+            (!text.is_empty()).then(|| text.to_string())
+        });
+        let methods = cap
+            .get(3)
+            .map(|value| parse_user_type_methods(value.as_str()))
+            .unwrap_or_default();
+        stmts.push(Statement::UserTypeDeclaration {
+            name: cap[1].to_string(),
+            extends,
+            methods,
+        });
+    }
+
     stmts
+}
+
+fn parse_arithmetic_operator(value: &str) -> Option<ArithmeticOperator> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "add" => Some(ArithmeticOperator::Add),
+        "subtract" => Some(ArithmeticOperator::Subtract),
+        "multiply" => Some(ArithmeticOperator::Multiply),
+        "divide" => Some(ArithmeticOperator::Divide),
+        _ => None,
+    }
+}
+
+fn parse_user_type_methods(value: &str) -> Vec<Procedure> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(|name| Procedure {
+            name: name.to_string(),
+            parameters: vec![],
+            body: vec![],
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------

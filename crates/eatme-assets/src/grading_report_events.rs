@@ -161,7 +161,7 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                     stmt_find_event_constructs(body, has_event, has_collision);
                 }
             }
-            Statement::CountLoop { body, .. } => {
+            Statement::CountLoop { body, .. } | Statement::ForEachArray { body, .. } => {
                 if !(*has_event && *has_collision) {
                     stmt_find_event_constructs(body, has_event, has_collision);
                 }
@@ -176,11 +176,25 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                     }
                 }
             }
+            Statement::UserTypeDeclaration { methods, .. } => {
+                if !(*has_event && *has_collision) {
+                    for method in methods {
+                        stmt_find_event_constructs(&method.body, has_event, has_collision);
+                        if *has_event && *has_collision {
+                            break;
+                        }
+                    }
+                }
+            }
             Statement::MethodCall { .. }
             | Statement::ReturnStatement { .. }
             | Statement::FunctionCall { .. }
             | Statement::VariableDeclaration { .. }
-            | Statement::VariableAssignment { .. } => {}
+            | Statement::VariableAssignment { .. }
+            | Statement::ArrayDeclaration { .. }
+            | Statement::ArrayAccess { .. }
+            | Statement::ArithmeticExpression { .. }
+            | Statement::Comment { .. } => {}
         }
         if *has_event && *has_collision {
             return;

@@ -334,15 +334,26 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
             | Statement::ReturnStatement { .. }
             | Statement::FunctionCall { .. }
             | Statement::VariableDeclaration { .. }
-            | Statement::VariableAssignment { .. } => {}
-            Statement::EventListener { body, .. } => {
+            | Statement::VariableAssignment { .. }
+            | Statement::ArrayDeclaration { .. }
+            | Statement::ArrayAccess { .. }
+            | Statement::ArithmeticExpression { .. }
+            | Statement::Comment { .. } => {}
+            Statement::EventListener { body, .. }
+            | Statement::CollisionListener { body, .. }
+            | Statement::ForEachArray { body, .. } => {
                 if !(*has_loop && *has_cond) {
                     stmt_find_constructs(body, has_loop, has_cond);
                 }
             }
-            Statement::CollisionListener { body, .. } => {
+            Statement::UserTypeDeclaration { methods, .. } => {
                 if !(*has_loop && *has_cond) {
-                    stmt_find_constructs(body, has_loop, has_cond);
+                    for method in methods {
+                        stmt_find_constructs(&method.body, has_loop, has_cond);
+                        if *has_loop && *has_cond {
+                            break;
+                        }
+                    }
                 }
             }
         }

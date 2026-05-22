@@ -20,6 +20,8 @@ mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
 pub mod grading_report;
+pub(crate) mod grading_report_arrays;
+pub(crate) mod grading_report_comments;
 pub(crate) mod grading_report_creative;
 pub(crate) mod grading_report_events;
 #[cfg(test)]
@@ -27,6 +29,7 @@ mod grading_report_extraction_edge_tests;
 #[cfg(test)]
 mod grading_report_extraction_tests;
 pub(crate) mod grading_report_functions;
+pub(crate) mod grading_report_inheritance;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
@@ -64,9 +67,12 @@ pub use grading_report::{
     GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
+pub use grading_report_arrays::{ArraysArithmeticGradingInput, grade_arrays_and_arithmetic};
+pub use grading_report_comments::{CommentsGradingInput, grade_comments};
 pub use grading_report_creative::{CreativeProjectGradingInput, grade_creative_project};
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
 pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
+pub use grading_report_inheritance::{InheritanceOopGradingInput, grade_inheritance_oop};
 pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
 pub use grading_report_variables::{VariablesGradingInput, grade_variables};
 pub use report::{

@@ -37,6 +37,14 @@ pub struct Function {
     pub body: Vec<Statement>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ArithmeticOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum Statement {
@@ -79,6 +87,35 @@ pub enum Statement {
     VariableAssignment {
         name: String,
         value: String,
+    },
+    ArrayDeclaration {
+        name: String,
+        element_type: String,
+        elements: Vec<String>,
+    },
+    ArrayAccess {
+        array: String,
+        index: String,
+        target: String,
+    },
+    ForEachArray {
+        item_name: String,
+        array: String,
+        body: Vec<Statement>,
+    },
+    ArithmeticExpression {
+        operator: ArithmeticOperator,
+        left: String,
+        right: String,
+        result: String,
+    },
+    Comment {
+        text: String,
+    },
+    UserTypeDeclaration {
+        name: String,
+        extends: Option<String>,
+        methods: Vec<Procedure>,
     },
 }
 
