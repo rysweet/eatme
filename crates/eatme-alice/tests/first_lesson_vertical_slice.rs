@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 #[allow(dead_code)]
 mod launch_smoke_support;
-use launch_smoke_support::{PathOverride, TestFixture, alice_home, real_alice_enabled};
+use launch_smoke_support::{PathOverride, TestFixture, alice_home, lock_env, real_alice_enabled};
 
 // ─── Step-evidence helper ────────────────────────────────────────────
 
@@ -178,6 +178,8 @@ fn real_alice_vertical_slice_captures_per_step_evidence() {
         eprintln!("skipping real-Alice vertical-slice test (set EATME_REAL_ALICE=1)");
         return;
     }
+
+    let _env_guard = lock_env();
 
     let runs_dir = env::current_dir()
         .unwrap()

@@ -282,7 +282,7 @@ fn real_alice_events_collision_launch_smoke() {
 
     // manifest.json round-trip from disk
     let manifest_path = runs_dir
-        .join("real-alice-launch-smoke")
+        .join("events-collision-proximity-game")
         .join(&run_id)
         .join("manifest.json");
     assert!(

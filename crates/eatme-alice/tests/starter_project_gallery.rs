@@ -21,7 +21,7 @@ use eatme_core::ast::Program;
 
 #[allow(dead_code)]
 mod launch_smoke_support;
-use launch_smoke_support::{alice_home, real_alice_enabled};
+use launch_smoke_support::{real_alice_enabled, starter_projects_dir};
 
 #[allow(dead_code)]
 mod a3p_parser_support;
@@ -30,11 +30,6 @@ use a3p_parser_support::parse_a3p_program;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// Directory containing Alice starter projects.
-fn starter_projects_dir() -> PathBuf {
-    alice_home().join("starter-projects")
-}
 
 /// Discover all `.a3p` files in the starter-projects directory.
 fn discover_a3p_files() -> Vec<PathBuf> {

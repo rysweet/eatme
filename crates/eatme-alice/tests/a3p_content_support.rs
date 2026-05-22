@@ -24,12 +24,22 @@ pub fn real_alice_enabled() -> bool {
         .unwrap_or(false)
 }
 
-/// Resolves the `starter-projects/` directory from `ALICE_HOME` or the
-/// default checkout path (`../alice3-modernization`).
+/// Resolves the Alice `starter-projects/` directory from `ALICE_HOME`.
+/// Supports both packaged installs and source-tree checkouts.
 pub fn starter_projects_dir() -> PathBuf {
-    let alice_home = env::var("ALICE_HOME").unwrap_or_else(|_| "../alice3-modernization".into());
-    PathBuf::from(alice_home)
-        .join("core/resources/target/distribution/application/starter-projects")
+    let alice_home =
+        PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "../alice3-modernization".into()));
+    for relative in [
+        "starter-projects",
+        "core/resources/target/distribution/application/starter-projects",
+        "core/resources/src/application/resources/starter-projects",
+    ] {
+        let candidate = alice_home.join(relative);
+        if candidate.is_dir() {
+            return candidate;
+        }
+    }
+    alice_home.join("core/resources/target/distribution/application/starter-projects")
 }
 
 // ===================================================================
@@ -172,8 +182,9 @@ pub static BILLBOARD_PATTERN: LazyLock<Regex> =
 pub static SCENE_ENTITY_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"SScene|SModel|SGround").unwrap());
 
-pub static RESOURCE_DECL_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"resourceReference|ModelResourceReference").unwrap());
+pub static RESOURCE_DECL_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"org\.lgna\.story\.resources|ModelResource|JointedModelResource").unwrap()
+});
 
 // ===================================================================
 // Gallery cache — extracts every starter-project ZIP exactly once

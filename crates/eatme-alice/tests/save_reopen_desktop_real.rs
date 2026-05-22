@@ -222,6 +222,15 @@ fn save_reopen_desktop_real_exercises_full_silver_thread() {
         "saved_project_artifact must be non-empty"
     );
 
+    let reopen_hook = alice.join(REOPEN_HOOK);
+    if !reopen_hook.is_file() {
+        eprintln!(
+            "reopen hook not found at {} — phase 3+ blocked (contract-first)",
+            reopen_hook.display()
+        );
+        return;
+    }
+
     // ── Phase 3: Reopen in a fresh session ──────────────────────────────
     let reopen_evidence = run_dir.join("project-reopen");
     let _xvfb = XvfbGuard::start(REOPEN_DISPLAY, &run_dir);

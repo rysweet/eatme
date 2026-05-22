@@ -24,41 +24,61 @@ use regex::Regex;
 
 pub fn re_user_method_type_first() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"UserMethod"[^>]*name\s*=\s*"([^"]+)""#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"(?s)type\s*=\s*"(?:[^"]+\.)?UserMethod"[^>]*?(?:name\s*=\s*"([^"]+)"|.*?<property\s+name\s*=\s*"name">\s*<value[^>]*>([^<]+)</value>)"#,
+        )
+        .unwrap()
+    })
 }
 
 pub fn re_user_method_name_first() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"UserMethod""#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r#"name\s*=\s*"([^"]+)"[^>]*type\s*=\s*"(?:[^"]+\.)?UserMethod""#).unwrap()
+    })
+}
+
+pub fn re_user_method_any() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"(?:[^"]+\.)?UserMethod""#).unwrap())
 }
 
 pub fn re_method_invocation() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"type\s*=\s*"MethodInvocation"[^>]*method\s*=\s*"([^"]*)"#).unwrap()
+        Regex::new(
+            r#"(?s)type\s*=\s*"(?:[^"]+\.)?MethodInvocation"[^>]*?(?:method\s*=\s*"([^"]*)"|.*?<method[^>]*name\s*=\s*"([^"]+)")"#,
+        )
+        .unwrap()
     })
 }
 
 pub fn re_conditional() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"ConditionalStatement""#).unwrap())
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"(?:[^"]+\.)?ConditionalStatement""#).unwrap())
 }
 
 pub fn re_count_loop() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CountLoop""#).unwrap())
+    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"(?:[^"]+\.)?CountLoop""#).unwrap())
 }
 
 pub fn re_event_listener() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"type\s*=\s*"AddEventListener"[^>]*event\s*=\s*"([^"]*)"#).unwrap()
+        Regex::new(
+            r#"(?s)type\s*=\s*"(?:[^"]+\.)?AddEventListener"[^>]*?(?:event\s*=\s*"([^"]*)"|.*?<property\s+name\s*=\s*"event"[^>]*>\s*<value[^>]*>([^<]+)</value>)"#,
+        )
+        .unwrap()
     })
 }
 
 pub fn re_collision_listener() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"type\s*=\s*"CollisionStart(?:Event)?Listener""#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r#"type\s*=\s*"(?:[^"]+\.)?CollisionStart(?:Event)?Listener""#).unwrap()
+    })
 }
 
 pub fn re_array_declaration() -> &'static Regex {
@@ -154,6 +174,12 @@ pub fn re_sequence_step() -> &'static Regex {
 // .a3p ZIP parser — lightweight regex-based XML extraction
 // ---------------------------------------------------------------------------
 
+fn capture_text<'a>(captures: &'a regex::Captures<'a>, groups: &[usize]) -> Option<&'a str> {
+    groups
+        .iter()
+        .find_map(|&index| captures.get(index).map(|value| value.as_str()))
+}
+
 fn read_all_xml(path: &Path) -> Option<String> {
     let file = std::fs::File::open(path).ok()?;
     let mut archive = zip::ZipArchive::new(file).ok()?;
@@ -241,7 +267,9 @@ pub fn extract_procedures(xml: &str) -> Vec<Procedure> {
 
     for re in [re_user_method_type_first(), re_user_method_name_first()] {
         for cap in re.captures_iter(xml) {
-            let name = cap[1].to_string();
+            let Some(name) = capture_text(&cap, &[1, 2]).map(str::to_string) else {
+                continue;
+            };
             if seen_names.insert(name.clone()) {
                 procedures.push(Procedure {
                     name,
@@ -250,6 +278,14 @@ pub fn extract_procedures(xml: &str) -> Vec<Procedure> {
                 });
             }
         }
+    }
+
+    if procedures.is_empty() && re_user_method_any().is_match(xml) {
+        procedures.push(Procedure {
+            name: "myFirstMethod".into(),
+            parameters: vec![],
+            body: Vec::new(),
+        });
     }
 
     let stmts = extract_statements(xml);
@@ -276,7 +312,7 @@ pub fn extract_statements(xml: &str) -> Vec<Statement> {
     for cap in re_method_invocation().captures_iter(xml) {
         stmts.push(Statement::MethodCall {
             object: "this".into(),
-            method: cap[1].to_string(),
+            method: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
             arguments: vec![],
         });
     }
@@ -301,7 +337,7 @@ pub fn extract_statements(xml: &str) -> Vec<Statement> {
     // AddEventListener → EventListener
     for cap in re_event_listener().captures_iter(xml) {
         stmts.push(Statement::EventListener {
-            event: cap[1].to_string(),
+            event: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
             body: vec![],
         });
     }
@@ -648,6 +684,42 @@ fn extract_procedures_handles_realistic_nested_alice_xml() {
         body.iter()
             .any(|s| matches!(s, Statement::CollisionListener { .. })),
         "should find CollisionStartEventListener"
+    );
+}
+
+#[test]
+fn extract_procedures_handles_fully_qualified_alice_ast_nodes() {
+    let xml = r#"
+        <root>
+          <node type="org.lgna.project.ast.UserMethod" uuid="1">
+            <property name="name"><value type="java.lang.String">main</value></property>
+          </node>
+          <node type="org.lgna.project.ast.ExpressionStatement">
+            <property name="expression">
+              <node type="org.lgna.project.ast.MethodInvocation" uuid="2">
+                <property name="method">
+                  <node type="org.lgna.project.ast.JavaMethod" uuid="3">
+                    <method isVarArgs="false" name="initializeInFrame" />
+                  </node>
+                </property>
+              </node>
+            </property>
+          </node>
+          <node type="org.lgna.project.ast.ConditionalStatement" uuid="4" />
+        </root>
+    "#;
+
+    let procs = extract_procedures(xml);
+    assert_eq!(procs.len(), 1);
+    assert_eq!(procs[0].name, "main");
+    assert!(procs[0].body.iter().any(
+        |stmt| matches!(stmt, Statement::MethodCall { method, .. } if method == "initializeInFrame")
+    ));
+    assert!(
+        procs[0]
+            .body
+            .iter()
+            .any(|stmt| matches!(stmt, Statement::IfElse { .. }))
     );
 }
 

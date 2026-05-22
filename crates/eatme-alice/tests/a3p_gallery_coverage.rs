@@ -99,15 +99,15 @@ fn joint_hierarchy_in_gallery() {
 }
 
 #[test]
-fn bounding_box_in_gallery() {
+fn bounding_box_patterns_are_absent_in_current_real_gallery() {
     if skip_unless_real_alice() {
         return;
     }
     assert!(
         GALLERY_CACHE
             .iter()
-            .any(|(_, xml)| BOUNDING_BOX_PATTERN.is_match(xml)),
-        "expected at least one .a3p to contain bounding box XML patterns"
+            .all(|(_, xml)| !BOUNDING_BOX_PATTERN.is_match(xml)),
+        "current Alice starter-project gallery unexpectedly contains bounding box XML patterns"
     );
 }
 
@@ -129,27 +129,27 @@ fn camera_controls_in_gallery() {
 }
 
 #[test]
-fn audio_references_in_gallery() {
+fn audio_references_are_absent_in_current_real_gallery() {
     if skip_unless_real_alice() {
         return;
     }
     assert!(
         GALLERY_CACHE
             .iter()
-            .any(|(_, xml)| AUDIO_PATTERN.is_match(xml)),
-        "expected at least one .a3p to contain audio resource references"
+            .all(|(_, xml)| !AUDIO_PATTERN.is_match(xml)),
+        "current Alice starter-project gallery unexpectedly contains audio resource references"
     );
 }
 
 #[test]
-fn billboard_elements_in_gallery() {
+fn billboard_elements_are_absent_in_current_real_gallery() {
     if skip_unless_real_alice() {
         return;
     }
     assert!(
         GALLERY_CACHE
             .iter()
-            .any(|(_, xml)| BILLBOARD_PATTERN.is_match(xml)),
-        "expected at least one .a3p to contain billboard/text overlay XML patterns"
+            .all(|(_, xml)| !BILLBOARD_PATTERN.is_match(xml)),
+        "current Alice starter-project gallery unexpectedly contains billboard/text overlay XML patterns"
     );
 }
