@@ -110,7 +110,7 @@ fn evaluate_functions_steps(program: &Option<Program>) -> Vec<StepGrade> {
 fn contains_return(statements: &[Statement]) -> bool {
     statements.iter().any(|s| match s {
         Statement::ReturnStatement { .. } => true,
-        Statement::CountLoop { body, .. } => contains_return(body),
+        Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => contains_return(body),
         Statement::IfElse {
             if_body, else_body, ..
         } => contains_return(if_body) || contains_return(else_body),
@@ -123,7 +123,9 @@ fn contains_return(statements: &[Statement]) -> bool {
 fn contains_function_call(statements: &[Statement]) -> bool {
     statements.iter().any(|s| match s {
         Statement::FunctionCall { .. } => true,
-        Statement::CountLoop { body, .. } => contains_function_call(body),
+        Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => {
+            contains_function_call(body)
+        }
         Statement::IfElse {
             if_body, else_body, ..
         } => contains_function_call(if_body) || contains_function_call(else_body),

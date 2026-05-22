@@ -16,5 +16,6 @@ serde_yaml.workspace = true
 eatme-assets = { path = "../eatme-assets" }
 eatme-test-support = { path = "../eatme-test-support" }
 regex = "1"
+roxmltree = "0.20"
 ureq = { version = "2", features = ["json"] }
 zip = "2"

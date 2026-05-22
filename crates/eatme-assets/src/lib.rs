@@ -27,10 +27,12 @@ mod grading_report_extraction_edge_tests;
 #[cfg(test)]
 mod grading_report_extraction_tests;
 pub(crate) mod grading_report_functions;
+pub(crate) mod grading_report_games_narrative;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
 mod grading_report_module_split_contract_tests;
+pub(crate) mod grading_report_nested_control;
 pub(crate) mod grading_report_parameters;
 pub(crate) mod grading_report_variables;
 #[cfg(test)]
@@ -67,6 +69,8 @@ pub use grading_report::{
 pub use grading_report_creative::{CreativeProjectGradingInput, grade_creative_project};
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
 pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
+pub use grading_report_games_narrative::{GamesNarrativeGradingInput, grade_games_and_narrative};
+pub use grading_report_nested_control::{NestedControlFlowGradingInput, grade_nested_control_flow};
 pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
 pub use grading_report_variables::{VariablesGradingInput, grade_variables};
 pub use report::{

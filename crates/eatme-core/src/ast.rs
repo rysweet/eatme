@@ -63,6 +63,9 @@ pub enum Statement {
         object_b: String,
         body: Vec<Statement>,
     },
+    DoInOrder {
+        body: Vec<Statement>,
+    },
     ReturnStatement {
         expression: String,
     },

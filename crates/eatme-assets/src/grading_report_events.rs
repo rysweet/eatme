@@ -161,7 +161,7 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                     stmt_find_event_constructs(body, has_event, has_collision);
                 }
             }
-            Statement::CountLoop { body, .. } => {
+            Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => {
                 if !(*has_event && *has_collision) {
                     stmt_find_event_constructs(body, has_event, has_collision);
                 }
