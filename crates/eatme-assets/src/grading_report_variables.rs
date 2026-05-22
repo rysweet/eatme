@@ -114,7 +114,9 @@ fn evaluate_variables_steps(program: &Option<Program>) -> Vec<StepGrade> {
 fn contains_var_declaration(stmts: &[Statement]) -> bool {
     stmts.iter().any(|s| match s {
         Statement::VariableDeclaration { .. } => true,
-        Statement::CountLoop { body, .. } => contains_var_declaration(body),
+        Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => {
+            contains_var_declaration(body)
+        }
         Statement::IfElse {
             if_body, else_body, ..
         } => contains_var_declaration(if_body) || contains_var_declaration(else_body),
@@ -125,7 +127,9 @@ fn contains_var_declaration(stmts: &[Statement]) -> bool {
 fn contains_var_in_method_call(stmts: &[Statement]) -> bool {
     stmts.iter().any(|s| match s {
         Statement::MethodCall { arguments, .. } => arguments.iter().any(|a| !a.starts_with('"')),
-        Statement::CountLoop { body, .. } => contains_var_in_method_call(body),
+        Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => {
+            contains_var_in_method_call(body)
+        }
         Statement::IfElse {
             if_body, else_body, ..
         } => contains_var_in_method_call(if_body) || contains_var_in_method_call(else_body),
@@ -136,7 +140,9 @@ fn contains_var_in_method_call(stmts: &[Statement]) -> bool {
 fn contains_var_assignment(stmts: &[Statement]) -> bool {
     stmts.iter().any(|s| match s {
         Statement::VariableAssignment { .. } => true,
-        Statement::CountLoop { body, .. } => contains_var_assignment(body),
+        Statement::CountLoop { body, .. } | Statement::DoInOrder { body } => {
+            contains_var_assignment(body)
+        }
         Statement::IfElse {
             if_body, else_body, ..
         } => contains_var_assignment(if_body) || contains_var_assignment(else_body),

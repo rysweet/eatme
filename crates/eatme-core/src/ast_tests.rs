@@ -79,6 +79,45 @@ fn empty_procedure_body_round_trips() {
 }
 
 #[test]
+fn scene_and_sequence_types_round_trip() {
+    let scene = SceneLayout {
+        ground_present: true,
+        sky_present: true,
+        objects: vec![SceneObject {
+            name: "cat".into(),
+            kind: "Biped".into(),
+            position: Some(Vec3 {
+                x: 1.0,
+                y: 0.0,
+                z: -2.5,
+            }),
+            size: Some(1.25),
+            color: Some("#ffcc00".into()),
+            opacity: Some(0.85),
+        }],
+        camera: Some(CameraPose {
+            position: Vec3 {
+                x: 0.0,
+                y: 5.0,
+                z: 10.0,
+            },
+        }),
+    };
+    let sequence = SequenceBlock {
+        kind: SequenceKind::DoTogether,
+        steps: vec!["move".into(), "turn".into()],
+    };
+
+    let scene_json = serde_json::to_string(&scene).unwrap();
+    let restored_scene: SceneLayout = serde_json::from_str(&scene_json).unwrap();
+    assert_eq!(scene, restored_scene);
+
+    let sequence_json = serde_json::to_string(&sequence).unwrap();
+    let restored_sequence: SequenceBlock = serde_json::from_str(&sequence_json).unwrap();
+    assert_eq!(sequence, restored_sequence);
+}
+
+#[test]
 fn multiple_procedures_round_trip() {
     let program = Program::new(vec![
         Procedure {

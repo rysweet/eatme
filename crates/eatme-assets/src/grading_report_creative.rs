@@ -133,8 +133,9 @@ fn evaluate_creative_steps(program: &Option<Program>) -> Vec<StepGrade> {
 fn has_control_structure(stmts: &[Statement]) -> bool {
     stmts.iter().any(|s| match s {
         Statement::CountLoop { .. } | Statement::IfElse { .. } => true,
-        Statement::EventListener { body, .. } => has_control_structure(body),
-        Statement::CollisionListener { body, .. } => has_control_structure(body),
+        Statement::EventListener { body, .. }
+        | Statement::CollisionListener { body, .. }
+        | Statement::DoInOrder { body } => has_control_structure(body),
         _ => false,
     })
 }
