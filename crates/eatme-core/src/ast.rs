@@ -37,6 +37,14 @@ pub struct Function {
     pub body: Vec<Statement>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ArithmeticOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vec3 {
     pub x: f32,
@@ -82,14 +90,6 @@ pub enum SequenceKind {
 pub struct SequenceBlock {
     pub kind: SequenceKind,
     pub steps: Vec<String>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ArithmeticOperator {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

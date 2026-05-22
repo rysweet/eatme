@@ -178,6 +178,16 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
                     }
                 }
             }
+            Statement::UserTypeDeclaration { methods, .. } => {
+                if !(*has_event && *has_collision) {
+                    for method in methods {
+                        stmt_find_event_constructs(&method.body, has_event, has_collision);
+                        if *has_event && *has_collision {
+                            break;
+                        }
+                    }
+                }
+            }
             Statement::MethodCall { .. }
             | Statement::ReturnStatement { .. }
             | Statement::FunctionCall { .. }
@@ -186,8 +196,7 @@ fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_col
             | Statement::ArrayDeclaration { .. }
             | Statement::ArrayAccess { .. }
             | Statement::ArithmeticExpression { .. }
-            | Statement::Comment { .. }
-            | Statement::UserTypeDeclaration { .. } => {}
+            | Statement::Comment { .. } => {}
         }
         if *has_event && *has_collision {
             return;
