@@ -121,8 +121,7 @@ fn contains_game_loop_pattern(stmts: &[Statement]) -> bool {
 }
 
 fn count_do_in_order_dialogue(stmts: &[Statement]) -> usize {
-    stmts
-        .iter()
+    stmts.iter()
         .map(|stmt| match stmt {
             Statement::DoInOrder { body } => body
                 .iter()

@@ -36,10 +36,11 @@ pub fn grade_nested_control_flow(input: NestedControlFlowGradingInput) -> Gradin
     let passed = !preconditions_blocked
         && interaction_steps
             .iter()
-            .all(|step| step.name != "grade-basic-nesting" || step.status == StepStatus::Ready)
+            .find(|step| step.name == "detect-relational-expressions")
+            .is_some_and(|step| step.status == StepStatus::Ready)
         && interaction_steps
             .iter()
-            .find(|step| step.name == "detect-relational-expressions")
+            .find(|step| step.name == "grade-basic-nesting")
             .is_some_and(|step| step.status == StepStatus::Ready);
 
     steps.extend(interaction_steps);
