@@ -29,27 +29,27 @@ fn keyboard_and_collision_program() -> Program {
             body: vec![
                 Statement::EventListener {
                     event: "KeyPress".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.player".into(),
-                        method: "move".into(),
-                        arguments: vec!["FORWARD".into(), "0.5".into()],
-                    }],
-                },
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.player".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Game started!\"".into()],
+                    body: vec![Statement::IfElse {
+                        condition: "canMove".into(),
+                        if_body: vec![Statement::MethodCall {
+                            object: "this.player".into(),
+                            method: "move".into(),
+                            arguments: vec!["FORWARD".into(), "0.5".into()],
+                        }],
+                        else_body: vec![],
                     }],
                 },
                 Statement::CollisionListener {
                     object_a: "this.player".into(),
                     object_b: "this.obstacle".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.player".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Collision detected!\"".into()],
+                    body: vec![Statement::IfElse {
+                        condition: "notGameOver".into(),
+                        if_body: vec![Statement::MethodCall {
+                            object: "this.player".into(),
+                            method: "say".into(),
+                            arguments: vec!["\"Collision detected!\"".into()],
+                        }],
+                        else_body: vec![],
                     }],
                 },
             ],
@@ -66,10 +66,14 @@ fn keyboard_only_program() -> Program {
             parameters: vec![],
             body: vec![Statement::EventListener {
                 event: "KeyPress".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.player".into(),
-                    method: "move".into(),
-                    arguments: vec!["FORWARD".into(), "1.0".into()],
+                body: vec![Statement::IfElse {
+                    condition: "canMove".into(),
+                    if_body: vec![Statement::MethodCall {
+                        object: "this.player".into(),
+                        method: "move".into(),
+                        arguments: vec!["FORWARD".into(), "1.0".into()],
+                    }],
+                    else_body: vec![],
                 }],
             }],
         }],
@@ -156,13 +160,17 @@ fn real_alice_e2e_launch_then_grade_keyboard_and_collision() {
     );
     assert_eq!(
         report.steps[5].status,
-        StepStatus::NotYetTested,
-        "run-world stays NotYetTested"
+        StepStatus::Ready,
+        "run-world should PASS"
     );
     assert_eq!(
         report.steps[6].status,
         StepStatus::Ready,
         "save-project should PASS — AST survives JSON round-trip"
+    );
+    assert!(
+        report.passed,
+        "well-written events program should earn full marks"
     );
 
     // Verify JSON round-trip of the keyboard+collision AST

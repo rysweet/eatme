@@ -15,20 +15,28 @@ pub fn complete_events_program() -> Program {
         parameters: vec![],
         body: vec![
             Statement::EventListener {
-                event: "SceneActivated".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "say".into(),
-                    arguments: vec!["\"Hello world!\"".into()],
+                event: "KeyPress".into(),
+                body: vec![Statement::IfElse {
+                    condition: "canMove".into(),
+                    if_body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "move".into(),
+                        arguments: vec!["FORWARD".into(), "0.5".into()],
+                    }],
+                    else_body: vec![],
                 }],
             },
             Statement::CollisionListener {
                 object_a: "this.cat".into(),
                 object_b: "this.dog".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "say".into(),
-                    arguments: vec!["\"Ouch!\"".into()],
+                body: vec![Statement::IfElse {
+                    condition: "notColliding".into(),
+                    if_body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec!["\"Ouch!\"".into()],
+                    }],
+                    else_body: vec![],
                 }],
             },
         ],
