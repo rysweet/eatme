@@ -45,12 +45,12 @@ pub fn grade_nested_control_flow(input: NestedControlFlowGradingInput) -> Gradin
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "nested-control-flow-relational-expressions".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "nested-control-flow-relational-expressions",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_nested_control_steps(program: &Option<Program>) -> Vec<StepGrade> {

@@ -43,12 +43,12 @@ pub fn grade_inheritance_oop(input: InheritanceOopGradingInput) -> GradingReport
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "inheritance-oop-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "inheritance-oop-mini-challenge",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_inheritance_steps(program: &Option<Program>) -> Vec<StepGrade> {

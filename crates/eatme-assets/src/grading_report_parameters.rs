@@ -7,6 +7,7 @@ pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 use crate::grading_report::{
     ast_check_step, build_preconditions, cascade_blocked, no_program_chain,
 };
+use crate::quality_scoring::score_parameter_quality;
 
 pub struct ParametersGradingInput {
     pub assets_valid: bool,
@@ -42,12 +43,13 @@ pub fn grade_parameters(input: ParametersGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "parameters-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "parameters-mini-challenge",
         passed,
         steps,
-    }
+    )
+    .with_quality_scores(score_parameter_quality(input.student_program.as_ref()))
 }
 
 fn evaluate_parameters_steps(program: &Option<Program>) -> Vec<StepGrade> {

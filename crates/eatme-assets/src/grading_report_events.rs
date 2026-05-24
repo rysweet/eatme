@@ -5,12 +5,11 @@
 
 use eatme_core::ast::{Program, Statement};
 
-// Re-export shared types so `use super::*` works in the test file
-pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
-
 use crate::grading_report::{
-    ast_check_step, build_preconditions, cascade_blocked, no_program_chain,
+    GradingReport, StepGrade, StepStatus, ast_check_step, build_preconditions, cascade_blocked,
+    no_program_chain,
 };
+use crate::quality_scoring::score_event_quality;
 
 /// Input struct for events-and-collision grading.
 pub struct EventsGradingInput {
@@ -49,12 +48,13 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "events-collision-proximity-game".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "events-collision-proximity-game",
         passed,
         steps,
-    }
+    )
+    .with_quality_scores(score_event_quality(input.student_program.as_ref()))
 }
 
 fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {

@@ -41,12 +41,12 @@ pub fn grade_comments(input: CommentsGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "comments-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "comments-mini-challenge",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_comments_steps(program: &Option<Program>) -> Vec<StepGrade> {

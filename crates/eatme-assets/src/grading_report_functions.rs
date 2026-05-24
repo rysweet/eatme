@@ -47,12 +47,12 @@ pub fn grade_functions(input: FunctionsGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "using-functions-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "using-functions-mini-challenge",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_functions_steps(program: &Option<Program>) -> Vec<StepGrade> {

@@ -48,6 +48,7 @@ mod neighborhood_data_story_tests;
 mod outside_in_alice_expansion_tests;
 #[cfg(test)]
 mod pr160_recovery_readiness_tests;
+pub mod quality_scoring;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
@@ -68,7 +69,7 @@ pub use creative_assessment::{
 };
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
 pub use grading_report::{
-    GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
+    GradingInput, GradingReport, LoopsGradingInput, QualityScore, StepGrade, StepStatus,
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
 pub use grading_report_arrays::{ArraysArithmeticGradingInput, grade_arrays_and_arithmetic};
@@ -83,6 +84,7 @@ pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
 pub use grading_report_scene_building::{SceneBuildingGradingInput, grade_scene_building};
 pub use grading_report_sequencing::{SequencingGradingInput, grade_sequencing};
 pub use grading_report_variables::{VariablesGradingInput, grade_variables};
+pub use quality_scoring::{score_event_quality, score_parameter_quality, score_variable_quality};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };

@@ -45,12 +45,12 @@ pub fn grade_sequencing(input: SequencingGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "procedure-sequencing-do-in-order-do-together".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "procedure-sequencing-do-in-order-do-together",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_sequencing_steps(sequence_blocks: &Option<Vec<SequenceBlock>>) -> Vec<StepGrade> {

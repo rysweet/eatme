@@ -44,12 +44,12 @@ pub fn grade_arrays_and_arithmetic(input: ArraysArithmeticGradingInput) -> Gradi
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "arrays-collection-choreography".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "arrays-collection-choreography",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_arrays_arithmetic_steps(program: &Option<Program>) -> Vec<StepGrade> {

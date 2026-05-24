@@ -51,12 +51,12 @@ pub fn grade_games_and_narrative(input: GamesNarrativeGradingInput) -> GradingRe
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "games-and-interactive-narrative".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "games-and-interactive-narrative",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {

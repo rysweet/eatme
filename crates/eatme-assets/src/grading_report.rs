@@ -7,6 +7,37 @@ pub struct GradingReport {
     pub lesson: String,
     pub passed: bool,
     pub steps: Vec<StepGrade>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub quality_scores: Vec<QualityScore>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct QualityScore {
+    pub score: u8,
+    pub dimension: String,
+    pub feedback: String,
+}
+
+impl GradingReport {
+    pub(crate) fn new(
+        schema_version: impl Into<String>,
+        lesson: impl Into<String>,
+        passed: bool,
+        steps: Vec<StepGrade>,
+    ) -> Self {
+        Self {
+            schema_version: schema_version.into(),
+            lesson: lesson.into(),
+            passed,
+            steps,
+            quality_scores: vec![],
+        }
+    }
+
+    pub(crate) fn with_quality_scores(mut self, quality_scores: Vec<QualityScore>) -> Self {
+        self.quality_scores = quality_scores;
+        self
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -68,12 +99,12 @@ pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
 
     steps.extend([place_object, edit_code, run_world]);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "building-a-scene-first-world".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "building-a-scene-first-world",
         passed,
         steps,
-    }
+    )
 }
 
 fn interaction_step(
@@ -191,12 +222,12 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "loops-and-conditionals-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "loops-and-conditionals-mini-challenge",
         passed,
         steps,
-    }
+    )
 }
 
 pub(crate) fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {

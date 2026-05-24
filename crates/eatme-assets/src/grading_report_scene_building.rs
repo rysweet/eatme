@@ -53,12 +53,12 @@ pub fn grade_scene_building(input: SceneBuildingGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "building-a-scene-first-world".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "building-a-scene-first-world",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_scene_steps(scene: &Option<SceneLayout>) -> Vec<StepGrade> {

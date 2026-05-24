@@ -47,12 +47,12 @@ pub fn grade_creative_project(input: CreativeProjectGradingInput) -> GradingRepo
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "creative-design-project".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "creative-design-project",
         passed,
         steps,
-    }
+    )
 }
 
 fn evaluate_creative_steps(program: &Option<Program>) -> Vec<StepGrade> {
