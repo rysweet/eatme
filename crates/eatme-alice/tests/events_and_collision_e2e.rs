@@ -45,9 +45,18 @@ fn events_grading_all_ready_with_complete_program() {
         "add-collision-listener"
     );
 
-    assert_eq!(report.steps[5].status, StepStatus::Ready, "run-world");
+    // Runtime step — requires execution, so not-yet-tested
+    assert_eq!(
+        report.steps[5].status,
+        StepStatus::NotYetTested,
+        "run-world"
+    );
+
+    // Save/reopen round-trip — actual verification, should be Ready
     assert_eq!(report.steps[6].status, StepStatus::Ready, "save-project");
-    assert!(report.passed);
+
+    // Passed is false because run-world is not-yet-tested
+    assert!(!report.passed);
 }
 
 // -------------------------------------------------------------------
@@ -108,15 +117,11 @@ fn events_grading_missing_collision_listener_blocks_downstream() {
         name: "eventOnly".into(),
         parameters: vec![],
         body: vec![Statement::EventListener {
-            event: "KeyPress".into(),
-            body: vec![Statement::IfElse {
-                condition: "canMove".into(),
-                if_body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "move".into(),
-                    arguments: vec!["FORWARD".into(), "0.5".into()],
-                }],
-                else_body: vec![],
+            event: "SceneActivated".into(),
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"Hello!\"".into()],
             }],
         }],
     }]);

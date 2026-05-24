@@ -8,7 +8,9 @@ use eatme_core::ast::{Program, Statement};
 // Re-export shared types so `use super::*` works in the test file
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 
-use crate::grading_report::{build_preconditions, cascade_blocked, no_program_chain};
+use crate::grading_report::{
+    ast_check_step, build_preconditions, cascade_blocked, no_program_chain,
+};
 
 /// Input struct for events-and-collision grading.
 pub struct EventsGradingInput {
@@ -39,6 +41,7 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
         evaluate_events_steps(&input.student_program)
     };
 
+    // Precondition steps are all Ready when !preconditions_blocked, so skip them.
     let passed = !preconditions_blocked
         && interaction_steps
             .iter()
@@ -54,16 +57,6 @@ pub fn grade_events_and_collision(input: EventsGradingInput) -> GradingReport {
     }
 }
 
-#[derive(Default)]
-struct EventsEvidence {
-    has_event_listener: bool,
-    has_supported_event_type: bool,
-    has_valid_event_listener: bool,
-    has_collision_listener: bool,
-    has_distinct_collision_targets: bool,
-    has_valid_collision_listener: bool,
-}
-
 fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
     let program = match program {
         Some(p) => p,
@@ -77,126 +70,122 @@ fn evaluate_events_steps(program: &Option<Program>) -> Vec<StepGrade> {
         }
     };
 
-    let evidence = analyze_events(program);
+    let (has_event, has_collision) = ast_find_event_constructs(program);
 
-    let add_event = if evidence.has_valid_event_listener {
-        ready_step(
-            "add-event-listener",
-            &["launch-smoke"],
-            "Key-press or mouse-click listener includes a guard condition",
-        )
-    } else {
-        let reason = if !evidence.has_event_listener {
-            "No EventListener found in student program"
-        } else if !evidence.has_supported_event_type {
-            "Event handler should use a key press or mouse click event"
-        } else {
-            "Event handler should include a guard condition to prevent infinite loops"
-        };
-        blocked_step("add-event-listener", &["launch-smoke"], reason)
-    };
+    let add_event = ast_check_step(
+        "add-event-listener",
+        "launch-smoke",
+        has_event,
+        "EventListener",
+    );
+    let event_blocked = add_event.status == StepStatus::Blocked;
 
-    let add_collision = if add_event.status == StepStatus::Blocked {
+    let add_collision = if event_blocked {
         cascade_blocked("add-collision-listener", &["add-event-listener"])
-    } else if evidence.has_valid_collision_listener {
-        ready_step(
-            "add-collision-listener",
-            &["add-event-listener"],
-            "Collision handler references two different entities and includes a guard condition",
-        )
     } else {
-        let reason = if !evidence.has_collision_listener {
-            "No CollisionListener found in student program"
-        } else if !evidence.has_distinct_collision_targets {
-            "Collision handler must reference two different entities"
-        } else {
-            "Collision handler should include a guard condition to prevent infinite loops"
-        };
-        blocked_step("add-collision-listener", &["add-event-listener"], reason)
+        ast_check_step(
+            "add-collision-listener",
+            "add-event-listener",
+            has_collision,
+            "CollisionListener",
+        )
     };
 
-    let run_world = if add_collision.status == StepStatus::Blocked {
+    let collision_blocked = add_collision.status == StepStatus::Blocked;
+
+    let run_world = if collision_blocked {
         cascade_blocked("run-world", &["add-collision-listener"])
     } else {
-        ready_step(
-            "run-world",
-            &["add-collision-listener"],
-            "Static grading found valid event and collision handlers for interactive play",
-        )
+        StepGrade {
+            name: "run-world".into(),
+            status: StepStatus::NotYetTested,
+            reason: "Run the world and observe results — requires human interaction".into(),
+            depends_on: vec!["add-collision-listener".into()],
+        }
     };
 
-    let save_project = if run_world.status == StepStatus::Blocked {
+    let run_world_blocked = run_world.status == StepStatus::Blocked;
+
+    let save_project = if run_world_blocked {
         cascade_blocked("save-project", &["run-world"])
     } else {
         let round_trip_ok = serde_json::to_vec(program)
             .ok()
             .and_then(|bytes| serde_json::from_slice::<Program>(&bytes).ok())
             .is_some_and(|restored| restored == *program);
-        if round_trip_ok {
-            ready_step(
-                "save-project",
-                &["run-world"],
-                "Program round-trip (serialize → deserialize → compare) verified",
-            )
+        let status = if round_trip_ok {
+            StepStatus::Ready
         } else {
-            blocked_step(
-                "save-project",
-                &["run-world"],
-                "Program failed round-trip verification",
-            )
+            StepStatus::Blocked
+        };
+        let reason = if round_trip_ok {
+            "Program round-trip (serialize → deserialize → compare) verified"
+        } else {
+            "Program failed round-trip verification"
+        };
+        StepGrade {
+            name: "save-project".into(),
+            status,
+            reason: reason.into(),
+            depends_on: vec!["run-world".into()],
         }
     };
 
     vec![add_event, add_collision, run_world, save_project]
 }
 
-fn analyze_events(program: &Program) -> EventsEvidence {
-    let mut evidence = EventsEvidence::default();
-    for procedure in &program.procedures {
-        collect_event_evidence(&procedure.body, &mut evidence);
+/// Single-pass AST scan: returns (has_event_listener, has_collision_listener).
+fn ast_find_event_constructs(program: &Program) -> (bool, bool) {
+    let (mut has_event, mut has_collision) = (false, false);
+    for proc in &program.procedures {
+        stmt_find_event_constructs(&proc.body, &mut has_event, &mut has_collision);
+        if has_event && has_collision {
+            return (true, true);
+        }
     }
-    evidence
+    (has_event, has_collision)
 }
 
-fn collect_event_evidence(statements: &[Statement], evidence: &mut EventsEvidence) {
-    for statement in statements {
-        match statement {
-            Statement::EventListener { event, body } => {
-                evidence.has_event_listener = true;
-                if is_supported_event_type(event) {
-                    evidence.has_supported_event_type = true;
-                    if contains_guard_condition(body) {
-                        evidence.has_valid_event_listener = true;
-                    }
+fn stmt_find_event_constructs(stmts: &[Statement], has_event: &mut bool, has_collision: &mut bool) {
+    for stmt in stmts {
+        match stmt {
+            Statement::EventListener { body, .. } => {
+                *has_event = true;
+                if !*has_collision {
+                    stmt_find_event_constructs(body, has_event, has_collision);
                 }
-                collect_event_evidence(body, evidence);
             }
-            Statement::CollisionListener {
-                object_a,
-                object_b,
-                body,
-            } => {
-                evidence.has_collision_listener = true;
-                if object_a != object_b {
-                    evidence.has_distinct_collision_targets = true;
-                    if contains_guard_condition(body) {
-                        evidence.has_valid_collision_listener = true;
-                    }
+            Statement::CollisionListener { body, .. } => {
+                *has_collision = true;
+                if !*has_event {
+                    stmt_find_event_constructs(body, has_event, has_collision);
                 }
-                collect_event_evidence(body, evidence);
             }
             Statement::CountLoop { body, .. }
             | Statement::DoInOrder { body }
-            | Statement::ForEachArray { body, .. } => collect_event_evidence(body, evidence),
+            | Statement::ForEachArray { body, .. } => {
+                if !(*has_event && *has_collision) {
+                    stmt_find_event_constructs(body, has_event, has_collision);
+                }
+            }
             Statement::IfElse {
                 if_body, else_body, ..
             } => {
-                collect_event_evidence(if_body, evidence);
-                collect_event_evidence(else_body, evidence);
+                if !(*has_event && *has_collision) {
+                    stmt_find_event_constructs(if_body, has_event, has_collision);
+                    if !(*has_event && *has_collision) {
+                        stmt_find_event_constructs(else_body, has_event, has_collision);
+                    }
+                }
             }
             Statement::UserTypeDeclaration { methods, .. } => {
-                for method in methods {
-                    collect_event_evidence(&method.body, evidence);
+                if !(*has_event && *has_collision) {
+                    for method in methods {
+                        stmt_find_event_constructs(&method.body, has_event, has_collision);
+                        if *has_event && *has_collision {
+                            break;
+                        }
+                    }
                 }
             }
             Statement::MethodCall { .. }
@@ -209,52 +198,9 @@ fn collect_event_evidence(statements: &[Statement], evidence: &mut EventsEvidenc
             | Statement::ArithmeticExpression { .. }
             | Statement::Comment { .. } => {}
         }
-    }
-}
-
-fn contains_guard_condition(statements: &[Statement]) -> bool {
-    statements.iter().any(|statement| match statement {
-        Statement::IfElse { .. } => true,
-        Statement::CountLoop { body, .. }
-        | Statement::DoInOrder { body }
-        | Statement::ForEachArray { body, .. }
-        | Statement::EventListener { body, .. }
-        | Statement::CollisionListener { body, .. } => contains_guard_condition(body),
-        Statement::UserTypeDeclaration { methods, .. } => methods
-            .iter()
-            .any(|method| contains_guard_condition(&method.body)),
-        Statement::MethodCall { .. }
-        | Statement::ReturnStatement { .. }
-        | Statement::FunctionCall { .. }
-        | Statement::VariableDeclaration { .. }
-        | Statement::VariableAssignment { .. }
-        | Statement::ArrayDeclaration { .. }
-        | Statement::ArrayAccess { .. }
-        | Statement::ArithmeticExpression { .. }
-        | Statement::Comment { .. } => false,
-    })
-}
-
-fn is_supported_event_type(event: &str) -> bool {
-    let lower = event.to_ascii_lowercase();
-    lower.contains("key") || lower.contains("mouse")
-}
-
-fn ready_step(name: &str, deps: &[&str], reason: &str) -> StepGrade {
-    StepGrade {
-        name: name.into(),
-        status: StepStatus::Ready,
-        reason: reason.into(),
-        depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
-    }
-}
-
-fn blocked_step(name: &str, deps: &[&str], reason: &str) -> StepGrade {
-    StepGrade {
-        name: name.into(),
-        status: StepStatus::Blocked,
-        reason: reason.into(),
-        depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
+        if *has_event && *has_collision {
+            return;
+        }
     }
 }
 
