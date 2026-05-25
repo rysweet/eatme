@@ -337,6 +337,20 @@ sleep 30
         );
     }
 
+    pub fn write_quick_exit_java_tool(&self) {
+        self.write_tool(
+            "java",
+            r#"#!/bin/sh
+if [ "$1" = "-version" ]; then
+  echo "openjdk version 21" 1>&2
+  exit 0
+fi
+echo "Alice exited before smoke readiness"
+exit 0
+"#,
+        );
+    }
+
     fn write_tool(&self, name: &str, script: &str) {
         let path = self.bin.join(name);
         fs::write(&path, script).unwrap();
