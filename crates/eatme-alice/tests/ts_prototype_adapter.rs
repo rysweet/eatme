@@ -525,11 +525,19 @@ impl TsPortStatement {
 }
 
 fn ts_port_root() -> PathBuf {
-    env::var("ALICE_WEB_PROTOTYPE_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../alice-web-prototype")
-        })
+    if let Ok(root) = env::var("ALICE_WEB_PROTOTYPE_ROOT") {
+        return PathBuf::from(root);
+    }
+
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    for ancestor in manifest_dir.ancestors() {
+        let candidate = ancestor.join("alice-web-prototype");
+        if candidate.join("package.json").exists() {
+            return candidate;
+        }
+    }
+
+    manifest_dir.join("../../../alice-web-prototype")
 }
 
 fn ensure_ts_port_server_build() {

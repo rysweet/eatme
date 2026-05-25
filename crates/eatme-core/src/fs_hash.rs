@@ -59,6 +59,20 @@ mod tests {
     }
 
     #[test]
+    fn hashes_empty_files_with_sha256_empty_digest() {
+        let path = unique_test_path("empty");
+        fs::write(&path, b"").unwrap();
+
+        assert_eq!(file_size(&path).unwrap(), 0);
+        assert_eq!(
+            sha256_file(&path).unwrap(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn includes_path_context_for_missing_files() {
         let path = unique_test_path("missing");
 
