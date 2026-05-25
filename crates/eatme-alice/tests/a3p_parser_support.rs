@@ -265,27 +265,29 @@ pub fn extract_procedures(xml: &str) -> Vec<Procedure> {
     let mut procedures = Vec::new();
     let mut seen_names = std::collections::HashSet::new();
 
-    for re in [re_user_method_type_first(), re_user_method_name_first()] {
-        for cap in re.captures_iter(xml) {
-            let Some(name) = capture_text(&cap, &[1, 2]).map(str::to_string) else {
-                continue;
-            };
-            if seen_names.insert(name.clone()) {
-                procedures.push(Procedure {
-                    name,
-                    parameters: vec![],
-                    body: Vec::new(),
-                });
+    if xml.contains("UserMethod") {
+        for re in [re_user_method_type_first(), re_user_method_name_first()] {
+            for cap in re.captures_iter(xml) {
+                let Some(name) = capture_text(&cap, &[1, 2]).map(str::to_string) else {
+                    continue;
+                };
+                if seen_names.insert(name.clone()) {
+                    procedures.push(Procedure {
+                        name,
+                        parameters: vec![],
+                        body: Vec::new(),
+                    });
+                }
             }
         }
-    }
 
-    if procedures.is_empty() && re_user_method_any().is_match(xml) {
-        procedures.push(Procedure {
-            name: "myFirstMethod".into(),
-            parameters: vec![],
-            body: Vec::new(),
-        });
+        if procedures.is_empty() && re_user_method_any().is_match(xml) {
+            procedures.push(Procedure {
+                name: "myFirstMethod".into(),
+                parameters: vec![],
+                body: Vec::new(),
+            });
+        }
     }
 
     let stmts = extract_statements(xml);
@@ -308,117 +310,128 @@ pub fn extract_procedures(xml: &str) -> Vec<Procedure> {
 pub fn extract_statements(xml: &str) -> Vec<Statement> {
     let mut stmts = Vec::new();
 
-    // MethodInvocation → MethodCall
-    for cap in re_method_invocation().captures_iter(xml) {
-        stmts.push(Statement::MethodCall {
-            object: "this".into(),
-            method: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
-            arguments: vec![],
-        });
+    if xml.contains("MethodInvocation") {
+        for cap in re_method_invocation().captures_iter(xml) {
+            stmts.push(Statement::MethodCall {
+                object: "this".into(),
+                method: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
+                arguments: vec![],
+            });
+        }
     }
 
-    // ConditionalStatement → IfElse
-    for _ in re_conditional().find_iter(xml) {
-        stmts.push(Statement::IfElse {
-            condition: String::new(),
-            if_body: vec![],
-            else_body: vec![],
-        });
+    if xml.contains("ConditionalStatement") {
+        for _ in re_conditional().find_iter(xml) {
+            stmts.push(Statement::IfElse {
+                condition: String::new(),
+                if_body: vec![],
+                else_body: vec![],
+            });
+        }
     }
 
-    // CountLoop → CountLoop
-    for _ in re_count_loop().find_iter(xml) {
-        stmts.push(Statement::CountLoop {
-            count: 1,
-            body: vec![],
-        });
+    if xml.contains("CountLoop") {
+        for _ in re_count_loop().find_iter(xml) {
+            stmts.push(Statement::CountLoop {
+                count: 1,
+                body: vec![],
+            });
+        }
     }
 
-    // AddEventListener → EventListener
-    for cap in re_event_listener().captures_iter(xml) {
-        stmts.push(Statement::EventListener {
-            event: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
-            body: vec![],
-        });
+    if xml.contains("AddEventListener") {
+        for cap in re_event_listener().captures_iter(xml) {
+            stmts.push(Statement::EventListener {
+                event: capture_text(&cap, &[1, 2]).unwrap_or("unknown").to_string(),
+                body: vec![],
+            });
+        }
     }
 
-    // CollisionStartListener → CollisionListener
-    for _ in re_collision_listener().find_iter(xml) {
-        stmts.push(Statement::CollisionListener {
-            object_a: "unknown".into(),
-            object_b: "unknown".into(),
-            body: vec![],
-        });
+    if xml.contains("CollisionStart") {
+        for _ in re_collision_listener().find_iter(xml) {
+            stmts.push(Statement::CollisionListener {
+                object_a: "unknown".into(),
+                object_b: "unknown".into(),
+                body: vec![],
+            });
+        }
     }
 
-    // ArrayDeclaration → ArrayDeclaration
-    for cap in re_array_declaration().captures_iter(xml) {
-        let elements = cap[3]
-            .split(',')
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned)
-            .collect();
-        stmts.push(Statement::ArrayDeclaration {
-            name: cap[1].to_string(),
-            element_type: cap[2].to_string(),
-            elements,
-        });
+    if xml.contains("ArrayDeclaration") {
+        for cap in re_array_declaration().captures_iter(xml) {
+            let elements = cap[3]
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .collect();
+            stmts.push(Statement::ArrayDeclaration {
+                name: cap[1].to_string(),
+                element_type: cap[2].to_string(),
+                elements,
+            });
+        }
     }
 
-    // ArrayAccess → ArrayAccess
-    for cap in re_array_access().captures_iter(xml) {
-        stmts.push(Statement::ArrayAccess {
-            array: cap[1].to_string(),
-            index: cap[2].to_string(),
-            target: cap[3].to_string(),
-        });
+    if xml.contains("ArrayAccess") {
+        for cap in re_array_access().captures_iter(xml) {
+            stmts.push(Statement::ArrayAccess {
+                array: cap[1].to_string(),
+                index: cap[2].to_string(),
+                target: cap[3].to_string(),
+            });
+        }
     }
 
-    // ForEachArray → ForEachArray
-    for cap in re_for_each_array().captures_iter(xml) {
-        stmts.push(Statement::ForEachArray {
-            item_name: cap[1].to_string(),
-            array: cap[2].to_string(),
-            body: vec![],
-        });
+    if xml.contains("ForEachArray") {
+        for cap in re_for_each_array().captures_iter(xml) {
+            stmts.push(Statement::ForEachArray {
+                item_name: cap[1].to_string(),
+                array: cap[2].to_string(),
+                body: vec![],
+            });
+        }
     }
 
-    // ArithmeticExpression → ArithmeticExpression
-    for cap in re_arithmetic_expression().captures_iter(xml) {
-        let Some(operator) = parse_arithmetic_operator(&cap[1]) else {
-            continue;
-        };
-        stmts.push(Statement::ArithmeticExpression {
-            operator,
-            left: cap[2].to_string(),
-            right: cap[3].to_string(),
-            result: cap[4].to_string(),
-        });
+    if xml.contains("ArithmeticExpression") {
+        for cap in re_arithmetic_expression().captures_iter(xml) {
+            let Some(operator) = parse_arithmetic_operator(&cap[1]) else {
+                continue;
+            };
+            stmts.push(Statement::ArithmeticExpression {
+                operator,
+                left: cap[2].to_string(),
+                right: cap[3].to_string(),
+                result: cap[4].to_string(),
+            });
+        }
     }
 
-    // Comment → Comment
-    for cap in re_comment().captures_iter(xml) {
-        stmts.push(Statement::Comment {
-            text: cap[1].to_string(),
-        });
+    if xml.contains("Comment") {
+        for cap in re_comment().captures_iter(xml) {
+            stmts.push(Statement::Comment {
+                text: cap[1].to_string(),
+            });
+        }
     }
 
-    // UserType → UserTypeDeclaration
-    for cap in re_user_type().captures_iter(xml) {
-        let extends = cap.get(2).and_then(|value| {
-            let text = value.as_str().trim();
-            (!text.is_empty()).then(|| text.to_string())
-        });
-        let methods = cap
-            .get(3)
-            .map(|value| parse_user_type_methods(value.as_str()))
-            .unwrap_or_default();
-        stmts.push(Statement::UserTypeDeclaration {
-            name: cap[1].to_string(),
-            extends,
-            methods,
-        });
+    if xml.contains("UserType") {
+        for cap in re_user_type().captures_iter(xml) {
+            let extends = cap.get(2).and_then(|value| {
+                let text = value.as_str().trim();
+                (!text.is_empty()).then(|| text.to_string())
+            });
+            let methods = cap
+                .get(3)
+                .map(|value| parse_user_type_methods(value.as_str()))
+                .unwrap_or_default();
+            stmts.push(Statement::UserTypeDeclaration {
+                name: cap[1].to_string(),
+                extends,
+                methods,
+            });
+        }
     }
 
     stmts
