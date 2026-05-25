@@ -4,8 +4,12 @@
 //! Gated behind EATME_TS_PROTOTYPE=1. Requires the TS server to be running.
 //! Set ALICE_WEB_URL to override the default http://localhost:3099.
 
+use eatme_assets::{SequencingGradingInput, StepStatus, grade_sequencing};
+use eatme_core::ast::{SequenceBlock, SequenceKind};
 use serde::Deserialize;
 use std::env;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 
 fn ts_enabled() -> bool {
@@ -62,6 +66,249 @@ fn http_client() -> ureq::Agent {
         .timeout_connect(Duration::from_secs(5))
         .timeout(Duration::from_secs(30))
         .build()
+}
+
+#[derive(Debug, Deserialize)]
+struct TsRoundTrip {
+    source: String,
+    ast: TsClassDecl,
+}
+
+#[derive(Debug, Deserialize)]
+struct TsClassDecl {
+    methods: Vec<TsMethodDecl>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TsMethodDecl {
+    name: String,
+    body: Vec<TsStatement>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
+enum TsStatement {
+    DoInOrder { body: Vec<TsStatement> },
+    DoTogether { body: Vec<TsStatement> },
+    ExpressionStatement { expression: TsExpression },
+    Comment { text: String },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
+enum TsExpression {
+    Identifier {
+        name: String,
+    },
+    This,
+    MemberAccess {
+        target: Box<TsExpression>,
+        #[serde(rename = "memberName")]
+        member_name: String,
+    },
+    MethodInvocation {
+        target: Option<Box<TsExpression>>,
+        #[serde(rename = "methodName")]
+        method_name: String,
+    },
+}
+
+fn ts_port_root() -> PathBuf {
+    env::var("ALICE_WEB_PROTOTYPE_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../alice-web-prototype")
+        })
+}
+
+fn ensure_ts_port_server_build() {
+    let root = ts_port_root();
+    if root.join("dist-server/code-generation.js").exists()
+        && root.join("dist-server/tweedle-parser.js").exists()
+    {
+        return;
+    }
+
+    let status = Command::new("npm")
+        .arg("run")
+        .arg("build:server")
+        .current_dir(&root)
+        .status()
+        .expect("failed to build alice-web-prototype server artifacts");
+    assert!(status.success(), "npm run build:server failed");
+}
+
+fn run_ts_round_trip(mode: &str) -> TsRoundTrip {
+    ensure_ts_port_server_build();
+    let root = ts_port_root();
+    let script = r#"
+import { pathToFileURL } from 'node:url';
+
+const { createTweedleSource } = await import(pathToFileURL(process.env.TS_CODEGEN).href);
+const { parseTweedle } = await import(pathToFileURL(process.env.TS_PARSER).href);
+
+const body = process.env.TS_SEQUENCE_MODE === 'missing-parallel'
+  ? [
+      'doInOrder {',
+      '  bunny.hop();',
+      '  bunny.turn();',
+      '}',
+    ]
+  : [
+      'doInOrder {',
+      '  bunny.hop();',
+      '  bunny.turn();',
+      '}',
+      'doTogether {',
+      '  bunny.jump();',
+      '  bunny.say("done");',
+      '}',
+    ];
+
+const source = createTweedleSource('Runner', [{
+  name: 'myFirstMethod',
+  body,
+}]);
+const ast = parseTweedle(source);
+console.log(JSON.stringify({ source, ast }));
+"#;
+
+    let output = Command::new("node")
+        .arg("--input-type=module")
+        .arg("-e")
+        .arg(script)
+        .env("TS_CODEGEN", root.join("dist-server/code-generation.js"))
+        .env("TS_PARSER", root.join("dist-server/tweedle-parser.js"))
+        .env("TS_SEQUENCE_MODE", mode)
+        .output()
+        .expect("failed to execute TS round-trip script");
+
+    assert!(
+        output.status.success(),
+        "node round-trip failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    serde_json::from_slice(&output.stdout).expect("invalid TS round-trip JSON")
+}
+
+fn sequence_blocks_from_round_trip(round_trip: &TsRoundTrip) -> Vec<SequenceBlock> {
+    let method = round_trip
+        .ast
+        .methods
+        .iter()
+        .find(|method| method.name == "myFirstMethod")
+        .expect("expected myFirstMethod in parsed AST");
+
+    method
+        .body
+        .iter()
+        .filter_map(sequence_block_from_statement)
+        .collect()
+}
+
+fn sequence_block_from_statement(statement: &TsStatement) -> Option<SequenceBlock> {
+    match statement {
+        TsStatement::DoInOrder { body } => Some(SequenceBlock {
+            kind: SequenceKind::DoInOrder,
+            steps: body.iter().filter_map(sequence_step_label).collect(),
+        }),
+        TsStatement::DoTogether { body } => Some(SequenceBlock {
+            kind: SequenceKind::DoTogether,
+            steps: body.iter().filter_map(sequence_step_label).collect(),
+        }),
+        _ => None,
+    }
+}
+
+fn sequence_step_label(statement: &TsStatement) -> Option<String> {
+    match statement {
+        TsStatement::ExpressionStatement { expression } => {
+            Some(render_expression_label(expression))
+        }
+        TsStatement::Comment { text } => Some(format!("// {text}")),
+        _ => None,
+    }
+}
+
+fn render_expression_label(expression: &TsExpression) -> String {
+    match expression {
+        TsExpression::Identifier { name } => name.clone(),
+        TsExpression::This => "this".into(),
+        TsExpression::MemberAccess {
+            target,
+            member_name,
+        } => {
+            format!("{}.{}", render_expression_label(target), member_name)
+        }
+        TsExpression::MethodInvocation {
+            target,
+            method_name,
+        } => match target {
+            Some(target) => format!("{}.{}", render_expression_label(target), method_name),
+            None => method_name.clone(),
+        },
+    }
+}
+
+fn all_ready_input(sequence_blocks: Option<Vec<SequenceBlock>>) -> SequencingGradingInput {
+    SequencingGradingInput {
+        assets_valid: true,
+        asset_reason: "TS round-trip succeeded".into(),
+        deps_available: true,
+        deps_reason: "TS parser + eatme grading available".into(),
+        sequence_blocks,
+    }
+}
+
+#[test]
+fn ts_port_round_trip_grades_complete_sequence_program() {
+    let round_trip = run_ts_round_trip("complete");
+    assert!(round_trip.source.contains("doInOrder"));
+    assert!(round_trip.source.contains("doTogether"));
+
+    let sequence_blocks = sequence_blocks_from_round_trip(&round_trip);
+    assert_eq!(sequence_blocks.len(), 2);
+    assert_eq!(sequence_blocks[0].kind, SequenceKind::DoInOrder);
+    assert_eq!(sequence_blocks[0].steps, vec!["bunny.hop", "bunny.turn"]);
+    assert_eq!(sequence_blocks[1].kind, SequenceKind::DoTogether);
+    assert_eq!(sequence_blocks[1].steps, vec!["bunny.jump", "bunny.say"]);
+
+    let report = grade_sequencing(all_ready_input(Some(sequence_blocks)));
+    assert!(report.passed);
+    assert_eq!(
+        report.lesson,
+        "procedure-sequencing-do-in-order-do-together"
+    );
+    for step in &report.steps {
+        assert_eq!(step.status, StepStatus::Ready, "step '{}'", step.name);
+    }
+}
+
+#[test]
+fn ts_port_round_trip_blocks_when_parallel_sequence_is_missing() {
+    let round_trip = run_ts_round_trip("missing-parallel");
+    assert!(round_trip.source.contains("doInOrder"));
+    assert!(!round_trip.source.contains("doTogether"));
+
+    let report = grade_sequencing(all_ready_input(Some(sequence_blocks_from_round_trip(
+        &round_trip,
+    ))));
+    assert!(!report.passed);
+
+    let do_together = report
+        .steps
+        .iter()
+        .find(|step| step.name == "use-do-together")
+        .expect("missing use-do-together step");
+    assert_eq!(do_together.status, StepStatus::Blocked);
+
+    let combined = report
+        .steps
+        .iter()
+        .find(|step| step.name == "combine-sequential-and-parallel-actions")
+        .expect("missing combine-sequential-and-parallel-actions step");
+    assert_eq!(combined.status, StepStatus::Blocked);
 }
 
 #[test]
