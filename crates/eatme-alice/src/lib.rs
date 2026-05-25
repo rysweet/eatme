@@ -35,3 +35,74 @@ pub use launch::run_launch_smoke;
 pub use launch_options::LaunchSmokeOptions;
 pub use package::{PackageOptions, package_alice};
 pub use scenario::LaunchSmokeScenario;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+    use std::path::{Path, PathBuf};
+
+    #[test]
+    fn root_reexports_cover_option_and_report_types() {
+        let scenario =
+            LaunchSmokeScenario::new(FIRST_LESSON_SCENARIO_ID).with_starter_project("starter.a3p");
+        let launch = LaunchSmokeOptions {
+            alice_home: PathBuf::from("/alice"),
+            run_id: "run-1".into(),
+            runs_dir: PathBuf::from("runs"),
+            timeout_seconds: 120,
+            json: true,
+            no_memory: false,
+            offline_package: true,
+            scenario: scenario.clone(),
+        };
+        let package = PackageOptions {
+            alice_home: Path::new("/alice"),
+            offline: true,
+        };
+        let dependency_report = DependencyReport {
+            tools: BTreeMap::from([("java".into(), true)]),
+            screenshot_available: false,
+            all_required_available: false,
+        };
+        let discovery = AliceDiscovery {
+            alice_home: "/alice".into(),
+            git_commit: "abc123".into(),
+            java_version: "21".into(),
+            maven_version: "3.9.9".into(),
+            alice_ide_jar_exists: true,
+            target_lib_exists: true,
+            starter_project_exists: true,
+        };
+        let comparison = AliceComparisonOptions {
+            registry_path: PathBuf::from("registry.yaml"),
+            baseline_target: "baseline".into(),
+            modernized_target: "modernized".into(),
+            baseline_home_override: None,
+            modernized_home_override: None,
+            scenario,
+            run_id: "run-1".into(),
+            runs_dir: PathBuf::from("runs"),
+            timeout_seconds: 120,
+            json: true,
+            no_memory: false,
+            offline_package: true,
+            execute: false,
+        };
+
+        assert_eq!(launch.scenario.id, FIRST_LESSON_SCENARIO_ID);
+        assert!(launch.scenario.requires_real_ui_actions());
+        assert!(package.offline);
+        assert_eq!(dependency_report.tools.get("java"), Some(&true));
+        assert!(discovery.starter_project_exists);
+        assert_eq!(comparison.baseline_target, "baseline");
+    }
+
+    #[test]
+    fn root_reexports_preserve_scenario_defaults() {
+        let default_scenario = LaunchSmokeScenario::default();
+
+        assert_eq!(default_scenario.id, "real-alice-launch-smoke");
+        assert!(!default_scenario.accepts_window_evidence());
+    }
+}
