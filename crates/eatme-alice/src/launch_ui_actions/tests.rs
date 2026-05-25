@@ -216,6 +216,44 @@ fn artifact_if_passed(status: &str, path: &str) -> Option<ArtifactInfo> {
     })
 }
 
+fn run_world_probe_with_status(status: &str) -> UiActionRunWorldProbe {
+    UiActionRunWorldProbe {
+        id: "alice-side-run-world-command-hook".into(),
+        action_id: "run-world".into(),
+        status: status.into(),
+        detail: "run world detail".into(),
+        run_selector: "scene.myFirstMethod".into(),
+        candidate_hook_path: "tools/eatme-run-world".into(),
+        command: Some("tools/eatme-run-world --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        run_artifact: artifact_if_passed(status, "world-run/run.json"),
+        runtime_or_log_evidence: artifact_if_passed(status, "world-run/runtime.log"),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
+fn save_project_probe_with_status(status: &str) -> UiActionSaveProjectProbe {
+    UiActionSaveProjectProbe {
+        id: "alice-side-save-project-command-hook".into(),
+        action_id: "save-project".into(),
+        status: status.into(),
+        detail: "save project detail".into(),
+        save_selector: "scene.myFirstMethod".into(),
+        candidate_hook_path: "tools/eatme-save-project".into(),
+        command: Some("tools/eatme-save-project --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        saved_project_artifact: artifact_if_passed(status, "project-save/project.a3p"),
+        save_artifact: artifact_if_passed(status, "project-save/save.json"),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
 #[test]
 fn preflight_blockers_include_post_focus_screenshot_captured() {
     let activation_probe = UiActionProbe {
@@ -245,4 +283,80 @@ fn preflight_blockers_include_post_focus_screenshot_captured() {
         "detail should explain preflight blocking: {}",
         post_focus.detail
     );
+}
+
+#[test]
+fn record_ui_action_artifact_marks_non_empty_artifact_as_passed() {
+    let mut assertions = std::collections::BTreeMap::new();
+
+    record_ui_action_artifact(
+        &mut assertions,
+        &ArtifactInfo {
+            path: "ui-action-contract.json".into(),
+            size_bytes: 64,
+            sha256: "hash".into(),
+        },
+    );
+
+    assert!(assertions["ui_action_artifact_captured"].passed);
+}
+
+#[test]
+fn record_alice_window_activation_marks_successful_probe_as_passed() {
+    let mut assertions = std::collections::BTreeMap::new();
+    let probe = UiActionProbe {
+        id: "activate-specific-alice-window".into(),
+        status: "passed".into(),
+        detail: "focused Alice window".into(),
+        window_id: Some("0x001".into()),
+        command: Some("wmctrl -ia 0x001".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    };
+
+    record_alice_window_activation(&mut assertions, &probe);
+
+    assert!(assertions["activate_alice_window_ui_action"].passed);
+}
+
+#[test]
+fn record_ui_action_blockers_records_artifact_and_run_world_no_go() {
+    let activation_probe = UiActionProbe {
+        id: "activate-specific-alice-window".into(),
+        status: "passed".into(),
+        detail: "focused Alice window".into(),
+        window_id: Some("0x001".into()),
+        command: Some("wmctrl -ia 0x001".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+    };
+    let place_object_precondition_probe =
+        probe_place_object_preconditions(true, true, true, Some(&activation_probe));
+    let object_placement_probe = object_placement_probe_with_status("passed");
+    let edit_procedure_probe = edit_procedure_probe_with_status("passed");
+    let run_world_probe = run_world_probe_with_status("blocked");
+    let save_project_probe = save_project_probe_with_status("blocked");
+    let mut assertions = std::collections::BTreeMap::new();
+
+    record_ui_action_blockers(
+        &mut assertions,
+        &ArtifactInfo {
+            path: "ui-action-contract.json".into(),
+            size_bytes: 64,
+            sha256: "hash".into(),
+        },
+        &place_object_precondition_probe,
+        &object_placement_probe,
+        &edit_procedure_probe,
+        &run_world_probe,
+        &save_project_probe,
+    );
+
+    assert!(assertions["place_object_ui_action"].passed);
+    assert!(assertions["edit_procedure_ui_action"].passed);
+    assert!(!assertions["run_world_ui_action"].passed);
+    assert!(assertions.contains_key("run_world_precondition_no_go_probe"));
+    assert!(assertions["ui_action_artifact_captured"].passed);
 }
