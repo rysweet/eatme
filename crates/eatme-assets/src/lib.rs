@@ -36,6 +36,8 @@ pub(crate) mod grading_report_inheritance;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
+mod grading_report_json_roundtrip_tests;
+#[cfg(test)]
 mod grading_report_module_split_contract_tests;
 pub(crate) mod grading_report_nested_control;
 pub(crate) mod grading_report_parameters;

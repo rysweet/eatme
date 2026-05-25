@@ -1,7 +1,7 @@
 use eatme_core::ast::{Program, Statement};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct GradingReport {
     pub schema_version: String,
     pub lesson: String,
@@ -11,7 +11,7 @@ pub struct GradingReport {
     pub quality_scores: Vec<QualityScore>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct QualityScore {
     pub score: u8,
     pub dimension: String,
@@ -40,7 +40,7 @@ impl GradingReport {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct StepGrade {
     pub name: String,
     pub status: StepStatus,
@@ -48,7 +48,7 @@ pub struct StepGrade {
     pub depends_on: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum StepStatus {
     #[serde(rename = "ready")]
     Ready,
