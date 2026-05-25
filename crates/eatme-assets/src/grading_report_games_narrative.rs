@@ -74,9 +74,13 @@ fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {
     };
 
     let evidence = collect_games_narrative_evidence(program);
-    let is_game_project =
-        evidence.has_event && evidence.has_collision && evidence.has_state_tracking;
-    let is_narrative_project = evidence.has_do_in_order && evidence.has_dialogue_sequence;
+    let passes_safety_checks = !evidence.has_circular_event_reference;
+    let is_game_project = evidence.has_event
+        && evidence.has_collision
+        && evidence.has_state_tracking
+        && passes_safety_checks;
+    let is_narrative_project =
+        evidence.has_do_in_order && evidence.has_dialogue_sequence && passes_safety_checks;
 
     vec![
         ast_check_step(
@@ -103,12 +107,21 @@ fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {
             evidence.has_game_loop_pattern,
             "event → condition → action pattern",
         ),
-        ast_check_step(
-            "grade-game-project",
-            "detect-game-loop-pattern",
-            is_game_project,
-            "game project evidence (events + collision + state tracking)",
-        ),
+        if evidence.has_circular_event_reference {
+            StepGrade {
+                name: "grade-game-project".into(),
+                status: StepStatus::Blocked,
+                reason: "Circular event references found in student program".into(),
+                depends_on: vec!["detect-game-loop-pattern".into()],
+            }
+        } else {
+            ast_check_step(
+                "grade-game-project",
+                "detect-game-loop-pattern",
+                is_game_project,
+                "game project evidence (events + collision + state tracking)",
+            )
+        },
         ast_check_step(
             "detect-do-in-order",
             "launch-smoke",
@@ -121,12 +134,21 @@ fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {
             evidence.has_dialogue_sequence,
             "dialogue-like sequence",
         ),
-        ast_check_step(
-            "grade-narrative-project",
-            "detect-dialogue-sequence",
-            is_narrative_project,
-            "narrative project evidence (DoInOrder + dialogue)",
-        ),
+        if evidence.has_circular_event_reference {
+            StepGrade {
+                name: "grade-narrative-project".into(),
+                status: StepStatus::Blocked,
+                reason: "Circular event references found in student program".into(),
+                depends_on: vec!["detect-dialogue-sequence".into()],
+            }
+        } else {
+            ast_check_step(
+                "grade-narrative-project",
+                "detect-dialogue-sequence",
+                is_narrative_project,
+                "narrative project evidence (DoInOrder + dialogue)",
+            )
+        },
     ]
 }
 
@@ -147,6 +169,7 @@ struct GamesNarrativeEvidence {
     has_game_loop_pattern: bool,
     has_do_in_order: bool,
     has_dialogue_sequence: bool,
+    has_circular_event_reference: bool,
 }
 
 fn collect_games_narrative_evidence(program: &Program) -> GamesNarrativeEvidence {
@@ -157,6 +180,7 @@ fn collect_games_narrative_evidence(program: &Program) -> GamesNarrativeEvidence
     for function in &program.functions {
         scan_games_narrative_statements(&function.body, &mut evidence);
     }
+    evidence.has_circular_event_reference = has_circular_event_reference(program);
     evidence
 }
 
@@ -200,6 +224,70 @@ fn scan_games_narrative_statements(stmts: &[Statement], evidence: &mut GamesNarr
             | Statement::UserTypeDeclaration { .. } => {}
         }
     }
+}
+
+fn has_circular_event_reference(program: &Program) -> bool {
+    program
+        .procedures
+        .iter()
+        .any(|procedure| find_circular_event_reference(&procedure.body, &mut Vec::new()))
+        || program
+            .functions
+            .iter()
+            .any(|function| find_circular_event_reference(&function.body, &mut Vec::new()))
+}
+
+fn find_circular_event_reference(stmts: &[Statement], active_events: &mut Vec<String>) -> bool {
+    for stmt in stmts {
+        match stmt {
+            Statement::EventListener { event, body } => {
+                if active_events.iter().any(|active| active == event) {
+                    return true;
+                }
+                active_events.push(event.clone());
+                let has_cycle = find_circular_event_reference(body, active_events);
+                active_events.pop();
+                if has_cycle {
+                    return true;
+                }
+            }
+            Statement::CollisionListener { body, .. }
+            | Statement::CountLoop { body, .. }
+            | Statement::DoInOrder { body }
+            | Statement::ForEachArray { body, .. } => {
+                if find_circular_event_reference(body, active_events) {
+                    return true;
+                }
+            }
+            Statement::IfElse {
+                if_body, else_body, ..
+            } => {
+                if find_circular_event_reference(if_body, active_events)
+                    || find_circular_event_reference(else_body, active_events)
+                {
+                    return true;
+                }
+            }
+            Statement::UserTypeDeclaration { methods, .. } => {
+                if methods
+                    .iter()
+                    .any(|method| find_circular_event_reference(&method.body, active_events))
+                {
+                    return true;
+                }
+            }
+            Statement::MethodCall { .. }
+            | Statement::ReturnStatement { .. }
+            | Statement::FunctionCall { .. }
+            | Statement::VariableDeclaration { .. }
+            | Statement::VariableAssignment { .. }
+            | Statement::ArrayDeclaration { .. }
+            | Statement::ArrayAccess { .. }
+            | Statement::ArithmeticExpression { .. }
+            | Statement::Comment { .. } => {}
+        }
+    }
+    false
 }
 
 fn contains_condition_action(stmts: &[Statement]) -> bool {

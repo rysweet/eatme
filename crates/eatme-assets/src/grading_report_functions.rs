@@ -4,6 +4,8 @@
 //! added a return statement, called the function from a procedure, run
 //! the world, and saved the project.
 
+use std::collections::BTreeSet;
+
 use eatme_core::ast::{Program, Statement};
 
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
@@ -72,39 +74,90 @@ fn evaluate_functions_steps(program: &Option<Program>) -> Vec<StepGrade> {
         .procedures
         .iter()
         .any(|p| contains_function_call(&p.body));
+    let has_unique_method_names = method_names_are_unique(program);
 
-    vec![
+    let create_function = if !has_function {
         ast_check_step(
             "create-function",
             "launch-smoke",
-            has_function,
+            false,
             "function with a return type",
-        ),
+        )
+    } else if !has_unique_method_names {
+        StepGrade {
+            name: "create-function".into(),
+            status: StepStatus::Blocked,
+            reason: "Duplicate method names found in student program".into(),
+            depends_on: vec!["launch-smoke".into()],
+        }
+    } else {
+        ast_check_step(
+            "create-function",
+            "launch-smoke",
+            true,
+            "function with a return type",
+        )
+    };
+
+    let create_function_blocked = create_function.status == StepStatus::Blocked;
+    let add_return = if create_function_blocked {
+        cascade_blocked("add-return-statement", &["create-function"])
+    } else {
         ast_check_step(
             "add-return-statement",
             "create-function",
             has_return,
             "return statement in a function",
-        ),
+        )
+    };
+
+    let add_return_blocked = add_return.status == StepStatus::Blocked;
+    let call_function = if add_return_blocked {
+        cascade_blocked("call-function-from-procedure", &["add-return-statement"])
+    } else {
         ast_check_step(
             "call-function-from-procedure",
             "add-return-statement",
             has_function_call,
             "function call from a procedure",
-        ),
+        )
+    };
+
+    let all_requirements_met =
+        has_function && has_return && has_function_call && has_unique_method_names;
+
+    vec![
+        create_function,
+        add_return,
+        call_function,
         ast_check_step(
             "run-world",
             "call-function-from-procedure",
-            has_function && has_return && has_function_call,
+            all_requirements_met,
             "world run with function",
         ),
         ast_check_step(
             "save-project",
             "run-world",
-            has_function && has_return && has_function_call,
+            all_requirements_met,
             "project save with function",
         ),
     ]
+}
+
+fn method_names_are_unique(program: &Program) -> bool {
+    let mut names = BTreeSet::new();
+    for procedure in &program.procedures {
+        if !names.insert(procedure.name.as_str()) {
+            return false;
+        }
+    }
+    for function in &program.functions {
+        if !names.insert(function.name.as_str()) {
+            return false;
+        }
+    }
+    true
 }
 
 fn contains_return(statements: &[Statement]) -> bool {

@@ -65,6 +65,14 @@ fn evaluate_comments_steps(program: &Option<Program>) -> Vec<StepGrade> {
 
     let has_comment = !comments.is_empty();
     let has_meaningful_comment = comments.into_iter().any(is_meaningful_comment);
+    let has_non_comment_work = program
+        .procedures
+        .iter()
+        .any(|procedure| contains_non_comment_work(&procedure.body))
+        || program
+            .functions
+            .iter()
+            .any(|function| contains_non_comment_work(&function.body));
 
     vec![
         ast_check_step("add-comment", "launch-smoke", has_comment, "comment"),
@@ -77,8 +85,8 @@ fn evaluate_comments_steps(program: &Option<Program>) -> Vec<StepGrade> {
         ast_check_step(
             "save-project",
             "write-meaningful-comment",
-            has_meaningful_comment,
-            "project save with comments",
+            has_meaningful_comment && has_non_comment_work,
+            "project save with comments on executable work",
         ),
     ]
 }
@@ -105,6 +113,31 @@ fn collect_comments<'a>(statements: &'a [Statement], comments: &mut Vec<&'a str>
             _ => {}
         }
     }
+}
+
+fn contains_non_comment_work(statements: &[Statement]) -> bool {
+    statements.iter().any(|statement| match statement {
+        Statement::Comment { .. } => false,
+        Statement::CountLoop { body, .. }
+        | Statement::ForEachArray { body, .. }
+        | Statement::EventListener { body, .. }
+        | Statement::CollisionListener { body, .. }
+        | Statement::DoInOrder { body } => contains_non_comment_work(body),
+        Statement::IfElse {
+            if_body, else_body, ..
+        } => contains_non_comment_work(if_body) || contains_non_comment_work(else_body),
+        Statement::UserTypeDeclaration { methods, .. } => methods
+            .iter()
+            .any(|method| contains_non_comment_work(&method.body)),
+        Statement::MethodCall { .. }
+        | Statement::ReturnStatement { .. }
+        | Statement::FunctionCall { .. }
+        | Statement::VariableDeclaration { .. }
+        | Statement::VariableAssignment { .. }
+        | Statement::ArrayDeclaration { .. }
+        | Statement::ArrayAccess { .. }
+        | Statement::ArithmeticExpression { .. } => true,
+    })
 }
 
 fn is_meaningful_comment(comment: &str) -> bool {

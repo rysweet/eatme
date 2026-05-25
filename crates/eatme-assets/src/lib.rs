@@ -19,6 +19,8 @@ mod default_workflow_pr_readiness_contract_tests;
 mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
+#[cfg(test)]
+mod grading_edge_case_tests;
 pub mod grading_report;
 pub(crate) mod grading_report_arrays;
 pub(crate) mod grading_report_comments;

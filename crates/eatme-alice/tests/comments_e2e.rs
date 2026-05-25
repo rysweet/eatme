@@ -55,7 +55,14 @@ fn parsed_a3p_extracts_comment_text() {
 
 #[test]
 fn comments_grading_passes_with_meaningful_comments() {
-    let report = grade_comments(all_ready_input(Some(parsed_comments_program())));
+    let mut program = parsed_comments_program();
+    program.procedures[0].body.push(Statement::MethodCall {
+        object: "this.cat".into(),
+        method: "say".into(),
+        arguments: vec!["\"Ready to perform\"".into()],
+    });
+
+    let report = grade_comments(all_ready_input(Some(program)));
     assert!(report.passed);
     assert_eq!(report.lesson, "comments-mini-challenge");
     for step in &report.steps {
