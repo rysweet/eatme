@@ -367,11 +367,67 @@ fn failed_display_responsive_assertions_still_create_functionality_difference() 
     assert_eq!(scorecard.functionality_result, "different");
 }
 
+#[test]
+fn identical_programs_keep_the_same_comparison_score() {
+    let baseline =
+        target_run_with_feature_score("baseline", &["place_object", "edit_code", "run_world"]);
+    let modernized =
+        target_run_with_feature_score("modernized", &["place_object", "edit_code", "run_world"]);
+
+    assert_eq!(feature_score(&baseline), feature_score(&modernized));
+}
+
+#[test]
+fn additional_modernized_features_improve_its_score_vs_baseline() {
+    let baseline = target_run_with_feature_score("baseline", &["place_object", "edit_code"]);
+    let modernized = target_run_with_feature_score(
+        "modernized",
+        &["place_object", "edit_code", "run_world", "save_project"],
+    );
+
+    assert!(feature_score(&modernized) > feature_score(&baseline));
+}
+
+#[test]
+fn removing_features_from_modernized_shows_regression_vs_baseline() {
+    let baseline = target_run_with_feature_score(
+        "baseline",
+        &["place_object", "edit_code", "run_world", "save_project"],
+    );
+    let modernized = target_run_with_feature_score("modernized", &["place_object"]);
+
+    assert!(feature_score(&modernized) < feature_score(&baseline));
+}
+
 fn assert_contract_contains(entries: &[String], expected: &str) {
     assert!(
         entries.iter().any(|entry| entry.contains(expected)),
         "contract entries should contain {expected:?}: {entries:?}"
     );
+}
+
+fn feature_score(target: &ComparisonTargetRun) -> usize {
+    target
+        .launch_manifest
+        .as_ref()
+        .map(|manifest| {
+            manifest
+                .assertions
+                .values()
+                .filter(|result| result.passed)
+                .count()
+        })
+        .unwrap_or(0)
+}
+
+fn target_run_with_feature_score(role: &str, features: &[&str]) -> ComparisonTargetRun {
+    let mut target = target_run_with_assertion(role, "passed", None, true);
+    let assertions = &mut target.launch_manifest.as_mut().unwrap().assertions;
+    assertions.clear();
+    for feature in features {
+        assertions.insert((*feature).into(), AssertionResult::pass("feature present"));
+    }
+    target
 }
 
 fn target_run_with_assertion(
