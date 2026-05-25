@@ -92,6 +92,19 @@ fn artifact_info_under_rejects_nonexistent_file() {
 }
 
 #[test]
+fn artifact_info_under_rejects_directory_path() {
+    let root = unique_test_dir("directory-artifact");
+    let nested = root.join("nested");
+    fs::create_dir_all(&nested).unwrap();
+
+    let result = artifact_info_under(&root, "nested", "test_field", "test root");
+
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not a readable artifact"));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn canonical_artifact_under_accepts_artifact_within_root() {
     let root = unique_test_dir("canonical-within");
     fs::create_dir_all(&root).unwrap();
@@ -102,6 +115,17 @@ fn canonical_artifact_under_accepts_artifact_within_root() {
 
     assert!(result.is_ok());
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn canonical_artifact_under_rejects_unreadable_root_directory() {
+    let root = unique_test_dir("missing-root");
+    let artifact = root.join("evidence.json");
+
+    let result = canonical_artifact_under(&root, &artifact, "test_field", "test root");
+
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("test root"));
 }
 
 #[cfg(unix)]
