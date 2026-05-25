@@ -339,3 +339,140 @@ fn variable_quality_does_not_count_substring_matches_as_usage() {
         "0 of 1 declared variables are referenced after declaration"
     );
 }
+
+#[test]
+fn parameter_quality_aggregates_types_across_multiple_procedures() {
+    let program = Program {
+        procedures: vec![
+            Procedure {
+                name: "configure".into(),
+                parameters: vec![
+                    Parameter {
+                        name: "distance".into(),
+                        param_type: "WholeNumber".into(),
+                    },
+                    Parameter {
+                        name: "target".into(),
+                        param_type: "Object".into(),
+                    },
+                ],
+                body: vec![],
+            },
+            Procedure {
+                name: "decorate".into(),
+                parameters: vec![Parameter {
+                    name: "pet".into(),
+                    param_type: "Bunny".into(),
+                }],
+                body: vec![],
+            },
+        ],
+        functions: vec![],
+    };
+
+    let scores = score_parameter_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "parameter_types");
+    assert_eq!(scores[0].score, 66);
+    assert_eq!(
+        scores[0].feedback,
+        "2 of 3 parameters use specific types; prefer concrete parameter types over Object or empty types"
+    );
+}
+
+#[test]
+fn event_quality_traverses_user_type_methods_and_foreach_listener_bodies() {
+    let program = Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![Statement::UserTypeDeclaration {
+            name: "Helper".into(),
+            extends: None,
+            methods: vec![Procedure {
+                name: "listen".into(),
+                parameters: vec![],
+                body: vec![Statement::EventListener {
+                    event: "SceneActivated".into(),
+                    body: vec![Statement::ForEachArray {
+                        item_name: "friend".into(),
+                        array: "friends".into(),
+                        body: vec![
+                            Statement::MethodCall {
+                                object: "this.cat".into(),
+                                method: "say".into(),
+                                arguments: vec!["\"hi\"".into()],
+                            },
+                            Statement::MethodCall {
+                                object: "friend".into(),
+                                method: "turn".into(),
+                                arguments: vec!["LEFT".into(), "0.25".into()],
+                            },
+                        ],
+                    }],
+                }],
+            }],
+        }],
+    }]);
+
+    let scores = score_event_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "entity_types");
+    assert_eq!(scores[0].score, 50);
+    assert_eq!(
+        scores[0].feedback,
+        "1 of 2 listener entity references use explicit scene entities like this.cat"
+    );
+}
+
+#[test]
+fn variable_quality_counts_function_calls_and_nested_user_type_returns() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "myFirstMethod".into(),
+            parameters: vec![],
+            body: vec![
+                Statement::VariableDeclaration {
+                    name: "speed".into(),
+                    var_type: "DecimalNumber".into(),
+                    initial_value: "0.5".into(),
+                },
+                Statement::VariableDeclaration {
+                    name: "target".into(),
+                    var_type: "Text".into(),
+                    initial_value: "\"cat\"".into(),
+                },
+                Statement::UserTypeDeclaration {
+                    name: "Helper".into(),
+                    extends: None,
+                    methods: vec![Procedure {
+                        name: "compute".into(),
+                        parameters: vec![],
+                        body: vec![
+                            Statement::FunctionCall {
+                                object: "math".into(),
+                                function: "blend".into(),
+                                arguments: vec!["speed".into(), "target".into()],
+                            },
+                            Statement::CountLoop {
+                                count: 2,
+                                body: vec![Statement::ReturnStatement {
+                                    expression: "target".into(),
+                                }],
+                            },
+                        ],
+                    }],
+                },
+            ],
+        }],
+        functions: vec![],
+    };
+
+    let scores = score_variable_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "variable_usage");
+    assert_eq!(scores[0].score, 100);
+    assert_eq!(
+        scores[0].feedback,
+        "All 2 declared variables are referenced after declaration"
+    );
+}
