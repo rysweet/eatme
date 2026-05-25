@@ -458,3 +458,59 @@ fn json_blocked_scenario_shows_blocked_status() {
     assert_eq!(json["entries"][4]["status"], "platform-blocked");
     assert_eq!(json["entries"][5]["status"], "platform-blocked");
 }
+
+#[test]
+fn export_scenarios_follow_expected_status_matrix() {
+    let scenarios = [
+        (
+            input_all_ready(),
+            FeatureReadiness::Ready,
+            "All preconditions met for .a3w export",
+            FeatureReadiness::Ready,
+            "Ready: export-a3w available for file sharing",
+        ),
+        (
+            input_blocked_assets(),
+            FeatureReadiness::Blocked,
+            "Blocked by validate-assets",
+            FeatureReadiness::Blocked,
+            "Blocked by export-a3w",
+        ),
+        (
+            input_blocked_deps(),
+            FeatureReadiness::Blocked,
+            "Blocked by check-dependencies",
+            FeatureReadiness::Blocked,
+            "Blocked by export-a3w",
+        ),
+        (
+            input_both_blocked(),
+            FeatureReadiness::Blocked,
+            "Blocked by validate-assets, check-dependencies",
+            FeatureReadiness::Blocked,
+            "Blocked by export-a3w",
+        ),
+    ];
+
+    for (input, export_status, export_reason, file_status, file_reason) in scenarios {
+        let report = check_sharing_platform_readiness(input);
+        assert_eq!(report.entries[2].status, export_status);
+        assert_eq!(report.entries[2].reason, export_reason);
+        assert_eq!(report.entries[3].status, file_status);
+        assert_eq!(report.entries[3].reason, file_reason);
+    }
+}
+
+#[test]
+fn export_json_reasons_remain_stable_for_both_blockers() {
+    let report = check_sharing_platform_readiness(input_both_blocked());
+    let json: serde_json::Value = serde_json::to_value(&report).unwrap();
+
+    assert_eq!(json["entries"][2]["feature"], "export-a3w");
+    assert_eq!(
+        json["entries"][2]["reason"],
+        "Blocked by validate-assets, check-dependencies"
+    );
+    assert_eq!(json["entries"][3]["feature"], "file-sharing");
+    assert_eq!(json["entries"][3]["reason"], "Blocked by export-a3w");
+}
