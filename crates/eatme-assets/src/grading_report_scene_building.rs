@@ -4,7 +4,9 @@ use eatme_core::ast::{SceneLayout, SceneObject};
 
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 
-use crate::grading_report::{build_preconditions, cascade_blocked};
+use crate::grading_report::{
+    blocked_by_reason, build_preconditions, cascade_blocked, no_scene_reason,
+};
 
 pub struct SceneBuildingGradingInput {
     pub assets_valid: bool,
@@ -32,7 +34,16 @@ pub fn grade_scene_building(input: SceneBuildingGradingInput) -> GradingReport {
             StepGrade {
                 name: "save-project".into(),
                 status: StepStatus::Blocked,
-                reason: "Blocked by: add-ground, add-sky, place-scene-objects, position-camera, set-object-properties".into(),
+                reason: blocked_by_reason(
+                    "save-project",
+                    &[
+                        "add-ground",
+                        "add-sky",
+                        "place-scene-objects",
+                        "position-camera",
+                        "set-object-properties",
+                    ],
+                ),
                 depends_on: vec![
                     "add-ground".into(),
                     "add-sky".into(),
@@ -72,7 +83,7 @@ fn evaluate_scene_steps(scene: &Option<SceneLayout>) -> Vec<StepGrade> {
             StepGrade {
                 name: "save-project".into(),
                 status: StepStatus::Blocked,
-                reason: "No student scene provided".into(),
+                reason: no_scene_reason("save-project"),
                 depends_on: vec![
                     "add-ground".into(),
                     "add-sky".into(),
@@ -165,9 +176,11 @@ fn ready_or_blocked(
             StepStatus::Blocked
         },
         reason: if ready {
-            success_reason.into()
+            format!("{success_reason}. Keep the scene saved so you can use it in the next step.")
         } else {
-            failure_reason.into()
+            format!(
+                "{failure_reason}. Update the scene in Alice, save the project, and rerun grading."
+            )
         },
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
@@ -177,7 +190,7 @@ fn missing_scene_step(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: "No student scene provided".into(),
+        reason: no_scene_reason(name),
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
 }

@@ -4,7 +4,9 @@ use eatme_core::ast::{SequenceBlock, SequenceKind};
 
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 
-use crate::grading_report::{build_preconditions, cascade_blocked};
+use crate::grading_report::{
+    blocked_by_reason, build_preconditions, cascade_blocked, no_sequence_reason,
+};
 
 pub struct SequencingGradingInput {
     pub assets_valid: bool,
@@ -29,7 +31,10 @@ pub fn grade_sequencing(input: SequencingGradingInput) -> GradingReport {
             StepGrade {
                 name: "combine-sequential-and-parallel-actions".into(),
                 status: StepStatus::Blocked,
-                reason: "Blocked by: use-do-in-order, use-do-together".into(),
+                reason: blocked_by_reason(
+                    "combine-sequential-and-parallel-actions",
+                    &["use-do-in-order", "use-do-together"],
+                ),
                 depends_on: vec!["use-do-in-order".into(), "use-do-together".into()],
             },
             cascade_blocked("save-project", &["combine-sequential-and-parallel-actions"]),
@@ -61,7 +66,7 @@ fn evaluate_sequencing_steps(sequence_blocks: &Option<Vec<SequenceBlock>>) -> Ve
             StepGrade {
                 name: "combine-sequential-and-parallel-actions".into(),
                 status: StepStatus::Blocked,
-                reason: "No sequence blocks provided".into(),
+                reason: no_sequence_reason("combine-sequential-and-parallel-actions"),
                 depends_on: vec!["use-do-in-order".into(), "use-do-together".into()],
             },
             missing_sequence_step("save-project", &["combine-sequential-and-parallel-actions"]),
@@ -123,9 +128,13 @@ fn ready_or_blocked(
             StepStatus::Blocked
         },
         reason: if ready {
-            success_reason.into()
+            format!(
+                "{success_reason}. Keep this sequencing evidence saved for the next grading step."
+            )
         } else {
-            failure_reason.into()
+            format!(
+                "{failure_reason}. Update the student's sequence blocks, save the project, and rerun grading."
+            )
         },
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
@@ -135,7 +144,7 @@ fn missing_sequence_step(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: "No sequence blocks provided".into(),
+        reason: no_sequence_reason(name),
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
 }

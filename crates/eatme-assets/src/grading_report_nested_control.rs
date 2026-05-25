@@ -4,7 +4,9 @@ use eatme_core::ast::{Program, Statement};
 
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 
-use crate::grading_report::{ast_check_step, build_preconditions, cascade_blocked};
+use crate::grading_report::{
+    ast_check_step, build_preconditions, cascade_blocked, no_program_reason,
+};
 
 pub struct NestedControlFlowGradingInput {
     pub assets_valid: bool,
@@ -102,7 +104,7 @@ fn missing_program_step(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: "No student program provided".into(),
+        reason: no_program_reason(name),
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
 }

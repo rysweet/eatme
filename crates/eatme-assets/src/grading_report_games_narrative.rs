@@ -7,7 +7,9 @@ use eatme_core::ast::{Program, Statement};
 
 pub use crate::grading_report::{GradingReport, StepGrade, StepStatus};
 
-use crate::grading_report::{ast_check_step, build_preconditions, cascade_blocked};
+use crate::grading_report::{
+    ast_check_step, build_preconditions, cascade_blocked, no_program_reason,
+};
 
 pub struct GamesNarrativeGradingInput {
     pub assets_valid: bool,
@@ -111,7 +113,7 @@ fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {
             StepGrade {
                 name: "grade-game-project".into(),
                 status: StepStatus::Blocked,
-                reason: "Circular event references found in student program".into(),
+                reason: "Circular event references found in student program. Break the event cycle, save the project, and rerun grading.".into(),
                 depends_on: vec!["detect-game-loop-pattern".into()],
             }
         } else {
@@ -138,7 +140,7 @@ fn evaluate_games_narrative_steps(program: &Option<Program>) -> Vec<StepGrade> {
             StepGrade {
                 name: "grade-narrative-project".into(),
                 status: StepStatus::Blocked,
-                reason: "Circular event references found in student program".into(),
+                reason: "Circular event references found in student program. Break the event cycle, save the project, and rerun grading.".into(),
                 depends_on: vec!["detect-dialogue-sequence".into()],
             }
         } else {
@@ -156,7 +158,7 @@ fn missing_program_step(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: "No student program provided".into(),
+        reason: no_program_reason(name),
         depends_on: deps.iter().map(|dep| (*dep).into()).collect(),
     }
 }

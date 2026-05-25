@@ -115,14 +115,14 @@ fn interaction_step(
 ) -> StepGrade {
     let depends_on: Vec<String> = deps.iter().map(|d| (*d).into()).collect();
     let (status, reason) = if upstream_blocked {
-        (
-            StepStatus::Blocked,
-            format!("Blocked by: {}", deps.join(", ")),
-        )
+        (StepStatus::Blocked, blocked_by_reason(name, deps))
     } else {
         (
             StepStatus::NotYetTested,
-            format!("{} — requires human interaction", description),
+            format!(
+                "{} — requires human interaction. In Alice, {}, save the project, and rerun grading.",
+                description, description
+            ),
         )
     };
     StepGrade {
@@ -131,6 +131,39 @@ fn interaction_step(
         reason,
         depends_on,
     }
+}
+
+pub(crate) fn step_display_name(name: &str) -> String {
+    name.replace('-', " ")
+}
+
+pub(crate) fn blocked_by_reason(name: &str, deps: &[&str]) -> String {
+    format!(
+        "Blocked by: {}. Complete those prerequisite steps before you try to {} again, then rerun grading.",
+        deps.join(", "),
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_program_reason(name: &str) -> String {
+    format!(
+        "No student program provided. Open the student's Alice project, complete the '{}' step, save the project, and rerun grading.",
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_scene_reason(name: &str) -> String {
+    format!(
+        "No student scene provided. Open the student's scene, complete the '{}' step, save the project, and rerun grading.",
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_sequence_reason(name: &str) -> String {
+    format!(
+        "No sequence blocks provided. Record the '{}' work in the student's program, save the project, and rerun grading.",
+        step_display_name(name)
+    )
 }
 
 pub(crate) fn build_preconditions(
@@ -171,14 +204,14 @@ pub(crate) fn build_preconditions(
             StepGrade {
                 name: "launch-smoke".into(),
                 status: StepStatus::Ready,
-                reason: "All preconditions met".into(),
+                reason: "All preconditions met. Launch Alice, complete the lesson steps, and rerun grading after you save the project.".into(),
                 depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
             }
         } else {
             StepGrade {
                 name: "launch-smoke".into(),
                 status: StepStatus::Blocked,
-                reason: format!("Blocked by: {}", blockers.join(", ")),
+                reason: blocked_by_reason("launch-smoke", &blockers),
                 depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
             }
         }
@@ -234,7 +267,7 @@ pub(crate) fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: format!("Blocked by: {}", deps.join(", ")),
+        reason: blocked_by_reason(name, deps),
         depends_on: deps.iter().map(|d| (*d).into()).collect(),
     }
 }
@@ -245,7 +278,7 @@ pub(crate) fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
         .map(|(name, dep)| StepGrade {
             name: (*name).into(),
             status: StepStatus::Blocked,
-            reason: "No student program provided".into(),
+            reason: no_program_reason(name),
             depends_on: vec![(*dep).into()],
         })
         .collect()
@@ -255,12 +288,16 @@ pub(crate) fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str
     let (status, reason) = if found {
         (
             StepStatus::Ready,
-            format!("{construct} found in student program"),
+            format!(
+                "{construct} found in student program. Keep this work, save the project, and move on to the next step."
+            ),
         )
     } else {
         (
             StepStatus::Blocked,
-            format!("No {construct} found in student program"),
+            format!(
+                "No {construct} found in student program. Add {construct} to the project, save the project, and rerun grading."
+            ),
         )
     };
     StepGrade {
@@ -308,7 +345,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
         StepGrade {
             name: "run-world".into(),
             status: StepStatus::NotYetTested,
-            reason: "Run the world and observe results — requires human interaction".into(),
+            reason: "Run the world and observe results — requires human interaction. In Alice, run the world, confirm the loop and conditional work, save the project, and rerun grading.".into(),
             depends_on: vec!["add-conditional-branch".into()],
         }
     };
@@ -321,7 +358,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
         StepGrade {
             name: "save-project".into(),
             status: StepStatus::Ready,
-            reason: "Save and reopen project to verify persistence".into(),
+            reason: "Save and reopen project to verify persistence. Keep that saved copy as evidence for grading and later review.".into(),
             depends_on: vec!["run-world".into()],
         }
     };
