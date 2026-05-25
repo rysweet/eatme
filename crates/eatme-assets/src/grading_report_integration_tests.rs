@@ -6,10 +6,11 @@ use crate::{
     EventsGradingInput, FunctionsGradingInput, GamesNarrativeGradingInput,
     InheritanceOopGradingInput, LoopsGradingInput, NestedControlFlowGradingInput,
     ParametersGradingInput, SceneBuildingGradingInput, SequencingGradingInput,
-    VariablesGradingInput, grade_arrays_and_arithmetic, grade_comments, grade_creative_project,
-    grade_events_and_collision, grade_functions, grade_games_and_narrative, grade_inheritance_oop,
-    grade_loops_and_conditionals, grade_nested_control_flow, grade_parameters,
-    grade_scene_building, grade_sequencing, grade_variables,
+    TextbookIntegrationGradingInput, VariablesGradingInput, grade_arrays_and_arithmetic,
+    grade_comments, grade_creative_project, grade_events_and_collision, grade_functions,
+    grade_games_and_narrative, grade_inheritance_oop, grade_loops_and_conditionals,
+    grade_nested_control_flow, grade_parameters, grade_scene_building, grade_sequencing,
+    grade_textbook_integration, grade_variables,
 };
 use eatme_core::ast::{
     ArithmeticOperator, CameraPose, Function, Parameter, Procedure, Program, SceneLayout,
@@ -318,6 +319,18 @@ fn feature_complete_grading_inputs_produce_schema_valid_json() {
             }),
         ),
         (
+            "textbook_integration_pass",
+            "textbook-integration-java-transition",
+            true,
+            grade_textbook_integration(TextbookIntegrationGradingInput {
+                assets_valid: true,
+                asset_reason: "assets ok".into(),
+                deps_available: true,
+                deps_reason: "deps ok".into(),
+                student_program: Some(complete_textbook_program()),
+            }),
+        ),
+        (
             "games_narrative_pass",
             "games-and-interactive-narrative",
             true,
@@ -515,6 +528,18 @@ fn failing_grading_inputs_produce_schema_valid_json() {
                 deps_available: true,
                 deps_reason: "deps ok".into(),
                 student_program: Some(failing_nested_control_program()),
+            }),
+        ),
+        (
+            "textbook_integration_fail",
+            "textbook-integration-java-transition",
+            false,
+            grade_textbook_integration(TextbookIntegrationGradingInput {
+                assets_valid: true,
+                asset_reason: "assets ok".into(),
+                deps_available: true,
+                deps_reason: "deps ok".into(),
+                student_program: Some(failing_textbook_program()),
             }),
         ),
         (
@@ -971,6 +996,59 @@ fn failing_nested_control_program() -> Program {
             if_body: vec![method_call("move", vec![])],
             else_body: vec![],
         }],
+    )])
+}
+
+fn complete_textbook_program() -> Program {
+    Program {
+        procedures: vec![procedure(
+            "run",
+            vec![
+                Statement::VariableDeclaration {
+                    name: "score".into(),
+                    var_type: "Number".into(),
+                    initial_value: "0".into(),
+                },
+                Statement::VariableAssignment {
+                    name: "score".into(),
+                    value: "score + 1".into(),
+                },
+                Statement::CountLoop {
+                    count: 3,
+                    body: vec![Statement::IfElse {
+                        condition: "score < 10".into(),
+                        if_body: vec![method_call("move", vec!["score"])],
+                        else_body: vec![],
+                    }],
+                },
+                Statement::FunctionCall {
+                    object: "this".into(),
+                    function: "scoreBonus".into(),
+                    arguments: vec![],
+                },
+            ],
+        )],
+        functions: vec![Function {
+            name: "scoreBonus".into(),
+            return_type: "Number".into(),
+            body: vec![Statement::ReturnStatement {
+                expression: "42".into(),
+            }],
+        }],
+    }
+}
+
+fn failing_textbook_program() -> Program {
+    Program::new(vec![procedure(
+        "run",
+        vec![
+            Statement::VariableDeclaration {
+                name: "score".into(),
+                var_type: "Number".into(),
+                initial_value: "0".into(),
+            },
+            method_call("say", vec!["score"]),
+        ],
     )])
 }
 

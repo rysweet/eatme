@@ -43,6 +43,7 @@ pub(crate) mod grading_report_nested_control;
 pub(crate) mod grading_report_parameters;
 pub(crate) mod grading_report_scene_building;
 pub(crate) mod grading_report_sequencing;
+pub(crate) mod grading_report_textbook_integration;
 pub(crate) mod grading_report_variables;
 #[cfg(test)]
 mod live_studio_workshop_tests;
@@ -87,6 +88,9 @@ pub use grading_report_nested_control::{NestedControlFlowGradingInput, grade_nes
 pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
 pub use grading_report_scene_building::{SceneBuildingGradingInput, grade_scene_building};
 pub use grading_report_sequencing::{SequencingGradingInput, grade_sequencing};
+pub use grading_report_textbook_integration::{
+    TextbookIntegrationGradingInput, grade_textbook_integration,
+};
 pub use grading_report_variables::{VariablesGradingInput, grade_variables};
 pub use quality_scoring::{score_event_quality, score_parameter_quality, score_variable_quality};
 pub use report::{
