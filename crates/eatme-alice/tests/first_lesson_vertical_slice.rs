@@ -152,9 +152,23 @@ fn fake_toolchain_vertical_slice_reports_step_by_step_evidence() {
         ],
     );
 
-    // Validate that the contract includes required_actions list
+    // Validate that the contract preserves the full first-lesson action chain.
     let required_actions = contract["required_actions"].as_array().unwrap();
-    assert!(required_actions.len() >= 4, "need ≥4 required_actions");
+    let required_action_ids: Vec<_> = required_actions
+        .iter()
+        .map(|action| action["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        required_action_ids,
+        vec![
+            "verify-specific-alice-window",
+            "activate-specific-alice-window",
+            "place-object",
+            "edit-procedure-or-code-block",
+            "run-world",
+            "save-project",
+        ]
+    );
 
     assert_eq!(
         contract["preflight_evidence"]["specific_alice_window_detected"],
