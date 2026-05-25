@@ -4,6 +4,7 @@ use regex::Regex;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 #[test]
 fn manifest_only_comparison_writes_bounded_manifest() {
@@ -403,6 +404,58 @@ fn removing_features_from_modernized_shows_regression_vs_baseline() {
 }
 
 #[test]
+fn compare_status_and_assertions_handles_large_assertion_sets_under_budget() {
+    const ASSERTION_COUNT: usize = 1_500;
+    const DIFFERING_EVERY: usize = 10;
+    const MAX_ELAPSED: Duration = Duration::from_millis(200);
+
+    let targets = large_assertion_targets(ASSERTION_COUNT, DIFFERING_EVERY);
+    let warmup = compare_status_and_assertions(&targets);
+    assert_eq!(
+        warmup.assertion_diffs.len(),
+        ASSERTION_COUNT / DIFFERING_EVERY
+    );
+
+    let start = Instant::now();
+    let diff = compare_status_and_assertions(&targets);
+    let elapsed = start.elapsed();
+
+    assert_eq!(
+        diff.assertion_diffs.len(),
+        ASSERTION_COUNT / DIFFERING_EVERY
+    );
+    assert!(
+        elapsed < MAX_ELAPSED,
+        "diffing {ASSERTION_COUNT} assertions took {elapsed:?}, expected under {MAX_ELAPSED:?}"
+    );
+}
+
+#[test]
+fn build_scorecard_processes_repeated_large_comparisons_under_budget() {
+    const ITERATIONS: usize = 100;
+    const ASSERTION_COUNT: usize = 1_000;
+    const MAX_ELAPSED: Duration = Duration::from_millis(400);
+
+    let targets = large_assertion_targets(ASSERTION_COUNT, 8);
+    let warmup = compare_status_and_assertions(&targets);
+    let warmup_scorecard = build_scorecard(true, &targets, &warmup);
+    assert_eq!(warmup_scorecard.functionality_result, "different");
+
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        let diff = compare_status_and_assertions(&targets);
+        let scorecard = build_scorecard(true, &targets, &diff);
+        assert_eq!(scorecard.functionality_result, "different");
+    }
+    let elapsed = start.elapsed();
+
+    assert!(
+        elapsed < MAX_ELAPSED,
+        "building {ITERATIONS} scorecards with {ASSERTION_COUNT} assertions took {elapsed:?}, expected under {MAX_ELAPSED:?}"
+    );
+}
+
+#[test]
 fn real_a3p_fixture_same_version_produces_no_comparison_diff() {
     let fixture = real_fixture_path("amazonMinimum.a3p");
     let mut targets = BTreeMap::new();
@@ -495,6 +548,34 @@ fn feature_score(target: &ComparisonTargetRun) -> usize {
                 .count()
         })
         .unwrap_or(0)
+}
+
+fn large_assertion_targets(
+    assertion_count: usize,
+    differing_every: usize,
+) -> BTreeMap<String, ComparisonTargetRun> {
+    let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
+    let mut modernized = target_run_with_assertion("modernized", "passed", None, true);
+    let baseline_assertions = &mut baseline.launch_manifest.as_mut().unwrap().assertions;
+    let modernized_assertions = &mut modernized.launch_manifest.as_mut().unwrap().assertions;
+    baseline_assertions.clear();
+    modernized_assertions.clear();
+
+    for index in 0..assertion_count {
+        let key = format!("assertion_{index}");
+        baseline_assertions.insert(key.clone(), AssertionResult::pass("ready"));
+        let modernized_result = if index % differing_every == 0 {
+            AssertionResult::fail("modernized regressed")
+        } else {
+            AssertionResult::pass("ready")
+        };
+        modernized_assertions.insert(key, modernized_result);
+    }
+
+    BTreeMap::from([
+        ("baseline".into(), baseline),
+        ("modernized".into(), modernized),
+    ])
 }
 
 fn target_run_with_feature_score(role: &str, features: &[&str]) -> ComparisonTargetRun {
