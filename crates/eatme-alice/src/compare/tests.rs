@@ -1,6 +1,9 @@
 use super::*;
 use eatme_core::AssertionResult;
-use std::path::Path;
+use regex::Regex;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[test]
 fn manifest_only_comparison_writes_bounded_manifest() {
@@ -399,6 +402,80 @@ fn removing_features_from_modernized_shows_regression_vs_baseline() {
     assert!(feature_score(&modernized) < feature_score(&baseline));
 }
 
+#[test]
+fn real_a3p_fixture_same_version_produces_no_comparison_diff() {
+    let fixture = real_fixture_path("amazonMinimum.a3p");
+    let mut targets = BTreeMap::new();
+    targets.insert(
+        "baseline".into(),
+        target_run_with_fixture_signature("baseline", &fixture),
+    );
+    targets.insert(
+        "modernized".into(),
+        target_run_with_fixture_signature("modernized", &fixture),
+    );
+
+    let diff = compare_status_and_assertions(&targets);
+
+    assert!(!diff.status_changed);
+    assert!(diff.assertion_diffs.is_empty());
+}
+
+#[test]
+fn real_a3p_fixture_variant_registers_diff_for_same_project() {
+    let baseline_fixture = real_fixture_path("amazonMinimum.a3p");
+    let variant_fixture = write_fixture_variant_copy("amazonMinimum.a3p");
+    let mut targets = BTreeMap::new();
+    targets.insert(
+        "baseline".into(),
+        target_run_with_fixture_signature("baseline", &baseline_fixture),
+    );
+    targets.insert(
+        "modernized".into(),
+        target_run_with_fixture_signature("modernized", &variant_fixture),
+    );
+
+    let diff = compare_status_and_assertions(&targets);
+
+    assert_eq!(diff.assertion_diffs.len(), 1);
+    let assertion_diff = &diff.assertion_diffs[0];
+    assert_eq!(assertion_diff.assertion, "project_fixture_signature");
+    assert_eq!(
+        assertion_diff
+            .baseline
+            .as_ref()
+            .map(|snapshot| snapshot.passed),
+        Some(true)
+    );
+    assert_eq!(
+        assertion_diff
+            .modernized
+            .as_ref()
+            .map(|snapshot| snapshot.passed),
+        Some(true)
+    );
+    assert_ne!(
+        assertion_diff.baseline.as_ref().unwrap().detail,
+        assertion_diff.modernized.as_ref().unwrap().detail
+    );
+    assert!(
+        assertion_diff
+            .baseline
+            .as_ref()
+            .unwrap()
+            .detail
+            .contains("methods=")
+    );
+    assert!(
+        assertion_diff
+            .modernized
+            .as_ref()
+            .unwrap()
+            .detail
+            .contains("comparisonVariant")
+    );
+}
+
 fn assert_contract_contains(entries: &[String], expected: &str) {
     assert!(
         entries.iter().any(|entry| entry.contains(expected)),
@@ -495,6 +572,123 @@ fn target_run_with_assertion(
         }),
         launch_manifest_artifact: None,
     }
+}
+
+fn real_fixture_path(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/real")
+        .join(name)
+}
+
+fn target_run_with_fixture_signature(role: &str, fixture: &Path) -> ComparisonTargetRun {
+    let mut target = target_run_with_assertion(role, "passed", None, true);
+    let assertions = &mut target.launch_manifest.as_mut().unwrap().assertions;
+    assertions.clear();
+    assertions.insert(
+        "project_fixture_signature".into(),
+        AssertionResult::pass(real_fixture_signature(fixture)),
+    );
+    target
+}
+
+fn real_fixture_signature(path: &Path) -> String {
+    let xml = extract_fixture_xml(path);
+    let method_names = user_method_name_regex()
+        .captures_iter(&xml)
+        .filter_map(|captures| {
+            captures
+                .get(1)
+                .or_else(|| captures.get(2))
+                .map(|value| value.as_str().to_string())
+        })
+        .collect::<Vec<_>>();
+    format!(
+        "methods={};names={}",
+        method_names.len(),
+        method_names.join("|")
+    )
+}
+
+fn extract_fixture_xml(path: &Path) -> String {
+    let file =
+        fs::File::open(path).unwrap_or_else(|err| panic!("open fixture {}: {err}", path.display()));
+    let mut archive = zip::ZipArchive::new(file)
+        .unwrap_or_else(|err| panic!("read fixture {} as zip: {err}", path.display()));
+    let mut xml = String::new();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).unwrap();
+        if entry.name().ends_with(".xml") {
+            let mut content = String::new();
+            entry.read_to_string(&mut content).unwrap();
+            xml.push_str(&content);
+            xml.push('\n');
+        }
+    }
+    xml
+}
+
+fn write_fixture_variant_copy(name: &str) -> PathBuf {
+    let source = real_fixture_path(name);
+    let root = unique_test_dir("real-a3p-fixture-variant");
+    fs::create_dir_all(&root).unwrap();
+    let output = root.join(format!("variant-{name}"));
+    let source_file = fs::File::open(&source)
+        .unwrap_or_else(|err| panic!("open source fixture {}: {err}", source.display()));
+    let mut archive = zip::ZipArchive::new(source_file)
+        .unwrap_or_else(|err| panic!("read source fixture {} as zip: {err}", source.display()));
+    let output_file = fs::File::create(&output)
+        .unwrap_or_else(|err| panic!("create variant fixture {}: {err}", output.display()));
+    let mut writer = zip::ZipWriter::new(output_file);
+    let options = zip::write::SimpleFileOptions::default();
+    let mut mutated = false;
+
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).unwrap();
+        let entry_name = entry.name().to_string();
+        if entry_name.ends_with('/') {
+            writer.add_directory(entry_name, options).unwrap();
+            continue;
+        }
+
+        let mut bytes = Vec::new();
+        entry.read_to_end(&mut bytes).unwrap();
+        if !mutated && entry_name.ends_with(".xml") {
+            let xml = String::from_utf8(bytes).unwrap();
+            if let Some(next_xml) = rename_first_user_method(&xml) {
+                bytes = next_xml.into_bytes();
+                mutated = true;
+            } else {
+                bytes = xml.into_bytes();
+            }
+        }
+
+        writer.start_file(entry_name, options).unwrap();
+        writer.write_all(&bytes).unwrap();
+    }
+    writer.finish().unwrap();
+    assert!(mutated, "expected fixture variant to rename a user method");
+    output
+}
+
+fn rename_first_user_method(xml: &str) -> Option<String> {
+    let captures = user_method_name_regex().captures(xml)?;
+    let name_match = captures.get(1).or_else(|| captures.get(2))?;
+    let mut mutated = String::with_capacity(xml.len() + "comparisonVariant".len());
+    mutated.push_str(&xml[..name_match.start()]);
+    mutated.push_str(name_match.as_str());
+    mutated.push_str("comparisonVariant");
+    mutated.push_str(&xml[name_match.end()..]);
+    Some(mutated)
+}
+
+fn user_method_name_regex() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"(?s)type\s*=\s*"(?:[^"]+\.)?UserMethod"[^>]*?(?:name\s*=\s*"([^"]+)"|.*?<property\s+name\s*=\s*"name">\s*<value[^>]*>([^<]+)</value>)"#,
+        )
+        .unwrap()
+    })
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {
