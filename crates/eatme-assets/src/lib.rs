@@ -43,6 +43,8 @@ pub(crate) mod grading_report_nested_control;
 pub(crate) mod grading_report_parameters;
 pub(crate) mod grading_report_scene_building;
 pub(crate) mod grading_report_sequencing;
+#[cfg(test)]
+mod grading_report_structure_tests;
 pub(crate) mod grading_report_textbook_integration;
 pub(crate) mod grading_report_variables;
 #[cfg(test)]
