@@ -568,6 +568,227 @@ fn failing_grading_inputs_produce_schema_valid_json() {
     }
 }
 
+#[test]
+fn grading_pipelines_cover_every_alice_statement_type() {
+    let loops_report = grade_loops_and_conditionals(LoopsGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![Statement::CountLoop {
+                count: 2,
+                body: vec![Statement::IfElse {
+                    condition: "score > 0".into(),
+                    if_body: vec![method_call("move", vec![])],
+                    else_body: vec![method_call("turn", vec![])],
+                }],
+            }],
+        )])),
+    });
+    assert_step_status(&loops_report, "build-counting-loop", StepStatus::Ready);
+    assert_step_status(&loops_report, "add-conditional-branch", StepStatus::Ready);
+
+    let events_report = grade_events_and_collision(EventsGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![
+                Statement::EventListener {
+                    event: "whenKeyPressed".into(),
+                    body: vec![method_call("jump", vec![])],
+                },
+                Statement::CollisionListener {
+                    object_a: "actor".into(),
+                    object_b: "tree".into(),
+                    body: vec![method_call("say", vec!["\"ouch\""])],
+                },
+            ],
+        )])),
+    });
+    assert_step_status(&events_report, "add-event-listener", StepStatus::Ready);
+    assert_step_status(&events_report, "add-collision-listener", StepStatus::Ready);
+
+    let variables_report = grade_variables(VariablesGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![Statement::DoInOrder {
+                body: vec![
+                    Statement::VariableDeclaration {
+                        name: "score".into(),
+                        var_type: "Number".into(),
+                        initial_value: "0".into(),
+                    },
+                    method_call("say", vec!["score"]),
+                    Statement::VariableAssignment {
+                        name: "score".into(),
+                        value: "score + 1".into(),
+                    },
+                ],
+            }],
+        )])),
+    });
+    assert_step_status(&variables_report, "declare-variable", StepStatus::Ready);
+    assert_step_status(
+        &variables_report,
+        "use-variable-in-method",
+        StepStatus::Ready,
+    );
+    assert_step_status(&variables_report, "modify-variable", StepStatus::Ready);
+
+    let arrays_report = grade_arrays_and_arithmetic(ArraysArithmeticGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![Statement::UserTypeDeclaration {
+                name: "Helper".into(),
+                extends: Some("Actor".into()),
+                methods: vec![procedure(
+                    "organize",
+                    vec![
+                        Statement::ArrayDeclaration {
+                            name: "pets".into(),
+                            element_type: "Object".into(),
+                            elements: vec!["rabbit".into(), "cat".into()],
+                        },
+                        Statement::ArrayAccess {
+                            array: "pets".into(),
+                            index: "0".into(),
+                            target: "leader".into(),
+                        },
+                        Statement::ForEachArray {
+                            item_name: "pet".into(),
+                            array: "pets".into(),
+                            body: vec![method_call("move", vec!["pet"])],
+                        },
+                        Statement::ArithmeticExpression {
+                            operator: ArithmeticOperator::Add,
+                            left: "1".into(),
+                            right: "2".into(),
+                            result: "sum".into(),
+                        },
+                        Statement::ArithmeticExpression {
+                            operator: ArithmeticOperator::Subtract,
+                            left: "5".into(),
+                            right: "3".into(),
+                            result: "difference".into(),
+                        },
+                        Statement::ArithmeticExpression {
+                            operator: ArithmeticOperator::Multiply,
+                            left: "2".into(),
+                            right: "4".into(),
+                            result: "product".into(),
+                        },
+                        Statement::ArithmeticExpression {
+                            operator: ArithmeticOperator::Divide,
+                            left: "8".into(),
+                            right: "2".into(),
+                            result: "quotient".into(),
+                        },
+                    ],
+                )],
+            }],
+        )])),
+    });
+    assert_step_status(&arrays_report, "create-array", StepStatus::Ready);
+    assert_step_status(&arrays_report, "access-array-element", StepStatus::Ready);
+    assert_step_status(&arrays_report, "iterate-array", StepStatus::Ready);
+    assert_step_status(
+        &arrays_report,
+        "use-arithmetic-operators",
+        StepStatus::Ready,
+    );
+
+    let functions_report = grade_functions(FunctionsGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program {
+            procedures: vec![procedure(
+                "run",
+                vec![Statement::FunctionCall {
+                    object: "this".into(),
+                    function: "computeDistance".into(),
+                    arguments: vec!["actor".into()],
+                }],
+            )],
+            functions: vec![Function {
+                name: "computeDistance".into(),
+                return_type: "Number".into(),
+                body: vec![Statement::ReturnStatement {
+                    expression: "1".into(),
+                }],
+            }],
+        }),
+    });
+    assert_step_status(&functions_report, "create-function", StepStatus::Ready);
+    assert_step_status(&functions_report, "add-return-statement", StepStatus::Ready);
+    assert_step_status(
+        &functions_report,
+        "call-function-from-procedure",
+        StepStatus::Ready,
+    );
+
+    let comments_report = grade_comments(CommentsGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![
+                comment("Explain why the actor moves before speaking."),
+                method_call("move", vec![]),
+            ],
+        )])),
+    });
+    assert_step_status(&comments_report, "add-comment", StepStatus::Ready);
+    assert_step_status(
+        &comments_report,
+        "write-meaningful-comment",
+        StepStatus::Ready,
+    );
+    assert_step_status(&comments_report, "save-project", StepStatus::Ready);
+
+    let inheritance_report = grade_inheritance_oop(InheritanceOopGradingInput {
+        assets_valid: true,
+        asset_reason: "ok".into(),
+        deps_available: true,
+        deps_reason: "ok".into(),
+        student_program: Some(Program::new(vec![procedure(
+            "run",
+            vec![Statement::UserTypeDeclaration {
+                name: "GuideDog".into(),
+                extends: Some("Dog".into()),
+                methods: vec![procedure("guide", vec![method_call("lead", vec![])])],
+            }],
+        )])),
+    });
+    assert_step_status(&inheritance_report, "create-custom-type", StepStatus::Ready);
+    assert_step_status(
+        &inheritance_report,
+        "set-extends-relationship",
+        StepStatus::Ready,
+    );
+    assert_step_status(
+        &inheritance_report,
+        "define-custom-method",
+        StepStatus::Ready,
+    );
+}
+
 fn assert_report_json_schema(
     case_name: &str,
     expected_lesson: &str,
