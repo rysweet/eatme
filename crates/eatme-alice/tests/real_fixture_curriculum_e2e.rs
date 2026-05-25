@@ -55,6 +55,16 @@ const REAL_FIXTURES: &[RealFixture<'_>] = &[
         xml_markers: &["UserMethod", "MethodInvocation", "ReturnStatement"],
     },
     RealFixture {
+        name: "lagoonMinimum",
+        source: "alice/core/resources/src/application/resources/starter-projects/lagoonMinimum.a3p",
+        xml_markers: &["UserMethod", "MethodInvocation"],
+    },
+    RealFixture {
+        name: "africaMinimum",
+        source: "alice/core/resources/src/application/resources/starter-projects/africaMinimum.a3p",
+        xml_markers: &["UserMethod", "MethodInvocation"],
+    },
+    RealFixture {
         name: "iceFull",
         source: "alice/core/resources/src/application/resources/starter-projects/iceFull.a3p",
         xml_markers: &[
@@ -63,6 +73,11 @@ const REAL_FIXTURES: &[RealFixture<'_>] = &[
             "ReturnStatement",
             "org.lgna.project.ast.Comment",
         ],
+    },
+    RealFixture {
+        name: "snowFull",
+        source: "alice/core/resources/src/application/resources/starter-projects/snowFull.a3p",
+        xml_markers: &["UserMethod", "MethodInvocation"],
     },
 ];
 
