@@ -1,6 +1,7 @@
 use eatme_assets::{
     EventsGradingInput, GradingReport, ParametersGradingInput, VariablesGradingInput,
-    grade_events_and_collision, grade_parameters, grade_variables,
+    grade_events_and_collision, grade_parameters, grade_variables, score_event_quality,
+    score_parameter_quality, score_variable_quality,
 };
 use eatme_core::ast::{Parameter, Procedure, Program, Statement};
 
@@ -165,4 +166,176 @@ fn actually_used_variables_score_higher_without_changing_grading() {
     assert_eq!(used.passed, unused.passed);
     assert_eq!(status_snapshot(&used), status_snapshot(&unused));
     assert!(score_for(&used, "variable_usage") > score_for(&unused, "variable_usage"));
+}
+
+#[test]
+fn parameter_quality_trims_types_and_penalizes_generic_aliases() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "mixedParameters".into(),
+            parameters: vec![
+                Parameter {
+                    name: "distance".into(),
+                    param_type: " DecimalNumber ".into(),
+                },
+                Parameter {
+                    name: "target".into(),
+                    param_type: "Any".into(),
+                },
+                Parameter {
+                    name: "mystery".into(),
+                    param_type: "Unknown".into(),
+                },
+                Parameter {
+                    name: "blank".into(),
+                    param_type: "   ".into(),
+                },
+            ],
+            body: vec![],
+        }],
+        functions: vec![],
+    };
+
+    let scores = score_parameter_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "parameter_types");
+    assert_eq!(scores[0].score, 25);
+    assert_eq!(
+        scores[0].feedback,
+        "1 of 4 parameters use specific types; prefer concrete parameter types over Object or empty types"
+    );
+}
+
+#[test]
+fn event_quality_counts_nested_listener_references_but_ignores_non_listener_calls() {
+    let program = Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![
+            Statement::MethodCall {
+                object: "cat".into(),
+                method: "say".into(),
+                arguments: vec!["\"outside\"".into()],
+            },
+            Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![Statement::DoInOrder {
+                    body: vec![
+                        Statement::MethodCall {
+                            object: "this.cat".into(),
+                            method: "say".into(),
+                            arguments: vec!["\"inside\"".into()],
+                        },
+                        Statement::IfElse {
+                            condition: "true".into(),
+                            if_body: vec![Statement::MethodCall {
+                                object: "cat".into(),
+                                method: "jump".into(),
+                                arguments: vec![],
+                            }],
+                            else_body: vec![],
+                        },
+                    ],
+                }],
+            },
+            Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.dog".into(),
+                    method: "turn".into(),
+                    arguments: vec!["LEFT".into(), "0.25".into()],
+                }],
+            },
+        ],
+    }]);
+
+    let scores = score_event_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "entity_types");
+    assert_eq!(scores[0].score, 60);
+    assert_eq!(
+        scores[0].feedback,
+        "3 of 5 listener entity references use explicit scene entities like this.cat"
+    );
+}
+
+#[test]
+fn variable_quality_tracks_nested_array_and_arithmetic_usage() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "myFirstMethod".into(),
+            parameters: vec![],
+            body: vec![
+                Statement::VariableDeclaration {
+                    name: "speed".into(),
+                    var_type: "DecimalNumber".into(),
+                    initial_value: "0.5".into(),
+                },
+                Statement::VariableDeclaration {
+                    name: "index".into(),
+                    var_type: "WholeNumber".into(),
+                    initial_value: "0".into(),
+                },
+                Statement::VariableDeclaration {
+                    name: "unused".into(),
+                    var_type: "Text".into(),
+                    initial_value: "\"ghost\"".into(),
+                },
+                Statement::ArrayAccess {
+                    array: "path".into(),
+                    index: "index".into(),
+                    target: "speed".into(),
+                },
+                Statement::ArithmeticExpression {
+                    operator: eatme_core::ast::ArithmeticOperator::Add,
+                    left: "speed".into(),
+                    right: "index".into(),
+                    result: "speed".into(),
+                },
+            ],
+        }],
+        functions: vec![],
+    };
+
+    let scores = score_variable_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "variable_usage");
+    assert_eq!(scores[0].score, 66);
+    assert_eq!(
+        scores[0].feedback,
+        "2 of 3 declared variables are referenced after declaration"
+    );
+}
+
+#[test]
+fn variable_quality_does_not_count_substring_matches_as_usage() {
+    let program = Program {
+        procedures: vec![Procedure {
+            name: "myFirstMethod".into(),
+            parameters: vec![],
+            body: vec![
+                Statement::VariableDeclaration {
+                    name: "speed".into(),
+                    var_type: "DecimalNumber".into(),
+                    initial_value: "0.5".into(),
+                },
+                Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["speedLimit".into()],
+                },
+            ],
+        }],
+        functions: vec![],
+    };
+
+    let scores = score_variable_quality(Some(&program));
+
+    assert_eq!(scores[0].dimension, "variable_usage");
+    assert_eq!(scores[0].score, 0);
+    assert_eq!(
+        scores[0].feedback,
+        "0 of 1 declared variables are referenced after declaration"
+    );
 }
