@@ -108,7 +108,14 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
     use std::path::PathBuf;
+    use std::sync::{Mutex, OnceLock};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn env_lock() -> &'static Mutex<()> {
+        ENV_LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     struct RecordingRunner {
         calls: RefCell<Vec<String>>,
@@ -198,6 +205,7 @@ mod tests {
 
     #[test]
     fn package_alice_reuses_existing_build_for_real_alice_runs() {
+        let _guard = env_lock().lock().unwrap();
         let alice_home = test_alice_home();
         let runner = RecordingRunner::new();
         let _real_alice = EnvVarGuard::set("EATME_REAL_ALICE", "1");
@@ -219,6 +227,7 @@ mod tests {
 
     #[test]
     fn package_alice_runs_maven_when_real_alice_env_is_unset() {
+        let _guard = env_lock().lock().unwrap();
         let alice_home = test_alice_home();
         let runner = RecordingRunner::new();
         let _real_alice = EnvVarGuard::unset("EATME_REAL_ALICE");
