@@ -108,3 +108,47 @@ impl PrStateCollector {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{CheckConclusion, CheckRollup, CheckRun, PrStateCollector, PrStateInput};
+
+    #[test]
+    fn collect_rejects_blank_branch_and_head_sha() {
+        let missing_branch = PrStateCollector::collect(PrStateInput {
+            pr_number: 199,
+            branch: "   ".into(),
+            head_sha: "abc123".into(),
+            changed_files: vec![],
+            check_runs: vec![],
+        })
+        .unwrap_err();
+        assert_eq!(missing_branch.code(), "pr_state_missing_branch");
+
+        let missing_head = PrStateCollector::collect(PrStateInput {
+            pr_number: 199,
+            branch: "feat/pr-199".into(),
+            head_sha: "   ".into(),
+            changed_files: vec![],
+            check_runs: vec![],
+        })
+        .unwrap_err();
+        assert_eq!(missing_head.code(), "pr_state_missing_head");
+    }
+
+    #[test]
+    fn check_rollup_summary_lists_each_category() {
+        let rollup = CheckRollup::from_runs(vec![
+            CheckRun::completed("workspace tests", CheckConclusion::Success),
+            CheckRun::completed("linux", CheckConclusion::Failure),
+            CheckRun::in_progress("quality gates"),
+            CheckRun::completed("cancelled stale run", CheckConclusion::Cancelled),
+            CheckRun::completed("optional preview", CheckConclusion::Skipped),
+        ]);
+
+        assert_eq!(
+            rollup.summary(),
+            "success=1 [workspace tests]; failure=1 [linux]; pending=1 [quality gates]; cancelled=1 [cancelled stale run]; skipped=1 [optional preview]"
+        );
+    }
+}
