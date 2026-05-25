@@ -66,3 +66,36 @@ impl DefaultWorkflowRecovery {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{DefaultWorkflowInvocation, DefaultWorkflowRecovery, WorkflowSource};
+
+    #[test]
+    fn validate_invocation_trims_auditable_fields() {
+        let proof = DefaultWorkflowRecovery::validate_invocation(&DefaultWorkflowInvocation {
+            source: WorkflowSource::RealDefaultWorkflowNoTimeout,
+            outcome: "  success  ".into(),
+            log_reference: Some("  logs/default-workflow/run-1  ".into()),
+            run_id: Some("  default-workflow-run-1  ".into()),
+        })
+        .unwrap();
+
+        assert_eq!(proof.outcome, "success");
+        assert_eq!(proof.log_reference, "logs/default-workflow/run-1");
+        assert_eq!(proof.run_id, "default-workflow-run-1");
+    }
+
+    #[test]
+    fn validate_invocation_rejects_blank_outcome_for_real_runs() {
+        let error = DefaultWorkflowRecovery::validate_invocation(&DefaultWorkflowInvocation {
+            source: WorkflowSource::RealDefaultWorkflowNoTimeout,
+            outcome: "   ".into(),
+            log_reference: Some("logs/default-workflow/run-1".into()),
+            run_id: Some("default-workflow-run-1".into()),
+        })
+        .unwrap_err();
+
+        assert_eq!(error.code(), "default_workflow_proof_missing");
+    }
+}
