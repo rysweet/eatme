@@ -1,5 +1,10 @@
 use super::*;
 use eatme_core::ast::{Procedure, Program, Statement};
+use std::{
+    sync::{Arc, Barrier},
+    thread,
+    time::{Duration, Instant},
+};
 
 // --- Test fixtures ---
 
@@ -98,6 +103,125 @@ fn events_input_both_blocked(program: Option<Program>) -> EventsGradingInput {
         deps_reason: "Missing required tools: Xvfb, wmctrl".into(),
         student_program: program,
     }
+}
+
+fn small_events_program(seed: usize) -> Program {
+    Program::new(vec![Procedure {
+        name: format!("smallEventProgram{seed}"),
+        parameters: vec![],
+        body: vec![
+            Statement::EventListener {
+                event: format!("SceneActivated{seed}"),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec![format!("\"Hello {seed}\"")],
+                }],
+            },
+            Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "think".into(),
+                    arguments: vec![format!("\"Ouch {seed}\"")],
+                }],
+            },
+        ],
+    }])
+}
+
+fn large_events_program(statement_count: usize) -> Program {
+    let mut body = Vec::with_capacity(statement_count);
+    for index in 0..statement_count {
+        if index % 2 == 0 {
+            body.push(Statement::EventListener {
+                event: format!("SceneActivated{index}"),
+                body: vec![
+                    Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "say".into(),
+                        arguments: vec![format!("\"Hello {index}\"")],
+                    },
+                    Statement::IfElse {
+                        condition: format!("score_{index} > 0"),
+                        if_body: vec![Statement::MethodCall {
+                            object: "this.cat".into(),
+                            method: "turn".into(),
+                            arguments: vec!["LEFT".into(), "0.25".into()],
+                        }],
+                        else_body: vec![Statement::MethodCall {
+                            object: "this.cat".into(),
+                            method: "turn".into(),
+                            arguments: vec!["RIGHT".into(), "0.25".into()],
+                        }],
+                    },
+                ],
+            });
+        } else {
+            body.push(Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![
+                    Statement::MethodCall {
+                        object: "this.dog".into(),
+                        method: "say".into(),
+                        arguments: vec![format!("\"Bounce {index}\"")],
+                    },
+                    Statement::DoInOrder {
+                        body: vec![
+                            Statement::MethodCall {
+                                object: "this.cat".into(),
+                                method: "move".into(),
+                                arguments: vec!["FORWARD".into(), "1.0".into()],
+                            },
+                            Statement::MethodCall {
+                                object: "this.dog".into(),
+                                method: "move".into(),
+                                arguments: vec!["BACKWARD".into(), "1.0".into()],
+                            },
+                        ],
+                    },
+                ],
+            });
+        }
+    }
+
+    Program::new(vec![Procedure {
+        name: "stressEventsProgram".into(),
+        parameters: vec![],
+        body,
+    }])
+}
+
+fn assert_ready_events_pipeline(report: &GradingReport) {
+    assert_eq!(report.steps.len(), 7);
+    assert_eq!(report.steps[0].status, StepStatus::Ready, "validate-assets");
+    assert_eq!(
+        report.steps[1].status,
+        StepStatus::Ready,
+        "check-dependencies"
+    );
+    assert_eq!(report.steps[2].status, StepStatus::Ready, "launch-smoke");
+    assert_eq!(
+        report.steps[3].status,
+        StepStatus::Ready,
+        "add-event-listener"
+    );
+    assert_eq!(
+        report.steps[4].status,
+        StepStatus::Ready,
+        "add-collision-listener"
+    );
+    assert_eq!(
+        report.steps[5].status,
+        StepStatus::NotYetTested,
+        "run-world"
+    );
+    assert_eq!(report.steps[6].status, StepStatus::Ready, "save-project");
+    assert_eq!(report.quality_scores.len(), 1);
+    assert_eq!(report.quality_scores[0].dimension, "entity_types");
+    assert_eq!(report.quality_scores[0].score, 100);
 }
 
 // --- Schema and structure tests ---
@@ -483,4 +607,84 @@ fn report_serializes_to_expected_json_shape() {
     assert_eq!(json["steps"][5]["status"], "not-yet-tested");
     assert_eq!(json["steps"][6]["name"], "save-project");
     assert_eq!(json["steps"][6]["status"], "ready");
+}
+
+#[test]
+fn grades_large_program_under_100ms() {
+    const LARGE_PROGRAM_STATEMENTS: usize = 240;
+    const MAX_ELAPSED: Duration = Duration::from_millis(100);
+
+    let program = large_events_program(LARGE_PROGRAM_STATEMENTS);
+    let warmup = grade_events_and_collision(events_input_all_ready(Some(program.clone())));
+    assert_ready_events_pipeline(&warmup);
+
+    let start = Instant::now();
+    let report = grade_events_and_collision(events_input_all_ready(Some(program)));
+    let elapsed = start.elapsed();
+
+    assert_ready_events_pipeline(&report);
+    assert!(
+        elapsed < MAX_ELAPSED,
+        "grading {LARGE_PROGRAM_STATEMENTS} statements took {elapsed:?}, expected under {MAX_ELAPSED:?}"
+    );
+}
+
+#[test]
+fn grades_hundred_small_programs_with_high_sequential_throughput() {
+    const PROGRAM_COUNT: usize = 100;
+    const MAX_TOTAL: Duration = Duration::from_millis(100);
+
+    let warmup = grade_events_and_collision(events_input_all_ready(Some(small_events_program(0))));
+    assert_ready_events_pipeline(&warmup);
+
+    let start = Instant::now();
+    for seed in 0..PROGRAM_COUNT {
+        let report =
+            grade_events_and_collision(events_input_all_ready(Some(small_events_program(seed))));
+        assert_ready_events_pipeline(&report);
+    }
+    let elapsed = start.elapsed();
+    let throughput = PROGRAM_COUNT as f64 / elapsed.as_secs_f64();
+
+    assert!(
+        elapsed < MAX_TOTAL,
+        "graded {PROGRAM_COUNT} small programs in {elapsed:?} ({throughput:.0} programs/sec), expected under {MAX_TOTAL:?}"
+    );
+}
+
+#[test]
+fn grades_programs_concurrently_across_multiple_threads() {
+    const THREADS: usize = 4;
+    const GRADES_PER_THREAD: usize = 25;
+
+    let barrier = Arc::new(Barrier::new(THREADS));
+    let mut handles = Vec::with_capacity(THREADS);
+
+    for thread_index in 0..THREADS {
+        let barrier = Arc::clone(&barrier);
+        handles.push(thread::spawn(move || {
+            barrier.wait();
+
+            let mut completed = 0;
+            for iteration in 0..GRADES_PER_THREAD {
+                let program = if iteration % 2 == 0 {
+                    small_events_program(thread_index * GRADES_PER_THREAD + iteration)
+                } else {
+                    large_events_program(240)
+                };
+                let report = grade_events_and_collision(events_input_all_ready(Some(program)));
+                assert_ready_events_pipeline(&report);
+                completed += 1;
+            }
+
+            completed
+        }));
+    }
+
+    let completed: usize = handles
+        .into_iter()
+        .map(|handle| handle.join().expect("grading thread should finish cleanly"))
+        .sum();
+
+    assert_eq!(completed, THREADS * GRADES_PER_THREAD);
 }
