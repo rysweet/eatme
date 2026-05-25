@@ -229,3 +229,71 @@ fn synthetic_a3p_with_scene_entities_extracts() {
         "scene entity pattern should match"
     );
 }
+
+#[test]
+fn synthetic_a3p_with_nested_types_extracts() {
+    let xml = concat!(
+        r#"<program><types>"#,
+        r#"<type name="Outer">"#,
+        r#"<type name="Inner"><field name="pet" type="SBunny"/></type>"#,
+        r#"</type></types></program>"#,
+    );
+    let zip_bytes = build_synthetic_a3p(vec![("types/nested.xml", xml)]);
+    let extracted = extract_all_xml_bytes(&zip_bytes);
+    assert!(extracted.contains("type name=\"Outer\""));
+    assert!(extracted.contains("type name=\"Inner\""));
+    assert!(extracted.contains("field name=\"pet\""));
+}
+
+#[test]
+fn synthetic_a3p_with_imported_types_extracts() {
+    let xml = concat!(
+        r#"<program><imports>"#,
+        r#"<import type="org.lgna.story.SGround"/>"#,
+        r#"<import type="org.lgna.story.SCamera"/>"#,
+        r#"</imports></program>"#,
+    );
+    let zip_bytes = build_synthetic_a3p(vec![("imports.xml", xml)]);
+    let extracted = extract_all_xml_bytes(&zip_bytes);
+    assert!(extracted.contains("org.lgna.story.SGround"));
+    assert!(extracted.contains("org.lgna.story.SCamera"));
+}
+
+#[test]
+fn synthetic_a3p_with_resource_references_across_files_extracts() {
+    let scene_xml = concat!(
+        r#"<scene><resourceReference key="bunny" type="ModelResourceReference"/>"#,
+        r#"<resourceReference key="grass" type="TextureResourceReference"/></scene>"#,
+    );
+    let resources_xml = concat!(
+        r#"<resources><JointedModelResource name="bunny"/>"#,
+        r#"<ImageResource name="grass"/></resources>"#,
+    );
+    let zip_bytes = build_synthetic_a3p(vec![
+        ("scene.xml", scene_xml),
+        ("resources/catalog.xml", resources_xml),
+    ]);
+    let extracted = extract_all_xml_bytes(&zip_bytes);
+    assert!(extracted.contains("resourceReference key=\"bunny\""));
+    assert!(extracted.contains("JointedModelResource name=\"bunny\""));
+    assert!(extracted.contains("ImageResource name=\"grass\""));
+}
+
+#[test]
+fn synthetic_a3p_with_multiple_scenes_extracts_all_scene_entries() {
+    let zip_bytes = build_synthetic_a3p(vec![
+        (
+            "scenes/harbor.xml",
+            r#"<scene name="harbor"><SScene><SModel name="boat"/></SScene></scene>"#,
+        ),
+        (
+            "scenes/castle.xml",
+            r#"<scene name="castle"><SScene><SModel name="dragon"/></SScene></scene>"#,
+        ),
+    ]);
+    let extracted = extract_all_xml_bytes(&zip_bytes);
+    assert!(extracted.contains("scene name=\"harbor\""));
+    assert!(extracted.contains("scene name=\"castle\""));
+    assert!(extracted.contains("SModel name=\"boat\""));
+    assert!(extracted.contains("SModel name=\"dragon\""));
+}
