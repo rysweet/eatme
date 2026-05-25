@@ -10,6 +10,7 @@ mod launch_license;
 mod launch_object_placement;
 mod launch_options;
 mod launch_path_validation;
+mod launch_preflight;
 mod launch_reopen_project;
 mod launch_run_window;
 mod launch_run_window_poll;
@@ -33,6 +34,7 @@ pub use deps::{DependencyReport, check_dependencies};
 pub use discover::{AliceDiscovery, discover_alice};
 pub use launch::run_launch_smoke;
 pub use launch_options::LaunchSmokeOptions;
+pub use launch_preflight::write_preflight_blocked_manifest;
 pub use package::{PackageOptions, package_alice};
 pub use scenario::LaunchSmokeScenario;
 
