@@ -63,3 +63,57 @@ pub struct LaunchSmokeManifest {
     pub assertions: BTreeMap<String, AssertionResult>,
     pub failure_category: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn assertion_result_helpers_set_expected_flags() {
+        let pass = AssertionResult::pass("ready");
+        let fail = AssertionResult::fail("blocked");
+
+        assert!(pass.passed);
+        assert_eq!(pass.detail, "ready");
+        assert!(!fail.passed);
+        assert_eq!(fail.detail, "blocked");
+    }
+
+    #[test]
+    fn launch_smoke_manifest_defaults_post_focus_fields_when_absent() {
+        let manifest: LaunchSmokeManifest = serde_json::from_value(json!({
+            "schema_version": "eatme.launch/v1",
+            "scenario_id": "first-world",
+            "run_id": "run-1",
+            "alice_home": "/alice",
+            "alice_git_commit": "abc123",
+            "eatme_git_commit": "def456",
+            "java_version": "21",
+            "maven_version": "3.9.9",
+            "dependency_checks": {"java": true},
+            "build_command": "mvn verify",
+            "build_exit_status": 0,
+            "launch_command": "alice",
+            "display": ":99",
+            "xvfb_pid": 42,
+            "alice_pid": 43,
+            "timeout_seconds": 120,
+            "window_list": null,
+            "window_list_error": null,
+            "screenshot": null,
+            "screenshot_error": null,
+            "ui_action_contract": null,
+            "log": null,
+            "log_error": null,
+            "fatal_log_scan": [],
+            "assertions": {"launch": {"passed": true, "detail": "ok"}},
+            "failure_category": null
+        }))
+        .unwrap();
+
+        assert!(manifest.post_focus_screenshot.is_none());
+        assert!(manifest.post_focus_screenshot_error.is_none());
+        assert_eq!(manifest.assertions["launch"].detail, "ok");
+    }
+}
