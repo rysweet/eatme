@@ -111,6 +111,8 @@ impl PrStateCollector {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::{CheckConclusion, CheckRollup, CheckRun, PrStateCollector, PrStateInput};
 
     #[test]
@@ -134,6 +136,46 @@ mod tests {
         })
         .unwrap_err();
         assert_eq!(missing_head.code(), "pr_state_missing_head");
+    }
+
+    #[test]
+    fn collect_rejects_unexpected_pr_number() {
+        let error = PrStateCollector::collect(PrStateInput {
+            pr_number: 42,
+            branch: "feat/other".into(),
+            head_sha: "abc123".into(),
+            changed_files: vec![],
+            check_runs: vec![],
+        })
+        .unwrap_err();
+
+        assert_eq!(error.code(), "unexpected_pr_number");
+    }
+
+    #[test]
+    fn collect_preserves_changed_files_and_rolls_up_checks() {
+        let state = PrStateCollector::collect(PrStateInput {
+            pr_number: 199,
+            branch: " feat/pr-199 ".into(),
+            head_sha: " def456 ".into(),
+            changed_files: vec![PathBuf::from("src/lib.rs"), PathBuf::from("docs/pr199.md")],
+            check_runs: vec![
+                CheckRun::completed("workspace", CheckConclusion::Success),
+                CheckRun::completed("ubuntu", CheckConclusion::Failure),
+                CheckRun::in_progress("qa rerun"),
+            ],
+        })
+        .unwrap();
+
+        assert_eq!(state.branch, "feat/pr-199");
+        assert_eq!(state.head_sha, "def456");
+        assert_eq!(
+            state.changed_files,
+            vec![PathBuf::from("src/lib.rs"), PathBuf::from("docs/pr199.md")]
+        );
+        assert_eq!(state.check_rollup.success, vec!["workspace".to_string()]);
+        assert_eq!(state.check_rollup.failure, vec!["ubuntu".to_string()]);
+        assert_eq!(state.check_rollup.pending, vec!["qa rerun".to_string()]);
     }
 
     #[test]

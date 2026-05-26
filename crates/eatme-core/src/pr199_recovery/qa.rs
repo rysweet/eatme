@@ -152,6 +152,24 @@ mod tests {
     }
 
     #[test]
+    fn summarize_marks_all_required_passes_as_successful_and_includable() {
+        let report = ScopedQaRunner::summarize(vec![
+            QaOutcome::passed(QaCommand::CargoWorkspaceAllFeatures),
+            QaOutcome::passed(QaCommand::AssetsValidateJson),
+            QaOutcome::passed(QaCommand::GenerateGadugiCheckJson),
+            QaOutcome::passed(QaCommand::MkdocsBuildStrict),
+            QaOutcome::passed(QaCommand::QualityGatesWithTmpdir),
+        ])
+        .unwrap();
+
+        assert!(report.passed);
+        assert!(report.blockers.is_empty());
+        assert!(report.includes(QaCommand::MkdocsBuildStrict));
+        assert!(report.includes(QaCommand::CargoWorkspaceAllFeatures));
+        assert_eq!(report.commands[0].summary, "passed");
+    }
+
+    #[test]
     fn summarize_collects_multiple_failures_as_blockers() {
         let report = ScopedQaRunner::summarize(vec![
             QaOutcome::failed(
