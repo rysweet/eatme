@@ -121,4 +121,20 @@ mod tests {
 
         fs::remove_file(path).unwrap();
     }
+
+    #[test]
+    fn hashes_files_that_end_exactly_on_a_read_chunk_boundary() {
+        let path = unique_test_path("boundary");
+        let payload = vec![b'y'; 8_192];
+        fs::write(&path, &payload).unwrap();
+
+        let mut hasher = Sha256::new();
+        hasher.update(&payload);
+        let expected = format!("{:x}", hasher.finalize());
+
+        assert_eq!(file_size(&path).unwrap(), payload.len() as u64);
+        assert_eq!(sha256_file(&path).unwrap(), expected);
+
+        fs::remove_file(path).unwrap();
+    }
 }
