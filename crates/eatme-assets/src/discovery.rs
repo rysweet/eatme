@@ -52,6 +52,7 @@ mod tests {
         fs::create_dir_all(&nested).unwrap();
         fs::write(root.join("b.yaml"), "id: b\n").unwrap();
         fs::write(root.join("ignore.txt"), "nope\n").unwrap();
+        fs::write(root.join("UPPER.YAML"), "id: upper\n").unwrap();
         fs::write(nested.join("a.yml"), "id: a\n").unwrap();
         fs::write(nested.join("z.json"), "{}\n").unwrap();
 
@@ -67,6 +68,19 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(relative, vec!["b.yaml", "nested/deeper/a.yml"]);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn scenario_asset_paths_reports_read_dir_errors_with_root_context() {
+        let root = unique_test_dir("file-root");
+        fs::create_dir_all(&root).unwrap();
+        let file_root = root.join("not-a-directory.yaml");
+        fs::write(&file_root, "id: single\n").unwrap();
+
+        let error = scenario_asset_paths(&file_root).unwrap_err();
+
+        assert!(error.to_string().contains(&file_root.display().to_string()));
         let _ = fs::remove_dir_all(root);
     }
 

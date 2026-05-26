@@ -91,6 +91,22 @@ mod tests {
     }
 
     #[test]
+    fn hashes_binary_files_with_null_bytes() {
+        let path = unique_test_path("binary");
+        let payload = [0_u8, 1, 2, 3, 0, 255];
+        fs::write(&path, payload).unwrap();
+
+        let mut hasher = Sha256::new();
+        hasher.update(payload);
+        let expected = format!("{:x}", hasher.finalize());
+
+        assert_eq!(file_size(&path).unwrap(), payload.len() as u64);
+        assert_eq!(sha256_file(&path).unwrap(), expected);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn hashes_large_files_across_multiple_read_chunks() {
         let path = unique_test_path("large");
         let payload = vec![b'x'; 20_000];
