@@ -145,4 +145,26 @@ mod tests {
         assert_eq!(search.failure_category(), Some("alice_window_not_detected"));
         assert!(search.detail().contains("no Alice main window"));
     }
+
+    #[test]
+    fn found_window_reports_detected_with_no_failure_category() {
+        let search = alice_window_search("0x001 0 host org.alice.stageide Alice 3");
+
+        assert!(search.detected());
+        assert_eq!(search.failure_category(), None);
+        assert!(search.detail().contains("Alice main window 0x001"));
+    }
+
+    #[test]
+    fn splash_windows_are_alice_like_but_not_treated_as_main_windows() {
+        let search = alice_window_search(
+            r#"0x60002a \"Alice 3 splash\": ("sun-launcher-LauncherHelper$FXHelper" "sun-launcher-LauncherHelper$FXHelper")"#,
+        );
+
+        assert!(!search.detected());
+        assert_eq!(
+            search.failure_category(),
+            Some("alice_like_window_not_main")
+        );
+    }
 }
