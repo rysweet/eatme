@@ -203,11 +203,52 @@ mod tests {
         assert_eq!(spec.retry_delay, Duration::from_millis(10));
     }
 
+    #[test]
+    fn shell_display_joins_program_and_args_without_trailing_spaces() {
+        assert_eq!(CommandSpec::new("cargo").shell_display(), "cargo");
+        assert_eq!(
+            CommandSpec::new("cargo")
+                .args(["test", "--workspace"])
+                .shell_display(),
+            "cargo test --workspace"
+        );
+    }
+
+    #[test]
+    fn real_runner_honors_working_directory_and_environment() {
+        let work_dir = unique_artifact_path("eatme-command-cwd");
+        fs::create_dir_all(&work_dir).unwrap();
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args(["-c", "printf '%s|%s' \"$PWD\" \"$ALICE_TEST_FLAG\""])
+                    .cwd(&work_dir)
+                    .env("ALICE_TEST_FLAG", "enabled"),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(0));
+        assert_eq!(output.stdout, format!("{}|enabled", work_dir.display()));
+
+        let _ = fs::remove_dir_all(work_dir);
+    }
+
     fn unique_temp_path(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         env::temp_dir().join(format!("{prefix}-{nonce}"))
+    }
+
+    fn unique_artifact_path(prefix: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        env::current_dir()
+            .unwrap()
+            .join("target/test-artifacts")
+            .join(format!("{prefix}-{nonce}"))
     }
 }
