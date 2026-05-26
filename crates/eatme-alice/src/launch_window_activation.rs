@@ -135,4 +135,26 @@ mod tests {
         assert!(detail.contains("wmctrl could not activate Alice window 0x04200001"));
         assert!(detail.contains("Some(2)"));
     }
+
+    #[test]
+    fn failure_category_treats_xdotool_windowfocus_as_unsupported_even_without_stderr_hint() {
+        assert_eq!(
+            ui_action_activation_failure_category(&probe(
+                "focus command failed",
+                "",
+                Some("xdotool windowfocus")
+            )),
+            "alice_window_activation_unsupported"
+        );
+    }
+
+    #[test]
+    fn activation_failure_detail_uses_stdout_unsupported_hint_from_xdotool() {
+        let xdotool = output("Activation is unsupported on this desktop", "", Some(1));
+
+        let detail = activation_failure_detail("0x04200001", None, &xdotool);
+
+        assert!(detail.contains("unsupported activation method"));
+        assert!(!detail.contains("exit_status"));
+    }
 }
