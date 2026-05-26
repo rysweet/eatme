@@ -453,3 +453,159 @@ fn single_program_scores_well_across_all_curriculum_areas() {
     assert_eq!(variables.quality_scores[0].score, 100);
     assert_eq!(parameters.quality_scores[0].score, 100);
 }
+
+#[test]
+fn single_program_produces_a_stable_end_to_end_pipeline_summary() {
+    let program = comprehensive_program();
+    let scene = scene_layout();
+    let sequencing = sequence_blocks();
+
+    let reports = vec![
+        grade_first_lesson_readiness(GradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+        }),
+        grade_scene_building(SceneBuildingGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_scene: Some(scene),
+        }),
+        grade_sequencing(SequencingGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            sequence_blocks: Some(sequencing),
+        }),
+        grade_arrays_and_arithmetic(ArraysArithmeticGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_events_and_collision(EventsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_variables(VariablesGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_loops_and_conditionals(LoopsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_functions(FunctionsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_parameters(ParametersGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_comments(CommentsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_inheritance_oop(InheritanceOopGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_nested_control_flow(NestedControlFlowGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_textbook_integration(TextbookIntegrationGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_games_and_narrative(GamesNarrativeGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program.clone()),
+        }),
+        grade_creative_project(CreativeProjectGradingInput {
+            assets_valid: true,
+            asset_reason: ready_reason(),
+            deps_available: true,
+            deps_reason: ready_reason(),
+            student_program: Some(program),
+        }),
+    ];
+
+    let passed_lessons = reports
+        .iter()
+        .filter(|report| report.passed)
+        .map(|report| report.lesson.as_str())
+        .collect::<Vec<_>>();
+    let partial_lessons = reports
+        .iter()
+        .filter(|report| !report.passed)
+        .map(|report| report.lesson.as_str())
+        .collect::<Vec<_>>();
+    let not_yet_tested_count = reports
+        .iter()
+        .flat_map(|report| report.steps.iter())
+        .filter(|step| step.status == StepStatus::NotYetTested)
+        .count();
+    let summary = reports
+        .iter()
+        .map(|report| {
+            format!(
+                "{}={}",
+                report.lesson,
+                if report.passed { "passed" } else { "partial" }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    assert_eq!(reports.len(), 15);
+    assert_eq!(passed_lessons.len(), 12);
+    assert_eq!(
+        partial_lessons,
+        vec![
+            "building-a-scene-first-world",
+            "events-collision-proximity-game",
+            "loops-and-conditionals-mini-challenge",
+        ]
+    );
+    assert_eq!(not_yet_tested_count, 5);
+    assert!(summary.contains("creative-design-project=passed"));
+    assert!(summary.contains("events-collision-proximity-game=partial"));
+    assert!(summary.contains("using-functions-mini-challenge=passed"));
+}
