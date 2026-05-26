@@ -196,6 +196,28 @@ mod tests {
     }
 
     #[test]
+    fn real_runner_stops_retrying_after_first_success() {
+        let counter_path = unique_artifact_path("eatme-command-single-success");
+        fs::create_dir_all(counter_path.parent().unwrap()).unwrap();
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args([
+                        "-c",
+                        "count=$(cat \"$1\" 2>/dev/null || echo 0); count=$((count + 1)); echo \"$count\" > \"$1\"; exit 0",
+                        "sh",
+                        counter_path.to_str().unwrap(),
+                    ])
+                    .retries(3, Duration::from_millis(10)),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(0));
+        assert_eq!(fs::read_to_string(&counter_path).unwrap().trim(), "1");
+        let _ = fs::remove_file(counter_path);
+    }
+
+    #[test]
     fn retries_clamps_zero_attempts_to_one() {
         let spec = CommandSpec::new("sh").retries(0, Duration::from_millis(10));
 
