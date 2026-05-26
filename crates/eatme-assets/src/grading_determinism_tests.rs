@@ -270,6 +270,104 @@ fn sample_sequences() -> Vec<SequenceBlock> {
     ]
 }
 
+fn reorder_statement(statement: Statement) -> Statement {
+    match statement {
+        Statement::CountLoop { count, body } => Statement::CountLoop {
+            count,
+            body: reorder_statements(body),
+        },
+        Statement::IfElse {
+            condition,
+            if_body,
+            else_body,
+        } => Statement::IfElse {
+            condition,
+            if_body: reorder_statements(if_body),
+            else_body: reorder_statements(else_body),
+        },
+        Statement::EventListener { event, body } => Statement::EventListener {
+            event,
+            body: reorder_statements(body),
+        },
+        Statement::CollisionListener {
+            object_a,
+            object_b,
+            body,
+        } => Statement::CollisionListener {
+            object_a,
+            object_b,
+            body: reorder_statements(body),
+        },
+        Statement::DoInOrder { body } => Statement::DoInOrder {
+            body: reorder_statements(body),
+        },
+        Statement::ForEachArray {
+            item_name,
+            array,
+            body,
+        } => Statement::ForEachArray {
+            item_name,
+            array,
+            body: reorder_statements(body),
+        },
+        Statement::UserTypeDeclaration {
+            name,
+            extends,
+            methods,
+        } => Statement::UserTypeDeclaration {
+            name,
+            extends,
+            methods: methods
+                .into_iter()
+                .map(|method| Procedure {
+                    body: reorder_statements(method.body),
+                    ..method
+                })
+                .collect(),
+        },
+        other => other,
+    }
+}
+
+fn reorder_statements(statements: Vec<Statement>) -> Vec<Statement> {
+    let mut reordered: Vec<_> = statements.into_iter().map(reorder_statement).collect();
+    if reordered.len() > 1 {
+        let rotate_by = 3 % reordered.len();
+        reordered.rotate_left(rotate_by);
+        reordered.reverse();
+    }
+    reordered
+}
+
+fn reordered_program() -> Program {
+    let mut program = sample_program();
+    for procedure in &mut program.procedures {
+        procedure.body = reorder_statements(std::mem::take(&mut procedure.body));
+    }
+    for function in &mut program.functions {
+        function.body = reorder_statements(std::mem::take(&mut function.body));
+    }
+    program
+}
+
+fn assert_order_independent<T, F>(label: &str, run: F)
+where
+    T: PartialEq + std::fmt::Debug,
+    F: Fn(Program) -> T,
+{
+    let original = sample_program();
+    let reordered = reordered_program();
+    assert_ne!(
+        original.procedures[0].body, reordered.procedures[0].body,
+        "{label} test setup must reorder statements"
+    );
+    assert_eq!(
+        run(original),
+        run(reordered),
+        "{label} should depend on present constructs, not statement order"
+    );
+}
+
 macro_rules! determinism_test {
     ($name:ident, $label:literal, $expr:expr) => {
         #[test]
@@ -456,4 +554,181 @@ determinism_test!(
         deps_reason: ready_deps_reason(),
         student_program: Some(sample_program()),
     })
+);
+
+macro_rules! order_independence_test {
+    ($name:ident, $label:literal, $run:expr) => {
+        #[test]
+        fn $name() {
+            assert_order_independent($label, $run);
+        }
+    };
+}
+
+order_independence_test!(
+    loops_grading_is_order_independent,
+    "grade_loops_and_conditionals",
+    |student_program: Program| {
+        grade_loops_and_conditionals(LoopsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    arrays_grading_is_order_independent,
+    "grade_arrays_and_arithmetic",
+    |student_program: Program| {
+        grade_arrays_and_arithmetic(ArraysArithmeticGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    comments_grading_is_order_independent,
+    "grade_comments",
+    |student_program: Program| {
+        grade_comments(CommentsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    creative_grading_is_order_independent,
+    "grade_creative_project",
+    |student_program: Program| {
+        grade_creative_project(CreativeProjectGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    events_grading_is_order_independent,
+    "grade_events_and_collision",
+    |student_program: Program| {
+        grade_events_and_collision(EventsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    functions_grading_is_order_independent,
+    "grade_functions",
+    |student_program: Program| {
+        grade_functions(FunctionsGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    games_narrative_grading_is_order_independent,
+    "grade_games_and_narrative",
+    |student_program: Program| {
+        grade_games_and_narrative(GamesNarrativeGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    inheritance_grading_is_order_independent,
+    "grade_inheritance_oop",
+    |student_program: Program| {
+        grade_inheritance_oop(InheritanceOopGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    nested_control_grading_is_order_independent,
+    "grade_nested_control_flow",
+    |student_program: Program| {
+        grade_nested_control_flow(NestedControlFlowGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    parameters_grading_is_order_independent,
+    "grade_parameters",
+    |student_program: Program| {
+        grade_parameters(ParametersGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    textbook_integration_grading_is_order_independent,
+    "grade_textbook_integration",
+    |student_program: Program| {
+        grade_textbook_integration(TextbookIntegrationGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
+);
+
+order_independence_test!(
+    variables_grading_is_order_independent,
+    "grade_variables",
+    |student_program: Program| {
+        grade_variables(VariablesGradingInput {
+            assets_valid: true,
+            asset_reason: ready_asset_reason(),
+            deps_available: true,
+            deps_reason: ready_deps_reason(),
+            student_program: Some(student_program),
+        })
+    }
 );
