@@ -90,3 +90,41 @@ fn vr_camera_curriculum_contract_records_real_vr_gate_and_desktop_fallback() {
         "vr camera contract should require viewpoint, locomotion, and comfort evidence"
     );
 }
+
+#[test]
+fn arrays_curriculum_contract_requires_visible_collection_order_and_boundary_evidence() {
+    let (path, yaml) = read_scenario("arrays-collection-choreography");
+    let validation = validate_scenario_asset(&path).expect("scenario should validate");
+
+    assert!(validation.passed, "{:?}", validation.errors);
+    assert!(
+        yaml.contains("visible list/array behavior")
+            && yaml.contains("item order")
+            && yaml.contains("boundary tests"),
+        "arrays contract should require visible collection behavior, ordering, and boundary coverage"
+    );
+    assert!(
+        yaml.contains("manifest scenario_id equals arrays-collection-choreography")
+            && yaml.contains("Alice.org Alice 3 lessons"),
+        "arrays contract should stay pinned to both the real smoke manifest and Alice lesson sources"
+    );
+}
+
+#[test]
+fn mythic_choice_curriculum_contract_requires_branching_and_alternate_path_evidence() {
+    let (path, yaml) = read_scenario("mythic-choice-event-tree");
+    let validation = validate_scenario_asset(&path).expect("scenario should validate");
+
+    assert!(validation.passed, "{:?}", validation.errors);
+    assert!(
+        yaml.contains("player trigger")
+            && yaml.contains("state or condition")
+            && yaml.contains("tested alternate paths"),
+        "mythic choice contract should require trigger, state, and alternate path proof"
+    );
+    assert!(
+        yaml.contains("interactive narrative or game")
+            && yaml.contains("Alice.org Programming in Alice lesson family"),
+        "mythic choice contract should stay grounded in the narrative/game lesson family"
+    );
+}
