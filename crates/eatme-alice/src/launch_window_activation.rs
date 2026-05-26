@@ -50,3 +50,89 @@ fn activation_output_is_unsupported(text: &str) -> bool {
         || normalized.contains("not supported")
         || normalized.contains("unsupported")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::launch_ui_actions::UiActionProbe;
+    use eatme_core::CommandOutput;
+
+    fn probe(detail: &str, stderr: &str, command: Option<&str>) -> UiActionProbe {
+        UiActionProbe {
+            id: "activate-alice-window".into(),
+            status: "failed".into(),
+            detail: detail.into(),
+            window_id: Some("0x04200001".into()),
+            command: command.map(str::to_string),
+            exit_status: Some(1),
+            stdout: String::new(),
+            stderr: stderr.into(),
+        }
+    }
+
+    fn output(stdout: &str, stderr: &str, exit_status: Option<i32>) -> CommandOutput {
+        CommandOutput {
+            command: "xdotool windowfocus 0x04200001".into(),
+            exit_status,
+            stdout: stdout.into(),
+            stderr: stderr.into(),
+        }
+    }
+
+    #[test]
+    fn failure_category_distinguishes_detection_and_unsupported_paths() {
+        assert_eq!(
+            ui_action_activation_failure_category(&probe(
+                "Detected Alice-like window but not the main frame",
+                "",
+                None
+            )),
+            "alice_like_window_not_main"
+        );
+        assert_eq!(
+            ui_action_activation_failure_category(&probe(
+                "No Alice main window was detected",
+                "",
+                None
+            )),
+            "alice_window_not_detected"
+        );
+        assert_eq!(
+            ui_action_activation_failure_category(&probe(
+                "activation failed",
+                "NET_ACTIVE_WINDOW not supported",
+                Some("xdotool windowfocus")
+            )),
+            "alice_window_activation_unsupported"
+        );
+        assert_eq!(
+            ui_action_activation_failure_category(&probe(
+                "wmctrl failed",
+                "",
+                Some("wmctrl -ia 0x04200001")
+            )),
+            "alice_window_activation_failed"
+        );
+    }
+
+    #[test]
+    fn activation_failure_detail_prefers_unsupported_message_when_any_tool_reports_it() {
+        let wmctrl = output("", "This WM does not support _NET_ACTIVE_WINDOW", Some(1));
+        let xdotool = output("", "window activation unsupported", Some(1));
+
+        let detail = activation_failure_detail("0x04200001", Some(&wmctrl), &xdotool);
+
+        assert!(detail.contains("unsupported activation method"));
+        assert!(!detail.contains("exit_status"));
+    }
+
+    #[test]
+    fn activation_failure_detail_reports_exit_status_for_supported_but_unsuccessful_tools() {
+        let xdotool = output("", "focus request failed", Some(2));
+
+        let detail = activation_failure_detail("0x04200001", None, &xdotool);
+
+        assert!(detail.contains("wmctrl could not activate Alice window 0x04200001"));
+        assert!(detail.contains("Some(2)"));
+    }
+}
