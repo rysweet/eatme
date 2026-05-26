@@ -462,3 +462,42 @@ fn blocked_probe(id: &str, detail: &str) -> UiActionProbe {
         stderr: String::new(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sentinel_content_requires_schema_status_and_created_marker() {
+        assert!(sentinel_content_indicates_run_window_created(
+            r#"{"schema_version":"eatme.alice-run-window-created/v1","status":"created"}"#
+        ));
+        assert!(!sentinel_content_indicates_run_window_created(
+            r#"{"schema_version":"eatme.alice-run-window-created/v1","status":"pending"}"#
+        ));
+        assert!(!sentinel_content_indicates_run_window_created(
+            r#"{"status":"created"}"#
+        ));
+    }
+
+    #[test]
+    fn geometry_matches_fixed_launch_window_requires_expected_dimensions() {
+        assert!(geometry_matches_fixed_launch_window(
+            "WIDTH=1000\nHEIGHT=740\n"
+        ));
+        assert!(!geometry_matches_fixed_launch_window(
+            "WIDTH=999\nHEIGHT=740\n"
+        ));
+        assert!(!geometry_matches_fixed_launch_window(
+            "WIDTH=1000\nHEIGHT=739\n"
+        ));
+    }
+
+    #[test]
+    fn shell_value_ignores_invalid_numbers_and_missing_keys() {
+        let text = "WIDTH=1000\nHEIGHT=oops\n";
+        assert_eq!(shell_value(text, "WIDTH"), Some(1000));
+        assert_eq!(shell_value(text, "HEIGHT"), None);
+        assert_eq!(shell_value(text, "X"), None);
+    }
+}
