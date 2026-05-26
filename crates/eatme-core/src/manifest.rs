@@ -116,4 +116,113 @@ mod tests {
         assert!(manifest.post_focus_screenshot_error.is_none());
         assert_eq!(manifest.assertions["launch"].detail, "ok");
     }
+
+    #[test]
+    fn launch_smoke_manifest_round_trips_optional_artifacts() {
+        let manifest = LaunchSmokeManifest {
+            schema_version: "eatme.launch/v1".into(),
+            scenario_id: "creative-world".into(),
+            run_id: "run-42".into(),
+            alice_home: "/alice".into(),
+            alice_git_commit: "abc123".into(),
+            eatme_git_commit: "def456".into(),
+            java_version: "21".into(),
+            maven_version: "3.9.9".into(),
+            dependency_checks: BTreeMap::from([("java".into(), true), ("maven".into(), true)]),
+            build_command: "mvn -q test".into(),
+            build_exit_status: Some(0),
+            launch_command: "alice --headless".into(),
+            display: ":99".into(),
+            xvfb_pid: Some(41),
+            alice_pid: Some(42),
+            timeout_seconds: 180,
+            window_list: Some(ArtifactInfo {
+                path: "artifacts/window-list.txt".into(),
+                size_bytes: 128,
+                sha256: "window-sha".into(),
+            }),
+            window_list_error: None,
+            screenshot: Some(ArtifactInfo {
+                path: "artifacts/before.png".into(),
+                size_bytes: 256,
+                sha256: "before-sha".into(),
+            }),
+            screenshot_error: None,
+            post_focus_screenshot: Some(ArtifactInfo {
+                path: "artifacts/after.png".into(),
+                size_bytes: 512,
+                sha256: "after-sha".into(),
+            }),
+            post_focus_screenshot_error: Some("focus retry used".into()),
+            ui_action_contract: Some(ArtifactInfo {
+                path: "artifacts/ui-actions.json".into(),
+                size_bytes: 64,
+                sha256: "contract-sha".into(),
+            }),
+            log: Some(ArtifactInfo {
+                path: "artifacts/launch.log".into(),
+                size_bytes: 1024,
+                sha256: "log-sha".into(),
+            }),
+            log_error: None,
+            fatal_log_scan: vec!["SEVERE missing texture".into()],
+            assertions: BTreeMap::from([("launch".into(), AssertionResult::pass("ok"))]),
+            failure_category: Some("screenshot-mismatch".into()),
+        };
+
+        let json = serde_json::to_string(&manifest).unwrap();
+        let restored: LaunchSmokeManifest = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(
+            restored.post_focus_screenshot.unwrap().path,
+            "artifacts/after.png"
+        );
+        assert_eq!(
+            restored.post_focus_screenshot_error.as_deref(),
+            Some("focus retry used")
+        );
+        assert_eq!(
+            restored.failure_category.as_deref(),
+            Some("screenshot-mismatch")
+        );
+        assert_eq!(restored.assertions["launch"].detail, "ok");
+    }
+
+    #[test]
+    fn launch_smoke_manifest_accepts_empty_dependency_checks() {
+        let manifest: LaunchSmokeManifest = serde_json::from_value(json!({
+            "schema_version": "eatme.launch/v1",
+            "scenario_id": "baseline",
+            "run_id": "run-empty",
+            "alice_home": "/alice",
+            "alice_git_commit": "abc123",
+            "eatme_git_commit": "def456",
+            "java_version": "21",
+            "maven_version": "3.9.9",
+            "dependency_checks": {},
+            "build_command": "mvn verify",
+            "build_exit_status": null,
+            "launch_command": "alice",
+            "display": ":99",
+            "xvfb_pid": null,
+            "alice_pid": null,
+            "timeout_seconds": 120,
+            "window_list": null,
+            "window_list_error": null,
+            "screenshot": null,
+            "screenshot_error": null,
+            "post_focus_screenshot": null,
+            "post_focus_screenshot_error": null,
+            "ui_action_contract": null,
+            "log": null,
+            "log_error": null,
+            "fatal_log_scan": [],
+            "assertions": {},
+            "failure_category": null
+        }))
+        .unwrap();
+
+        assert!(manifest.dependency_checks.is_empty());
+        assert!(manifest.assertions.is_empty());
+    }
 }
