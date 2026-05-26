@@ -233,6 +233,32 @@ mod tests {
         let _ = fs::remove_dir_all(work_dir);
     }
 
+    #[test]
+    fn real_runner_preserves_failed_exit_status_stdout_and_stderr() {
+        let output = RealCommandRunner
+            .run(&CommandSpec::new("sh").args(["-c", "printf 'hello'; printf 'warn' >&2; exit 7"]))
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(7));
+        assert_eq!(output.stdout, "hello");
+        assert_eq!(output.stderr, "warn");
+    }
+
+    #[test]
+    fn timed_out_commands_keep_existing_stderr_before_timeout_suffix() {
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args(["-c", "printf 'warn' >&2; sleep 2"])
+                    .timeout(Duration::from_millis(100)),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, None);
+        assert!(output.stderr.contains("warn"));
+        assert!(output.stderr.contains("command timed out"));
+    }
+
     fn unique_temp_path(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
