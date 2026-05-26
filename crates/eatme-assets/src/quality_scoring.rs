@@ -342,3 +342,116 @@ fn quality_score(dimension: &str, score: u8, feedback: impl Into<String>) -> Qua
         feedback: feedback.into(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eatme_core::ast::{Parameter, Procedure};
+
+    #[test]
+    fn parameter_quality_scores_only_specific_parameter_types() {
+        let program = Program::new(vec![Procedure {
+            name: "move".into(),
+            parameters: vec![
+                Parameter {
+                    name: "distance".into(),
+                    param_type: "WholeNumber".into(),
+                },
+                Parameter {
+                    name: "thing".into(),
+                    param_type: "Object".into(),
+                },
+            ],
+            body: vec![],
+        }]);
+
+        let score = &score_parameter_quality(Some(&program))[0];
+
+        assert_eq!(score.dimension, "parameter_types");
+        assert_eq!(score.score, 50);
+        assert!(
+            score
+                .feedback
+                .contains("1 of 2 parameters use specific types")
+        );
+    }
+
+    #[test]
+    fn event_quality_counts_only_listener_entity_references() {
+        let program = Program::new(vec![Procedure {
+            name: "setup".into(),
+            parameters: vec![],
+            body: vec![
+                Statement::MethodCall {
+                    object: "this.ignoredOutsideListener".into(),
+                    method: "turn".into(),
+                    arguments: vec![],
+                },
+                Statement::EventListener {
+                    event: "mouseClickOnObject".into(),
+                    body: vec![
+                        Statement::MethodCall {
+                            object: "this.cat".into(),
+                            method: "say".into(),
+                            arguments: vec!["hello".into()],
+                        },
+                        Statement::MethodCall {
+                            object: "enemy".into(),
+                            method: "move".into(),
+                            arguments: vec!["1".into()],
+                        },
+                    ],
+                },
+            ],
+        }]);
+
+        let score = &score_event_quality(Some(&program))[0];
+
+        assert_eq!(score.dimension, "entity_types");
+        assert_eq!(score.score, 50);
+        assert!(
+            score
+                .feedback
+                .contains("1 of 2 listener entity references use explicit scene entities")
+        );
+    }
+
+    #[test]
+    fn variable_quality_tracks_references_across_nested_control_flow() {
+        let program = Program::new(vec![Procedure {
+            name: "play".into(),
+            parameters: vec![],
+            body: vec![
+                Statement::VariableDeclaration {
+                    name: "counter".into(),
+                    var_type: "Number".into(),
+                    initial_value: "0".into(),
+                },
+                Statement::VariableDeclaration {
+                    name: "unused".into(),
+                    var_type: "String".into(),
+                    initial_value: "hello".into(),
+                },
+                Statement::IfElse {
+                    condition: "counter > 0".into(),
+                    if_body: vec![Statement::MethodCall {
+                        object: "this".into(),
+                        method: "say".into(),
+                        arguments: vec!["counter".into()],
+                    }],
+                    else_body: vec![],
+                },
+            ],
+        }]);
+
+        let score = &score_variable_quality(Some(&program))[0];
+
+        assert_eq!(score.dimension, "variable_usage");
+        assert_eq!(score.score, 50);
+        assert!(
+            score
+                .feedback
+                .contains("1 of 2 declared variables are referenced after declaration")
+        );
+    }
+}
