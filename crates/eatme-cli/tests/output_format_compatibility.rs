@@ -87,6 +87,44 @@ fn first_lesson_plain_output_stays_newline_delimited_for_dashboards() {
     );
 }
 
+#[test]
+fn first_lesson_json_output_stays_machine_readable_for_dashboards() {
+    let root = scratch_root("output-format-json-compatibility");
+    let registry_path = write_registry(&root);
+
+    let output = Command::new(eatme_bin())
+        .args([
+            "alice",
+            "run-first-lesson-readiness",
+            "--json",
+            "--registry",
+            registry_path.to_str().unwrap(),
+            "--run-id",
+            "output-format-json-compatibility",
+            "--runs-dir",
+            root.join("runs").to_str().unwrap(),
+        ])
+        .output()
+        .expect("run eatme alice run-first-lesson-readiness --json");
+
+    assert_exit_code(&output, 1);
+    assert_json_stdout_contract(&output.stdout);
+    assert_no_ansi(&output.stderr, "stderr");
+
+    let report = parse_single_json_document(&output.stdout);
+    assert_eq!(
+        report["schema_version"],
+        serde_json::Value::String("eatme.first-lesson-readiness-sequence/v1".into())
+    );
+    assert!(report["not_yet_shown"].is_array(), "stdout: {report}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("first-lesson readiness sequence incomplete"),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 fn assert_json_stdout_contract(stdout: &[u8]) {
     assert!(stdout.ends_with(b"\n"), "stdout should end with a newline");
     assert_no_ansi(stdout, "stdout");
