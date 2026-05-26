@@ -260,6 +260,56 @@ targets: {}
 }
 
 #[test]
+fn validate_id_rejects_empty_uppercase_and_trailing_dash() {
+    assert!(validate_id("target id", "").is_err());
+    assert!(validate_id("target id", "Uppercase").is_err());
+    assert!(validate_id("target id", "trailing-").is_err());
+    assert!(validate_id("target id", "valid-id-1").is_ok());
+}
+
+#[test]
+fn resolve_alice_home_prefers_override_then_registry_then_env() {
+    let registry_path = PathBuf::from("/registry/home");
+    let override_path = PathBuf::from("/override/home");
+    let env_path =
+        PathBuf::from(std::env::var_os("HOME").expect("HOME should be available during tests"));
+    let target = AliceTargetDefinition {
+        label: "Target".into(),
+        description: "Comparison target".into(),
+        alice_home: Some(registry_path.clone()),
+        alice_home_env: Some("HOME".into()),
+        required_paths: Vec::new(),
+        metadata: std::collections::BTreeMap::new(),
+        notes: Vec::new(),
+    };
+
+    assert_eq!(
+        resolve_alice_home(&target, Some(&override_path)),
+        Some((override_path, "cli_override".into()))
+    );
+    assert_eq!(
+        resolve_alice_home(&target, None),
+        Some((registry_path, "registry".into()))
+    );
+
+    let env_target = AliceTargetDefinition {
+        alice_home: None,
+        ..target.clone()
+    };
+    assert_eq!(
+        resolve_alice_home(&env_target, None),
+        Some((env_path, "env:HOME".into()))
+    );
+
+    let missing_env_target = AliceTargetDefinition {
+        alice_home: None,
+        alice_home_env: Some("EATME_TEST_UNSET_HOME".into()),
+        ..target
+    };
+    assert_eq!(resolve_alice_home(&missing_env_target, None), None);
+}
+
+#[test]
 fn status_diff_records_changed_assertions() {
     let mut targets = BTreeMap::new();
     targets.insert(
