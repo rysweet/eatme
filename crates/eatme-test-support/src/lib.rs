@@ -72,4 +72,43 @@ mod tests {
         assert!(output.stderr.is_empty());
         assert_eq!(runner.commands(), vec!["java -version"]);
     }
+
+    #[test]
+    fn consumes_queued_outputs_in_order_before_defaulting() {
+        let runner = FakeCommandRunner::default();
+        runner.push_output(CommandOutput {
+            command: "first".into(),
+            exit_status: Some(1),
+            stdout: "one".into(),
+            stderr: String::new(),
+        });
+        runner.push_output(CommandOutput {
+            command: "second".into(),
+            exit_status: Some(2),
+            stdout: "two".into(),
+            stderr: "warn".into(),
+        });
+
+        let first = runner
+            .run(&CommandSpec::new("alice").args(["--first"]))
+            .unwrap();
+        let second = runner
+            .run(&CommandSpec::new("alice").args(["--second"]))
+            .unwrap();
+        let fallback = runner
+            .run(&CommandSpec::new("alice").args(["--third"]))
+            .unwrap();
+
+        assert_eq!(first.command, "first");
+        assert_eq!(first.exit_status, Some(1));
+        assert_eq!(second.command, "second");
+        assert_eq!(second.exit_status, Some(2));
+        assert_eq!(second.stderr, "warn");
+        assert_eq!(fallback.command, "alice --third");
+        assert_eq!(fallback.exit_status, Some(0));
+        assert_eq!(
+            runner.commands(),
+            vec!["alice --first", "alice --second", "alice --third"]
+        );
+    }
 }
