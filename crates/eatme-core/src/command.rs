@@ -195,6 +195,14 @@ mod tests {
         let _ = fs::remove_file(counter_path);
     }
 
+    #[test]
+    fn retries_clamps_zero_attempts_to_one() {
+        let spec = CommandSpec::new("sh").retries(0, Duration::from_millis(10));
+
+        assert_eq!(spec.attempts, 1);
+        assert_eq!(spec.retry_delay, Duration::from_millis(10));
+    }
+
     fn unique_temp_path(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
