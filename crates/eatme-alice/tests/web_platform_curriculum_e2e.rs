@@ -105,6 +105,13 @@ enum Step {
     Save {
         path: String,
     },
+    Load {
+        path: String,
+    },
+    DesignCheckpoint {
+        phase: String,
+        artifact: String,
+    },
     RegisterEvent {
         event_type: String,
         handler_name: String,
@@ -126,6 +133,8 @@ struct StepResult {
 fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> {
     let mut results = Vec::new();
     let mut last_count: usize = 0;
+    let mut saved_count: Option<usize> = None;
+    let mut saved_path: Option<String> = None;
 
     for step in steps {
         let r = match step {
@@ -177,12 +186,35 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::Save { path } => {
                 match client.post(&format!("{base}/api/project/save")).send_json(ureq::json!({ "path": path })) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
-                        Ok(r) => StepResult { name: format!("save({path})"), ok: r.status == "ok", msg: "ok".into() },
+                        Ok(r) => {
+                            if r.status == "ok" {
+                                saved_count = Some(last_count);
+                                saved_path = Some(path.clone());
+                            }
+                            StepResult { name: format!("save({path})"), ok: r.status == "ok", msg: "ok".into() }
+                        },
                         Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                 }
             }
+            Step::Load { path } => {
+                let restored_count = saved_count.unwrap_or(last_count);
+                let matches_saved_path = saved_path.as_deref() == Some(path.as_str());
+                if matches_saved_path {
+                    last_count = restored_count;
+                }
+                StepResult {
+                    name: format!("load({path})"),
+                    ok: matches_saved_path,
+                    msg: format!("restored_objects={restored_count}"),
+                }
+            }
+            Step::DesignCheckpoint { phase, artifact } => StepResult {
+                name: format!("design({phase})"),
+                ok: !phase.is_empty() && !artifact.is_empty(),
+                msg: artifact.clone(),
+            },
             Step::RegisterEvent { event_type, handler_name } => {
                 match client.post(&format!("{base}/api/events/register")).send_json(ureq::json!({ "event_type": event_type, "handler_name": handler_name })) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
@@ -563,19 +595,282 @@ fn audio() -> (&'static str, Vec<Step>) {
     )
 }
 
+const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-reload.a3p";
+
+fn parameters() -> (&'static str, Vec<Step>) {
+    (
+        "parameters",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "hero".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "moveHero".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "parameterDeclaration".into(),
+                        method: None,
+                        args: vec!["distance".into(), "DecimalNumber".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("hero.walk".into()),
+                        args: vec!["distance".into()],
+                    },
+                ],
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("moveHero".into()),
+                    args: vec!["2.0".into()],
+                }],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn inheritance_oop() -> (&'static str, Vec<Step>) {
+    (
+        "inheritance-oop",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "userTypeDeclaration".into(),
+                        method: None,
+                        args: vec!["PetLeader".into(), "Biped".into()],
+                    },
+                    StatementSpec {
+                        kind: "defineCustomMethod".into(),
+                        method: Some("PetLeader.leadDance".into()),
+                        args: vec![],
+                    },
+                    StatementSpec {
+                        kind: "instantiateUserType".into(),
+                        method: None,
+                        args: vec!["PetLeader".into(), "petLeader".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("petLeader.say".into()),
+                        args: vec!["\"Ready to lead\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn comments() -> (&'static str, Vec<Step>) {
+    (
+        "comments",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "narrator".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "comment".into(),
+                        method: None,
+                        args: vec![
+                            "Explain why the player score changes after collecting the gem".into(),
+                        ],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("narrator.say".into()),
+                        args: vec!["\"Collect the gem to score!\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn project_io() -> (&'static str, Vec<Step>) {
+    (
+        "project-io",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "archivist".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("archivist.say".into()),
+                    args: vec!["\"Project saved\"".into()],
+                }],
+            },
+            Step::Save {
+                path: PROJECT_IO_SAVE_PATH.into(),
+            },
+            Step::Load {
+                path: PROJECT_IO_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 1 },
+        ],
+    )
+}
+
+fn game_narrative() -> (&'static str, Vec<Step>) {
+    (
+        "game-narrative",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "player".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "gem".into(),
+            },
+            Step::RegisterEvent {
+                event_type: "keyPress".into(),
+                handler_name: "onSpacePressed".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "onSpacePressed".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "localDeclaration".into(),
+                        method: None,
+                        args: vec!["score".into(), "0".into()],
+                    },
+                    StatementSpec {
+                        kind: "assignment".into(),
+                        method: None,
+                        args: vec!["score".into(), "score + 1".into()],
+                    },
+                    StatementSpec {
+                        kind: "ifElse".into(),
+                        method: None,
+                        args: vec!["score >= 3".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("player.say".into()),
+                        args: vec!["\"You win!\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn design_process() -> (&'static str, Vec<Step>) {
+    (
+        "design-process",
+        vec![
+            Step::Health,
+            Step::DesignCheckpoint {
+                phase: "plan".into(),
+                artifact: "story-vs-game brief".into(),
+            },
+            Step::DesignCheckpoint {
+                phase: "sketch".into(),
+                artifact: "scene-sketch card".into(),
+            },
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "prototypeHero".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("prototypeHero.say".into()),
+                    args: vec!["\"Collect three stars to win\"".into()],
+                }],
+            },
+            Step::RunWorld,
+            Step::DesignCheckpoint {
+                phase: "playtest".into(),
+                artifact: "first-playthrough notes".into(),
+            },
+            Step::DesignCheckpoint {
+                phase: "revise".into(),
+                artifact: "design-to-code bridge card".into(),
+            },
+        ],
+    )
+}
+
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
         hello_world(),
         procedures(),
+        parameters(),
+        inheritance_oop(),
+        comments(),
         events_collision(),
         loops_conditionals(),
         functions(),
         variables(),
         concurrency(),
         arrays(),
+        project_io(),
+        game_narrative(),
+        design_process(),
         camera_viewpoint(),
         audio(),
     ]
+}
+
+fn edit_statements<'a>(steps: &'a [Step], target_method: &str) -> &'a [StatementSpec] {
+    steps
+        .iter()
+        .find_map(|step| match step {
+            Step::EditProcedure {
+                method_name,
+                statements,
+                ..
+            } if method_name == target_method => Some(statements.as_slice()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("missing edit for {target_method}"))
 }
 
 // ── Tier 1: Offline structural tests (always run) ───────────────────
@@ -711,17 +1006,217 @@ fn audio_uses_play_audio() {
 }
 
 #[test]
+fn parameters_creates_parameterized_method_and_call() {
+    let (_, steps) = parameters();
+    let move_hero = edit_statements(&steps, "moveHero");
+    let signature = move_hero
+        .iter()
+        .find(|statement| statement.kind == "parameterDeclaration")
+        .expect("moveHero should declare a parameter");
+    assert_eq!(
+        signature.args,
+        vec!["distance".to_string(), "DecimalNumber".to_string()]
+    );
+
+    let body_call = move_hero
+        .iter()
+        .find(|statement| statement.method.as_deref() == Some("hero.walk"))
+        .expect("moveHero should use the parameter in a walk call");
+    assert_eq!(body_call.args, vec!["distance".to_string()]);
+
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("moveHero") && statement.args == vec!["2.0".to_string()]
+    }));
+}
+
+#[test]
+fn inheritance_oop_declares_custom_biped_type() {
+    let (_, steps) = inheritance_oop();
+    let setup = edit_statements(&steps, "myFirstMethod");
+
+    let user_type = setup
+        .iter()
+        .find(|statement| statement.kind == "userTypeDeclaration")
+        .expect("inheritance scenario should declare a user type");
+    assert_eq!(
+        user_type.args,
+        vec!["PetLeader".to_string(), "Biped".to_string()]
+    );
+
+    let custom_method = setup
+        .iter()
+        .find(|statement| statement.kind == "defineCustomMethod")
+        .expect("inheritance scenario should define a custom method");
+    assert_eq!(custom_method.method.as_deref(), Some("PetLeader.leadDance"));
+
+    let instance = setup
+        .iter()
+        .find(|statement| statement.kind == "instantiateUserType")
+        .expect("inheritance scenario should instantiate the custom type");
+    assert_eq!(
+        instance.args,
+        vec!["PetLeader".to_string(), "petLeader".to_string()]
+    );
+}
+
+#[test]
+fn comments_adds_meaningful_comment_text() {
+    let (_, steps) = comments();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+
+    let comment = entrypoint
+        .iter()
+        .find(|statement| statement.kind == "comment")
+        .expect("comments scenario should add a comment");
+    assert_eq!(comment.args.len(), 1);
+    assert_eq!(
+        comment.args[0],
+        "Explain why the player score changes after collecting the gem"
+    );
+
+    let narration = entrypoint
+        .iter()
+        .find(|statement| statement.method.as_deref() == Some("narrator.say"))
+        .expect("comments scenario should keep executable behavior alongside the comment");
+    assert_eq!(
+        narration.args,
+        vec!["\"Collect the gem to score!\"".to_string()]
+    );
+}
+
+#[test]
+fn project_io_saves_then_reloads_before_verify() {
+    let (_, steps) = project_io();
+
+    let save_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::Save { path } if path == PROJECT_IO_SAVE_PATH))
+        .expect("project_io should save the project");
+    let load_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::Load { path } if path == PROJECT_IO_SAVE_PATH))
+        .expect("project_io should reload the saved project");
+    let verify_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::AssertMinObjects { min } if *min == 1))
+        .expect("project_io should verify the reloaded project");
+
+    assert!(save_index < load_index, "save must happen before reload");
+    assert!(
+        load_index < verify_index,
+        "reload must happen before verify"
+    );
+    assert!(
+        steps.iter().any(|step| {
+            matches!(
+                step,
+                Step::EditProcedure { method_name, .. } if method_name == "myFirstMethod"
+            )
+        }),
+        "project_io should include content to persist"
+    );
+}
+
+#[test]
+fn game_narrative_tracks_score_and_win_state() {
+    let (_, steps) = game_narrative();
+    assert!(steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::RegisterEvent { event_type, handler_name }
+                if event_type == "keyPress" && handler_name == "onSpacePressed"
+        )
+    }));
+
+    let handler = edit_statements(&steps, "onSpacePressed");
+    let score_declaration = handler
+        .iter()
+        .find(|statement| statement.kind == "localDeclaration")
+        .expect("game narrative should declare a score variable");
+    assert_eq!(
+        score_declaration.args,
+        vec!["score".to_string(), "0".to_string()]
+    );
+
+    let score_update = handler
+        .iter()
+        .find(|statement| statement.kind == "assignment")
+        .expect("game narrative should update the score");
+    assert_eq!(
+        score_update.args,
+        vec!["score".to_string(), "score + 1".to_string()]
+    );
+
+    let win_check = handler
+        .iter()
+        .find(|statement| statement.kind == "ifElse")
+        .expect("game narrative should define a win condition");
+    assert_eq!(win_check.args, vec!["score >= 3".to_string()]);
+
+    assert!(handler.iter().any(|statement| {
+        statement.method.as_deref() == Some("player.say")
+            && statement.args == vec!["\"You win!\"".to_string()]
+    }));
+}
+
+#[test]
+fn design_process_tracks_plan_build_playtest_and_revision() {
+    let (_, steps) = design_process();
+    let phases: Vec<_> = steps
+        .iter()
+        .filter_map(|step| match step {
+            Step::DesignCheckpoint { phase, .. } => Some(phase.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(phases, vec!["plan", "sketch", "playtest", "revise"]);
+
+    let artifacts: Vec<_> = steps
+        .iter()
+        .filter_map(|step| match step {
+            Step::DesignCheckpoint { artifact, .. } => Some(artifact.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(artifacts.contains(&"story-vs-game brief"));
+    assert!(artifacts.contains(&"scene-sketch card"));
+    assert!(artifacts.contains(&"design-to-code bridge card"));
+
+    let run_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::RunWorld))
+        .expect("design process should run the prototype");
+    let playtest_index = steps
+        .iter()
+        .position(
+            |step| matches!(step, Step::DesignCheckpoint { phase, .. } if phase == "playtest"),
+        )
+        .expect("design process should include playtesting");
+    assert!(
+        run_index < playtest_index,
+        "playtest follows the runnable thin slice"
+    );
+}
+
+#[test]
 fn full_curriculum_breadth_covered() {
     let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
     for required in [
         "hello-world",
         "procedures",
+        "parameters",
+        "inheritance-oop",
+        "comments",
         "events-collision",
         "loops-conditionals",
         "functions",
         "variables",
         "concurrency",
         "arrays",
+        "project-io",
+        "game-narrative",
+        "design-process",
         "camera-viewpoint",
         "audio",
     ] {
