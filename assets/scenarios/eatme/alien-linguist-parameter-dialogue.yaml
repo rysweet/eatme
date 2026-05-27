@@ -23,13 +23,19 @@ purpose: >-
   different results when called for at least two different aliens. Students
   name the parameter, identify what it carries, call the greeting at least
   twice with different arguments, predict each result before running, and
-  record what they observed. This scenario covers the curious-novice and
-  creative-storyteller student personas without claiming full user interface
-  automation, automated creative assessment, learner-world grading, complete
-  Alice coverage, or real Alice smoke evidence.
+  record what they observed. The visible greeting can use say/think speech
+  bubbles or other dialogue cues so the web platform covers Alice dialogue
+  behavior instead of only text output. This scenario covers the curious-novice
+  and creative-storyteller student personas without claiming full user
+  interface automation, automated creative assessment, learner-world grading,
+  complete Alice coverage, or real Alice smoke evidence.
 personas:
   instructors: [concept-cartographer, exercise-forger]
   students: [curious-novice, creative-storyteller]
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
 agentic_flow:
   focus: alien-linguist-parameter-dialogue
   instructor_goal: >-

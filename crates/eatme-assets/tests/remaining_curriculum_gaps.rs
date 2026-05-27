@@ -128,3 +128,45 @@ fn mythic_choice_curriculum_contract_requires_branching_and_alternate_path_evide
         "mythic choice contract should stay grounded in the narrative/game lesson family"
     );
 }
+
+#[test]
+fn round_86_targeted_web_curriculum_contracts_keep_missing_topics_explicit() {
+    let targeted_contracts = [
+        (
+            "alien-linguist-parameter-dialogue",
+            ["say/think speech", "dialogue cues", "gadugi-cli"],
+        ),
+        (
+            "lost-robot-debug-museum",
+            ["breakpoint", "debug checkpoint", "gadugi-cli"],
+        ),
+        (
+            "audio-camera-and-export-sharecase",
+            ["viewpoint", "camera marker", "gadugi-cli"],
+        ),
+        (
+            "time-travel-recipe-sequencing",
+            ["doInOrder", "sequential execution", "gadugi-cli"],
+        ),
+        (
+            "modified-class-portability",
+            [
+                "gadugi-cli",
+                "behavior persistence after import",
+                "different Alice project",
+            ],
+        ),
+    ];
+
+    for (scenario_id, markers) in targeted_contracts {
+        let (path, yaml) = read_scenario(scenario_id);
+        let validation = validate_scenario_asset(&path).expect("scenario should validate");
+        assert!(validation.passed, "{} {:?}", scenario_id, validation.errors);
+        assert!(
+            markers.iter().all(|marker| yaml.contains(marker)),
+            "{} should keep round 86 topic markers {:?} explicit",
+            scenario_id,
+            markers
+        );
+    }
+}

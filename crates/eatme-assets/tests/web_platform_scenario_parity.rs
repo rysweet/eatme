@@ -116,6 +116,14 @@ const CORE_CURRICULUM_SCENARIOS: &[&str] = &[
     "reusable-methods-and-parameters",
 ];
 
+const ROUND_86_TARGETED_WEB_SCENARIOS: &[&str] = &[
+    "alien-linguist-parameter-dialogue",
+    "lost-robot-debug-museum",
+    "audio-camera-and-export-sharecase",
+    "time-travel-recipe-sequencing",
+    "modified-class-portability",
+];
+
 #[test]
 fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
     let root = repository_root();
@@ -139,9 +147,9 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        25,
+        29,
         web_capable_ids.len(),
-        "expected 25 web-capable desktop scenarios, found {:?}",
+        "expected 29 web-capable desktop scenarios, found {:?}",
         web_capable_ids
     );
     assert!(
@@ -167,6 +175,30 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
 }
 
 #[test]
+fn round_86_targeted_curriculum_topics_are_web_capable() {
+    let root = repository_root();
+    let web_capable_ids = web_capable_desktop_ids(&root);
+    let generated_ids = generated_web_ids(&root);
+    let missing_web_capable = ROUND_86_TARGETED_WEB_SCENARIOS
+        .iter()
+        .filter(|id| !web_capable_ids.contains(**id))
+        .copied()
+        .collect::<Vec<_>>();
+    let missing_generated = ROUND_86_TARGETED_WEB_SCENARIOS
+        .iter()
+        .filter(|id| !generated_ids.contains(**id))
+        .copied()
+        .collect::<Vec<_>>();
+
+    assert!(
+        missing_web_capable.is_empty() && missing_generated.is_empty(),
+        "round 86 targeted topics must be both web-capable and generated; missing web_capable={:?}, missing generated={:?}",
+        missing_web_capable,
+        missing_generated
+    );
+}
+
+#[test]
 fn every_web_scenario_has_health_launch_action_and_verification_structure() {
     let root = repository_root();
     let desktop = desktop_scenarios(&root);
@@ -184,6 +216,7 @@ fn every_web_scenario_has_health_launch_action_and_verification_structure() {
             .unwrap_or_default();
         let artifacts = map_keys_at(&yaml, &["artifacts"]);
         let launcher = string_at(&yaml, &["launcher", "command"]).unwrap_or_default();
+        let kind = string_at(&yaml, &["kind"]).unwrap_or_default();
 
         let has_validate = steps.iter().any(|step| {
             string_at(step, &["id"]).as_deref() == Some("validate-assets")
@@ -209,7 +242,15 @@ fn every_web_scenario_has_health_launch_action_and_verification_structure() {
                 string_at(step, &["command"])
                     .as_deref()
                     .is_some_and(|command| command.contains("alice launch-smoke"))
-            });
+            })
+            || (kind == "instructor_agentic_flow"
+                && steps.iter().any(|step| {
+                    string_at(step, &["command"])
+                        .as_deref()
+                        .is_some_and(|command| {
+                            command.contains("agentic instructor acceptance review")
+                        })
+                }));
         let has_action = steps.iter().any(|step| {
             let step_id = string_at(step, &["id"]).unwrap_or_default();
             let command = string_at(step, &["command"]).unwrap_or_default();
