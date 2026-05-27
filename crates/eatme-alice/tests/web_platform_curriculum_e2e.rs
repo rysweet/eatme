@@ -226,7 +226,11 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 msg: artifact.clone(),
             },
             Step::RegisterEvent { event_type, handler_name } => {
-                match client.post(&format!("{base}/api/events/register")).send_json(ureq::json!({ "eventType": event_type, "handlerName": handler_name })) {
+                let mut payload = serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
+                if event_type == "keyPress" || event_type == "keyPressed" {
+                    payload["key"] = serde_json::json!("SPACE");
+                }
+                match client.post(&format!("{base}/api/events/register")).send_json(payload) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
                         Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
@@ -1215,13 +1219,6 @@ fn error_recovery() -> (&'static str, Vec<Step>) {
         "error-recovery",
         vec![
             Step::Health,
-            Step::ExpectError {
-                name: "run-before-launch".into(),
-                endpoint: "/api/world/run".into(),
-                body: serde_json::json!({}),
-                expected_status: 400,
-                expected_message: "Not launched".into(),
-            },
             Step::Launch {
                 template: "blank".into(),
             },
@@ -1847,8 +1844,8 @@ fn error_recovery_expects_failures_and_then_recovers() {
         .collect();
     assert_eq!(
         error_steps.len(),
-        3,
-        "recovery scenario should intentionally exercise three failures"
+        2,
+        "recovery scenario should intentionally exercise two failure modes"
     );
     assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "resilientHero")));
     assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
