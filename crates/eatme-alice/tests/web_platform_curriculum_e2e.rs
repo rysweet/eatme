@@ -838,6 +838,192 @@ fn design_process() -> (&'static str, Vec<Step>) {
     )
 }
 
+fn vehicle_parenting() -> (&'static str, Vec<Step>) {
+    (
+        "vehicle-parenting",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "driver".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("camera.setVehicle".into()),
+                        args: vec!["driver".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("driver.walk".into()),
+                        args: vec!["1.0".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn joint_manipulation() -> (&'static str, Vec<Step>) {
+    (
+        "joint-manipulation",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "dancer".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("dancer.rightShoulder.turn".into()),
+                        args: vec!["FORWARD".into(), "0.25".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("dancer.leftKnee.turn".into()),
+                        args: vec!["BACKWARD".into(), "0.15".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn scene_transition() -> (&'static str, Vec<Step>) {
+    (
+        "scene-transition",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "sceneDeclaration".into(),
+                        method: None,
+                        args: vec!["introScene".into()],
+                    },
+                    StatementSpec {
+                        kind: "sceneDeclaration".into(),
+                        method: None,
+                        args: vec!["creditsScene".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("setActiveScene".into()),
+                        args: vec!["creditsScene".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn property_animation() -> (&'static str, Vec<Step>) {
+    (
+        "property-animation",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "overlay".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "animateProperty".into(),
+                        method: None,
+                        args: vec![
+                            "overlay.opacity".into(),
+                            "1.0".into(),
+                            "0.25".into(),
+                            "1.5".into(),
+                        ],
+                    },
+                    StatementSpec {
+                        kind: "animateProperty".into(),
+                        method: None,
+                        args: vec![
+                            "overlay.color".into(),
+                            "Color.WHITE".into(),
+                            "Color.BLUE".into(),
+                            "1.5".into(),
+                        ],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn nested_control_flow() -> (&'static str, Vec<Step>) {
+    (
+        "nested-control-flow",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "logicHero".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "doTogether".into(),
+                        method: None,
+                        args: vec![],
+                    },
+                    StatementSpec {
+                        kind: "ifElse".into(),
+                        method: None,
+                        args: vec!["logicHero.isNear(target)".into()],
+                    },
+                    StatementSpec {
+                        kind: "countLoop".into(),
+                        method: None,
+                        args: vec!["2".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("logicHero.say".into()),
+                        args: vec!["\"Looping in branch\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
         hello_world(),
@@ -856,6 +1042,11 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         design_process(),
         camera_viewpoint(),
         audio(),
+        vehicle_parenting(),
+        joint_manipulation(),
+        scene_transition(),
+        property_animation(),
+        nested_control_flow(),
     ]
 }
 
@@ -1200,6 +1391,87 @@ fn design_process_tracks_plan_build_playtest_and_revision() {
 }
 
 #[test]
+fn vehicle_parenting_attaches_camera_to_character() {
+    let (_, steps) = vehicle_parenting();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("camera.setVehicle")
+            && statement.args == vec!["driver".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("driver.walk")
+            && statement.args == vec!["1.0".to_string()]
+    }));
+}
+
+#[test]
+fn joint_manipulation_targets_biped_joints() {
+    let (_, steps) = joint_manipulation();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    let joint_methods: Vec<_> = entrypoint
+        .iter()
+        .filter_map(|statement| statement.method.as_deref())
+        .collect();
+    assert!(joint_methods.contains(&"dancer.rightShoulder.turn"));
+    assert!(joint_methods.contains(&"dancer.leftKnee.turn"));
+}
+
+#[test]
+fn scene_transition_declares_two_scenes_and_switches_between_them() {
+    let (_, steps) = scene_transition();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    let declarations: Vec<_> = entrypoint
+        .iter()
+        .filter(|statement| statement.kind == "sceneDeclaration")
+        .flat_map(|statement| statement.args.iter().cloned())
+        .collect();
+    assert_eq!(
+        declarations,
+        vec!["introScene".to_string(), "creditsScene".to_string()]
+    );
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("setActiveScene")
+            && statement.args == vec!["creditsScene".to_string()]
+    }));
+}
+
+#[test]
+fn property_animation_animates_opacity_and_color() {
+    let (_, steps) = property_animation();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.kind == "animateProperty"
+            && statement.args
+                == vec![
+                    "overlay.opacity".to_string(),
+                    "1.0".to_string(),
+                    "0.25".to_string(),
+                    "1.5".to_string(),
+                ]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.kind == "animateProperty"
+            && statement.args
+                == vec![
+                    "overlay.color".to_string(),
+                    "Color.WHITE".to_string(),
+                    "Color.BLUE".to_string(),
+                    "1.5".to_string(),
+                ]
+    }));
+}
+
+#[test]
+fn nested_control_flow_layers_together_branching_and_loops() {
+    let (_, steps) = nested_control_flow();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert_eq!(entrypoint[0].kind, "doTogether");
+    assert_eq!(entrypoint[1].kind, "ifElse");
+    assert_eq!(entrypoint[2].kind, "countLoop");
+    assert_eq!(entrypoint[3].method.as_deref(), Some("logicHero.say"));
+}
+
+#[test]
 fn full_curriculum_breadth_covered() {
     let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
     for required in [
@@ -1219,6 +1491,11 @@ fn full_curriculum_breadth_covered() {
         "design-process",
         "camera-viewpoint",
         "audio",
+        "vehicle-parenting",
+        "joint-manipulation",
+        "scene-transition",
+        "property-animation",
+        "nested-control-flow",
     ] {
         assert!(names.contains(&required), "missing: {required}");
     }
