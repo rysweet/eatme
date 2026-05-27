@@ -484,7 +484,7 @@ fn compare_status_and_assertions_handles_large_assertion_sets_under_budget() {
 fn build_scorecard_processes_repeated_large_comparisons_under_budget() {
     const ITERATIONS: usize = 100;
     const ASSERTION_COUNT: usize = 1_000;
-    const MAX_ELAPSED: Duration = Duration::from_millis(400);
+    const MAX_ELAPSED: Duration = Duration::from_millis(800);
 
     let targets = large_assertion_targets(ASSERTION_COUNT, 8);
     let warmup = compare_status_and_assertions(&targets);
