@@ -7,6 +7,7 @@
 //! Tier 2 (gated behind EATME_WEB_PLATFORM=1): hit the live TS server.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::env;
 use std::time::Duration;
 
@@ -74,7 +75,9 @@ struct SaveResponse {
 
 #[derive(Debug, Deserialize)]
 struct EventResponse {
-    status: String,
+    status: Option<String>,
+    #[serde(rename = "registrationId")]
+    registration_id: Option<String>,
 }
 
 // ── Scenario step model ─────────────────────────────────────────────
@@ -116,6 +119,13 @@ enum Step {
         event_type: String,
         handler_name: String,
     },
+    ExpectError {
+        name: String,
+        endpoint: String,
+        body: Value,
+        expected_status: u16,
+        expected_message: String,
+    },
     AssertMinObjects {
         min: usize,
     },
@@ -141,7 +151,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::Health => {
                 match client.get(&format!("{base}/api/health")).call() {
                     Ok(resp) => match resp.into_json::<HealthResponse>() {
-                        Ok(h) => StepResult { name: "health".into(), ok: h.status == "ok", msg: "ok".into() },
+                        Ok(h) => StepResult { name: "health".into(), ok: matches!(h.status.as_str(), "ok" | "running"), msg: "ok".into() },
                         Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
@@ -150,25 +160,25 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::Launch { template } => {
                 match client.post(&format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
                     Ok(resp) => match resp.into_json::<LaunchResponse>() {
-                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: r.status == "ok", msg: format!("objects={}", r.scene_object_count) } },
+                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: matches!(r.status.as_str(), "ok" | "launched"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::AddObject { class_name, instance_name } => {
-                match client.post(&format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "class_name": class_name, "instance_name": instance_name })) {
+                match client.post(&format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "className": class_name, "name": instance_name })) {
                     Ok(resp) => match resp.into_json::<AddObjectResponse>() {
-                        Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: r.status == "ok", msg: format!("after={}", r.scene_field_count_after) } },
+                        Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: matches!(r.status.as_str(), "ok" | "added"), msg: format!("after={}", r.scene_field_count_after) } },
                         Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::EditProcedure { class_name, method_name, statements } => {
-                match client.post(&format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "class_name": class_name, "method_name": method_name, "statements": statements })) {
+                match client.post(&format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
                     Ok(resp) => match resp.into_json::<EditProcedureResponse>() {
-                        Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: r.status == "ok", msg: "ok".into() },
+                        Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: matches!(r.status.as_str(), "ok" | "proved"), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
@@ -177,21 +187,21 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::RunWorld => {
                 match client.post(&format!("{base}/api/world/run")).send_json(ureq::json!({})) {
                     Ok(resp) => match resp.into_json::<RunWorldResponse>() {
-                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: r.status == "ok", msg: format!("objects={}", r.scene_object_count) } },
+                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: matches!(r.status.as_str(), "ok" | "completed"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::Save { path } => {
-                match client.post(&format!("{base}/api/project/save")).send_json(ureq::json!({ "path": path })) {
+                match client.post(&format!("{base}/api/project/save")).send_json(ureq::json!({ "targetPath": path })) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
                         Ok(r) => {
-                            if r.status == "ok" {
+                            if matches!(r.status.as_str(), "ok" | "saved") {
                                 saved_count = Some(last_count);
                                 saved_path = Some(path.clone());
                             }
-                            StepResult { name: format!("save({path})"), ok: r.status == "ok", msg: "ok".into() }
+                            StepResult { name: format!("save({path})"), ok: matches!(r.status.as_str(), "ok" | "saved"), msg: "ok".into() }
                         },
                         Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                     },
@@ -216,12 +226,34 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 msg: artifact.clone(),
             },
             Step::RegisterEvent { event_type, handler_name } => {
-                match client.post(&format!("{base}/api/events/register")).send_json(ureq::json!({ "event_type": event_type, "handler_name": handler_name })) {
+                match client.post(&format!("{base}/api/events/register")).send_json(ureq::json!({ "eventType": event_type, "handlerName": handler_name })) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
-                        Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status == "ok", msg: "ok".into() },
+                        Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::ExpectError { name, endpoint, body, expected_status, expected_message } => {
+                match client.post(&format!("{base}{endpoint}")).send_json(body.clone()) {
+                    Ok(resp) => StepResult {
+                        name: name.clone(),
+                        ok: false,
+                        msg: format!("expected status {expected_status}, got {}", resp.status()),
+                    },
+                    Err(ureq::Error::Status(code, resp)) => {
+                        let message = resp
+                            .into_json::<Value>()
+                            .ok()
+                            .and_then(|value| value.get("error").and_then(Value::as_str).map(str::to_string))
+                            .unwrap_or_default();
+                        StepResult {
+                            name: name.clone(),
+                            ok: code == *expected_status && message.contains(expected_message),
+                            msg: format!("status={code} message={message}"),
+                        }
+                    }
+                    Err(e) => StepResult { name: name.clone(), ok: false, msg: e.to_string() },
                 }
             }
             Step::AssertMinObjects { min } => {
@@ -249,7 +281,7 @@ fn hello_world() -> (&'static str, Vec<Step>) {
             },
             Step::AssertMinObjects { min: 1 },
             Step::Save {
-                path: "/tmp/hello_world.a3p".into(),
+                path: HELLO_WORLD_SAVE_PATH.into(),
             },
         ],
     )
@@ -595,7 +627,11 @@ fn audio() -> (&'static str, Vec<Step>) {
     )
 }
 
+const HELLO_WORLD_SAVE_PATH: &str = "target/test-work/web-platform/hello-world-save.a3p";
 const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-reload.a3p";
+const FULL_STUDENT_JOURNEY_SAVE_PATH: &str =
+    "target/test-work/web-platform/full-student-journey.a3p";
+const INSTRUCTOR_GRADING_SAVE_PATH: &str = "target/test-work/web-platform/instructor-grading.a3p";
 
 fn parameters() -> (&'static str, Vec<Step>) {
     (
@@ -1024,6 +1060,162 @@ fn nested_control_flow() -> (&'static str, Vec<Step>) {
     )
 }
 
+fn full_student_journey() -> (&'static str, Vec<Step>) {
+    (
+        "full-student-journey",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "studentHero".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "goal".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "hazard".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "countLoop".into(),
+                        method: None,
+                        args: vec!["3".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("studentHero.walk".into()),
+                        args: vec!["1.0".into()],
+                    },
+                    StatementSpec {
+                        kind: "ifElse".into(),
+                        method: None,
+                        args: vec!["studentHero.distanceTo(goal) < 2.0".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("studentHero.say".into()),
+                        args: vec!["\"Goal reached\"".into()],
+                    },
+                ],
+            },
+            Step::RegisterEvent {
+                event_type: "collision".into(),
+                handler_name: "onStudentCollision".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "onStudentCollision".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("studentHero.say".into()),
+                    args: vec!["\"Careful!\"".into()],
+                }],
+            },
+            Step::RunWorld,
+            Step::Save {
+                path: FULL_STUDENT_JOURNEY_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 5 },
+        ],
+    )
+}
+
+fn instructor_grading() -> (&'static str, Vec<Step>) {
+    (
+        "instructor-grading",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "learner".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "checkpoint".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("learner.walk".into()),
+                        args: vec!["2.0".into()],
+                    },
+                    StatementSpec {
+                        kind: "ifElse".into(),
+                        method: None,
+                        args: vec!["learner.distanceTo(checkpoint) < 1.5".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("learner.say".into()),
+                        args: vec!["\"Rubric ready\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+            Step::Save {
+                path: INSTRUCTOR_GRADING_SAVE_PATH.into(),
+            },
+            Step::Load {
+                path: INSTRUCTOR_GRADING_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 4 },
+        ],
+    )
+}
+
+fn error_recovery() -> (&'static str, Vec<Step>) {
+    (
+        "error-recovery",
+        vec![
+            Step::Health,
+            Step::ExpectError {
+                name: "run-before-launch".into(),
+                endpoint: "/api/world/run".into(),
+                body: serde_json::json!({}),
+                expected_status: 400,
+                expected_message: "Not launched".into(),
+            },
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::ExpectError {
+                name: "missing-class-name".into(),
+                endpoint: "/api/scene/add-object".into(),
+                body: serde_json::json!({}),
+                expected_status: 400,
+                expected_message: "className is required".into(),
+            },
+            Step::ExpectError {
+                name: "unknown-event-type".into(),
+                endpoint: "/api/events/register".into(),
+                body: serde_json::json!({ "eventType": "madeUpEvent", "handlerName": "onMadeUpEvent" }),
+                expected_status: 400,
+                expected_message: "unknown eventType".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "resilientHero".into(),
+            },
+            Step::RunWorld,
+            Step::AssertMinObjects { min: 3 },
+        ],
+    )
+}
+
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
         hello_world(),
@@ -1047,6 +1239,9 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         scene_transition(),
         property_animation(),
         nested_control_flow(),
+        full_student_journey(),
+        instructor_grading(),
+        error_recovery(),
     ]
 }
 
@@ -1062,6 +1257,25 @@ fn edit_statements<'a>(steps: &'a [Step], target_method: &str) -> &'a [Statement
             _ => None,
         })
         .unwrap_or_else(|| panic!("missing edit for {target_method}"))
+}
+
+fn build_edit_spec(class_name: &str, method_name: &str, statements: &[StatementSpec]) -> String {
+    let summary = statements
+        .iter()
+        .map(|statement| {
+            let target = statement
+                .method
+                .as_deref()
+                .unwrap_or(statement.kind.as_str());
+            if statement.args.is_empty() {
+                target.to_string()
+            } else {
+                format!("{}({})", target, statement.args.join(", "))
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" | ");
+    format!("append-comment:{class_name}.{method_name}: {summary}")
 }
 
 // ── Tier 1: Offline structural tests (always run) ───────────────────
@@ -1496,6 +1710,9 @@ fn full_curriculum_breadth_covered() {
         "scene-transition",
         "property-animation",
         "nested-control-flow",
+        "full-student-journey",
+        "instructor-grading",
+        "error-recovery",
     ] {
         assert!(names.contains(&required), "missing: {required}");
     }
@@ -1506,6 +1723,86 @@ fn every_scenario_has_at_least_three_steps() {
     for (name, steps) in all_scenarios() {
         assert!(steps.len() >= 3, "{name} has only {} steps", steps.len());
     }
+}
+
+#[test]
+fn full_student_journey_covers_student_build_run_and_save_flow() {
+    let (_, steps) = full_student_journey();
+    let add_count = steps
+        .iter()
+        .filter(|step| matches!(step, Step::AddObject { .. }))
+        .count();
+    assert_eq!(
+        add_count, 3,
+        "student journey should add three authored objects"
+    );
+    assert!(steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::RegisterEvent { event_type, handler_name }
+                if event_type == "collision" && handler_name == "onStudentCollision"
+        )
+    }));
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(
+        entrypoint
+            .iter()
+            .any(|statement| statement.kind == "countLoop")
+    );
+    assert!(
+        entrypoint
+            .iter()
+            .any(|statement| statement.kind == "ifElse")
+    );
+    assert!(
+        steps.iter().any(
+            |step| matches!(step, Step::Save { path } if path == FULL_STUDENT_JOURNEY_SAVE_PATH)
+        )
+    );
+}
+
+#[test]
+fn instructor_grading_round_trips_saved_project_structure() {
+    let (_, steps) = instructor_grading();
+    let save_index = steps
+        .iter()
+        .position(
+            |step| matches!(step, Step::Save { path } if path == INSTRUCTOR_GRADING_SAVE_PATH),
+        )
+        .expect("grading scenario should save work");
+    let load_index = steps
+        .iter()
+        .position(
+            |step| matches!(step, Step::Load { path } if path == INSTRUCTOR_GRADING_SAVE_PATH),
+        )
+        .expect("grading scenario should load saved work");
+    assert!(
+        save_index < load_index,
+        "saved work should be loaded after save"
+    );
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(
+        entrypoint
+            .iter()
+            .any(|statement| statement.method.as_deref() == Some("learner.walk"))
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+}
+
+#[test]
+fn error_recovery_expects_failures_and_then_recovers() {
+    let (_, steps) = error_recovery();
+    let error_steps: Vec<_> = steps
+        .iter()
+        .filter(|step| matches!(step, Step::ExpectError { .. }))
+        .collect();
+    assert_eq!(
+        error_steps.len(),
+        3,
+        "recovery scenario should intentionally exercise three failures"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "resilientHero")));
+    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
 }
 
 // ── Tier 2: Live tests (gated) ─────────────────────────────────────
@@ -1532,6 +1829,45 @@ fn live_procedures() {
     let c = http_client();
     let b = web_base_url();
     for r in execute(&b, &c, &procedures().1) {
+        assert!(r.ok, "{}: {}", r.name, r.msg);
+    }
+}
+
+#[test]
+fn live_full_student_journey() {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let c = http_client();
+    let b = web_base_url();
+    for r in execute(&b, &c, &full_student_journey().1) {
+        assert!(r.ok, "{}: {}", r.name, r.msg);
+    }
+}
+
+#[test]
+fn live_instructor_grading() {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let c = http_client();
+    let b = web_base_url();
+    for r in execute(&b, &c, &instructor_grading().1) {
+        assert!(r.ok, "{}: {}", r.name, r.msg);
+    }
+}
+
+#[test]
+fn live_error_recovery() {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let c = http_client();
+    let b = web_base_url();
+    for r in execute(&b, &c, &error_recovery().1) {
         assert!(r.ok, "{}: {}", r.name, r.msg);
     }
 }
