@@ -50,6 +50,8 @@ mod grading_report_structure_tests;
 pub(crate) mod grading_report_textbook_integration;
 pub(crate) mod grading_report_variables;
 #[cfg(test)]
+mod ide_performance_accessibility_tests;
+#[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
 mod neighborhood_data_story_tests;
@@ -194,7 +196,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 101);
+        assert_eq!(report.scenario_asset_count, 105);
     }
 
     #[test]
