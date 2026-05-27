@@ -54,6 +54,8 @@ mod ide_performance_accessibility_tests;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
+mod multi_lesson_student_persona_tests;
+#[cfg(test)]
 mod neighborhood_data_story_tests;
 #[cfg(test)]
 mod outside_in_alice_expansion_tests;
