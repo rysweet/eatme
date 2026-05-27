@@ -832,6 +832,39 @@ fn game_narrative() -> (&'static str, Vec<Step>) {
     )
 }
 
+fn say_think() -> (&'static str, Vec<Step>) {
+    (
+        "say-think",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "speaker".into(),
+            },
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("speaker.say".into()),
+                        args: vec!["\"Welcome to the bubble lab\"".into()],
+                    },
+                    StatementSpec {
+                        kind: "methodCall".into(),
+                        method: Some("speaker.think".into()),
+                        args: vec!["\"I should keep this plan quiet\"".into()],
+                    },
+                ],
+            },
+            Step::RunWorld,
+        ],
+    )
+}
+
 fn design_process() -> (&'static str, Vec<Step>) {
     (
         "design-process",
@@ -1231,6 +1264,7 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         arrays(),
         project_io(),
         game_narrative(),
+        say_think(),
         design_process(),
         camera_viewpoint(),
         audio(),
@@ -1566,6 +1600,20 @@ fn game_narrative_tracks_score_and_win_state() {
 }
 
 #[test]
+fn say_think_uses_speech_and_thought_bubbles() {
+    let (_, steps) = say_think();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.say")
+            && statement.args == vec!["\"Welcome to the bubble lab\"".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.think")
+            && statement.args == vec!["\"I should keep this plan quiet\"".to_string()]
+    }));
+}
+
+#[test]
 fn design_process_tracks_plan_build_playtest_and_revision() {
     let (_, steps) = design_process();
     let phases: Vec<_> = steps
@@ -1702,6 +1750,7 @@ fn full_curriculum_breadth_covered() {
         "arrays",
         "project-io",
         "game-narrative",
+        "say-think",
         "design-process",
         "camera-viewpoint",
         "audio",
