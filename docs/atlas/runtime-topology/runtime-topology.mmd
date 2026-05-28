@@ -1,0 +1,51 @@
+graph LR
+    main["eatme-cli main()"]
+    parse["Cli::parse()"]
+    dispatch["Commands match"]
+    runner["RealCommandRunner"]
+
+    main --> parse --> dispatch
+    main --> runner
+
+    deps_cmd["Deps::Check"]
+    deps_api["eatme_alice::check_dependencies"]
+    dispatch --> deps_cmd --> deps_api
+    deps_api --> runner
+
+    assets_validate["Assets::Validate"]
+    asset_route["scenario/persona/root dispatch"]
+    assets_scenario["validate_scenario_asset"]
+    assets_persona["validate_persona_crew"]
+    assets_all["validate_assets"]
+    assets_gadugi["Assets::GenerateGadugi"]
+    assets_gadugi_api["generate_gadugi_adapters"]
+    assets_grading["Assets::GradingReport"]
+    assets_grading_api["grading::run_grading_report"]
+
+    dispatch --> assets_validate --> asset_route
+    asset_route --> assets_scenario
+    asset_route --> assets_persona
+    assets_validate --> assets_all
+    dispatch --> assets_gadugi --> assets_gadugi_api
+    dispatch --> assets_grading --> assets_grading_api
+    assets_grading_api --> assets_all
+    assets_grading_api --> deps_api
+
+    discover["discover_alice"]
+    package["package_alice"]
+    gate["ensure_real_alice_gate"]
+    launch_prep["LaunchSmokeScenario build"]
+    launch["run_launch_smoke"]
+    compare["run_launch_smoke_comparison"]
+    lesson_contract["check_lesson_session_contract"]
+    lesson_readiness["check_lesson_session_readiness"]
+    first_lesson["run_first_lesson_readiness_sequence"]
+
+    dispatch --> discover --> runner
+    dispatch --> package --> runner
+    dispatch --> gate
+    gate --> launch_prep --> launch
+    gate --> compare
+    gate --> first_lesson
+    dispatch --> lesson_contract
+    dispatch --> lesson_readiness

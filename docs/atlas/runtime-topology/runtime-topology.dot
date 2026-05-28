@@ -1,0 +1,76 @@
+digraph runtime_topology {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="eatme CLI runtime topology"];
+    node [shape=box, style=rounded, fontsize=10];
+
+    main [label="eatme-cli main()"];
+    parse [label="Cli::parse()"];
+    dispatch [label="Commands match"];
+    runner [label="RealCommandRunner"];
+
+    main -> parse -> dispatch;
+    main -> runner;
+
+    subgraph cluster_deps {
+        label="Deps";
+        color=lightgrey;
+        deps_cmd [label="Deps::Check"];
+        deps_api [label="eatme_alice::check_dependencies"];
+        deps_cmd -> deps_api;
+    }
+
+    subgraph cluster_assets {
+        label="Assets";
+        color=lightgrey;
+        assets_validate [label="Assets::Validate"];
+        asset_route [label="scenario/persona/root dispatch"];
+        assets_scenario [label="validate_scenario_asset"];
+        assets_persona [label="validate_persona_crew"];
+        assets_all [label="validate_assets"];
+        assets_gadugi [label="Assets::GenerateGadugi"];
+        assets_gadugi_api [label="generate_gadugi_adapters"];
+        assets_grading [label="Assets::GradingReport"];
+        assets_grading_api [label="grading::run_grading_report"];
+
+        assets_validate -> asset_route;
+        asset_route -> assets_scenario [label="scenario path/schema"];
+        asset_route -> assets_persona [label="persona path"];
+        assets_validate -> assets_all [label="repo root"];
+        assets_gadugi -> assets_gadugi_api;
+        assets_grading -> assets_grading_api;
+    }
+
+    subgraph cluster_alice {
+        label="Alice";
+        color=lightgrey;
+        discover [label="discover_alice"];
+        package [label="package_alice"];
+        gate [label="ensure_real_alice_gate"];
+        launch_prep [label="LaunchSmokeScenario build"];
+        launch [label="run_launch_smoke"];
+        compare [label="run_launch_smoke_comparison"];
+        lesson_contract [label="check_lesson_session_contract"];
+        lesson_readiness [label="check_lesson_session_readiness"];
+        first_lesson [label="run_first_lesson_readiness_sequence"];
+
+        gate -> launch_prep -> launch;
+        gate -> compare [style=dashed, label="execute flow"];
+        gate -> first_lesson [style=dashed, label="execute flow"];
+    }
+
+    dispatch -> deps_cmd;
+    deps_api -> runner;
+
+    dispatch -> assets_validate;
+    dispatch -> assets_gadugi;
+    dispatch -> assets_grading;
+    assets_grading_api -> assets_all;
+    assets_grading_api -> deps_api;
+
+    dispatch -> discover;
+    discover -> runner;
+    dispatch -> package;
+    package -> runner;
+    dispatch -> gate;
+    dispatch -> lesson_contract;
+    dispatch -> lesson_readiness;
+}

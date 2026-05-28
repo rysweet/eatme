@@ -1,0 +1,51 @@
+graph TD
+    core["eatme-core"]
+    alice["eatme-alice"]
+    assets_crate["eatme-assets"]
+    cli["eatme-cli"]
+    support["eatme-test-support"]
+
+    anyhow["anyhow 1.0"]
+    serde["serde 1.0"]
+    serde_json["serde_json 1.0"]
+    serde_yaml["serde_yaml 0.9"]
+    sha2["sha2 0.10"]
+    clap["clap 4.5"]
+    regex["regex 1 (dev)"]
+    roxmltree["roxmltree 0.20 (dev)"]
+    ureq["ureq 2 + json (dev)"]
+    zip["zip 2 (dev)"]
+
+    core --> anyhow
+    core --> serde
+    core --> serde_json
+    core --> sha2
+
+    support --> anyhow
+    support --> core
+
+    alice --> anyhow
+    alice --> core
+    alice --> serde
+    alice --> serde_json
+    alice --> serde_yaml
+    alice -. dev .-> assets_crate
+    alice -. dev .-> support
+    alice -. dev .-> regex
+    alice -. dev .-> roxmltree
+    alice -. dev .-> ureq
+    alice -. dev .-> zip
+
+    assets_crate --> anyhow
+    assets_crate --> core
+    assets_crate --> serde
+    assets_crate --> serde_json
+    assets_crate --> serde_yaml
+
+    cli --> anyhow
+    cli --> clap
+    cli --> alice
+    cli --> assets_crate
+    cli --> core
+    cli --> serde
+    cli --> serde_json
