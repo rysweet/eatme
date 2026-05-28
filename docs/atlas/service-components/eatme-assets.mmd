@@ -1,0 +1,39 @@
+graph TD
+    root["eatme-assets lib.rs"]
+    schema["schema.rs
+asset structs"]
+    discovery["discovery.rs
+scenario_asset_paths"]
+    validation["validation/
+scenario + crew + portability"]
+    report["report.rs
+validation reports"]
+    grading["grading_report.rs
+preconditions + report model"]
+    lesson_graders["grading_report_* modules
+scene / loops / events / functions / sequencing / ..."]
+    quality["quality_scoring.rs"]
+    creative["creative_assessment.rs"]
+    sharing["sharing_platform.rs"]
+    gadugi["gadugi.rs
+adapter generation"]
+
+    root --> schema
+    root --> discovery
+    root --> validation
+    root --> report
+    root --> grading
+    root --> quality
+    root --> creative
+    root --> sharing
+    root --> gadugi
+
+    discovery --> validation
+    schema --> validation
+    validation --> report
+    validation --> grading
+    grading --> lesson_graders
+    lesson_graders --> quality
+    grading --> report
+    schema --> gadugi
+    discovery --> gadugi

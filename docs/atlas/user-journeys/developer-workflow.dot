@@ -1,0 +1,13 @@
+digraph developer_workflow {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="developer workflow journey"];
+    node [shape=box, style=rounded, fontsize=10];
+    Developer -> Cargo [label="1 cargo test --workspace"];
+    Cargo -> Tests [label="2 run 1393 tests"];
+    Tests -> Cargo [label="3 all pass"];
+    Developer -> Clippy [label="4 cargo clippy"];
+    Clippy -> Developer [label="5 clean lint"];
+    Developer -> PreCommit [label="6 pre-commit run --all-files"];
+    PreCommit -> Developer [label="7 hooks pass"];
+    Developer -> Git [label="8 git push feat/code-atlas"];
+    Git -> Developer [label="9 branch updated"];
+}

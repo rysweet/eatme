@@ -1,0 +1,16 @@
+digraph web_platform_test {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="web platform test journey"];
+    node [shape=box, style=rounded, fontsize=10];
+    Developer -> Server [label="1 start TS server"];
+    Developer -> Test [label="2 run web test"];
+    Test -> Client [label="3 scenario steps"];
+    Client -> Server [label="4 health"];
+    Client -> Server [label="5 launch"];
+    Client -> Server [label="6 add-object"];
+    Client -> Server [label="7 edit-procedure"];
+    Client -> Server [label="8 run"];
+    Client -> Server [label="9 save"];
+    Client -> Server [label="10 events"];
+    Server -> Assert [label="11 JSON responses"];
+    Assert -> Developer [label="12 verdicts"];
+}

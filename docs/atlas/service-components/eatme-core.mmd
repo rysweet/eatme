@@ -1,0 +1,23 @@
+graph TD
+    root["eatme-core lib.rs"]
+    ast["ast.rs
+Program / Procedure / Statement"]
+    command["command.rs
+CommandRunner / RealCommandRunner"]
+    manifest["manifest.rs
+LaunchSmokeManifest"]
+    collaboration["collaboration.rs
+CollaborativeProject"]
+    fs_hash["fs_hash.rs
+sha256 helpers"]
+    recovery["pr199_recovery/
+workflow + service + evidence"]
+
+    root --> ast
+    root --> command
+    root --> manifest
+    root --> collaboration
+    root --> fs_hash
+    root --> recovery
+    collaboration --> ast
+    recovery --> command

@@ -1,0 +1,28 @@
+graph LR
+    cli["eatme-cli consumers"]
+
+    core_ast["eatme-core ast exports"]
+    core_cmd["eatme-core command exports"]
+    core_manifest["eatme-core manifest exports"]
+    core_misc["eatme-core collaboration/hash/pr199"]
+
+    alice_compare["eatme-alice compare/readiness"]
+    alice_ops["eatme-alice deps/discover/package"]
+    alice_launch["eatme-alice launch surface"]
+
+    assets_assess["eatme-assets assessment/sharing"]
+    assets_grade["eatme-assets grading surface"]
+    assets_validate["eatme-assets validation/report/gadugi"]
+
+    alice_compare --> core_manifest
+    alice_ops --> core_cmd
+    alice_launch --> core_cmd
+    alice_launch --> core_manifest
+    alice_launch --> core_misc
+    assets_grade --> core_ast
+    cli --> alice_compare
+    cli --> alice_ops
+    cli --> alice_launch
+    cli --> assets_assess
+    cli --> assets_grade
+    cli --> assets_validate

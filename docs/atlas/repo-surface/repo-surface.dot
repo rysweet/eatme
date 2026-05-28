@@ -1,0 +1,54 @@
+digraph repo_surface {
+    graph [rankdir=TB, fontsize=10, labelloc=t, label="eatme repository surface"];
+    node [shape=box, style=rounded, fontsize=10];
+
+    root [label="eatme root"];
+    cargo [label="Cargo.toml workspace"];
+
+    subgraph cluster_crates {
+        label="crates/";
+        color=lightgrey;
+        core [label="eatme-core"];
+        alice [label="eatme-alice"];
+        assets_crate [label="eatme-assets"];
+        cli [label="eatme-cli"];
+        support [label="eatme-test-support"];
+    }
+
+    subgraph cluster_assets {
+        label="assets/";
+        color=lightgrey;
+        scenarios [label="assets/scenarios/"];
+        eatme_scen [label="scenarios/eatme/"];
+        gadugi_scen [label="scenarios/gadugi/"];
+        personas [label="assets/personas/"];
+    }
+
+    subgraph cluster_docsops {
+        label="docs + automation";
+        color=lightgrey;
+        docs [label="docs/"];
+        atlas [label="docs/atlas/"];
+        scripts [label="scripts/"];
+        quality [label="quality-gates.sh"];
+        github [label=".github/"];
+        workflows [label="workflows/"];
+    }
+
+    root -> cargo;
+    root -> core;
+    root -> alice;
+    root -> assets_crate;
+    root -> cli;
+    root -> support;
+    root -> scenarios;
+    scenarios -> eatme_scen;
+    scenarios -> gadugi_scen;
+    root -> personas;
+    root -> docs;
+    docs -> atlas;
+    root -> scripts;
+    scripts -> quality;
+    root -> github;
+    github -> workflows;
+}

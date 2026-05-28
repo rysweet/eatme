@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor Instructor
+    participant A3P as student .a3p
+    participant Parser as ZipArchive + program.xml parser
+    participant AST as Program AST
+    participant Grade as eatme-assets grade_* pipeline
+    participant Score as quality_scoring
+    participant Report as GradingReport
+
+    Instructor->>A3P: collect saved project
+    Instructor->>Parser: load .a3p
+    Parser->>Parser: unzip program.xml
+    Parser->>AST: extract Procedure / Statement nodes
+    AST->>Grade: lesson-specific grading input
+    Grade->>Score: compute quality scores
+    Score-->>Grade: QualityScore[]
+    Grade-->>Report: pass/block statuses
+    Report-->>Instructor: grading JSON + feedback
