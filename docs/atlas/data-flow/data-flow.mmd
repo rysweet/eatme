@@ -3,14 +3,12 @@ flowchart LR
         yaml["Scenario YAML"] --> yaml_parse["serde_yaml parse"] --> schema["EatmeScenarioAsset or GadugiScenarioAsset"] --> validate["validate_scenario_asset / validate_assets"] --> validation_report["ScenarioAssetValidationReport"] --> launch_contract["alice launch-smoke or web step plan"] --> alice_runtime["Alice desktop or TS web port"]
     end
 
-    subgraph a3p["A3P to grading"]
-        a3p_file["Student .a3p file"] --> zip_read["ZipArchive reads program.xml"] --> xml_parse["program.xml parser
-roxmltree or regex extraction"] --> ast["Program / Procedure / Statement AST"] --> grade["grade_* pipeline"] --> grading_report["GradingReport"]
-        ast --> quality["QualityScore"] --> grading_report
+    subgraph grading["CLI grading preflight"]
+        grading_cli["assets grading-report"] --> validate_assets["validate_assets(Path)"] --> depcheck["check_dependencies"] --> grade["grade_first_lesson_readiness"] --> grading_report["GradingReport"]
     end
 
     subgraph cli["CLI launch smoke"]
-        invoke["eatme CLI invocation"] --> depcheck["check_dependencies"] --> build["package_alice"] --> launch_smoke["run_launch_smoke"] --> evidence["window list / screenshot / ui_action_contract / log"] --> manifest["LaunchSmokeManifest JSON"]
+        invoke["eatme CLI invocation"] --> depcheck_launch["check_dependencies"] --> build["package_alice"] --> launch_smoke["run_launch_smoke"] --> evidence["window list / screenshot / ui_action_contract / log"] --> manifest["LaunchSmokeManifest JSON"]
     end
 
     subgraph web["Web platform assertions"]

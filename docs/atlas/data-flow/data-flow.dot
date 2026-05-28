@@ -19,33 +19,28 @@ or TS web port"];
         yaml -> yaml_parse -> schema -> validate -> validation_report -> launch_contract -> alice_runtime;
     }
 
-    subgraph cluster_a3p {
-        label="A3P to grading";
+    subgraph cluster_grading {
+        label="CLI grading preflight";
         color=lightgrey;
-        a3p_file [label="student .a3p ZIP"];
-        zip_read [label="ZipArchive
-program.xml read"];
-        xml_parse [label="program.xml parser
-roxmltree or regex"];
-        ast [label="Program / Procedure / Statement AST"];
-        grade [label="grade_* pipeline"];
-        quality [label="QualityScore"];
+        grading_cli [label="assets grading-report"];
+        validate_assets [label="validate_assets(Path)"];
+        depcheck [label="check_dependencies"];
+        grade [label="grade_first_lesson_readiness"];
         grading_report [label="GradingReport"];
-        a3p_file -> zip_read -> xml_parse -> ast -> grade -> grading_report;
-        ast -> quality -> grading_report;
+        grading_cli -> validate_assets -> depcheck -> grade -> grading_report;
     }
 
     subgraph cluster_cli {
         label="CLI launch smoke";
         color=lightgrey;
         invoke [label="eatme CLI invocation"];
-        depcheck [label="check_dependencies"];
+        depcheck_launch [label="check_dependencies"];
         build [label="package_alice"];
         launch_smoke [label="run_launch_smoke"];
         evidence [label="window list / screenshot
 ui_action_contract / log"];
         manifest [label="LaunchSmokeManifest JSON"];
-        invoke -> depcheck -> build -> launch_smoke -> evidence -> manifest;
+        invoke -> depcheck_launch -> build -> launch_smoke -> evidence -> manifest;
     }
 
     subgraph cluster_web {

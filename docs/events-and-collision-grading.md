@@ -212,7 +212,7 @@ as the first-lesson and loops-and-conditionals grading reports:
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 93 scenario assets passed validation"
+      "reason": "All 105 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -519,7 +519,7 @@ use eatme_assets::{
 
 let report: GradingReport = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: Some(program),
@@ -667,7 +667,7 @@ let program = Program {
 
 let report = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: Some(program),
@@ -692,7 +692,7 @@ assert!(!report.passed);
 ```rust
 let report = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: None,
@@ -719,7 +719,7 @@ let program = Program {
 
 let report = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: Some(program),
@@ -750,7 +750,7 @@ let program = Program {
 
 let report = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: Some(program),
@@ -794,7 +794,7 @@ let program = Program {
 
 let report = grade_events_and_collision(EventsGradingInput {
     assets_valid: true,
-    asset_reason: "All 93 scenario assets passed validation".into(),
+    asset_reason: "All 105 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required tools available".into(),
     student_program: Some(program),
@@ -857,7 +857,7 @@ cargo run -q -p eatme-cli -- assets grading-report \
 
 ```text
 Events grading: events-collision-proximity-game
-  validate-assets: ready — All 93 scenario assets passed validation
+  validate-assets: ready — All 105 scenario assets passed validation
   check-dependencies: blocked — Missing required tools: Xvfb, wmctrl
   launch-smoke: blocked — Blocked by: check-dependencies
   add-event-listener: blocked — Blocked by: launch-smoke

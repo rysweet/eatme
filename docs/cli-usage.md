@@ -93,10 +93,11 @@ Report readiness for the Building a Scene first-lesson scenario:
 cargo run -q -p eatme-cli -- assets grading-report --json
 ```
 
-The report evaluates three steps from the `building-a-scene-first-world`
-scenario: `validate-assets`, `check-dependencies`, and `launch-smoke`. Each
-step receives a status of `ready` or `blocked`. The command does not launch
-Alice; it checks whether preconditions for launching are satisfied.
+The report returns six ordered steps from the `building-a-scene-first-world`
+scenario: `validate-assets`, `check-dependencies`, `launch-smoke`,
+`place-object`, `edit-code`, and `run-world`. The command is still a preflight
+check: it validates assets and dependencies, then reports the interaction steps
+as blocked or `not-yet-tested`; it does not launch Alice.
 
 See [First-Lesson Grading Report](first-lesson-grading-report.md) for the
 full output schema, status semantics, and examples.
