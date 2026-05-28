@@ -1,0 +1,93 @@
+digraph api_contracts {
+    graph [rankdir=TB, fontsize=10, labelloc=t, label="eatme API contracts"];
+    node [shape=box, style=rounded, fontsize=10];
+
+    subgraph cluster_cli {
+        label="CLI subcommands";
+        color=lightgrey;
+        deps [label="deps check"];
+        discover [label="alice discover"];
+        package [label="alice package"];
+        smoke [label="alice launch-smoke"];
+        validate [label="assets validate"];
+        gadugi [label="assets generate-gadugi"];
+    }
+
+    subgraph cluster_alice {
+        label="eatme-alice public API";
+        color=lightgrey;
+        check [label="check_dependencies
+DependencyReport"];
+        disc [label="discover_alice
+AliceDiscovery"];
+        pack [label="package_alice
+PackageResult"];
+        launch_api [label="run_launch_smoke
+LaunchSmokeManifest"];
+    }
+
+    subgraph cluster_core {
+        label="eatme-core public types";
+        color=lightgrey;
+        program [label="Program"];
+        procedure [label="Procedure"];
+        statement [label="Statement"];
+        runner [label="CommandRunner"];
+        manifest [label="LaunchSmokeManifest"];
+    }
+
+    subgraph cluster_assets {
+        label="eatme-assets public API";
+        color=lightgrey;
+        grade [label="grade_sequencing
+GradingReport"];
+        validate_scenario [label="validate_scenario_asset"];
+        validate_persona [label="validate_persona_crew"];
+        validate_all [label="validate_assets"];
+        generate [label="generate_gadugi_adapters"];
+    }
+
+    subgraph cluster_web {
+        label="web-platform adapter surface";
+        color=lightgrey;
+        health [label="GET /api/health"];
+        launch [label="POST /api/launch"];
+        add_object [label="POST /api/scene/add-object"];
+        edit_proc [label="POST /api/code/edit-procedure"];
+        run_world [label="POST /api/world/run"];
+        save_project [label="POST /api/project/save"];
+        register_event [label="POST /api/events/register"];
+        adapter_assert [label="response DTOs
++ StepResult assertions"];
+    }
+
+    deps -> check;
+    discover -> disc;
+    package -> pack;
+    smoke -> launch_api;
+    validate -> validate_scenario;
+    validate -> validate_persona;
+    validate -> validate_all;
+    gadugi -> generate;
+
+    check -> runner;
+    disc -> runner;
+    pack -> runner;
+    launch_api -> runner;
+    launch_api -> manifest;
+
+    grade -> program;
+    grade -> procedure;
+    grade -> statement;
+
+    health -> adapter_assert;
+    launch -> adapter_assert;
+    add_object -> adapter_assert;
+    edit_proc -> adapter_assert;
+    edit_proc -> statement;
+    run_world -> adapter_assert;
+    save_project -> adapter_assert;
+    save_project -> program;
+    register_event -> adapter_assert;
+    register_event -> statement;
+}

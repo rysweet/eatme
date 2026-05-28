@@ -1,0 +1,13 @@
+digraph instructor_grading {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="instructor grading journey"];
+    node [shape=box, style=rounded, fontsize=10];
+    Instructor -> A3P [label="1 collect project"];
+    Instructor -> Parser [label="2 load .a3p"];
+    Parser -> Parser [label="3 unzip program.xml"];
+    Parser -> AST [label="4 extract AST"];
+    AST -> Grade [label="5 grade input"];
+    Grade -> Score [label="6 quality scoring"];
+    Score -> Grade [label="7 scores"];
+    Grade -> Report [label="8 grading report"];
+    Report -> Instructor [label="9 feedback"];
+}

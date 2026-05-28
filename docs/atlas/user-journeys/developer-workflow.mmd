@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor Developer
+    participant Cargo as cargo
+    participant Tests as workspace tests
+    participant Clippy as cargo clippy
+    participant PreCommit as pre-commit hooks
+    participant Git as remote branch
+
+    Developer->>Cargo: cargo test --workspace
+    Cargo->>Tests: run all 1393 tests
+    Tests-->>Cargo: all pass
+    Developer->>Clippy: cargo clippy --workspace --all-targets --all-features -- -D warnings
+    Clippy-->>Developer: lint clean
+    Developer->>PreCommit: pre-commit run --all-files
+    PreCommit-->>Developer: cargo-fmt + cargo-clippy hooks pass
+    Developer->>Git: git push feat/code-atlas
+    Git-->>Developer: branch updated
