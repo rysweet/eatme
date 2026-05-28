@@ -9,8 +9,13 @@ digraph api_contracts {
         discover [label="alice discover"];
         package [label="alice package"];
         smoke [label="alice launch-smoke"];
+        compare [label="alice compare-launch-smoke"];
+        check_session [label="alice check-lesson-session"];
+        check_readiness [label="alice check-lesson-readiness"];
+        run_first [label="alice run-first-lesson-readiness"];
         validate [label="assets validate"];
         gadugi [label="assets generate-gadugi"];
+        grading [label="assets grading-report"];
     }
 
     subgraph cluster_alice {
@@ -24,6 +29,14 @@ AliceDiscovery"];
 PackageResult"];
         launch_api [label="run_launch_smoke
 LaunchSmokeManifest"];
+        compare_api [label="run_launch_smoke_comparison
+AliceComparisonManifest"];
+        lesson_contract [label="check_lesson_session_contract
+LessonSessionContractCheck"];
+        lesson_readiness [label="check_lesson_session_readiness
+LessonSessionReadinessReport"];
+        first_lesson [label="run_first_lesson_readiness_sequence
+FirstLessonReadinessSequenceReport"];
     }
 
     subgraph cluster_core {
@@ -39,6 +52,8 @@ LaunchSmokeManifest"];
     subgraph cluster_assets {
         label="eatme-assets public API";
         color=lightgrey;
+        first_grade [label="grade_first_lesson_readiness
+GradingReport"];
         grade [label="grade_sequencing
 GradingReport"];
         validate_scenario [label="validate_scenario_asset"];
@@ -65,16 +80,26 @@ GradingReport"];
     discover -> disc;
     package -> pack;
     smoke -> launch_api;
+    compare -> compare_api;
+    check_session -> lesson_contract;
+    check_readiness -> lesson_readiness;
+    run_first -> first_lesson;
     validate -> validate_scenario;
     validate -> validate_persona;
     validate -> validate_all;
     gadugi -> generate;
+    grading -> validate_all;
+    grading -> check;
+    grading -> first_grade;
 
     check -> runner;
     disc -> runner;
     pack -> runner;
     launch_api -> runner;
+    compare_api -> runner;
+    first_lesson -> runner;
     launch_api -> manifest;
+    compare_api -> manifest;
 
     grade -> program;
     grade -> procedure;

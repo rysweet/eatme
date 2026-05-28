@@ -83,7 +83,7 @@ The live lane covers these curriculum areas:
 | Parameters | Edit parameterized behavior |
 | Inheritance and OOP | Use custom type patterns |
 | Comments and code clarity | Check learner-friendly procedure edits |
-| Project IO | Save, reload, and verify project state |
+| Project IO | Save, then verify synthetic in-memory reload state; there is no REST load endpoint yet |
 | Game and narrative | Follow score, win, and story flows |
 | Say and think | Exercise speech and thought bubbles |
 | Design process | Track plan, build, playtest, and revision checkpoints |
@@ -93,9 +93,14 @@ The live lane covers these curriculum areas:
 | Property animation | Change opacity, color, and related properties |
 | Nested control flow | Layer loops and branches together |
 | Full student journey | Build, run, and save one lesson path |
-| Instructor grading | Round-trip the saved project structure for review |
+| Instructor grading | Preserve save-path evidence only; no REST-backed reload/review round-trip |
 | Error recovery | Prove expected failures and recovery paths |
 | Full curriculum sweep | Run the combined scenario set |
+
+The current `Step::Load` check is synthetic. `Step::Save` calls
+`POST /api/project/save`, but reload only compares the remembered save path and
+object count in memory; eatme does not currently exercise a `/api/project/load`
+or instructor-review endpoint.
 
 ## Environment variables
 

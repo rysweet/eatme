@@ -4,8 +4,13 @@ flowchart TD
         discover["alice discover"]
         package["alice package"]
         smoke["alice launch-smoke"]
+        compare["alice compare-launch-smoke"]
+        check_session["alice check-lesson-session"]
+        check_readiness["alice check-lesson-readiness"]
+        run_first["alice run-first-lesson-readiness"]
         validate["assets validate"]
         gadugi["assets generate-gadugi"]
+        grading["assets grading-report"]
     end
 
     subgraph alice["eatme-alice public API"]
@@ -13,6 +18,10 @@ flowchart TD
         disc["discover_alice -> AliceDiscovery"]
         pack["package_alice -> PackageResult"]
         launch_api["run_launch_smoke -> LaunchSmokeManifest"]
+        compare_api["run_launch_smoke_comparison -> AliceComparisonManifest"]
+        lesson_contract["check_lesson_session_contract -> LessonSessionContractCheck"]
+        lesson_readiness["check_lesson_session_readiness -> LessonSessionReadinessReport"]
+        first_lesson["run_first_lesson_readiness_sequence -> FirstLessonReadinessSequenceReport"]
     end
 
     subgraph core["eatme-core public types"]
@@ -24,6 +33,7 @@ flowchart TD
     end
 
     subgraph assets["eatme-assets public API"]
+        first_grade["grade_first_lesson_readiness -> GradingReport"]
         grade["grade_sequencing -> GradingReport"]
         validate_scenario["validate_scenario_asset"]
         validate_persona["validate_persona_crew"]
@@ -46,16 +56,26 @@ flowchart TD
     discover --> disc
     package --> pack
     smoke --> launch_api
+    compare --> compare_api
+    check_session --> lesson_contract
+    check_readiness --> lesson_readiness
+    run_first --> first_lesson
     validate --> validate_scenario
     validate --> validate_persona
     validate --> validate_all
     gadugi --> generate
+    grading --> validate_all
+    grading --> check
+    grading --> first_grade
 
     check --> runner
     disc --> runner
     pack --> runner
     launch_api --> runner
+    compare_api --> runner
+    first_lesson --> runner
     launch_api --> manifest
+    compare_api --> manifest
 
     grade --> program
     grade --> procedure
