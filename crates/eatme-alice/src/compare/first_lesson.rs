@@ -91,55 +91,122 @@ pub fn run_first_lesson_readiness_sequence(
         execute: options.execute,
     })?;
 
-    let readiness =
-        check_lesson_session_readiness(&PathBuf::from(&comparison.comparison_manifest_path))?;
+    let comparison_manifest_path = comparison.comparison_manifest_path;
+    let readiness = check_lesson_session_readiness(&PathBuf::from(&comparison_manifest_path))?;
     let target_statuses = comparison
         .targets
-        .iter()
-        .map(|(role, target)| (role.clone(), target_status(target)))
+        .into_iter()
+        .map(|(role, target)| (role, target_status(target)))
         .collect();
+    let LessonSessionReadinessReport {
+        schema_version,
+        manifest_path,
+        scenario_id,
+        passed,
+        status,
+        readiness_status,
+        blocked_reason,
+        human_summary,
+        evidence_gap_message,
+        desktop_proof_contract,
+        shown_evidence,
+        not_yet_shown,
+        desktop_next_action,
+        original_alice_action_evidence,
+        unproven_claims,
+        evidence_progress,
+        evidence_boundaries,
+        required_evidence,
+        no_go_contracts,
+        lesson_session_readiness,
+        role_readiness,
+        contract_check,
+        execute_requested,
+        target_evidence,
+        issues,
+        limitations,
+    } = readiness;
+    let readiness_report = LessonSessionReadinessReport {
+        schema_version,
+        manifest_path,
+        scenario_id,
+        passed,
+        status: status.clone(),
+        readiness_status: readiness_status.clone(),
+        blocked_reason: blocked_reason.clone(),
+        human_summary: human_summary.clone(),
+        evidence_gap_message: evidence_gap_message.clone(),
+        desktop_proof_contract: desktop_proof_contract.clone(),
+        shown_evidence: shown_evidence.clone(),
+        not_yet_shown: not_yet_shown.clone(),
+        desktop_next_action: desktop_next_action.clone(),
+        original_alice_action_evidence,
+        unproven_claims: unproven_claims.clone(),
+        evidence_progress: evidence_progress.clone(),
+        evidence_boundaries: evidence_boundaries.clone(),
+        required_evidence: required_evidence.clone(),
+        no_go_contracts: no_go_contracts.clone(),
+        lesson_session_readiness,
+        role_readiness: role_readiness.clone(),
+        contract_check,
+        execute_requested,
+        target_evidence,
+        issues: issues.clone(),
+        limitations: limitations.clone(),
+    };
 
     Ok(FirstLessonReadinessSequenceReport {
         schema_version: "eatme.first-lesson-readiness-sequence/v1".into(),
         scenario_id: FIRST_LESSON_SCENARIO_ID.into(),
         run_id: options.run_id.clone(),
         execute_requested: options.execute,
-        comparison_manifest_path: comparison.comparison_manifest_path,
-        passed: readiness.passed,
-        status: readiness.status.clone(),
-        readiness_status: readiness.readiness_status.clone(),
-        blocked_reason: readiness.blocked_reason.clone(),
-        human_summary: readiness.human_summary.clone(),
-        evidence_gap_message: readiness.evidence_gap_message.clone(),
-        desktop_proof_contract: readiness.desktop_proof_contract.clone(),
-        shown_evidence: readiness.shown_evidence.clone(),
-        not_yet_shown: readiness.not_yet_shown.clone(),
-        desktop_next_action: readiness.desktop_next_action.clone(),
-        original_alice_action_evidence: readiness.original_alice_action_evidence,
-        unproven_claims: readiness.unproven_claims.clone(),
-        evidence_progress: readiness.evidence_progress.clone(),
-        evidence_boundaries: readiness.evidence_boundaries.clone(),
-        required_evidence: readiness.required_evidence.clone(),
-        no_go_contracts: readiness.no_go_contracts.clone(),
-        role_readiness: readiness.role_readiness.clone(),
+        comparison_manifest_path,
+        passed,
+        status,
+        readiness_status,
+        blocked_reason,
+        human_summary,
+        evidence_gap_message,
+        desktop_proof_contract,
+        shown_evidence,
+        not_yet_shown,
+        desktop_next_action,
+        original_alice_action_evidence,
+        unproven_claims,
+        evidence_progress,
+        evidence_boundaries,
+        required_evidence,
+        no_go_contracts,
+        role_readiness,
         target_statuses,
-        issues: readiness.issues.clone(),
-        limitations: readiness.limitations.clone(),
-        readiness_report: readiness,
+        issues,
+        limitations,
+        readiness_report,
     })
 }
 
-fn target_status(target: &ComparisonTargetRun) -> FirstLessonTargetStatus {
+fn target_status(target: ComparisonTargetRun) -> FirstLessonTargetStatus {
+    let ComparisonTargetRun {
+        target_id,
+        status,
+        failure_category,
+        launch_manifest,
+        ..
+    } = target;
+    let (launch_manifest_present, ui_action_contract_path) = match launch_manifest {
+        Some(manifest) => (
+            true,
+            manifest.ui_action_contract.map(|artifact| artifact.path),
+        ),
+        None => (false, None),
+    };
+
     FirstLessonTargetStatus {
-        target_id: target.target_id.clone(),
-        status: target.status.clone(),
-        failure_category: target.failure_category.clone(),
-        launch_manifest_present: target.launch_manifest.is_some(),
-        ui_action_contract_path: target
-            .launch_manifest
-            .as_ref()
-            .and_then(|manifest| manifest.ui_action_contract.as_ref())
-            .map(|artifact| artifact.path.clone()),
+        target_id,
+        status,
+        failure_category,
+        launch_manifest_present,
+        ui_action_contract_path,
     }
 }
 
