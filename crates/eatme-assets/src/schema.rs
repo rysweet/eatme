@@ -2,7 +2,7 @@ use serde::Deserialize;
 use serde_yaml::Value;
 use std::collections::BTreeMap;
 
-#[allow(dead_code)]
+#[allow(dead_code)] // YAML fields needed for deny_unknown_fields but not read by code
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct CrewAsset {
