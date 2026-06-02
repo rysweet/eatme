@@ -30,7 +30,7 @@ use import_export_support::{
     start_xvfb_for_workflow, validate_evidence_artifact,
 };
 
-const REOPEN_SELECTOR: &str = "scene.eatmeFirstLessonStep";
+const REOPEN_SELECTOR: &str = "scene.myFirstMethod";
 
 // ---------------------------------------------------------------------------
 // Test
