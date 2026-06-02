@@ -24,19 +24,23 @@ resource_basis:
 purpose: >-
   Help an instructor design a lesson where students polish an Alice world with
   at least one camera or audio cue, then share it with peers in an
-  accessibility-aware way. Students choose a camera marker or audio cue that
-  improves audience understanding, add a caption or text label that makes the
-  cue meaningful for viewers who cannot rely on sound or fine visual detail,
-  prepare a sharing plan that offers at least two delivery alternatives in case
-  export fails, and invite one targeted peer-feedback question that addresses
-  concept or communication rather than only aesthetics. This scenario covers the
-  creative-storyteller, accessibility-advocate, and immersive-camera-director
-  student personas without claiming full user interface automation, automated
-  creative assessment, learner-world grading, complete Alice coverage, or a
-  real smoke-test of the Alice application.
+  accessibility-aware way. Students choose a camera marker, viewpoint shift, or
+  audio cue that improves audience understanding, add a caption or text label
+  that makes the cue meaningful for viewers who cannot rely on sound or fine
+  visual detail, prepare a sharing plan that offers at least two delivery
+  alternatives in case export fails, and invite one targeted peer-feedback
+  question that addresses concept or communication rather than only aesthetics.
+  This scenario covers the creative-storyteller, accessibility-advocate, and
+  immersive-camera-director student personas without claiming full user
+  interface automation, automated creative assessment, learner-world grading,
+  complete Alice coverage, or a real smoke-test of the Alice application.
 personas:
   instructors: [studio-facilitator, classroom-orchestrator, assessment-curator]
   students: [creative-storyteller, accessibility-advocate, immersive-camera-director]
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
 agentic_flow:
   focus: audio-camera-and-export-sharecase
   instructor_goal: >-

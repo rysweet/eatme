@@ -89,13 +89,13 @@ fn is_skipped_path(path: &Path) -> bool {
     path.components().any(|component| {
         matches!(
             component.as_os_str().to_str(),
-            Some(".git" | ".claude" | "site" | "target")
+            Some(".git" | ".claude" | "site" | "target" | "worktrees")
         )
     })
 }
 
 fn is_allowed_policy_document(root: &Path, path: &Path) -> bool {
-    path == root.join("docs/local-hook-artifacts.md")
+    path == root.join("docs/local-hook-artifacts.md") || path == root.join(".gitignore")
 }
 
 fn list_files(path: &Path) -> Vec<String> {

@@ -4,56 +4,55 @@ use super::*;
 
 #[test]
 fn program_with_all_variants_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::MethodCall {
+    let program = Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![
+            Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into(), "1.0".into()],
+            },
+            Statement::CountLoop {
+                count: 3,
+                body: vec![Statement::MethodCall {
                     object: "this.cat".into(),
-                    method: "walk".into(),
-                    arguments: vec!["FORWARD".into(), "1.0".into()],
-                },
-                Statement::CountLoop {
-                    count: 3,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "turn".into(),
-                        arguments: vec!["LEFT".into(), "0.25".into()],
-                    }],
-                },
-                Statement::IfElse {
-                    condition: "this.cat isCloseTo this.dog".into(),
-                    if_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello!\"".into()],
-                    }],
-                    else_body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "think".into(),
-                        arguments: vec!["\"Hmm...\"".into()],
-                    }],
-                },
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Scene started!\"".into()],
-                    }],
-                },
-                Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Ouch!\"".into()],
-                    }],
-                },
-            ],
-        }],
-    };
+                    method: "turn".into(),
+                    arguments: vec!["LEFT".into(), "0.25".into()],
+                }],
+            },
+            Statement::IfElse {
+                condition: "this.cat isCloseTo this.dog".into(),
+                if_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Hello!\"".into()],
+                }],
+                else_body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "think".into(),
+                    arguments: vec!["\"Hmm...\"".into()],
+                }],
+            },
+            Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Scene started!\"".into()],
+                }],
+            },
+            Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Ouch!\"".into()],
+                }],
+            },
+        ],
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -61,7 +60,7 @@ fn program_with_all_variants_round_trips() {
 
 #[test]
 fn empty_program_round_trips() {
-    let program = Program { procedures: vec![] };
+    let program = Program::new(vec![]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -69,39 +68,77 @@ fn empty_program_round_trips() {
 
 #[test]
 fn empty_procedure_body_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "emptyMethod".into(),
-            body: vec![],
-        }],
-    };
+    let program = Program::new(vec![Procedure {
+        name: "emptyMethod".into(),
+        parameters: vec![],
+        body: vec![],
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
 }
 
 #[test]
-fn multiple_procedures_round_trip() {
-    let program = Program {
-        procedures: vec![
-            Procedure {
-                name: "methodOne".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "walk".into(),
-                    arguments: vec![],
-                }],
+fn scene_and_sequence_types_round_trip() {
+    let scene = SceneLayout {
+        ground_present: true,
+        sky_present: true,
+        objects: vec![SceneObject {
+            name: "cat".into(),
+            kind: "Biped".into(),
+            position: Some(Vec3 {
+                x: 1.0,
+                y: 0.0,
+                z: -2.5,
+            }),
+            size: Some(1.25),
+            color: Some("#ffcc00".into()),
+            opacity: Some(0.85),
+        }],
+        camera: Some(CameraPose {
+            position: Vec3 {
+                x: 0.0,
+                y: 5.0,
+                z: 10.0,
             },
-            Procedure {
-                name: "methodTwo".into(),
-                body: vec![Statement::MethodCall {
-                    object: "this.dog".into(),
-                    method: "run".into(),
-                    arguments: vec!["FAST".into()],
-                }],
-            },
-        ],
+        }),
     };
+    let sequence = SequenceBlock {
+        kind: SequenceKind::DoTogether,
+        steps: vec!["move".into(), "turn".into()],
+    };
+
+    let scene_json = serde_json::to_string(&scene).unwrap();
+    let restored_scene: SceneLayout = serde_json::from_str(&scene_json).unwrap();
+    assert_eq!(scene, restored_scene);
+
+    let sequence_json = serde_json::to_string(&sequence).unwrap();
+    let restored_sequence: SequenceBlock = serde_json::from_str(&sequence_json).unwrap();
+    assert_eq!(sequence, restored_sequence);
+}
+
+#[test]
+fn multiple_procedures_round_trip() {
+    let program = Program::new(vec![
+        Procedure {
+            name: "methodOne".into(),
+            parameters: vec![],
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec![],
+            }],
+        },
+        Procedure {
+            name: "methodTwo".into(),
+            parameters: vec![],
+            body: vec![Statement::MethodCall {
+                object: "this.dog".into(),
+                method: "run".into(),
+                arguments: vec!["FAST".into()],
+            }],
+        },
+    ]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -111,19 +148,18 @@ fn multiple_procedures_round_trip() {
 
 #[test]
 fn count_loop_containing_method_call_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "loopMethod".into(),
-            body: vec![Statement::CountLoop {
-                count: 5,
-                body: vec![Statement::MethodCall {
-                    object: "this.cat".into(),
-                    method: "walk".into(),
-                    arguments: vec!["FORWARD".into(), "1.0".into()],
-                }],
+    let program = Program::new(vec![Procedure {
+        name: "loopMethod".into(),
+        parameters: vec![],
+        body: vec![Statement::CountLoop {
+            count: 5,
+            body: vec![Statement::MethodCall {
+                object: "this.cat".into(),
+                method: "walk".into(),
+                arguments: vec!["FORWARD".into(), "1.0".into()],
             }],
         }],
-    };
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -131,23 +167,22 @@ fn count_loop_containing_method_call_round_trips() {
 
 #[test]
 fn if_else_containing_count_loop_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nestedMethod".into(),
-            body: vec![Statement::IfElse {
-                condition: "this.cat isCloseTo this.dog".into(),
-                if_body: vec![Statement::CountLoop {
-                    count: 3,
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec!["FORWARD".into()],
-                    }],
+    let program = Program::new(vec![Procedure {
+        name: "nestedMethod".into(),
+        parameters: vec![],
+        body: vec![Statement::IfElse {
+            condition: "this.cat isCloseTo this.dog".into(),
+            if_body: vec![Statement::CountLoop {
+                count: 3,
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "walk".into(),
+                    arguments: vec!["FORWARD".into()],
                 }],
-                else_body: vec![],
             }],
+            else_body: vec![],
         }],
-    };
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -155,26 +190,25 @@ fn if_else_containing_count_loop_round_trips() {
 
 #[test]
 fn deeply_nested_three_levels_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "deepMethod".into(),
-            body: vec![Statement::CountLoop {
-                count: 2,
-                body: vec![Statement::IfElse {
-                    condition: "true".into(),
-                    if_body: vec![Statement::CountLoop {
-                        count: 1,
-                        body: vec![Statement::MethodCall {
-                            object: "this.cat".into(),
-                            method: "walk".into(),
-                            arguments: vec![],
-                        }],
+    let program = Program::new(vec![Procedure {
+        name: "deepMethod".into(),
+        parameters: vec![],
+        body: vec![Statement::CountLoop {
+            count: 2,
+            body: vec![Statement::IfElse {
+                condition: "true".into(),
+                if_body: vec![Statement::CountLoop {
+                    count: 1,
+                    body: vec![Statement::MethodCall {
+                        object: "this.cat".into(),
+                        method: "walk".into(),
+                        arguments: vec![],
                     }],
-                    else_body: vec![],
                 }],
+                else_body: vec![],
             }],
         }],
-    };
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -370,22 +404,21 @@ fn collision_listener_with_empty_body_round_trips() {
 
 #[test]
 fn event_listener_nested_in_count_loop_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nestedEvent".into(),
-            body: vec![Statement::CountLoop {
-                count: 2,
-                body: vec![Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "walk".into(),
-                        arguments: vec![],
-                    }],
+    let program = Program::new(vec![Procedure {
+        name: "nestedEvent".into(),
+        parameters: vec![],
+        body: vec![Statement::CountLoop {
+            count: 2,
+            body: vec![Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "walk".into(),
+                    arguments: vec![],
                 }],
             }],
         }],
-    };
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);
@@ -393,24 +426,23 @@ fn event_listener_nested_in_count_loop_round_trips() {
 
 #[test]
 fn collision_listener_nested_in_if_else_round_trips() {
-    let program = Program {
-        procedures: vec![Procedure {
-            name: "nestedCollision".into(),
-            body: vec![Statement::IfElse {
-                condition: "true".into(),
-                if_body: vec![Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Collided!\"".into()],
-                    }],
+    let program = Program::new(vec![Procedure {
+        name: "nestedCollision".into(),
+        parameters: vec![],
+        body: vec![Statement::IfElse {
+            condition: "true".into(),
+            if_body: vec![Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Collided!\"".into()],
                 }],
-                else_body: vec![],
             }],
+            else_body: vec![],
         }],
-    };
+    }]);
     let json = serde_json::to_string(&program).unwrap();
     let restored: Program = serde_json::from_str(&json).unwrap();
     assert_eq!(program, restored);

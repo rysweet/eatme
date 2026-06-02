@@ -73,7 +73,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
     fs::write(edit_evidence_dir.join("edited-project.a3p"), "edited").unwrap();
     fs::write(
         edit_evidence_dir.join("procedure.diff.json"),
-        r#"{"edited":["scene.eatmeFirstLessonStep"]}"#,
+        r#"{"edited":["scene.myFirstMethod"]}"#,
     )
     .unwrap();
     let runner = FakeCommandRunner::default();
@@ -81,7 +81,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
         command: "tools/eatme-edit-procedure --json".into(),
         exit_status: Some(0),
         stdout: serde_json::json!({
-            "schema_version": "eatme.alice-procedure-edit-result/v1",
+            "schema_version": "eatme.alice-first-lesson-code-editor-action-proof-result/v1",
             "status": "edited",
             "procedure_selector": DEFAULT_PROCEDURE_SELECTOR,
             "edited_project_artifact": "edited-project.a3p",
@@ -124,7 +124,7 @@ fn edit_procedure_hook_rejects_paths_outside_evidence_dir() {
         command: "tools/eatme-edit-procedure --json".into(),
         exit_status: Some(0),
         stdout: serde_json::json!({
-            "schema_version": "eatme.alice-procedure-edit-result/v1",
+            "schema_version": "eatme.alice-first-lesson-code-editor-action-proof-result/v1",
             "status": "edited",
             "procedure_selector": DEFAULT_PROCEDURE_SELECTOR,
             "edited_project_artifact": "../edited-project.a3p",
@@ -190,4 +190,226 @@ fn unique_test_dir(prefix: &str) -> PathBuf {
         .join("target")
         .join("eatme-alice-edit-procedure-tests")
         .join(format!("{prefix}-{nonce}"))
+}
+
+#[test]
+fn proof_artifact_valid_json_sets_verified_true() {
+    let root = unique_test_dir("proof-artifact-valid");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    fs::write(
+        run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT),
+        r#"{"action":"code-editor","lesson":"first","timestamp":"2026-05-12T00:00:00Z"}"#,
+    )
+    .unwrap();
+
+    // Start with a blocked probe (hook didn't prove edit) — proof artifact should supplement.
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(
+        probe.edit_procedure_verified,
+        "valid proof JSON must set edit_procedure_verified=true"
+    );
+    assert!(
+        probe.proof_detail.is_some(),
+        "valid proof JSON must populate proof_detail"
+    );
+    let detail = probe.proof_detail.as_deref().unwrap();
+    assert!(
+        detail.contains("code-editor") || detail.contains("first"),
+        "proof_detail should summarize the proof contents: {detail}"
+    );
+    // OR-logic: proof artifact provides alternative verification path
+    assert!(
+        probe.proves_edit(),
+        "proves_edit() should return true when proof artifact validates, \
+         even if the hook itself did not prove editing"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn proof_artifact_missing_sets_verified_false() {
+    let root = unique_test_dir("proof-artifact-missing");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    // Deliberately do NOT create the proof artifact file.
+
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(
+        !probe.edit_procedure_verified,
+        "missing proof artifact must leave edit_procedure_verified=false"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn proof_artifact_invalid_json_sets_verified_false() {
+    let root = unique_test_dir("proof-artifact-invalid");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    fs::write(
+        run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT),
+        "this is not valid json {{{",
+    )
+    .unwrap();
+
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(
+        !probe.edit_procedure_verified,
+        "invalid JSON proof must leave edit_procedure_verified=false"
+    );
+    assert!(
+        probe.proof_detail.is_some(),
+        "invalid JSON should populate proof_detail with error info"
+    );
+    let detail = probe.proof_detail.as_deref().unwrap();
+    assert!(
+        detail.to_lowercase().contains("json") || detail.to_lowercase().contains("parse"),
+        "proof_detail should mention the JSON parse failure: {detail}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn proof_artifact_large_json_is_truncated() {
+    let root = unique_test_dir("proof-artifact-truncated");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    // Build a valid JSON object larger than 500 bytes.
+    let large_value = "x".repeat(600);
+    let content = format!(r#"{{"padding":"{large_value}"}}"#);
+    assert!(content.len() > 500, "test fixture must exceed 500 bytes");
+    fs::write(run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT), &content).unwrap();
+
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(probe.edit_procedure_verified, "valid JSON must verify");
+    let detail = probe.proof_detail.as_deref().unwrap();
+    assert!(
+        detail.len() <= 501,
+        "proof_detail must be truncated to ~500 chars, got {}",
+        detail.len()
+    );
+    assert!(
+        detail.ends_with('…'),
+        "truncated proof_detail must end with ellipsis: {detail}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn validate_accepts_proved_without_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(errors.is_empty(), "Expected no errors, got: {:?}", errors);
+}
+
+#[test]
+fn validate_accepts_edited_with_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "edited".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: Some("some/diff.txt".into()),
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(errors.is_empty(), "Expected no errors, got: {:?}", errors);
+}
+
+#[test]
+fn validate_rejects_edited_without_diff() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "edited".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("procedure_or_code_diff")),
+        "Expected diff error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_rejects_unknown_status() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "unknown".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("status must be")),
+        "Expected status error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_rejects_empty_edited_project() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "".into(),
+        procedure_or_code_diff: None,
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.iter().any(|e| e.contains("edited_project_artifact")),
+        "Expected artifact error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn validate_proved_with_empty_diff_is_ok() {
+    let result = ProcedureEditHookResult {
+        schema_version: "eatme.alice-first-lesson-code-editor-action-proof-result/v1".into(),
+        status: "proved".into(),
+        procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
+        edited_project_artifact: "some/path.a3p".into(),
+        procedure_or_code_diff: Some("".into()),
+    };
+    let errors = validate_edit_hook_result(&result);
+    assert!(
+        errors.is_empty(),
+        "Expected no errors for proved+empty diff, got: {:?}",
+        errors
+    );
 }

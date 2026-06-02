@@ -1,6 +1,10 @@
 use super::*;
 use eatme_core::AssertionResult;
-use std::path::Path;
+use regex::Regex;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
 
 #[test]
 fn manifest_only_comparison_writes_bounded_manifest() {
@@ -257,6 +261,56 @@ targets: {}
 }
 
 #[test]
+fn validate_id_rejects_empty_uppercase_and_trailing_dash() {
+    assert!(validate_id("target id", "").is_err());
+    assert!(validate_id("target id", "Uppercase").is_err());
+    assert!(validate_id("target id", "trailing-").is_err());
+    assert!(validate_id("target id", "valid-id-1").is_ok());
+}
+
+#[test]
+fn resolve_alice_home_prefers_override_then_registry_then_env() {
+    let registry_path = PathBuf::from("/registry/home");
+    let override_path = PathBuf::from("/override/home");
+    let env_path =
+        PathBuf::from(std::env::var_os("HOME").expect("HOME should be available during tests"));
+    let target = AliceTargetDefinition {
+        label: "Target".into(),
+        description: "Comparison target".into(),
+        alice_home: Some(registry_path.clone()),
+        alice_home_env: Some("HOME".into()),
+        required_paths: Vec::new(),
+        metadata: std::collections::BTreeMap::new(),
+        notes: Vec::new(),
+    };
+
+    assert_eq!(
+        resolve_alice_home(&target, Some(&override_path)),
+        Some((override_path, "cli_override".into()))
+    );
+    assert_eq!(
+        resolve_alice_home(&target, None),
+        Some((registry_path, "registry".into()))
+    );
+
+    let env_target = AliceTargetDefinition {
+        alice_home: None,
+        ..target.clone()
+    };
+    assert_eq!(
+        resolve_alice_home(&env_target, None),
+        Some((env_path, "env:HOME".into()))
+    );
+
+    let missing_env_target = AliceTargetDefinition {
+        alice_home: None,
+        alice_home_env: Some("EATME_TEST_UNSET_HOME".into()),
+        ..target
+    };
+    assert_eq!(resolve_alice_home(&missing_env_target, None), None);
+}
+
+#[test]
 fn status_diff_records_changed_assertions() {
     let mut targets = BTreeMap::new();
     targets.insert(
@@ -367,11 +421,221 @@ fn failed_display_responsive_assertions_still_create_functionality_difference() 
     assert_eq!(scorecard.functionality_result, "different");
 }
 
+#[test]
+fn identical_programs_keep_the_same_comparison_score() {
+    let baseline =
+        target_run_with_feature_score("baseline", &["place_object", "edit_code", "run_world"]);
+    let modernized =
+        target_run_with_feature_score("modernized", &["place_object", "edit_code", "run_world"]);
+
+    assert_eq!(feature_score(&baseline), feature_score(&modernized));
+}
+
+#[test]
+fn additional_modernized_features_improve_its_score_vs_baseline() {
+    let baseline = target_run_with_feature_score("baseline", &["place_object", "edit_code"]);
+    let modernized = target_run_with_feature_score(
+        "modernized",
+        &["place_object", "edit_code", "run_world", "save_project"],
+    );
+
+    assert!(feature_score(&modernized) > feature_score(&baseline));
+}
+
+#[test]
+fn removing_features_from_modernized_shows_regression_vs_baseline() {
+    let baseline = target_run_with_feature_score(
+        "baseline",
+        &["place_object", "edit_code", "run_world", "save_project"],
+    );
+    let modernized = target_run_with_feature_score("modernized", &["place_object"]);
+
+    assert!(feature_score(&modernized) < feature_score(&baseline));
+}
+
+#[test]
+fn compare_status_and_assertions_handles_large_assertion_sets_under_budget() {
+    const ASSERTION_COUNT: usize = 1_500;
+    const DIFFERING_EVERY: usize = 10;
+    const MAX_ELAPSED: Duration = Duration::from_millis(200);
+
+    let targets = large_assertion_targets(ASSERTION_COUNT, DIFFERING_EVERY);
+    let warmup = compare_status_and_assertions(&targets);
+    assert_eq!(
+        warmup.assertion_diffs.len(),
+        ASSERTION_COUNT / DIFFERING_EVERY
+    );
+
+    let start = Instant::now();
+    let diff = compare_status_and_assertions(&targets);
+    let elapsed = start.elapsed();
+
+    assert_eq!(
+        diff.assertion_diffs.len(),
+        ASSERTION_COUNT / DIFFERING_EVERY
+    );
+    assert!(
+        elapsed < MAX_ELAPSED,
+        "diffing {ASSERTION_COUNT} assertions took {elapsed:?}, expected under {MAX_ELAPSED:?}"
+    );
+}
+
+#[test]
+fn build_scorecard_processes_repeated_large_comparisons_under_budget() {
+    const ITERATIONS: usize = 100;
+    const ASSERTION_COUNT: usize = 1_000;
+    const MAX_ELAPSED: Duration = Duration::from_millis(800);
+
+    let targets = large_assertion_targets(ASSERTION_COUNT, 8);
+    let warmup = compare_status_and_assertions(&targets);
+    let warmup_scorecard = build_scorecard(true, &targets, &warmup);
+    assert_eq!(warmup_scorecard.functionality_result, "different");
+
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        let diff = compare_status_and_assertions(&targets);
+        let scorecard = build_scorecard(true, &targets, &diff);
+        assert_eq!(scorecard.functionality_result, "different");
+    }
+    let elapsed = start.elapsed();
+
+    assert!(
+        elapsed < MAX_ELAPSED,
+        "building {ITERATIONS} scorecards with {ASSERTION_COUNT} assertions took {elapsed:?}, expected under {MAX_ELAPSED:?}"
+    );
+}
+
+#[test]
+fn real_a3p_fixture_same_version_produces_no_comparison_diff() {
+    let fixture = real_fixture_path("amazonMinimum.a3p");
+    let mut targets = BTreeMap::new();
+    targets.insert(
+        "baseline".into(),
+        target_run_with_fixture_signature("baseline", &fixture),
+    );
+    targets.insert(
+        "modernized".into(),
+        target_run_with_fixture_signature("modernized", &fixture),
+    );
+
+    let diff = compare_status_and_assertions(&targets);
+
+    assert!(!diff.status_changed);
+    assert!(diff.assertion_diffs.is_empty());
+}
+
+#[test]
+fn real_a3p_fixture_variant_registers_diff_for_same_project() {
+    let baseline_fixture = real_fixture_path("amazonMinimum.a3p");
+    let variant_fixture = write_fixture_variant_copy("amazonMinimum.a3p");
+    let mut targets = BTreeMap::new();
+    targets.insert(
+        "baseline".into(),
+        target_run_with_fixture_signature("baseline", &baseline_fixture),
+    );
+    targets.insert(
+        "modernized".into(),
+        target_run_with_fixture_signature("modernized", &variant_fixture),
+    );
+
+    let diff = compare_status_and_assertions(&targets);
+
+    assert_eq!(diff.assertion_diffs.len(), 1);
+    let assertion_diff = &diff.assertion_diffs[0];
+    assert_eq!(assertion_diff.assertion, "project_fixture_signature");
+    assert_eq!(
+        assertion_diff
+            .baseline
+            .as_ref()
+            .map(|snapshot| snapshot.passed),
+        Some(true)
+    );
+    assert_eq!(
+        assertion_diff
+            .modernized
+            .as_ref()
+            .map(|snapshot| snapshot.passed),
+        Some(true)
+    );
+    assert_ne!(
+        assertion_diff.baseline.as_ref().unwrap().detail,
+        assertion_diff.modernized.as_ref().unwrap().detail
+    );
+    assert!(
+        assertion_diff
+            .baseline
+            .as_ref()
+            .unwrap()
+            .detail
+            .contains("methods=")
+    );
+    assert!(
+        assertion_diff
+            .modernized
+            .as_ref()
+            .unwrap()
+            .detail
+            .contains("comparisonVariant")
+    );
+}
+
 fn assert_contract_contains(entries: &[String], expected: &str) {
     assert!(
         entries.iter().any(|entry| entry.contains(expected)),
         "contract entries should contain {expected:?}: {entries:?}"
     );
+}
+
+fn feature_score(target: &ComparisonTargetRun) -> usize {
+    target
+        .launch_manifest
+        .as_ref()
+        .map(|manifest| {
+            manifest
+                .assertions
+                .values()
+                .filter(|result| result.passed)
+                .count()
+        })
+        .unwrap_or(0)
+}
+
+fn large_assertion_targets(
+    assertion_count: usize,
+    differing_every: usize,
+) -> BTreeMap<String, ComparisonTargetRun> {
+    let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
+    let mut modernized = target_run_with_assertion("modernized", "passed", None, true);
+    let baseline_assertions = &mut baseline.launch_manifest.as_mut().unwrap().assertions;
+    let modernized_assertions = &mut modernized.launch_manifest.as_mut().unwrap().assertions;
+    baseline_assertions.clear();
+    modernized_assertions.clear();
+
+    for index in 0..assertion_count {
+        let key = format!("assertion_{index}");
+        baseline_assertions.insert(key.clone(), AssertionResult::pass("ready"));
+        let modernized_result = if index % differing_every == 0 {
+            AssertionResult::fail("modernized regressed")
+        } else {
+            AssertionResult::pass("ready")
+        };
+        modernized_assertions.insert(key, modernized_result);
+    }
+
+    BTreeMap::from([
+        ("baseline".into(), baseline),
+        ("modernized".into(), modernized),
+    ])
+}
+
+fn target_run_with_feature_score(role: &str, features: &[&str]) -> ComparisonTargetRun {
+    let mut target = target_run_with_assertion(role, "passed", None, true);
+    let assertions = &mut target.launch_manifest.as_mut().unwrap().assertions;
+    assertions.clear();
+    for feature in features {
+        assertions.insert((*feature).into(), AssertionResult::pass("feature present"));
+    }
+    target
 }
 
 fn target_run_with_assertion(
@@ -439,6 +703,123 @@ fn target_run_with_assertion(
         }),
         launch_manifest_artifact: None,
     }
+}
+
+fn real_fixture_path(name: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/real")
+        .join(name)
+}
+
+fn target_run_with_fixture_signature(role: &str, fixture: &Path) -> ComparisonTargetRun {
+    let mut target = target_run_with_assertion(role, "passed", None, true);
+    let assertions = &mut target.launch_manifest.as_mut().unwrap().assertions;
+    assertions.clear();
+    assertions.insert(
+        "project_fixture_signature".into(),
+        AssertionResult::pass(real_fixture_signature(fixture)),
+    );
+    target
+}
+
+fn real_fixture_signature(path: &Path) -> String {
+    let xml = extract_fixture_xml(path);
+    let method_names = user_method_name_regex()
+        .captures_iter(&xml)
+        .filter_map(|captures| {
+            captures
+                .get(1)
+                .or_else(|| captures.get(2))
+                .map(|value| value.as_str().to_string())
+        })
+        .collect::<Vec<_>>();
+    format!(
+        "methods={};names={}",
+        method_names.len(),
+        method_names.join("|")
+    )
+}
+
+fn extract_fixture_xml(path: &Path) -> String {
+    let file =
+        fs::File::open(path).unwrap_or_else(|err| panic!("open fixture {}: {err}", path.display()));
+    let mut archive = zip::ZipArchive::new(file)
+        .unwrap_or_else(|err| panic!("read fixture {} as zip: {err}", path.display()));
+    let mut xml = String::new();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).unwrap();
+        if entry.name().ends_with(".xml") {
+            let mut content = String::new();
+            entry.read_to_string(&mut content).unwrap();
+            xml.push_str(&content);
+            xml.push('\n');
+        }
+    }
+    xml
+}
+
+fn write_fixture_variant_copy(name: &str) -> PathBuf {
+    let source = real_fixture_path(name);
+    let root = unique_test_dir("real-a3p-fixture-variant");
+    fs::create_dir_all(&root).unwrap();
+    let output = root.join(format!("variant-{name}"));
+    let source_file = fs::File::open(&source)
+        .unwrap_or_else(|err| panic!("open source fixture {}: {err}", source.display()));
+    let mut archive = zip::ZipArchive::new(source_file)
+        .unwrap_or_else(|err| panic!("read source fixture {} as zip: {err}", source.display()));
+    let output_file = fs::File::create(&output)
+        .unwrap_or_else(|err| panic!("create variant fixture {}: {err}", output.display()));
+    let mut writer = zip::ZipWriter::new(output_file);
+    let options = zip::write::SimpleFileOptions::default();
+    let mut mutated = false;
+
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).unwrap();
+        let entry_name = entry.name().to_string();
+        if entry_name.ends_with('/') {
+            writer.add_directory(entry_name, options).unwrap();
+            continue;
+        }
+
+        let mut bytes = Vec::new();
+        entry.read_to_end(&mut bytes).unwrap();
+        if !mutated && entry_name.ends_with(".xml") {
+            let xml = String::from_utf8(bytes).unwrap();
+            if let Some(next_xml) = rename_first_user_method(&xml) {
+                bytes = next_xml.into_bytes();
+                mutated = true;
+            } else {
+                bytes = xml.into_bytes();
+            }
+        }
+
+        writer.start_file(entry_name, options).unwrap();
+        writer.write_all(&bytes).unwrap();
+    }
+    writer.finish().unwrap();
+    assert!(mutated, "expected fixture variant to rename a user method");
+    output
+}
+
+fn rename_first_user_method(xml: &str) -> Option<String> {
+    let captures = user_method_name_regex().captures(xml)?;
+    let name_match = captures.get(1).or_else(|| captures.get(2))?;
+    let mut mutated = String::with_capacity(xml.len() + "comparisonVariant".len());
+    mutated.push_str(&xml[..name_match.start()]);
+    mutated.push_str(name_match.as_str());
+    mutated.push_str("comparisonVariant");
+    mutated.push_str(&xml[name_match.end()..]);
+    Some(mutated)
+}
+
+fn user_method_name_regex() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r#"(?s)type\s*=\s*"(?:[^"]+\.)?UserMethod"[^>]*?(?:name\s*=\s*"([^"]+)"|.*?<property\s+name\s*=\s*"name">\s*<value[^>]*>([^<]+)</value>)"#,
+        )
+        .unwrap()
+    })
 }
 
 fn unique_test_dir(prefix: &str) -> PathBuf {

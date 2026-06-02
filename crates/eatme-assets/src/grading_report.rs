@@ -1,15 +1,46 @@
 use eatme_core::ast::{Program, Statement};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct GradingReport {
     pub schema_version: String,
     pub lesson: String,
     pub passed: bool,
     pub steps: Vec<StepGrade>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub quality_scores: Vec<QualityScore>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+pub struct QualityScore {
+    pub score: u8,
+    pub dimension: String,
+    pub feedback: String,
+}
+
+impl GradingReport {
+    pub(crate) fn new(
+        schema_version: impl Into<String>,
+        lesson: impl Into<String>,
+        passed: bool,
+        steps: Vec<StepGrade>,
+    ) -> Self {
+        Self {
+            schema_version: schema_version.into(),
+            lesson: lesson.into(),
+            passed,
+            steps,
+            quality_scores: vec![],
+        }
+    }
+
+    pub(crate) fn with_quality_scores(mut self, quality_scores: Vec<QualityScore>) -> Self {
+        self.quality_scores = quality_scores;
+        self
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct StepGrade {
     pub name: String,
     pub status: StepStatus,
@@ -17,7 +48,7 @@ pub struct StepGrade {
     pub depends_on: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum StepStatus {
     #[serde(rename = "ready")]
     Ready,
@@ -68,12 +99,12 @@ pub fn grade_first_lesson_readiness(input: GradingInput) -> GradingReport {
 
     steps.extend([place_object, edit_code, run_world]);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "building-a-scene-first-world".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "building-a-scene-first-world",
         passed,
         steps,
-    }
+    )
 }
 
 fn interaction_step(
@@ -84,14 +115,14 @@ fn interaction_step(
 ) -> StepGrade {
     let depends_on: Vec<String> = deps.iter().map(|d| (*d).into()).collect();
     let (status, reason) = if upstream_blocked {
-        (
-            StepStatus::Blocked,
-            format!("Blocked by: {}", deps.join(", ")),
-        )
+        (StepStatus::Blocked, blocked_by_reason(name, deps))
     } else {
         (
             StepStatus::NotYetTested,
-            format!("{} — requires human interaction", description),
+            format!(
+                "{} — requires human interaction. In Alice, {}, save the project, and rerun grading.",
+                description, description
+            ),
         )
     };
     StepGrade {
@@ -100,6 +131,39 @@ fn interaction_step(
         reason,
         depends_on,
     }
+}
+
+pub(crate) fn step_display_name(name: &str) -> String {
+    name.replace('-', " ")
+}
+
+pub(crate) fn blocked_by_reason(name: &str, deps: &[&str]) -> String {
+    format!(
+        "Blocked by: {}. Complete those prerequisite steps before you try to {} again, then rerun grading.",
+        deps.join(", "),
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_program_reason(name: &str) -> String {
+    format!(
+        "No student program provided. Open the student's Alice project, complete the '{}' step, save the project, and rerun grading.",
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_scene_reason(name: &str) -> String {
+    format!(
+        "No student scene provided. Open the student's scene, complete the '{}' step, save the project, and rerun grading.",
+        step_display_name(name)
+    )
+}
+
+pub(crate) fn no_sequence_reason(name: &str) -> String {
+    format!(
+        "No sequence blocks provided. Record the '{}' work in the student's program, save the project, and rerun grading.",
+        step_display_name(name)
+    )
 }
 
 pub(crate) fn build_preconditions(
@@ -140,14 +204,14 @@ pub(crate) fn build_preconditions(
             StepGrade {
                 name: "launch-smoke".into(),
                 status: StepStatus::Ready,
-                reason: "All preconditions met".into(),
+                reason: "All preconditions met. Launch Alice, complete the lesson steps, and rerun grading after you save the project.".into(),
                 depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
             }
         } else {
             StepGrade {
                 name: "launch-smoke".into(),
                 status: StepStatus::Blocked,
-                reason: format!("Blocked by: {}", blockers.join(", ")),
+                reason: blocked_by_reason("launch-smoke", &blockers),
                 depends_on: vec!["validate-assets".into(), "check-dependencies".into()],
             }
         }
@@ -191,19 +255,19 @@ pub fn grade_loops_and_conditionals(input: LoopsGradingInput) -> GradingReport {
 
     steps.extend(interaction_steps);
 
-    GradingReport {
-        schema_version: "eatme.assets/grading/v1".into(),
-        lesson: "loops-and-conditionals-mini-challenge".into(),
+    GradingReport::new(
+        "eatme.assets/grading/v1",
+        "loops-and-conditionals-mini-challenge",
         passed,
         steps,
-    }
+    )
 }
 
 pub(crate) fn cascade_blocked(name: &str, deps: &[&str]) -> StepGrade {
     StepGrade {
         name: name.into(),
         status: StepStatus::Blocked,
-        reason: format!("Blocked by: {}", deps.join(", ")),
+        reason: blocked_by_reason(name, deps),
         depends_on: deps.iter().map(|d| (*d).into()).collect(),
     }
 }
@@ -214,7 +278,7 @@ pub(crate) fn no_program_chain(steps: &[(&str, &str)]) -> Vec<StepGrade> {
         .map(|(name, dep)| StepGrade {
             name: (*name).into(),
             status: StepStatus::Blocked,
-            reason: "No student program provided".into(),
+            reason: no_program_reason(name),
             depends_on: vec![(*dep).into()],
         })
         .collect()
@@ -224,12 +288,16 @@ pub(crate) fn ast_check_step(name: &str, dep: &str, found: bool, construct: &str
     let (status, reason) = if found {
         (
             StepStatus::Ready,
-            format!("{construct} found in student program"),
+            format!(
+                "{construct} found in student program. Keep this work, save the project, and move on to the next step."
+            ),
         )
     } else {
         (
             StepStatus::Blocked,
-            format!("No {construct} found in student program"),
+            format!(
+                "No {construct} found in student program. Add {construct} to the project, save the project, and rerun grading."
+            ),
         )
     };
     StepGrade {
@@ -277,7 +345,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
         StepGrade {
             name: "run-world".into(),
             status: StepStatus::NotYetTested,
-            reason: "Run the world and observe results — requires human interaction".into(),
+            reason: "Run the world and observe results — requires human interaction. In Alice, run the world, confirm the loop and conditional work, save the project, and rerun grading.".into(),
             depends_on: vec!["add-conditional-branch".into()],
         }
     };
@@ -290,7 +358,7 @@ fn evaluate_loops_steps(program: &Option<Program>) -> Vec<StepGrade> {
         StepGrade {
             name: "save-project".into(),
             status: StepStatus::Ready,
-            reason: "Save and reopen project to verify persistence".into(),
+            reason: "Save and reopen project to verify persistence. Keep that saved copy as evidence for grading and later review.".into(),
             depends_on: vec!["run-world".into()],
         }
     };
@@ -330,15 +398,31 @@ fn stmt_find_constructs(stmts: &[Statement], has_loop: &mut bool, has_cond: &mut
                     }
                 }
             }
-            Statement::MethodCall { .. } => {}
-            Statement::EventListener { body, .. } => {
+            Statement::MethodCall { .. }
+            | Statement::ReturnStatement { .. }
+            | Statement::FunctionCall { .. }
+            | Statement::VariableDeclaration { .. }
+            | Statement::VariableAssignment { .. }
+            | Statement::ArrayDeclaration { .. }
+            | Statement::ArrayAccess { .. }
+            | Statement::ArithmeticExpression { .. }
+            | Statement::Comment { .. } => {}
+            Statement::EventListener { body, .. }
+            | Statement::CollisionListener { body, .. }
+            | Statement::DoInOrder { body }
+            | Statement::ForEachArray { body, .. } => {
                 if !(*has_loop && *has_cond) {
                     stmt_find_constructs(body, has_loop, has_cond);
                 }
             }
-            Statement::CollisionListener { body, .. } => {
+            Statement::UserTypeDeclaration { methods, .. } => {
                 if !(*has_loop && *has_cond) {
-                    stmt_find_constructs(body, has_loop, has_cond);
+                    for method in methods {
+                        stmt_find_constructs(&method.body, has_loop, has_cond);
+                        if *has_loop && *has_cond {
+                            break;
+                        }
+                    }
                 }
             }
         }

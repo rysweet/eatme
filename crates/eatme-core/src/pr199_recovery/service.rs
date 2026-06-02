@@ -216,3 +216,110 @@ fn external_error_excerpt(output: &CommandOutput) -> String {
     };
     detail.chars().take(500).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::Result;
+    use std::sync::Mutex;
+
+    struct StubRunner {
+        output: CommandOutput,
+        specs: Mutex<Vec<CommandSpec>>,
+    }
+
+    impl StubRunner {
+        fn new(output: CommandOutput) -> Self {
+            Self {
+                output,
+                specs: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    impl CommandRunner for StubRunner {
+        fn run(&self, spec: &CommandSpec) -> Result<CommandOutput> {
+            self.specs.lock().unwrap().push(spec.clone());
+            Ok(self.output.clone())
+        }
+    }
+
+    #[test]
+    fn fetch_state_uses_expected_gh_command_and_collects_rollup() {
+        let runner = StubRunner::new(CommandOutput {
+            command: "gh pr view 199".into(),
+            exit_status: Some(0),
+            stdout: r#"{
+              "number": 199,
+              "headRefName": "feat/pr-199",
+              "headRefOid": "abc123",
+              "files": [{"path": "crates/eatme-core/src/lib.rs"}],
+              "statusCheckRollup": [
+                {"name": "workspace", "conclusion": "SUCCESS"},
+                {"context": "linux-headless", "status": "IN_PROGRESS"},
+                {"workflowName": "preview", "state": "SKIPPED"}
+              ]
+            }"#
+            .into(),
+            stderr: String::new(),
+        });
+        let client = GitHubPrStateClient::with_config(
+            &runner,
+            GitHubPrStateClientConfig {
+                attempts: 5,
+                retry_delay: Duration::from_millis(25),
+                timeout: Duration::from_secs(9),
+            },
+        );
+
+        let state = client.fetch_state().unwrap();
+        let specs = runner.specs.lock().unwrap();
+
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0].program, "gh");
+        assert_eq!(
+            specs[0].args,
+            vec![
+                "pr".to_string(),
+                "view".to_string(),
+                "199".to_string(),
+                "--json".to_string(),
+                PR199_JSON_FIELDS.to_string(),
+            ]
+        );
+        assert_eq!(specs[0].attempts, 5);
+        assert_eq!(specs[0].retry_delay, Duration::from_millis(25));
+        assert_eq!(specs[0].timeout, Some(Duration::from_secs(9)));
+        assert_eq!(state.branch, "feat/pr-199");
+        assert_eq!(state.head_sha, "abc123");
+        assert_eq!(
+            state.changed_files,
+            vec![PathBuf::from("crates/eatme-core/src/lib.rs")]
+        );
+        assert_eq!(state.check_rollup.success, vec!["workspace".to_string()]);
+        assert_eq!(
+            state.check_rollup.pending,
+            vec!["linux-headless".to_string()]
+        );
+        assert_eq!(state.check_rollup.skipped, vec!["preview".to_string()]);
+    }
+
+    #[test]
+    fn fetch_state_reports_nonzero_exit_with_trimmed_excerpt() {
+        let runner = StubRunner::new(CommandOutput {
+            command: "gh pr view 199".into(),
+            exit_status: Some(1),
+            stdout: String::new(),
+            stderr: format!("{} trailing detail", "x".repeat(600)),
+        });
+        let client = GitHubPrStateClient::new(&runner);
+
+        let error = client.fetch_state().unwrap_err();
+
+        assert_eq!(error.code(), "github_pr_state_fetch_failed");
+        let rendered = error.to_string();
+        assert!(rendered.contains("gh pr view exited Some(1)"));
+        assert!(rendered.contains(&"x".repeat(500)));
+        assert!(!rendered.contains(&"x".repeat(501)));
+    }
+}

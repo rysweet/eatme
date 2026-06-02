@@ -188,3 +188,112 @@ fn ui_action_blocking_reason(
         "The harness can activate a detected Alice window when present, but deterministic object placement, procedure editing, world run, and project save automation are not wired yet."
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn test_run_dir() -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target/test-work/ui-action-contract-tests")
+            .join(format!("{nonce}"));
+        fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    fn artifact(path: &str) -> eatme_core::ArtifactInfo {
+        eatme_core::ArtifactInfo {
+            path: path.into(),
+            size_bytes: 16,
+            sha256: format!("{path}-sha"),
+        }
+    }
+
+    fn object_placement_probe(status: &str) -> UiActionObjectPlacementProbe {
+        UiActionObjectPlacementProbe {
+            id: "alice-side-object-placement-command-hook".into(),
+            action_id: "place-object".into(),
+            status: status.into(),
+            detail: "placement detail".into(),
+            object_identifier: "alice-gallery://animals/bunny".into(),
+            candidate_hook_path: DEFAULT_OBJECT_PLACEMENT_HOOK.into(),
+            command: Some("tools/eatme-place-object --json".into()),
+            exit_status: Some(0),
+            stdout: String::new(),
+            stderr: String::new(),
+            placement_artifact: (status == "passed").then(|| artifact("placement.json")),
+            scene_or_project_diff: (status == "passed").then(|| artifact("scene.diff.json")),
+            validation_errors: Vec::new(),
+            missing_affordance: None,
+        }
+    }
+
+    #[test]
+    fn write_ui_action_contract_records_blocked_follow_on_actions_after_placement() {
+        let run_dir = test_run_dir();
+        let placement_probe = object_placement_probe("passed");
+
+        let contract = write_ui_action_contract(
+            &run_dir,
+            true,
+            true,
+            true,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(&placement_probe),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let json = fs::read_to_string(run_dir.join("ui-action-contract.json")).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(
+            contract.path,
+            run_dir
+                .join("ui-action-contract.json")
+                .display()
+                .to_string()
+        );
+        assert_eq!(value["schema_version"], "eatme.ui-action-contract/v1");
+        assert_eq!(value["required_actions"][2]["decision"], "ready");
+        assert_eq!(value["required_actions"][3]["decision"], "no_go");
+        assert_eq!(
+            value["candidate_affordance_probes"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            value["action_precondition_probes"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert!(
+            value["blocking_reason"]
+                .as_str()
+                .unwrap()
+                .contains("procedure/code-block edit contract")
+        );
+
+        let _ = fs::remove_dir_all(run_dir);
+    }
+}

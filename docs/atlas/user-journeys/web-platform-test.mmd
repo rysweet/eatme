@@ -1,0 +1,19 @@
+sequenceDiagram
+    actor Developer
+    participant Server as TS server
+    participant Test as web_platform_curriculum_e2e
+    participant Client as ureq client
+    participant Assert as StepResult assertions
+
+    Developer->>Server: start serve --port 3099
+    Developer->>Test: EATME_WEB_PLATFORM=1 cargo test -p eatme-alice --test web_platform_curriculum_e2e
+    Test->>Client: load scenario steps + base URL
+    Client->>Server: GET /api/health
+    Client->>Server: POST /api/launch
+    Client->>Server: POST /api/scene/add-object
+    Client->>Server: POST /api/code/edit-procedure
+    Client->>Server: POST /api/world/run
+    Client->>Server: POST /api/project/save
+    Client->>Server: POST /api/events/register
+    Server-->>Assert: JSON responses
+    Assert-->>Developer: curriculum scenario verdicts

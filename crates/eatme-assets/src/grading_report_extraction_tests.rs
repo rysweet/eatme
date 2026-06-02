@@ -15,36 +15,35 @@ use eatme_core::ast::{Procedure, Program, Statement};
 // ── Fixtures ──────────────────────────────────────────────────
 
 fn complete_events_program() -> Program {
-    Program {
-        procedures: vec![Procedure {
-            name: "myFirstMethod".into(),
-            body: vec![
-                Statement::EventListener {
-                    event: "SceneActivated".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Hello world!\"".into()],
-                    }],
-                },
-                Statement::CollisionListener {
-                    object_a: "this.cat".into(),
-                    object_b: "this.dog".into(),
-                    body: vec![Statement::MethodCall {
-                        object: "this.cat".into(),
-                        method: "say".into(),
-                        arguments: vec!["\"Ouch!\"".into()],
-                    }],
-                },
-            ],
-        }],
-    }
+    Program::new(vec![Procedure {
+        name: "myFirstMethod".into(),
+        parameters: vec![],
+        body: vec![
+            Statement::EventListener {
+                event: "SceneActivated".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Hello world!\"".into()],
+                }],
+            },
+            Statement::CollisionListener {
+                object_a: "this.cat".into(),
+                object_b: "this.dog".into(),
+                body: vec![Statement::MethodCall {
+                    object: "this.cat".into(),
+                    method: "say".into(),
+                    arguments: vec!["\"Ouch!\"".into()],
+                }],
+            },
+        ],
+    }])
 }
 
 fn all_ready_input(program: Option<Program>) -> EventsGradingInput {
     EventsGradingInput {
         assets_valid: true,
-        asset_reason: "All 93 scenario assets passed validation".into(),
+        asset_reason: "All 101 scenario assets passed validation".into(),
         deps_available: true,
         deps_reason: "All required tools available".into(),
         student_program: program,

@@ -1,0 +1,39 @@
+graph TD
+    root["eatme root"]
+    cargo["Cargo.toml workspace"]
+    crates["crates/"]
+    core["eatme-core"]
+    alice["eatme-alice"]
+    assets_crate["eatme-assets"]
+    cli["eatme-cli"]
+    support["eatme-test-support"]
+    assets["assets/"]
+    scenarios["assets/scenarios/"]
+    eatme_scen["scenarios/eatme/"]
+    gadugi_scen["scenarios/gadugi/"]
+    personas["assets/personas/"]
+    docs["docs/"]
+    atlas["docs/atlas/"]
+    scripts["scripts/"]
+    quality["quality-gates.sh"]
+    github[".github/"]
+    workflows["workflows/"]
+
+    root --> cargo
+    root --> crates
+    crates --> core
+    crates --> alice
+    crates --> assets_crate
+    crates --> cli
+    crates --> support
+    root --> assets
+    assets --> scenarios
+    scenarios --> eatme_scen
+    scenarios --> gadugi_scen
+    assets --> personas
+    root --> docs
+    docs --> atlas
+    root --> scripts
+    scripts --> quality
+    root --> github
+    github --> workflows

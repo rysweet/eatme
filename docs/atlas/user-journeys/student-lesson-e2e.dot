@@ -1,0 +1,16 @@
+digraph student_lesson_e2e {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="student lesson e2e"];
+    node [shape=box, style=rounded, fontsize=10];
+    Student -> CLI [label="1 deps check"];
+    CLI -> AliceAPI [label="2 check_dependencies"];
+    Student -> CLI [label="3 launch-smoke"];
+    CLI -> AliceAPI [label="4 discover/package/run_launch_smoke"];
+    AliceAPI -> Alice [label="5 build + launch"];
+    Student -> Alice [label="6 lesson actions"];
+    Alice -> Runs [label="7 capture evidence + save"];
+    AliceAPI -> CLI [label="8 LaunchSmokeManifest"];
+    CLI -> Parser [label="9 parse saved .a3p"];
+    Parser -> Grade [label="10 Program AST"];
+    Grade -> CLI [label="11 GradingReport"];
+    CLI -> Student [label="12 report result"];
+}

@@ -75,6 +75,68 @@ fn fake_toolchain_launch_smoke_uses_scenario_run_directory() {
 }
 
 #[test]
+fn launch_smoke_marks_process_started_when_alice_stays_alive() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "process-started-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::default(),
+    })
+    .unwrap();
+
+    assert!(
+        manifest
+            .assertions
+            .get("process_started")
+            .expect("manifest should include process-started assertion")
+            .passed
+    );
+    assert_eq!(manifest.failure_category, None);
+}
+
+#[test]
+fn launch_smoke_reports_process_exit_when_alice_dies_during_startup_wait() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_quick_exit_java_tool();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "process-exited-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("alice_process_exited")
+    );
+    assert!(
+        !manifest
+            .assertions
+            .get("process_started")
+            .expect("manifest should include process-started assertion")
+            .passed
+    );
+}
+
+#[test]
 fn lesson_smoke_is_ready_when_window_evidence_exists_without_screenshot() {
     let fixture = TestFixture::new();
     fixture.write_fake_tools();

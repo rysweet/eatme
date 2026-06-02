@@ -19,27 +19,56 @@ mod default_workflow_pr_readiness_contract_tests;
 mod design_process_story_or_game_tests;
 mod discovery;
 mod gadugi;
+#[cfg(test)]
+mod grading_determinism_tests;
+#[cfg(test)]
+mod grading_edge_case_tests;
 pub mod grading_report;
+pub(crate) mod grading_report_arrays;
+pub(crate) mod grading_report_comments;
+pub(crate) mod grading_report_creative;
 pub(crate) mod grading_report_events;
 #[cfg(test)]
 mod grading_report_extraction_edge_tests;
 #[cfg(test)]
 mod grading_report_extraction_tests;
+pub(crate) mod grading_report_functions;
+pub(crate) mod grading_report_games_narrative;
+pub(crate) mod grading_report_inheritance;
 #[cfg(test)]
 mod grading_report_integration_tests;
 #[cfg(test)]
+mod grading_report_json_roundtrip_tests;
+#[cfg(test)]
+mod grading_report_module_split_contract_tests;
+pub(crate) mod grading_report_nested_control;
+pub(crate) mod grading_report_parameters;
+pub(crate) mod grading_report_scene_building;
+pub(crate) mod grading_report_sequencing;
+#[cfg(test)]
+mod grading_report_structure_tests;
+pub(crate) mod grading_report_textbook_integration;
+pub(crate) mod grading_report_variables;
+#[cfg(test)]
+mod ide_performance_accessibility_tests;
+#[cfg(test)]
 mod live_studio_workshop_tests;
+#[cfg(test)]
+mod multi_lesson_student_persona_tests;
 #[cfg(test)]
 mod neighborhood_data_story_tests;
 #[cfg(test)]
 mod outside_in_alice_expansion_tests;
 #[cfg(test)]
 mod pr160_recovery_readiness_tests;
+pub mod quality_scoring;
 mod report;
 #[cfg(test)]
 mod repository_policy_tests;
 #[cfg(test)]
 mod save_reopen_readiness_docs_tests;
+#[cfg(test)]
+mod scenario_asset_smoke_tests;
 mod schema;
 #[cfg(test)]
 mod setup_preflight_ready_to_create_tests;
@@ -55,10 +84,25 @@ pub use creative_assessment::{
 };
 pub use gadugi::{generate_gadugi_adapter_yaml, generate_gadugi_adapters};
 pub use grading_report::{
-    GradingInput, GradingReport, LoopsGradingInput, StepGrade, StepStatus,
+    GradingInput, GradingReport, LoopsGradingInput, QualityScore, StepGrade, StepStatus,
     grade_first_lesson_readiness, grade_loops_and_conditionals,
 };
+pub use grading_report_arrays::{ArraysArithmeticGradingInput, grade_arrays_and_arithmetic};
+pub use grading_report_comments::{CommentsGradingInput, grade_comments};
+pub use grading_report_creative::{CreativeProjectGradingInput, grade_creative_project};
 pub use grading_report_events::{EventsGradingInput, grade_events_and_collision};
+pub use grading_report_functions::{FunctionsGradingInput, grade_functions};
+pub use grading_report_games_narrative::{GamesNarrativeGradingInput, grade_games_and_narrative};
+pub use grading_report_inheritance::{InheritanceOopGradingInput, grade_inheritance_oop};
+pub use grading_report_nested_control::{NestedControlFlowGradingInput, grade_nested_control_flow};
+pub use grading_report_parameters::{ParametersGradingInput, grade_parameters};
+pub use grading_report_scene_building::{SceneBuildingGradingInput, grade_scene_building};
+pub use grading_report_sequencing::{SequencingGradingInput, grade_sequencing};
+pub use grading_report_textbook_integration::{
+    TextbookIntegrationGradingInput, grade_textbook_integration,
+};
+pub use grading_report_variables::{VariablesGradingInput, grade_variables};
+pub use quality_scoring::{score_event_quality, score_parameter_quality, score_variable_quality};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,
 };
@@ -156,7 +200,7 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = validate_assets(&root).unwrap();
         assert!(report.passed, "{:?}", report.errors);
-        assert_eq!(report.scenario_asset_count, 93);
+        assert_eq!(report.scenario_asset_count, 105);
     }
 
     #[test]

@@ -66,7 +66,7 @@ The `--json` flag produces structured JSON:
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 93 scenario assets passed validation"
+      "reason": "All 105 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -120,7 +120,7 @@ Without `--json`, the command prints a plain-text summary:
 
 ```text
 First-lesson grading: building-a-scene-first-world
-  validate-assets: ready — All 93 scenario assets passed validation
+  validate-assets: ready — All 105 scenario assets passed validation
   check-dependencies: blocked — Missing required tools: Xvfb, wmctrl
   launch-smoke: blocked — Blocked by: check-dependencies
   place-object: blocked — Blocked by: launch-smoke
@@ -337,7 +337,7 @@ cargo run -q -p eatme-cli -- assets grading-report --json
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 93 scenario assets passed validation"
+      "reason": "All 105 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -398,7 +398,7 @@ cargo run -q -p eatme-cli -- assets grading-report --json
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 93 scenario assets passed validation"
+      "reason": "All 105 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -540,7 +540,7 @@ cargo run -q -p eatme-cli -- assets grading-report
 
 ```text
 First-lesson grading: building-a-scene-first-world
-  validate-assets: ready — All 93 scenario assets passed validation
+  validate-assets: ready — All 105 scenario assets passed validation
   check-dependencies: ready — All required dependencies available
   launch-smoke: ready — All preconditions met
   place-object: not-yet-tested — Requires runtime execution
@@ -639,13 +639,19 @@ machine-assessed and what needs human review, see
 
 ### 500-line module limit
 
-The grading report module (`grading_report.rs`) targets under 300 lines.
-Tests are split into unit tests (`grading_report_tests.rs`) and integration
-tests (`grading_report_integration_tests.rs`), each under 300 lines. This
-keeps all modules well within the repository's 500-line quality gate.
+The grading code is split across two source modules to stay within the
+repository's 500-line quality gate: `grading_report.rs` (357 lines) contains
+the first-lesson and loops grading functions plus shared helpers, and
+`grading_report_events.rs` (189 lines) contains the events grading function.
+Tests are split into dedicated test files, each under 500 lines.
+
+For the full module map, shared helper contracts, and import patterns, see
+[Grading Module Architecture](grading-module-architecture.md).
 
 ## Related documentation
 
+- [Grading Module Architecture](grading-module-architecture.md) — Module
+  layout, shared helpers, import patterns, and how to add new lesson grading.
 - [Creative Assessment Boundary](creative-assessment-boundary.md) — What can
   be machine-assessed vs. what needs human review for Building a Scene.
 - [CLI Usage](cli-usage.md) — Full command reference including `assets

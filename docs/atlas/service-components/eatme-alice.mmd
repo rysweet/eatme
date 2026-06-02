@@ -1,0 +1,49 @@
+graph TD
+    root["eatme-alice lib.rs"]
+    deps["deps.rs"]
+    discover["discover.rs"]
+    package["package.rs"]
+    scenario["scenario.rs"]
+    compare["compare/ + compare.rs"]
+    launch["launch.rs"]
+    preflight["launch_preflight.rs"]
+    desktop_exec["launch_desktop_execution.rs"]
+    window_target["launch_window_targeting.rs"]
+    ui_actions["launch_ui_actions.rs"]
+    object_hook["launch_object_placement.rs"]
+    edit_hook["launch_edit_procedure.rs"]
+    run_world["launch_run_world.rs"]
+    run_window["launch_run_window.rs"]
+    save["launch_save_project.rs"]
+    reopen["launch_reopen_project.rs"]
+    contract["launch_ui_action_contract.rs"]
+    web_adapter["tests/web_platform_curriculum_e2e.rs
++ tests/ts_prototype_adapter.rs"]
+    ts_server["TypeScript server"]
+
+    root --> deps
+    root --> discover
+    root --> package
+    root --> scenario
+    root --> compare
+    root --> launch
+
+    launch --> preflight
+    preflight --> deps
+    preflight --> discover
+    preflight --> package
+    preflight --> desktop_exec
+    desktop_exec --> window_target
+    window_target --> ui_actions
+    ui_actions --> object_hook
+    ui_actions --> edit_hook
+    ui_actions --> run_world
+    run_world --> run_window
+    run_window --> save
+    run_window --> contract
+    save -. optional .-> reopen
+
+    compare --> launch
+    compare --> scenario
+    web_adapter --> scenario
+    web_adapter --> ts_server

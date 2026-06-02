@@ -1,0 +1,120 @@
+schema_version: eatme.scenario/v1
+id: ide-performance-parity
+title: IDE Performance Parity — Large Projects and Animation Load
+kind: instructor_agentic_flow
+owner: eatme
+resource_basis:
+  - name: Alice resources overview
+    url: https://www.alice.org/resources/
+    use: >-
+      Ground a performance-check scenario in the same Alice classroom workflows
+      teachers already use when they open larger worlds, run animations, and
+      compare whether the IDE remains responsive enough for instruction.
+  - name: Alice 3 lessons list
+    url: https://www.alice.org/resources/alice-3-lessons
+    use: >-
+      Reuse lesson-scale world-building and animation tasks to define concrete
+      parity checks: a large project with 50+ entities and a complex animation
+      exercise with 10 concurrent animations.
+purpose: >-
+  Help an instructor or reviewer prepare a performance-parity verification pack
+  for the Alice IDE. The pack must define a large project performance scenario
+  where a project with 50+ entities loads under a stated threshold and remains
+  inspectable, plus a complex animation performance scenario where 10 concurrent
+  animations sustain a stated frame-rate target without collapsing the teaching
+  flow. The output must stay honest about boundaries: it is not full user
+  interface automation, not creative assessment, not learner-world grading,
+  and not complete Alice coverage.
+personas:
+  instructors: [studio-facilitator, assessment-curator]
+  students: [debug-coach, creative-storyteller]
+agentic_flow:
+  focus: ide-performance-parity
+  instructor_goal: >-
+    Produce a performance checklist, an execution worksheet, and an evidence
+    summary template for two IDE performance scenarios: large-project loading
+    and concurrent-animation playback.
+  prompt_source: assets/scenarios/eatme/ide-performance-parity.yaml#agentic_test_prompt
+  non_coder_editable:
+    - resource_basis
+    - purpose
+    - agentic_test_prompt
+    - acceptance_criteria
+    - acceptance_probes
+    - rubric
+    - avoid
+  expected_outputs:
+    - performance_checklist
+    - execution_worksheet
+    - evidence_summary_template
+agentic_test_prompt: >-
+  Act as an instructor acceptance agent preparing an IDE performance parity
+  review. Produce a performance checklist, an execution worksheet, and an
+  evidence summary template. The checklist must include a large project
+  performance scenario with 50+ entities and a stated load-time threshold, plus
+  a complex animation performance scenario with 10 concurrent animations and a
+  stated frame-rate target. The worksheet must prompt reviewers to record the
+  observed load time, whether the world remains navigable after loading, the
+  observed frame rate during the 10 concurrent animations, and what interaction
+  becomes unreliable first if the target is missed. The evidence summary must
+  call out pass, borderline, and fail language while stating not full user
+  interface automation, not creative assessment, not learner-world grading,
+  and not complete Alice coverage.
+acceptance_criteria:
+  - given: an instructor needs evidence about IDE project scale limits
+    when: the large-project scenario is prepared
+    then: it defines a project with 50+ entities, a load-time threshold, and a visible post-load usability check
+  - given: an instructor needs evidence about runtime animation strain
+    when: the animation scenario is prepared
+    then: it defines 10 concurrent animations, a frame-rate target, and the first user-visible degradation to record
+  - given: a reviewer must summarize the result honestly
+    when: the evidence template is used
+    then: it separates pass, borderline, and fail outcomes without overclaiming automation coverage
+acceptance_probes:
+  - Large project scenario explicitly says 50+ entities.
+  - Large project scenario requires reviewers to record load time under threshold.
+  - Large project scenario asks whether the IDE remains usable after load.
+  - Complex animation scenario explicitly says 10 concurrent animations.
+  - Complex animation scenario requires reviewers to record frame rate.
+  - Complex animation scenario asks what interaction degrades first if the frame-rate target is missed.
+  - Output states that the scenario is not full user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
+rubric:
+  - criterion: Large-project stress clarity
+    evidence:
+      - Checklist names a large project with 50+ entities.
+      - Worksheet captures the measured load time and whether the IDE remains navigable.
+  - criterion: Animation-load clarity
+    evidence:
+      - Checklist names 10 concurrent animations and a frame-rate target.
+      - Worksheet prompts reviewers to record the first user-visible degradation.
+  - criterion: Honest reporting boundary
+    evidence:
+      - Evidence summary separates pass, borderline, and fail language.
+      - Evidence summary does not claim full user interface automation and does not claim learner-world grading.
+avoid:
+  - Requiring a single exact asset pack or scene layout.
+  - Treating synthetic thresholds as proof of complete IDE coverage.
+  - Hiding whether load time or frame rate was actually measured.
+  - Claiming creative assessment, learner-world grading, or full user interface automation.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes ide-performance-parity
+  - id: agentic-instructor-review
+    command: agentic instructor acceptance review using assets/scenarios/eatme/ide-performance-parity.yaml
+    evidence:
+      - agent output addresses every acceptance_probe
+      - agent output returns the expected_outputs listed in this YAML
+timeouts:
+  agentic_seconds: 900
+artifacts:
+  performance_checklist: agentic://instructor/performance-checklist
+  execution_worksheet: agentic://instructor/execution-worksheet
+  evidence_summary_template: agentic://instructor/evidence-summary-template
+unsupported_policy: >-
+  If the agent cannot read this editable YAML or the cited Alice-facing
+  resources, fail visibly and report the missing evidence. Do not substitute the
+  scenario with claims of full user interface automation. State not creative
+  assessment, not learner-world grading, and not complete Alice coverage.

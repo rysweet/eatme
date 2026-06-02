@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor Author
+    participant YAML as scenario YAML
+    participant CLI as eatme CLI
+    participant Assets as eatme-assets validation
+    participant Gadugi as gadugi generator
+    participant CI as CI gate
+
+    Author->>YAML: edit assets/scenarios/eatme/*.yaml
+    Author->>CLI: assets validate --json
+    CLI->>Assets: validate_scenario_asset / validate_assets
+    Assets-->>CLI: validation report
+    Author->>CLI: assets generate-gadugi --check --json
+    CLI->>Gadugi: generate_gadugi_adapters(root, check)
+    Gadugi-->>CLI: adapter generation report
+    CI->>CLI: rerun validate + gadugi freshness checks
+    CLI-->>CI: pass or fail merge gate

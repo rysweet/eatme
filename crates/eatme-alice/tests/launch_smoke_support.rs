@@ -15,7 +15,9 @@ pub struct PathOverride<'a> {
 
 impl<'a> PathOverride<'a> {
     pub fn prepend(bin: &Path) -> Self {
-        let guard = ENV_LOCK.lock().unwrap();
+        let guard = ENV_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let old_path = env::var_os("PATH");
         let mut entries = vec![bin.to_path_buf()];
         if let Some(path) = &old_path {
@@ -36,7 +38,9 @@ impl<'a> PathOverride<'a> {
     }
 
     pub fn replace(bin: &Path) -> Self {
-        let guard = ENV_LOCK.lock().unwrap();
+        let guard = ENV_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let old_path = env::var_os("PATH");
 
         unsafe {
@@ -333,6 +337,20 @@ sleep 30
         );
     }
 
+    pub fn write_quick_exit_java_tool(&self) {
+        self.write_tool(
+            "java",
+            r#"#!/bin/sh
+if [ "$1" = "-version" ]; then
+  echo "openjdk version 21" 1>&2
+  exit 0
+fi
+echo "Alice exited before smoke readiness"
+exit 0
+"#,
+        );
+    }
+
     fn write_tool(&self, name: &str, script: &str) {
         let path = self.bin.join(name);
         fs::write(&path, script).unwrap();
@@ -398,4 +416,48 @@ impl Drop for TestFixture {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.root);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Real-Alice environment helpers (shared across integration test files)
+// ---------------------------------------------------------------------------
+
+#[allow(dead_code)]
+pub fn lock_env() -> MutexGuard<'static, ()> {
+    ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+#[allow(dead_code)]
+pub fn real_alice_enabled() -> bool {
+    env::var("EATME_REAL_ALICE")
+        .map(|v| v == "1")
+        .unwrap_or(false)
+}
+
+#[allow(dead_code)]
+pub fn alice_home() -> PathBuf {
+    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
+}
+
+#[allow(dead_code)]
+pub fn starter_projects_dir() -> PathBuf {
+    let alice_home = alice_home();
+    for relative in [
+        "starter-projects",
+        "core/resources/target/distribution/application/starter-projects",
+        "core/resources/src/application/resources/starter-projects",
+    ] {
+        let candidate = alice_home.join(relative);
+        if candidate.is_dir() {
+            return candidate;
+        }
+    }
+    alice_home.join("core/resources/target/distribution/application/starter-projects")
+}
+
+#[allow(dead_code)]
+pub fn starter_project_path(name: &str) -> PathBuf {
+    starter_projects_dir().join(format!("{name}.a3p"))
 }
