@@ -16,6 +16,9 @@ fn collect_yaml_paths(root: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
     for entry in fs::read_dir(root).with_context(|| format!("reading {}", root.display()))? {
         let path = entry?.path();
         if path.is_dir() {
+            if path.file_name().and_then(|n| n.to_str()) == Some("step-blocks") {
+                continue;
+            }
             collect_yaml_paths(&path, paths)?;
         } else if path
             .extension()

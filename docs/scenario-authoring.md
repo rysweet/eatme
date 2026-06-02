@@ -139,6 +139,14 @@ for generated adapters. When removing or renaming a canonical scenario, delete
 the old generated Gadugi adapter too; check mode compares expected targets but
 does not prune orphaned files.
 
+## Step block templates
+
+The gadugi adapter generator reads shared step-block templates from
+`assets/scenarios/gadugi/step-blocks/` instead of hardcoding expected-output
+patterns in Rust. When editing the expected evidence contract for preflight or
+launch-smoke steps, edit the step-block template and regenerate adapters. See
+[Step Block Composition](step-block-composition.md) for details.
+
 ## Evidence language
 
 Good scenario evidence is observable:

@@ -290,7 +290,7 @@ steps:
 
 #[test]
 fn step_blocks_directory_excluded_from_scenario_asset_discovery() {
-    let root = scratch_root("step-blocks-excluded-from-discovery");
+    let root = scratch_root("sb-dir-excluded-from-discovery");
     let eatme_dir = root.join("assets/scenarios/eatme");
     let gadugi_dir = root.join("assets/scenarios/gadugi");
     let step_blocks_dir = gadugi_dir.join("step-blocks");
