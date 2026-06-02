@@ -7,9 +7,15 @@ use anyhow::{Context, Result, bail};
 mod gadugi_instructor;
 #[path = "gadugi_schema.rs"]
 mod gadugi_schema;
+#[path = "gadugi_step_blocks.rs"]
+mod gadugi_step_blocks;
 
 use gadugi_instructor::generate_instructor_agentic_adapter;
 use gadugi_schema::*;
+use gadugi_step_blocks::{
+    launch_expected_stdout, preflight_check_dependencies_patterns,
+    preflight_validate_assets_patterns,
+};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -396,7 +402,6 @@ fn expected_exit_code(scenario: &EatmeScenarioAsset, step: &EatmeScenarioStep) -
         0
     }
 }
-
 fn expected_stdout(
     scenario: &EatmeScenarioAsset,
     step: &EatmeScenarioStep,
@@ -405,18 +410,16 @@ fn expected_stdout(
     let step_id = step.id.as_str();
     let command = step.command.as_str();
     if command.contains("assets validate") {
-        let mut expected = vec!["\"passed\": true".into()];
         if command.contains("--path") {
-            expected.push(format!("\"id\": \"{}\"", scenario.id));
-        } else {
-            expected.push(format!(
-                "\"scenario_asset_count\": {expected_scenario_asset_count}"
-            ));
+            return vec![
+                "\"passed\": true".into(),
+                format!("\"id\": \"{}\"", scenario.id),
+            ];
         }
-        return expected;
+        return preflight_validate_assets_patterns(expected_scenario_asset_count);
     }
     if step_id.contains("dependencies") {
-        return vec!["\"all_required_available\": true".into()];
+        return preflight_check_dependencies_patterns();
     }
     if step_id.contains("discover") {
         return vec!["\"alice_ide_jar_exists\": true".into()];
@@ -431,49 +434,6 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
     step_id.contains("launch")
         || step_id.contains("smoke")
         || command.contains("alice launch-smoke")
-}
-
-fn launch_expected_stdout(scenario: &EatmeScenarioAsset, step: &EatmeScenarioStep) -> Vec<String> {
-    let evidence = step.evidence.join("\n").to_lowercase();
-    let mut expected = vec![format!("\"scenario_id\": \"{}\"", scenario.id)];
-    if scenario.kind == "alice_real_ui_action_contract" {
-        expected.push("\"failure_category\":".into());
-    } else {
-        expected.push("\"failure_category\": null".into());
-    }
-    expected.push("\"real_alice_execution_evidence\": {".into());
-
-    if evidence.contains("screenshot or window") {
-        expected.push("\"startup_window_or_screenshot\": {".into());
-    } else if evidence.contains("screenshot") {
-        expected.push("\"startup_screenshot\": {".into());
-    }
-
-    for assertion in [
-        "specific_alice_window_detected",
-        "activate_alice_window_ui_action",
-        "save_project_desktop_shortcut_dispatch",
-        "place_object_precondition_no_go_probe",
-        "place_object_ui_action",
-        "edit_procedure_ui_action",
-        "run_world_ui_action",
-        "save_project_ui_action",
-        "ui_action_artifact_captured",
-    ] {
-        if evidence.contains(assertion) {
-            expected.push(format!("\"{assertion}\": {{"));
-        }
-    }
-    if evidence.contains("ui-action-contract.json") {
-        expected.push("\"ui_action_contract\": {".into());
-    }
-    if evidence.contains("africa.a3p") {
-        expected.push("africa.a3p".into());
-    }
-    if evidence.contains("assertions all pass") || evidence.contains("passed=true") {
-        expected.push("\"passed\": true".into());
-    }
-    expected
 }
 
 fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {

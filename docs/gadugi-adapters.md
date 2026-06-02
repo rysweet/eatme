@@ -106,6 +106,17 @@ Readiness consumers should inspect the normalized `status`,
 `lesson_session_readiness`, and `no_go_contracts` fields documented in
 [Lesson Session Readiness](lesson-session-readiness.md).
 
+## Step block composition
+
+The generator uses shared step-block templates to avoid duplicating expected-
+output patterns across 25+ adapters. Templates live in
+`assets/scenarios/gadugi/step-blocks/` and are embedded at compile time via
+`include_str!()`. The generator substitutes per-scenario values (asset count,
+scenario id) and inlines the result — generated YAML is still self-contained.
+
+See [Step Block Composition](step-block-composition.md) for template format,
+placeholder reference, and instructions for adding new step blocks.
+
 ## Editing policy
 
 Do not hand-edit generated Gadugi adapters to change mission intent. If a prompt,

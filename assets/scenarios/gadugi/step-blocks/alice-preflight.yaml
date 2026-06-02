@@ -1,0 +1,11 @@
+# Step-block template: alice-preflight
+# Shared validate-assets and check-dependencies expected_stdout patterns.
+# Placeholder: {{scenario-asset-count}} — replaced with discovered count at generation time.
+steps:
+  - id: validate-assets
+    expected_stdout:
+      - '"passed": true'
+      - '"scenario_asset_count": {{scenario-asset-count}}'
+  - id: check-dependencies
+    expected_stdout:
+      - '"all_required_available": true'

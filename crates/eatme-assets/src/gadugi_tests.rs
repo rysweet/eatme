@@ -285,3 +285,7 @@ steps:
     )
     .unwrap();
 }
+
+#[cfg(test)]
+#[path = "gadugi_step_block_tests.rs"]
+mod gadugi_step_block_tests;
