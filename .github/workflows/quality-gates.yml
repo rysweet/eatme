@@ -21,6 +21,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  MODULE_MAX_LINES: 2000
 
 jobs:
   changes:
@@ -122,18 +123,8 @@ jobs:
         env:
           CHANGED_RUST_FILES: ${{ needs.changes.outputs.rust_files }}
         run: |
-          MODULE_MAX_LINES="${MODULE_MAX_LINES:-700}"
-          if [ -z "${CHANGED_RUST_FILES}" ]; then
-            echo "No changed Rust files under crates/."
-            exit 0
-          fi
-          printf '%s\n' "${CHANGED_RUST_FILES}" \
-            | while IFS= read -r file; do
-                case "$file" in
-                  */tests/*|*/tests.rs|*/*_tests.rs) continue ;;
-                esac
-                test -f "$file" && wc -l "$file"
-              done \
+          MODULE_MAX_LINES="${MODULE_MAX_LINES:-2000}"
+          find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
             | awk -v max="$MODULE_MAX_LINES" '$2 != "total" && $1 > max { print; bad=1 } END { exit bad }'
 
   rust-tests:

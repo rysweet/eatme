@@ -9,6 +9,7 @@ mod launch_edit_procedure;
 mod launch_license;
 mod launch_object_placement;
 mod launch_object_transform;
+mod launch_objects_first_full_path;
 mod launch_options;
 mod launch_path_validation;
 mod launch_preflight;
@@ -38,7 +39,7 @@ pub use launch::run_launch_smoke;
 pub use launch_options::LaunchSmokeOptions;
 pub use launch_preflight::write_preflight_blocked_manifest;
 pub use package::{PackageOptions, package_alice};
-pub use scenario::LaunchSmokeScenario;
+pub use scenario::{LaunchSmokeScenario, OBJECTS_FIRST_FULL_PATH_SCENARIO_ID};
 
 #[cfg(test)]
 mod tests {

@@ -154,6 +154,10 @@ pub(super) fn build_manifest(
         log_error,
         fatal_log_scan,
         assertions,
+        command: None,
+        scenario: None,
+        evidence: None,
+        persistence_assertions: None,
         failure_category,
     }
 }

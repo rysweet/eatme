@@ -215,6 +215,7 @@ fn object_transform_probe_with_status(status: &str) -> UiActionObjectTransformPr
         status: status.into(),
         detail: "transform probe detail".into(),
         object_identifier: "alice-gallery://animals/bunny".into(),
+        object_id: "bunny-1".into(),
         candidate_hook_path: "tools/eatme-transform-object".into(),
         command: Some("tools/eatme-transform-object --json".into()),
         exit_status: Some(0),
@@ -225,6 +226,8 @@ fn object_transform_probe_with_status(status: &str) -> UiActionObjectTransformPr
             status,
             "object-transform/transformed-project.a3p",
         ),
+        transform: (status == "passed")
+            .then(|| serde_json::json!({"x": 1.5, "y": 0.0, "z": -2.0, "scale": 1.25})),
         validation_errors: Vec::new(),
         missing_affordance: None,
     }

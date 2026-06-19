@@ -85,6 +85,10 @@ pub fn write_preflight_blocked_manifest(
         log_error: None,
         fatal_log_scan: vec![detail.to_string()],
         assertions,
+        command: None,
+        scenario: None,
+        evidence: None,
+        persistence_assertions: None,
         failure_category: Some(failure_category.to_string()),
     };
     write_manifest(run_dir, &manifest)?;

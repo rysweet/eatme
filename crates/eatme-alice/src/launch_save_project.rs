@@ -11,6 +11,7 @@ use std::time::Duration;
 
 pub(crate) const DEFAULT_PROJECT_SAVE_HOOK: &str = "tools/eatme-save-project";
 pub(crate) const DEFAULT_SAVE_SELECTOR: &str = "scene.myFirstMethod";
+pub(crate) const OBJECTS_FIRST_SAVE_SELECTOR: &str = "objects-first-full-path";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionSaveProjectProbe {
@@ -53,6 +54,24 @@ pub(crate) fn probe_project_save_hook(
     alice_home: &Path,
     run_dir: &Path,
     run_world_probe: &UiActionRunWorldProbe,
+    display: &str,
+) -> UiActionSaveProjectProbe {
+    probe_project_save_hook_with_selector(
+        runner,
+        alice_home,
+        run_dir,
+        run_world_probe,
+        DEFAULT_SAVE_SELECTOR,
+        display,
+    )
+}
+
+pub(crate) fn probe_project_save_hook_with_selector(
+    runner: &impl CommandRunner,
+    alice_home: &Path,
+    run_dir: &Path,
+    run_world_probe: &UiActionRunWorldProbe,
+    save_selector: &str,
     display: &str,
 ) -> UiActionSaveProjectProbe {
     let hook_path = alice_home.join(DEFAULT_PROJECT_SAVE_HOOK);
@@ -108,7 +127,7 @@ pub(crate) fn probe_project_save_hook(
                 "--project".to_string(),
                 edited_project.display().to_string(),
                 "--save-selector".to_string(),
-                DEFAULT_SAVE_SELECTOR.to_string(),
+                save_selector.to_string(),
                 "--evidence-dir".to_string(),
                 evidence_dir.display().to_string(),
                 "--json".to_string(),
@@ -127,7 +146,7 @@ pub(crate) fn probe_project_save_hook(
                     "{} --project {} --save-selector {} --evidence-dir {} --json",
                     hook_path.display(),
                     edited_project.display(),
-                    DEFAULT_SAVE_SELECTOR,
+                    save_selector,
                     evidence_dir.display()
                 )),
                 None,
@@ -165,7 +184,7 @@ pub(crate) fn probe_project_save_hook(
         }
     };
 
-    let mut validation_errors = validate_save_hook_result(&result);
+    let mut validation_errors = validate_save_hook_result(&result, save_selector);
     let saved_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.saved_project_artifact,
@@ -204,7 +223,7 @@ pub(crate) fn probe_project_save_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side project save hook returned non-empty saved project and save evidence for {DEFAULT_SAVE_SELECTOR}"
+            "Alice-side project save hook returned non-empty saved project and save evidence for {save_selector}"
         )
     } else {
         format!(
@@ -218,7 +237,7 @@ pub(crate) fn probe_project_save_hook(
         action_id: "save-project".into(),
         status: status.into(),
         detail,
-        save_selector: DEFAULT_SAVE_SELECTOR.into(),
+        save_selector: save_selector.into(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -326,7 +345,10 @@ fn failed_save_project_probe(
     }
 }
 
-fn validate_save_hook_result(result: &ProjectSaveHookResult) -> Vec<String> {
+fn validate_save_hook_result(
+    result: &ProjectSaveHookResult,
+    expected_selector: &str,
+) -> Vec<String> {
     let mut errors = Vec::new();
     if result.schema_version != "eatme.alice-project-save-result/v1" {
         errors.push(format!(
@@ -337,10 +359,10 @@ fn validate_save_hook_result(result: &ProjectSaveHookResult) -> Vec<String> {
     if result.status != "saved" {
         errors.push(format!("status must be saved, got {:?}", result.status));
     }
-    if result.save_selector != DEFAULT_SAVE_SELECTOR {
+    if result.save_selector != expected_selector {
         errors.push(format!(
             "save_selector must be {:?}, got {:?}",
-            DEFAULT_SAVE_SELECTOR, result.save_selector
+            expected_selector, result.save_selector
         ));
     }
     if result.saved_project_artifact.is_empty() {

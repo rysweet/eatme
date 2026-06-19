@@ -129,6 +129,10 @@ fn manifest_schema_round_trip() {
         log_error: None,
         fatal_log_scan: vec![],
         assertions,
+        command: None,
+        scenario: None,
+        evidence: None,
+        persistence_assertions: None,
         failure_category: None,
     };
 

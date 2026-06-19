@@ -5,13 +5,17 @@ use crate::launch_ui_actions::{
 };
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
 pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.myFirstMethod";
-const DEFAULT_EDIT_SPEC: &str = "append-movement:bunny.move(FORWARD,1.0)";
+pub(crate) const OBJECTS_FIRST_PROCEDURE_SELECTOR: &str = "world.myFirstMethod";
+const DEFAULT_EDIT_SPEC: &str = "append-comment:eatme first lesson edit proof";
+const OBJECTS_FIRST_MOVEMENT_EDIT_SPEC: &str =
+    "movement:object=placed-object;operation=move;direction=forward;distance_meters=1.0";
 pub(crate) const EDIT_PROCEDURE_PROOF_ARTIFACT: &str = "first-lesson-code-editor-action-proof.json";
 
 #[derive(Clone, Debug, Serialize)]
@@ -108,6 +112,18 @@ struct ProcedureEditProofMovement {
     method: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct MovementProcedureEditHookResult {
+    schema_version: String,
+    status: String,
+    procedure_selector: String,
+    edit_kind: String,
+    object_id: String,
+    movement: Value,
+    edited_project_artifact: String,
+    procedure_or_code_diff: String,
+}
+
 pub(crate) fn probe_edit_procedure_hook(
     runner: &impl CommandRunner,
     alice_home: &Path,
@@ -125,6 +141,7 @@ pub(crate) fn probe_edit_procedure_hook(
             Some(missing_procedure_edit_affordance()),
         );
     }
+
     if !hook_path.is_file() {
         return blocked_edit_procedure_probe(
             &hook_path,
@@ -312,6 +329,201 @@ pub(crate) fn probe_edit_procedure_hook(
     }
 }
 
+pub(crate) fn probe_movement_procedure_hook(
+    runner: &impl CommandRunner,
+    alice_home: &Path,
+    run_dir: &Path,
+    transformed_project_ready: bool,
+    object_id: &str,
+    display: &str,
+) -> UiActionEditProcedureProbe {
+    let hook_path = alice_home.join(DEFAULT_PROCEDURE_EDIT_HOOK);
+    let evidence_dir = run_dir.join("procedure-edit");
+    let transformed_project = run_dir
+        .join("object-transform")
+        .join("transformed-object-project.a3p");
+    if !transformed_project_ready {
+        return blocked_edit_procedure_probe(
+            &hook_path,
+            "blocked: object transform proof is required before movement procedure editing would be safe",
+            Some(missing_procedure_edit_affordance()),
+        );
+    }
+    if !hook_path.is_file() {
+        return blocked_edit_procedure_probe(
+            &hook_path,
+            &format!(
+                "blocked: Alice checkout does not expose {DEFAULT_PROCEDURE_EDIT_HOOK}; movement procedure editing remains unproven"
+            ),
+            Some(missing_procedure_edit_affordance()),
+        );
+    }
+    if !transformed_project.is_file() {
+        return failed_movement_procedure_probe(
+            &hook_path,
+            None,
+            None,
+            String::new(),
+            String::new(),
+            vec![format!(
+                "object transform did not leave a transformed project at {}",
+                transformed_project.display()
+            )],
+        );
+    }
+
+    if let Err(error) = fs::create_dir_all(&evidence_dir) {
+        return failed_movement_procedure_probe(
+            &hook_path,
+            None,
+            None,
+            String::new(),
+            String::new(),
+            vec![format!(
+                "creating procedure edit evidence dir {} failed: {error}",
+                evidence_dir.display()
+            )],
+        );
+    }
+
+    let output = runner.run(
+        &CommandSpec::new(hook_path.display().to_string())
+            .args([
+                "--project".to_string(),
+                transformed_project.display().to_string(),
+                "--procedure-selector".to_string(),
+                OBJECTS_FIRST_PROCEDURE_SELECTOR.to_string(),
+                "--edit-spec".to_string(),
+                OBJECTS_FIRST_MOVEMENT_EDIT_SPEC.to_string(),
+                "--object-id".to_string(),
+                object_id.to_string(),
+                "--evidence-dir".to_string(),
+                evidence_dir.display().to_string(),
+                "--json".to_string(),
+            ])
+            .cwd(alice_home)
+            .env("DISPLAY", display)
+            .timeout(Duration::from_secs(30)),
+    );
+
+    let output = match output {
+        Ok(output) => output,
+        Err(error) => {
+            return failed_movement_procedure_probe(
+                &hook_path,
+                Some(format!(
+                    "{} --project {} --procedure-selector {} --edit-spec {} --object-id {} --evidence-dir {} --json",
+                    hook_path.display(),
+                    transformed_project.display(),
+                    OBJECTS_FIRST_PROCEDURE_SELECTOR,
+                    OBJECTS_FIRST_MOVEMENT_EDIT_SPEC,
+                    object_id,
+                    evidence_dir.display()
+                )),
+                None,
+                String::new(),
+                String::new(),
+                vec![format!(
+                    "movement procedure edit hook failed to run: {error:#}"
+                )],
+            );
+        }
+    };
+
+    if output.exit_status != Some(0) {
+        return failed_movement_procedure_probe(
+            &hook_path,
+            Some(output.command),
+            output.exit_status,
+            output.stdout,
+            output.stderr,
+            vec!["movement procedure edit hook exited unsuccessfully".into()],
+        );
+    }
+
+    let result = match serde_json::from_str::<MovementProcedureEditHookResult>(&output.stdout) {
+        Ok(result) => result,
+        Err(error) => {
+            return failed_movement_procedure_probe(
+                &hook_path,
+                Some(output.command),
+                output.exit_status,
+                output.stdout,
+                output.stderr,
+                vec![format!(
+                    "movement procedure edit hook stdout is not valid movement JSON: {error}"
+                )],
+            );
+        }
+    };
+
+    let mut validation_errors = validate_movement_edit_hook_result(&result, object_id);
+    let edited_project_artifact = hook_artifact(
+        &evidence_dir,
+        &result.edited_project_artifact,
+        "edited_project_artifact",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
+    let procedure_or_code_diff = hook_artifact(
+        &evidence_dir,
+        &result.procedure_or_code_diff,
+        "procedure_or_code_diff",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
+    if edited_project_artifact
+        .as_ref()
+        .map(|artifact| artifact.size_bytes == 0)
+        .unwrap_or(false)
+    {
+        validation_errors.push("edited_project_artifact must be non-empty".into());
+    }
+    if procedure_or_code_diff
+        .as_ref()
+        .map(|artifact| artifact.size_bytes == 0)
+        .unwrap_or(false)
+    {
+        validation_errors.push("procedure_or_code_diff must be non-empty".into());
+    }
+
+    let status = if validation_errors.is_empty() {
+        "passed"
+    } else {
+        "failed"
+    };
+    let detail = if validation_errors.is_empty() {
+        format!(
+            "Alice-side procedure edit hook created movement in {OBJECTS_FIRST_PROCEDURE_SELECTOR} for {object_id}"
+        )
+    } else {
+        format!(
+            "movement procedure edit hook ran but did not prove movement editing: {}",
+            validation_errors.join("; ")
+        )
+    };
+
+    UiActionEditProcedureProbe {
+        id: "alice-side-movement-procedure-edit-command-hook".into(),
+        action_id: "edit-movement-procedure".into(),
+        status: status.into(),
+        detail,
+        procedure_selector: OBJECTS_FIRST_PROCEDURE_SELECTOR.into(),
+        edit_spec: OBJECTS_FIRST_MOVEMENT_EDIT_SPEC.into(),
+        candidate_hook_path: hook_path.display().to_string(),
+        command: Some(output.command),
+        exit_status: output.exit_status,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        edited_project_artifact,
+        procedure_or_code_diff,
+        validation_errors,
+        missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
+    }
+}
+
 pub(crate) fn probe_edit_procedure_preconditions(
     object_placement_probe: &UiActionObjectPlacementProbe,
 ) -> UiActionNoGoProbe {
@@ -425,6 +637,7 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
             result.schema_version
         ));
     }
+
     if result.status != "edited" && result.status != "proved" {
         errors.push(format!(
             "status must be edited or proved, got {:?}",
@@ -449,6 +662,108 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
         errors.push("procedure_or_code_diff must not be empty".into());
     }
     errors
+}
+
+fn validate_movement_edit_hook_result(
+    result: &MovementProcedureEditHookResult,
+    expected_object_id: &str,
+) -> Vec<String> {
+    let mut errors = Vec::new();
+    if result.schema_version != "eatme.alice-procedure-edit-result/v2" {
+        errors.push(format!(
+            "schema_version must be eatme.alice-procedure-edit-result/v2, got {:?}",
+            result.schema_version
+        ));
+    }
+    if result.status != "edited" {
+        errors.push(format!("status must be edited, got {:?}", result.status));
+    }
+    if result.procedure_selector != OBJECTS_FIRST_PROCEDURE_SELECTOR {
+        errors.push(format!(
+            "procedure_selector must be {:?}, got {:?}",
+            OBJECTS_FIRST_PROCEDURE_SELECTOR, result.procedure_selector
+        ));
+    }
+    if result.edit_kind != "movement" {
+        errors.push(format!(
+            "edit_kind must be movement, got {:?}",
+            result.edit_kind
+        ));
+    }
+    if result.object_id != expected_object_id {
+        errors.push(format!(
+            "object_id must be {:?}, got {:?}",
+            expected_object_id, result.object_id
+        ));
+    }
+    if result
+        .movement
+        .get("operation")
+        .and_then(|value| value.as_str())
+        != Some("move")
+    {
+        errors.push("movement.operation must be move".into());
+    }
+    if result
+        .movement
+        .get("distance_meters")
+        .and_then(|value| value.as_f64())
+        .is_none_or(|distance| distance <= 0.0)
+    {
+        errors.push("movement.distance_meters must be positive".into());
+    }
+    if result.edited_project_artifact.is_empty() {
+        errors.push("edited_project_artifact must not be empty".into());
+    }
+    if result.procedure_or_code_diff.is_empty() {
+        errors.push("procedure_or_code_diff must not be empty".into());
+    }
+    errors
+}
+
+fn failed_movement_procedure_probe(
+    hook_path: &Path,
+    command: Option<String>,
+    exit_status: Option<i32>,
+    stdout: String,
+    stderr: String,
+    validation_errors: Vec<String>,
+) -> UiActionEditProcedureProbe {
+    UiActionEditProcedureProbe {
+        id: "alice-side-movement-procedure-edit-command-hook".into(),
+        action_id: "edit-movement-procedure".into(),
+        status: "failed".into(),
+        detail: format!(
+            "movement procedure edit hook did not prove movement editing: {}",
+            validation_errors.join("; ")
+        ),
+        procedure_selector: OBJECTS_FIRST_PROCEDURE_SELECTOR.into(),
+        edit_spec: OBJECTS_FIRST_MOVEMENT_EDIT_SPEC.into(),
+        candidate_hook_path: hook_path.display().to_string(),
+        command,
+        exit_status,
+        stdout,
+        stderr,
+        edited_project_artifact: None,
+        procedure_or_code_diff: None,
+        validation_errors,
+        missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
+    }
+}
+
+fn hook_artifact(
+    evidence_dir: &Path,
+    relative_path: &str,
+    field: &str,
+) -> std::result::Result<ArtifactInfo, String> {
+    artifact_info_under(
+        evidence_dir,
+        relative_path,
+        field,
+        "procedure-edit evidence dir",
+    )
 }
 
 fn project_after_object_change_path(run_dir: &Path) -> std::path::PathBuf {
