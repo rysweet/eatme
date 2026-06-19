@@ -66,6 +66,24 @@ pub(crate) fn probe_project_reopen_hook(
     save_project_probe: &UiActionSaveProjectProbe,
     display: &str,
 ) -> UiActionReopenProjectProbe {
+    probe_project_reopen_hook_with_selector(
+        runner,
+        alice_home,
+        run_dir,
+        save_project_probe,
+        DEFAULT_SAVE_SELECTOR,
+        display,
+    )
+}
+
+pub(crate) fn probe_project_reopen_hook_with_selector(
+    runner: &impl CommandRunner,
+    alice_home: &Path,
+    run_dir: &Path,
+    save_project_probe: &UiActionSaveProjectProbe,
+    reopen_selector: &str,
+    display: &str,
+) -> UiActionReopenProjectProbe {
     let hook_path = alice_home.join(DEFAULT_PROJECT_REOPEN_HOOK);
     let evidence_dir = run_dir.join("project-reopen");
 
@@ -122,7 +140,7 @@ pub(crate) fn probe_project_reopen_hook(
                 "--saved-project".to_string(),
                 saved_project.display().to_string(),
                 "--reopen-selector".to_string(),
-                DEFAULT_SAVE_SELECTOR.to_string(),
+                reopen_selector.to_string(),
                 "--evidence-dir".to_string(),
                 evidence_dir.display().to_string(),
                 "--json".to_string(),
@@ -141,7 +159,7 @@ pub(crate) fn probe_project_reopen_hook(
                     "{} --saved-project {} --reopen-selector {} --evidence-dir {} --json",
                     hook_path.display(),
                     saved_project.display(),
-                    DEFAULT_SAVE_SELECTOR,
+                    reopen_selector,
                     evidence_dir.display()
                 )),
                 None,
@@ -182,7 +200,8 @@ pub(crate) fn probe_project_reopen_hook(
         }
     };
 
-    let mut validation_errors = validate_reopen_hook_result(&result, run_dir, &saved_project);
+    let mut validation_errors =
+        validate_reopen_hook_result(&result, run_dir, &saved_project, reopen_selector);
     let reopened_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.reopened_project_artifact,
@@ -237,7 +256,7 @@ pub(crate) fn probe_project_reopen_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side project reopen hook reopened saved artifact {} and returned state evidence for {DEFAULT_SAVE_SELECTOR}",
+            "Alice-side project reopen hook reopened saved artifact {} and returned state evidence for {reopen_selector}",
             result.source_saved_project_artifact
         )
     } else {
@@ -252,7 +271,7 @@ pub(crate) fn probe_project_reopen_hook(
         action_id: "reopen-project".into(),
         status: status.into(),
         detail,
-        reopen_selector: DEFAULT_SAVE_SELECTOR.into(),
+        reopen_selector: reopen_selector.into(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -373,6 +392,7 @@ fn validate_reopen_hook_result(
     result: &ProjectReopenHookResult,
     run_dir: &Path,
     expected_saved_project: &Path,
+    expected_selector: &str,
 ) -> Vec<String> {
     let mut errors = Vec::new();
     if result.schema_version != "eatme.alice-project-reopen-result/v1" {
@@ -384,15 +404,15 @@ fn validate_reopen_hook_result(
     if result.status != "reopened" {
         errors.push(format!("status must be reopened, got {:?}", result.status));
     }
-    if result.reopen_selector != DEFAULT_SAVE_SELECTOR {
+    if result.reopen_selector != expected_selector {
         errors.push(format!(
             "reopen_selector must be {:?}, got {:?}",
-            DEFAULT_SAVE_SELECTOR, result.reopen_selector
+            expected_selector, result.reopen_selector
         ));
     }
-    if result.state_verification != "passed" {
+    if result.state_verification != "passed" && result.state_verification != "matched" {
         errors.push(format!(
-            "state_verification must be passed, got {:?}",
+            "state_verification must be passed or matched, got {:?}",
             result.state_verification
         ));
     }

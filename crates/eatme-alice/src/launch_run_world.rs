@@ -55,6 +55,24 @@ pub(crate) fn probe_run_world_hook(
     edit_procedure_probe: &UiActionEditProcedureProbe,
     display: &str,
 ) -> UiActionRunWorldProbe {
+    probe_run_world_hook_with_selector(
+        runner,
+        alice_home,
+        run_dir,
+        edit_procedure_probe,
+        DEFAULT_RUN_SELECTOR,
+        display,
+    )
+}
+
+pub(crate) fn probe_run_world_hook_with_selector(
+    runner: &impl CommandRunner,
+    alice_home: &Path,
+    run_dir: &Path,
+    edit_procedure_probe: &UiActionEditProcedureProbe,
+    run_selector: &str,
+    display: &str,
+) -> UiActionRunWorldProbe {
     let hook_path = alice_home.join(DEFAULT_WORLD_RUN_HOOK);
     let evidence_dir = run_dir.join("world-run");
     let edited_project = run_dir.join("procedure-edit").join("edited-project.a3p");
@@ -108,7 +126,7 @@ pub(crate) fn probe_run_world_hook(
                 "--project".to_string(),
                 edited_project.display().to_string(),
                 "--run-selector".to_string(),
-                DEFAULT_RUN_SELECTOR.to_string(),
+                run_selector.to_string(),
                 "--evidence-dir".to_string(),
                 evidence_dir.display().to_string(),
                 "--json".to_string(),
@@ -127,7 +145,7 @@ pub(crate) fn probe_run_world_hook(
                     "{} --project {} --run-selector {} --evidence-dir {} --json",
                     hook_path.display(),
                     edited_project.display(),
-                    DEFAULT_RUN_SELECTOR,
+                    run_selector,
                     evidence_dir.display()
                 )),
                 None,
@@ -165,7 +183,7 @@ pub(crate) fn probe_run_world_hook(
         }
     };
 
-    let mut validation_errors = validate_run_hook_result(&result);
+    let mut validation_errors = validate_run_hook_result(&result, run_selector);
     let run_artifact = hook_artifact(&evidence_dir, &result.run_artifact, "run_artifact")
         .map_err(|error| validation_errors.push(error))
         .ok();
@@ -198,7 +216,7 @@ pub(crate) fn probe_run_world_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side world run hook returned non-empty run artifact and runtime/log evidence for {DEFAULT_RUN_SELECTOR}"
+            "Alice-side world run hook returned non-empty run artifact and runtime/log evidence for {run_selector}"
         )
     } else {
         format!(
@@ -212,7 +230,7 @@ pub(crate) fn probe_run_world_hook(
         action_id: "run-world".into(),
         status: status.into(),
         detail,
-        run_selector: DEFAULT_RUN_SELECTOR.into(),
+        run_selector: run_selector.into(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -320,7 +338,7 @@ fn failed_run_world_probe(
     }
 }
 
-fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
+fn validate_run_hook_result(result: &WorldRunHookResult, expected_selector: &str) -> Vec<String> {
     let mut errors = Vec::new();
     if result.schema_version != "eatme.alice-world-run-result/v1" {
         errors.push(format!(
@@ -331,10 +349,10 @@ fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
     if result.status != "ran" {
         errors.push(format!("status must be ran, got {:?}", result.status));
     }
-    if result.run_selector != DEFAULT_RUN_SELECTOR {
+    if result.run_selector != expected_selector {
         errors.push(format!(
             "run_selector must be {:?}, got {:?}",
-            DEFAULT_RUN_SELECTOR, result.run_selector
+            expected_selector, result.run_selector
         ));
     }
     if result.run_artifact.is_empty() {

@@ -127,6 +127,16 @@ The baseline Alice integration proves launch readiness. Scenario-specific Alice
 workflows add their own evidence requirements on top of the same packaging,
 display, process, log, window, and screenshot foundation.
 
+`alice objects-first-full-path` is the executable full-path command. It binds
+`assets/scenarios/eatme/alice-objects-first-full-path.yaml` by default and drives
+RabbitHole Alice through project create/open, visible object placement, object
+transform, movement procedure edit, run-world, save, reopen, and persistence
+assertions. Evidence is written under
+`runs/alice-objects-first-full-path/<run-id>/`, and a launch-only run is rejected.
+For usage and contracts, see
+[Alice Objects-First Full Path](alice-objects-first-full-path.md) and
+[Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md).
+
 `alice-objects-first-world` is the full objects-first workflow. It uses
 RabbitHole Alice at `/home/azureuser/src/alice` as the primary target and records
 separate proof for project create/open, visible object placement, object

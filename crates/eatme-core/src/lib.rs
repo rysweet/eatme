@@ -63,6 +63,10 @@ mod tests {
             log_error: None,
             fatal_log_scan: vec![],
             assertions: BTreeMap::from([("launch".into(), AssertionResult::pass("ok"))]),
+            command: None,
+            scenario: None,
+            evidence: None,
+            persistence_assertions: None,
             failure_category: None,
         };
         let runner = RealCommandRunner;

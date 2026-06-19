@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 const DEFAULT_STARTER_PROJECT: &str =
     "core/resources/target/distribution/application/starter-projects/africa.a3p";
+pub const OBJECTS_FIRST_FULL_PATH_SCENARIO_ID: &str = "alice-objects-first-full-path";
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
@@ -22,11 +23,17 @@ impl LaunchSmokeScenario {
     }
 
     pub fn accepts_window_evidence(&self) -> bool {
-        self.id != "real-alice-launch-smoke"
+        self.id != "real-alice-launch-smoke" && self.id != OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
     }
 
     pub fn requires_real_ui_actions(&self) -> bool {
-        self.id == "first-lessons-real-ui-actions" || self.id == "code-editor-first-run"
+        self.id == "first-lessons-real-ui-actions"
+            || self.id == "code-editor-first-run"
+            || self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
+    }
+
+    pub fn is_objects_first_full_path(&self) -> bool {
+        self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
     }
 
     pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
@@ -64,8 +71,16 @@ mod tests {
             LaunchSmokeScenario::new("first-lessons-real-ui-actions").requires_real_ui_actions()
         );
         assert!(LaunchSmokeScenario::new("code-editor-first-run").requires_real_ui_actions());
+        assert!(
+            LaunchSmokeScenario::new(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID)
+                .requires_real_ui_actions()
+        );
         assert!(!LaunchSmokeScenario::new("student-progression").requires_real_ui_actions());
         assert!(LaunchSmokeScenario::new("student-progression").accepts_window_evidence());
+        assert!(
+            !LaunchSmokeScenario::new(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID)
+                .accepts_window_evidence()
+        );
     }
 
     #[test]

@@ -17,6 +17,8 @@ use self::instructor_agentic_flow::validate_instructor_agentic_flow;
 mod real_ui_action_contract;
 use self::real_ui_action_contract::validate_real_ui_action_contract;
 
+const OBJECTS_FIRST_FULL_PATH_SCENARIO_ID: &str = "alice-objects-first-full-path";
+
 pub fn validate_scenario_asset(path: &Path) -> Result<ScenarioAssetValidationReport> {
     let persona_discovery = discover_scenario_personas(path)?;
     validate_scenario_asset_inner(
@@ -310,11 +312,11 @@ fn validate_launch_smoke_contract(scenario: &EatmeScenarioAsset, errors: &mut Ve
         .as_ref()
         .map(|launcher| launcher.command.as_str())
         .unwrap_or("");
-    let has_launch_smoke = launch_command.contains("alice launch-smoke")
+    let has_launch_smoke = is_launch_runtime_command(scenario, launch_command)
         || scenario
             .steps
             .iter()
-            .any(|step| step.command.contains("alice launch-smoke"));
+            .any(|step| is_launch_runtime_command(scenario, &step.command));
     if !has_launch_smoke {
         errors.push("scenario must route runtime through alice launch-smoke".into());
     }
@@ -328,7 +330,7 @@ fn validate_launch_smoke_contract(scenario: &EatmeScenarioAsset, errors: &mut Ve
 
 fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
     let launch_step_mentions_real_evidence = scenario.steps.iter().any(|step| {
-        step.command.contains("alice launch-smoke")
+        is_launch_runtime_command(scenario, &step.command)
             && step
                 .evidence
                 .iter()
@@ -337,6 +339,12 @@ fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &m
     if !launch_step_mentions_real_evidence {
         errors.push("launch-smoke step evidence must inspect manifest assertions.real_alice_execution_evidence".into());
     }
+}
+
+fn is_launch_runtime_command(scenario: &EatmeScenarioAsset, command: &str) -> bool {
+    command.contains("alice launch-smoke")
+        || (scenario.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
+            && command.contains("alice objects-first-full-path"))
 }
 
 fn validate_acceptance_criteria(

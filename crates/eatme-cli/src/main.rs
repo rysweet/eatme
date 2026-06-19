@@ -2,9 +2,10 @@ use anyhow::{Result, bail};
 use clap::{Args, Parser, Subcommand};
 use eatme_alice::{
     AliceComparisonOptions, FIRST_LESSON_SCENARIO_ID, FirstLessonReadinessOptions,
-    LaunchSmokeOptions, LaunchSmokeScenario, PackageOptions, check_dependencies,
-    check_lesson_session_contract, check_lesson_session_readiness, discover_alice, package_alice,
-    run_first_lesson_readiness_sequence, run_launch_smoke, run_launch_smoke_comparison,
+    LaunchSmokeOptions, LaunchSmokeScenario, OBJECTS_FIRST_FULL_PATH_SCENARIO_ID, PackageOptions,
+    check_dependencies, check_lesson_session_contract, check_lesson_session_readiness,
+    discover_alice, package_alice, run_first_lesson_readiness_sequence, run_launch_smoke,
+    run_launch_smoke_comparison,
 };
 use eatme_core::RealCommandRunner;
 use std::env;
@@ -57,6 +58,10 @@ enum AliceCommand {
     Discover(AliceHomeArgs),
     Package(PackageArgs),
     LaunchSmoke(LaunchSmokeArgs),
+    #[command(
+        long_about = "Execute the canonical Alice objects-first full path scenario (alice-objects-first-full-path) from assets/scenarios/eatme/alice-objects-first-full-path.yaml."
+    )]
+    ObjectsFirstFullPath(ObjectsFirstFullPathArgs),
     CompareLaunchSmoke(CompareLaunchSmokeArgs),
     CheckLessonSession(CheckLessonSessionArgs),
     CheckLessonReadiness(CheckLessonSessionArgs),
@@ -122,6 +127,26 @@ struct LaunchSmokeArgs {
     offline_package: bool,
     #[arg(long, default_value = "real-alice-launch-smoke")]
     scenario: String,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct ObjectsFirstFullPathArgs {
+    #[arg(long, env = "ALICE_HOME")]
+    alice_home: PathBuf,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, default_value = "runs")]
+    runs_dir: PathBuf,
+    #[arg(long, default_value_t = 900)]
+    timeout: u64,
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    no_memory: bool,
+    #[arg(long)]
+    offline_package: bool,
     #[arg(long)]
     starter_project: Option<PathBuf>,
 }
@@ -234,6 +259,29 @@ fn main() -> Result<()> {
                 print_result(args.json, &manifest)?;
                 if let Some(category) = manifest.failure_category {
                     bail!("launch smoke failed: {category}");
+                }
+            }
+            AliceCommand::ObjectsFirstFullPath(args) => {
+                ensure_real_alice_gate(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID)?;
+                let mut scenario = LaunchSmokeScenario::new(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID);
+                if let Some(starter_project) = args.starter_project {
+                    scenario = scenario.with_starter_project(starter_project);
+                }
+                let manifest = run_launch_smoke(&LaunchSmokeOptions {
+                    alice_home: args.alice_home,
+                    run_id: args.run_id,
+                    runs_dir: args.runs_dir,
+                    timeout_seconds: args.timeout,
+                    json: args.json,
+                    no_memory: args.no_memory,
+                    offline_package: args.offline_package,
+                    scenario,
+                })?;
+                print_result(args.json, &manifest)?;
+                if let Some(category) = manifest.failure_category {
+                    bail!(
+                        "objects-first full path failed for scenario {OBJECTS_FIRST_FULL_PATH_SCENARIO_ID}: {category}"
+                    );
                 }
             }
             AliceCommand::CompareLaunchSmoke(args) => {

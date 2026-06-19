@@ -23,6 +23,7 @@ order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
 | `alice discover` | Inspect an Alice checkout |
 | `alice package` | Package Alice through Maven |
 | `alice launch-smoke` | Launch Alice and record deterministic evidence; selected scenarios may require full workflow proof |
+| `alice objects-first-full-path` | Execute the full Alice objects-first path and verify save/reopen persistence |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 | `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
@@ -203,6 +204,40 @@ The scenario fails when the run only starts Alice. Review
 for the reopened object, transform, and procedure movement proof. See
 [Alice Objects-First World](alice-objects-first-world.md) for the full usage
 guide.
+
+## Run the Alice objects-first full path
+
+Use `alice objects-first-full-path` when the claim is the executable full user
+path, not a launch-smoke scenario label. The command binds the canonical
+`alice-objects-first-full-path` scenario and verifies create/open, visible object
+placement, object transform, movement procedure edit, run-world, save, reopen,
+and persisted state.
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path \
+  --alice-home "${ALICE_HOME}" \
+  --run-id local-alice-objects-first-full-path \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+`NODE_OPTIONS` is for Node-backed wrappers and generated adapters around the
+run; the Rust command does not require Node by itself.
+
+The run writes evidence under
+`runs/alice-objects-first-full-path/<run-id>/`. Review
+`project-reopen/persistence-assertions.json` for the final object, transform,
+procedure, run-world, and saved-artifact assertions. See
+[Alice Objects-First Full Path](alice-objects-first-full-path.md) for usage and
+[Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md)
+for the API contract.
 
 ## Compare two Alice targets
 

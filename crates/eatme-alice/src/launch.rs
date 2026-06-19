@@ -20,12 +20,23 @@ use crate::deps::check_dependencies;
 use crate::discover::discover_alice;
 use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
 use crate::launch_desktop_execution::probe_toolbar_run_and_execution;
-use crate::launch_edit_procedure::probe_edit_procedure_hook;
+use crate::launch_edit_procedure::{
+    OBJECTS_FIRST_PROCEDURE_SELECTOR, probe_edit_procedure_hook, probe_movement_procedure_hook,
+};
 use crate::launch_license::seed_license_preferences_if_requested;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
+use crate::launch_object_transform::probe_object_transform_hook;
+use crate::launch_objects_first_full_path::{
+    FullPathPhaseProbes, FullPathVisualEvidence, write_objects_first_full_path_contract,
+};
 use crate::launch_options::LaunchSmokeOptions;
+use crate::launch_reopen_project::probe_project_reopen_hook_with_selector;
 use crate::launch_run_window::probe_run_window_after_shortcut;
 use crate::launch_run_world::probe_run_world_hook;
+use crate::launch_run_world::probe_run_world_hook_with_selector;
+use crate::launch_save_project::{
+    OBJECTS_FIRST_SAVE_SELECTOR, probe_project_save_hook_with_selector,
+};
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
     probe_alice_window_activation, probe_place_object_preconditions, probe_specific_alice_window,
@@ -354,119 +365,254 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if !real_alice_execution_evidence && failure_category.is_none() {
         failure_category = Some("real_alice_evidence_missing".into());
     }
-    let ui_action_contract = if options.scenario.requires_real_ui_actions() {
-        let place_object_probe = probe_place_object_preconditions(
-            specific_alice_window_ok,
-            smoke_ready_visual_evidence,
-            log_ok,
-            alice_window_activation_probe.as_ref(),
-        );
-        let object_placement_probe = probe_object_placement_hook(
-            &runner,
-            &options.alice_home,
-            &run_dir,
-            &options.scenario.starter_project,
-            default_object_identifier(),
-            display.name(),
-        );
-        let edit_procedure_probe = probe_edit_procedure_hook(
-            &runner,
-            &options.alice_home,
-            &run_dir,
-            &object_placement_probe,
-            display.name(),
-        )
-        .with_proof_artifact_check(&run_dir);
-        let desktop_run_shortcut_probe = probe_desktop_run_shortcut(
-            &runner,
-            display.name(),
-            alice_window_activation_probe.as_ref(),
-            edit_procedure_probe.proves_edit(),
-        );
-        if desktop_run_shortcut_probe.status == "passed" {
-            assertions.insert(
-                "run_world_desktop_shortcut_dispatch".into(),
-                bool_assert(true, desktop_run_shortcut_probe.detail.clone()),
+    let (ui_action_contract, objects_first_full_path_evidence) =
+        if options.scenario.requires_real_ui_actions() {
+            let place_object_probe = probe_place_object_preconditions(
+                specific_alice_window_ok,
+                smoke_ready_visual_evidence,
+                log_ok,
+                alice_window_activation_probe.as_ref(),
             );
-        }
-        let run_window_probe = probe_run_window_after_shortcut(
-            &runner,
-            display.name(),
-            &run_dir,
-            &desktop_run_shortcut_probe,
-        );
-        if desktop_run_shortcut_probe.status == "passed" {
-            assertions.insert(
-                "run_world_desktop_window_observed".into(),
-                bool_assert(
-                    run_window_probe.status == "passed",
-                    run_window_probe.detail.clone(),
-                ),
+            let object_placement_probe = probe_object_placement_hook(
+                &runner,
+                &options.alice_home,
+                &run_dir,
+                &options.scenario.starter_project,
+                default_object_identifier(),
+                display.name(),
             );
-        }
-        let (
-            desktop_run_toolbar_probe,
-            run_window_after_toolbar_probe,
-            desktop_run_execution_probe,
-        ) = probe_toolbar_run_and_execution(
-            &runner,
-            display.name(),
-            &run_dir,
-            alice_window_activation_probe.as_ref(),
-            &run_window_probe,
-            &mut assertions,
-        );
-        let run_world_probe = probe_run_world_hook(
-            &runner,
-            &options.alice_home,
-            &run_dir,
-            &edit_procedure_probe,
-            display.name(),
-        );
-        let save_project_probe = crate::launch_save_project::probe_project_save_hook(
-            &runner,
-            &options.alice_home,
-            &run_dir,
-            &run_world_probe,
-            display.name(),
-        );
-        let artifact = write_ui_action_contract(
-            &run_dir,
-            specific_alice_window_ok,
-            smoke_ready_visual_evidence,
-            log_ok,
-            alice_window_verification_probe.as_ref(),
-            alice_window_activation_probe.as_ref(),
-            desktop_save_shortcut_probe.as_ref(),
-            Some(&desktop_run_shortcut_probe),
-            Some(&run_window_probe),
-            Some(&desktop_run_toolbar_probe),
-            Some(&run_window_after_toolbar_probe),
-            Some(&desktop_run_execution_probe),
-            Some(&place_object_probe),
-            Some(&object_placement_probe),
-            Some(&edit_procedure_probe),
-            Some(&run_world_probe),
-            Some(&save_project_probe),
-        )?;
-        record_ui_action_blockers(
-            &mut assertions,
-            &artifact,
-            &place_object_probe,
-            &object_placement_probe,
-            &edit_procedure_probe,
-            &run_world_probe,
-            &save_project_probe,
-        );
-        if failure_category.is_none() {
-            failure_category = Some(ui_action_failure_category(&object_placement_probe).into());
-        }
-        Some(artifact)
-    } else {
-        None
-    };
+            if options.scenario.is_objects_first_full_path() {
+                let object_transform_probe = probe_object_transform_hook(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &object_placement_probe,
+                    &options.scenario.starter_project,
+                    display.name(),
+                );
+                let edit_procedure_probe = probe_movement_procedure_hook(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    object_transform_probe.proves_transform(),
+                    &object_transform_probe.object_id,
+                    display.name(),
+                );
+                let desktop_run_shortcut_probe = probe_desktop_run_shortcut(
+                    &runner,
+                    display.name(),
+                    alice_window_activation_probe.as_ref(),
+                    edit_procedure_probe.proves_edit(),
+                );
+                if desktop_run_shortcut_probe.status == "passed" {
+                    assertions.insert(
+                        "run_world_desktop_shortcut_dispatch".into(),
+                        bool_assert(true, desktop_run_shortcut_probe.detail.clone()),
+                    );
+                }
+                let run_window_probe = probe_run_window_after_shortcut(
+                    &runner,
+                    display.name(),
+                    &run_dir,
+                    &desktop_run_shortcut_probe,
+                );
+                if desktop_run_shortcut_probe.status == "passed" {
+                    assertions.insert(
+                        "run_world_desktop_window_observed".into(),
+                        bool_assert(
+                            run_window_probe.status == "passed",
+                            run_window_probe.detail.clone(),
+                        ),
+                    );
+                }
+                let (
+                    desktop_run_toolbar_probe,
+                    run_window_after_toolbar_probe,
+                    desktop_run_execution_probe,
+                ) = probe_toolbar_run_and_execution(
+                    &runner,
+                    display.name(),
+                    &run_dir,
+                    alice_window_activation_probe.as_ref(),
+                    &run_window_probe,
+                    &mut assertions,
+                );
+                let run_world_probe = probe_run_world_hook_with_selector(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &edit_procedure_probe,
+                    OBJECTS_FIRST_PROCEDURE_SELECTOR,
+                    display.name(),
+                );
+                let save_project_probe = probe_project_save_hook_with_selector(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &run_world_probe,
+                    OBJECTS_FIRST_SAVE_SELECTOR,
+                    display.name(),
+                );
+                let reopen_project_probe = probe_project_reopen_hook_with_selector(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &save_project_probe,
+                    OBJECTS_FIRST_SAVE_SELECTOR,
+                    display.name(),
+                );
+                let artifact = write_ui_action_contract(
+                    &run_dir,
+                    specific_alice_window_ok,
+                    smoke_ready_visual_evidence,
+                    log_ok,
+                    alice_window_verification_probe.as_ref(),
+                    alice_window_activation_probe.as_ref(),
+                    desktop_save_shortcut_probe.as_ref(),
+                    Some(&desktop_run_shortcut_probe),
+                    Some(&run_window_probe),
+                    Some(&desktop_run_toolbar_probe),
+                    Some(&run_window_after_toolbar_probe),
+                    Some(&desktop_run_execution_probe),
+                    Some(&place_object_probe),
+                    Some(&object_placement_probe),
+                    Some(&edit_procedure_probe),
+                    Some(&run_world_probe),
+                    Some(&save_project_probe),
+                )?;
+                record_ui_action_blockers(
+                    &mut assertions,
+                    &artifact,
+                    &place_object_probe,
+                    &object_placement_probe,
+                    &edit_procedure_probe,
+                    &run_world_probe,
+                    &save_project_probe,
+                );
+                let full_path_evidence = write_objects_first_full_path_contract(
+                    &run_dir,
+                    FullPathVisualEvidence {
+                        screenshot: screenshot.as_ref(),
+                        screenshot_error: screenshot_error.as_deref(),
+                        ui_action_contract: Some(&artifact),
+                    },
+                    FullPathPhaseProbes {
+                        object_placement: &object_placement_probe,
+                        object_transform: &object_transform_probe,
+                        edit_procedure: &edit_procedure_probe,
+                        run_world: &run_world_probe,
+                        save_project: &save_project_probe,
+                        reopen_project: &reopen_project_probe,
+                    },
+                )?;
+                for (id, assertion) in &full_path_evidence.assertions {
+                    assertions.insert(id.clone(), assertion.clone());
+                }
+                if failure_category.is_none() {
+                    failure_category = full_path_evidence.failure_category.clone();
+                }
+                (Some(artifact), Some(full_path_evidence))
+            } else {
+                let edit_procedure_probe = probe_edit_procedure_hook(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &object_placement_probe,
+                    display.name(),
+                )
+                .with_proof_artifact_check(&run_dir);
+                let desktop_run_shortcut_probe = probe_desktop_run_shortcut(
+                    &runner,
+                    display.name(),
+                    alice_window_activation_probe.as_ref(),
+                    edit_procedure_probe.proves_edit(),
+                );
+                if desktop_run_shortcut_probe.status == "passed" {
+                    assertions.insert(
+                        "run_world_desktop_shortcut_dispatch".into(),
+                        bool_assert(true, desktop_run_shortcut_probe.detail.clone()),
+                    );
+                }
+                let run_window_probe = probe_run_window_after_shortcut(
+                    &runner,
+                    display.name(),
+                    &run_dir,
+                    &desktop_run_shortcut_probe,
+                );
+                if desktop_run_shortcut_probe.status == "passed" {
+                    assertions.insert(
+                        "run_world_desktop_window_observed".into(),
+                        bool_assert(
+                            run_window_probe.status == "passed",
+                            run_window_probe.detail.clone(),
+                        ),
+                    );
+                }
+                let (
+                    desktop_run_toolbar_probe,
+                    run_window_after_toolbar_probe,
+                    desktop_run_execution_probe,
+                ) = probe_toolbar_run_and_execution(
+                    &runner,
+                    display.name(),
+                    &run_dir,
+                    alice_window_activation_probe.as_ref(),
+                    &run_window_probe,
+                    &mut assertions,
+                );
+                let run_world_probe = probe_run_world_hook(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &edit_procedure_probe,
+                    display.name(),
+                );
+                let save_project_probe = crate::launch_save_project::probe_project_save_hook(
+                    &runner,
+                    &options.alice_home,
+                    &run_dir,
+                    &run_world_probe,
+                    display.name(),
+                );
+                let artifact = write_ui_action_contract(
+                    &run_dir,
+                    specific_alice_window_ok,
+                    smoke_ready_visual_evidence,
+                    log_ok,
+                    alice_window_verification_probe.as_ref(),
+                    alice_window_activation_probe.as_ref(),
+                    desktop_save_shortcut_probe.as_ref(),
+                    Some(&desktop_run_shortcut_probe),
+                    Some(&run_window_probe),
+                    Some(&desktop_run_toolbar_probe),
+                    Some(&run_window_after_toolbar_probe),
+                    Some(&desktop_run_execution_probe),
+                    Some(&place_object_probe),
+                    Some(&object_placement_probe),
+                    Some(&edit_procedure_probe),
+                    Some(&run_world_probe),
+                    Some(&save_project_probe),
+                )?;
+                record_ui_action_blockers(
+                    &mut assertions,
+                    &artifact,
+                    &place_object_probe,
+                    &object_placement_probe,
+                    &edit_procedure_probe,
+                    &run_world_probe,
+                    &save_project_probe,
+                );
+                if failure_category.is_none() {
+                    failure_category =
+                        Some(ui_action_failure_category(&object_placement_probe).into());
+                }
+                (Some(artifact), None)
+            }
+        } else {
+            (None, None)
+        };
     let launch_command = format!("java {}", launch_args.join(" "));
-    let manifest = build_manifest(
+    let mut manifest = build_manifest(
         options,
         deps,
         &eatme_commit,
@@ -489,6 +635,12 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
         assertions,
         failure_category,
     );
+    if let Some(full_path_evidence) = objects_first_full_path_evidence {
+        manifest.command = Some(full_path_evidence.command);
+        manifest.scenario = Some(full_path_evidence.scenario);
+        manifest.evidence = Some(full_path_evidence.evidence);
+        manifest.persistence_assertions = Some(full_path_evidence.persistence_assertions);
+    }
     let manifest_write = write_manifest(&run_dir, &manifest);
     shutdown(&mut alice);
     shutdown(&mut xvfb);
