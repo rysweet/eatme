@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor Student
+    participant CLI as eatme CLI
+    participant AliceAPI as eatme-alice
+    participant Alice as Alice desktop
+    participant Runs as runs/ evidence
+    participant Parser as A3P parser
+    participant Grade as eatme-assets grading
+
+    Student->>CLI: deps check
+    CLI->>AliceAPI: check_dependencies(&RealCommandRunner)
+    AliceAPI-->>CLI: DependencyReport
+    Student->>CLI: alice launch-smoke --scenario ...
+    CLI->>AliceAPI: discover_alice + package_alice + run_launch_smoke
+    AliceAPI->>Alice: build and launch Alice
+    Student->>Alice: place object, edit code, run, save
+    Alice-->>Runs: screenshot, window list, ui_action_contract, saved project
+    AliceAPI-->>CLI: LaunchSmokeManifest
+    CLI->>Parser: load saved .a3p / program.xml
+    Parser-->>Grade: Program AST
+    Grade-->>CLI: GradingReport
+    CLI-->>Student: evidence + grading result

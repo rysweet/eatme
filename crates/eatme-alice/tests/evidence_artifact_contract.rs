@@ -6,6 +6,7 @@ mod support;
 use support::{
     DesktopFixture, FirstLessonNextActionFixture, PixelObservationFixture,
     overwrite_modernized_first_lesson_next_action, write_manifest,
+    write_modernized_run_window_evidence_file,
 };
 
 #[test]
@@ -418,6 +419,90 @@ fn restrained_limitation_wording_remains_valid() {
     assert_report_text_contains(&report_json, "does not prove completion");
     assert_report_text_contains(&report_json, "grading is not assessed");
     assert_report_text_contains(&report_json, "UI automation is not complete");
+}
+
+#[test]
+fn proof_artifact_contract_accepts_direct_declarations_and_blocked_aliases() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    write_modernized_run_window_evidence_file(
+        &manifest_path,
+        "save-project-proof.json",
+        r#"{"proof":"save-project"}"#,
+    );
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "candidate_actions":["desktop_save_menu_action"],
+  "requiresNextEvidence":["Collect explicit Save finish-state evidence before reporting Save completion."],
+  "save_project_proof_artifact":{
+    "path":"run-window-evidence/save-project-proof.json",
+    "size_bytes":24,
+    "sha256":"sha256-save-project-proof"
+  },
+  "selectProjectProofArtifact":{
+    "status":"blocked",
+    "blocker":{
+      "reason":"Select Project proof collection is blocked by an explicit desktop affordance boundary.",
+      "codes":["select_project_proof_unavailable"]
+    }
+  },
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let next_action = modernized_next_action(&report_json);
+
+    assert_eq!(
+        next_action["save_project_proof_artifact"]["status"],
+        "present"
+    );
+    assert_eq!(
+        next_action["select_project_proof_artifact"]["status"],
+        "blocked"
+    );
+    assert_report_text_contains(&report_json, "run-window-evidence/save-project-proof.json");
+    assert_report_text_contains(
+        &report_json,
+        "Select Project proof collection is blocked by an explicit desktop affordance boundary.",
+    );
+    assert_report_text_contains(&report_json, "select_project_proof_unavailable");
+}
+
+#[test]
+fn proof_artifact_contract_rejects_empty_status_values() {
+    let manifest_path = write_manifest(ready_desktop_fixture());
+    overwrite_modernized_first_lesson_next_action(
+        &manifest_path,
+        r#"{
+  "schema_version":"eatme.alice-desktop-first-lesson-next-action/v1",
+  "status":"blocked",
+  "candidate_actions":["desktop_save_menu_action"],
+  "requiresNextEvidence":["Collect explicit Save finish-state evidence before reporting Save completion."],
+  "save_project_proof_artifact":{"status":""},
+  "doesNotClaim":["full Alice UI automation","first-lesson completion","grading","creative assessment"]
+}"#,
+    );
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+    let report_json = serde_json::to_value(&report).unwrap();
+    let next_action = modernized_next_action(&report_json);
+
+    assert!(
+        !report.passed,
+        "empty proof-artifact status must block readiness: {report_json}"
+    );
+    assert_eq!(
+        next_action["save_project_proof_artifact"]["status"],
+        "invalid"
+    );
+    assert_report_issue_contains(
+        &report,
+        "Save Project proof artifact status must be a non-empty string",
+    );
 }
 
 fn ready_desktop_fixture() -> DesktopFixture {

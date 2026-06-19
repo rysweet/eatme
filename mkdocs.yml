@@ -1,50 +1,73 @@
 site_name: eatme
-site_description: Agentic Alice outside-in quality assurance harness
+site_description: End-to-end testing and curriculum validation for Alice 3
 repo_url: https://github.com/rysweet/eatme
 docs_dir: docs
 site_dir: site
-
-theme:
-  name: mkdocs
-
-nav:
-  - Home: index.md
-  - Installation: installation.md
-  - CLI Usage: cli-usage.md
-  - Scenario Authoring: scenario-authoring.md
-  - Gadugi Adapters: gadugi-adapters.md
-  - Generated Asset Consistency: generated-asset-consistency.md
-  - Validation and Quality Gates: validation-quality-gates.md
-  - Outside-in Alice Test Modules: outside-in-alice-test-modules.md
-  - Alice Integration: alice-integration.md
-  - Alice Objects-First World: alice-objects-first-world.md
-  - Alice Objects-First World Reference: alice-objects-first-world-reference.md
-  - Deterministic Real-Alice Smoke Test: deterministic-real-alice-smoke-test.md
-  - Lesson Session Readiness: lesson-session-readiness.md
-  - First-Lesson Evidence Readiness: first-lesson-evidence-readiness.md
-  - First-Lesson Grading Report: first-lesson-grading-report.md
-  - Creative Assessment Boundary: creative-assessment-boundary.md
-  - First-Lesson Vertical Slice: first-lesson-vertical-slice.md
-  - Post-focus Screenshot Evidence: post-focus-screenshot-evidence.md
-  - Evidence Artifact Contract: evidence-artifact-contract.md
-  - Lesson Readiness Module Boundary: lesson-readiness-module-boundary.md
-  - Starter Project Preflight Evidence: starter-project-preflight-evidence.md
-  - Save/reopen Readiness: save-reopen-readiness.md
-  - Default-workflow PR Readiness: default-workflow-pr-readiness.md
-  - "PR #199 Recovery Workflow": pr-199-recovery-workflow.md
-  - "PR #160 Gap-Reporting Readiness": pr-160-gap-reporting-readiness.md
-  - Live Studio Workshop Evidence Contract: live-studio-workshop-evidence.md
-  - Instructor Missions: instructor-missions.md
-  - Student Missions: student-missions.md
-  - Code Editor First Run E2E Test: code-editor-first-run-e2e.md
-  - Loops and Conditionals Grading: loops-and-conditionals-grading.md
-  - Events and Collision Grading: events-and-collision-grading.md
-  - Sharing Platform Readiness: sharing-platform-readiness.md
-  - Student Lesson E2E Tests: student-lesson-e2e-tests.md
-  - GitHub Pages: github-pages.md
-  - Existing Guides:
-      - Persona Assets: persona-assets.md
-      - Alice Lesson Smoke: alice-lesson-smoke.md
-      - Implementation Plan: implementation-plan.md
-
 strict: true
+theme:
+  name: material
+  palette:
+    primary: blue
+nav:
+  - "Home": "index.md"
+  - "Getting Started":
+    - "Installation": "installation.md"
+    - "CLI usage": "cli-usage.md"
+  - "Curriculum Scenarios":
+    - "Scenario authoring": "scenario-authoring.md"
+    - "Alice Objects-First World": "alice-objects-first-world.md"
+    - "Student missions": "student-missions.md"
+    - "Instructor missions": "instructor-missions.md"
+    - "Alice lesson smoke": "alice-lesson-smoke.md"
+    - "Student lesson E2E tests": "student-lesson-e2e-tests.md"
+    - "Code editor first run E2E test": "code-editor-first-run-e2e.md"
+    - "First-Lesson Grading Report": "first-lesson-grading-report.md"
+    - "Loops and conditionals grading": "loops-and-conditionals-grading.md"
+    - "Events and collision grading": "events-and-collision-grading.md"
+    - "Real-Alice lesson grading integration tests": "real-alice-lesson-grading-tests.md"
+    - "Creative assessment boundary": "creative-assessment-boundary.md"
+  - "Testing":
+    - "Validation and quality gates": "validation-quality-gates.md"
+    - "Web platform testing": "web-platform-testing.md"
+    - "Deterministic real-Alice smoke test": "deterministic-real-alice-smoke-test.md"
+    - "Real-Alice grading integration tests": "real-alice-grading-integration-tests.md"
+    - "Alice content coverage tests": "alice-content-coverage-tests.md"
+    - "Outside-in Alice test modules": "outside-in-alice-test-modules.md"
+    - "Post-focus screenshot evidence": "post-focus-screenshot-evidence.md"
+    - "Run window polling": "run-window-polling.md"
+    - "Edit procedure proof verification": "edit-procedure-proof-verification.md"
+  - "Architecture":
+    - "Grading module architecture": "grading-module-architecture.md"
+    - "Evidence artifact contract": "evidence-artifact-contract.md"
+    - "Alice Objects-First World Reference": "alice-objects-first-world-reference.md"
+    - "Lesson readiness module boundary": "lesson-readiness-module-boundary.md"
+    - "First-lesson vertical slice": "first-lesson-vertical-slice.md"
+    - "First-Lesson Evidence Readiness": "first-lesson-evidence-readiness.md"
+    - "Lesson session readiness": "lesson-session-readiness.md"
+    - "Starter project preflight evidence": "starter-project-preflight-evidence.md"
+    - "Save/reopen readiness": "save-reopen-readiness.md"
+    - "Import/export workflow": "import-export-workflow.md"
+    - "Sharing platform readiness": "sharing-platform-readiness.md"
+    - "Generated asset consistency": "generated-asset-consistency.md"
+    - "Gadugi adapters": "gadugi-adapters.md"
+    - "Persona assets": "persona-assets.md"
+    - "Live studio workshop evidence contract": "live-studio-workshop-evidence.md"
+  - "Integrations and publishing":
+    - "Alice integration": "alice-integration.md"
+    - "GitHub Pages": "github-pages.md"
+  - "Workflows and readiness":
+    - "Default-workflow PR readiness": "default-workflow-pr-readiness.md"
+    - "PR #199 Recovery Workflow": "pr-199-recovery-workflow.md"
+    - "PR #160 Gap-Reporting Readiness": "pr-160-gap-reporting-readiness.md"
+  - "Existing project note":
+    - "Implementation plan": "implementation-plan.md"
+  - "Architecture Atlas":
+    - "Atlas Overview": "atlas/index.md"
+    - "Repository Surface": "atlas/repo-surface/README.md"
+    - "Symbol Bindings": "atlas/ast-lsp-bindings/README.md"
+    - "Compile Dependencies": "atlas/compile-deps/README.md"
+    - "Runtime Topology": "atlas/runtime-topology/README.md"
+    - "API Contracts": "atlas/api-contracts/README.md"
+    - "Data Flow": "atlas/data-flow/README.md"
+    - "Service Components": "atlas/service-components/README.md"
+    - "User Journeys": "atlas/user-journeys/README.md"

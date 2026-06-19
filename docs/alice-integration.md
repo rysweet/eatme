@@ -147,3 +147,11 @@ valid evidence, eatme reports sanitized product-issue details for follow-up.
 For usage, evidence layout, and hook APIs, see
 [Alice Objects-First World](alice-objects-first-world.md) and
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
+
+The [import/export workflow](import-export-workflow.md) extends the save/reopen
+contract with a deterministic export phase. After save and reopen succeed, the
+`tools/eatme-export-project` hook exports the saved `.a3p` to NetBeans project
+format and the test verifies the Ant `build.xml` exists on disk. The export hook
+contract uses `eatme.alice-project-export-result/v1` JSON schema. A missing
+export hook produces a bounded `blocked` result without failing the save/reopen
+evidence.

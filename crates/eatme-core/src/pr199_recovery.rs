@@ -89,3 +89,50 @@ where
     summary.push(']');
     summary
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn required_text_trims_and_returns_present_values() {
+        assert_eq!(
+            required_text(Some("  ready  "), "missing").unwrap(),
+            "ready"
+        );
+    }
+
+    #[test]
+    fn required_text_rejects_missing_or_blank_values() {
+        let none_error = required_text(None, "missing").unwrap_err();
+        let blank_error = required_text(Some("   \n\t"), "blank").unwrap_err();
+
+        assert_eq!(none_error.code(), "missing");
+        assert_eq!(blank_error.code(), "blank");
+        assert_eq!(
+            blank_error.to_string(),
+            "blank: required recovery evidence is missing"
+        );
+    }
+
+    #[test]
+    fn summarize_names_prefixes_count_and_preserves_order() {
+        let names = vec!["lint".to_string(), "tests".to_string(), "docs".to_string()];
+
+        assert_eq!(summarize_names(&names), "3 [lint, tests, docs]");
+        assert_eq!(summarize_names(&[]), "0");
+    }
+
+    #[test]
+    fn summarize_paths_uses_display_strings() {
+        let paths = vec![
+            PathBuf::from("artifacts/report.json"),
+            PathBuf::from("logs/run.log"),
+        ];
+
+        assert_eq!(
+            summarize_paths(&paths),
+            "2 [artifacts/report.json, logs/run.log]"
+        );
+    }
+}

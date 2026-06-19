@@ -23,13 +23,19 @@ purpose: >-
   time-travel recipe as a sequence of named procedure calls. Students write
   at least three steps in a deliberate order, predict what the scene will look
   like after each step runs, swap two steps to observe the changed outcome,
-  and record why order mattered. This scenario covers the curious-novice and
-  systems-puzzle-solver student personas without claiming full user interface
-  automation, automated creative assessment, learner-world grading, complete
-  Alice coverage, or real Alice smoke evidence.
+  and record why order mattered. The lesson can name the sequence explicitly as
+  a doInOrder-style routine so the web platform covers Alice sequential
+  execution instead of only generic procedure calls. This scenario covers the
+  curious-novice and systems-puzzle-solver student personas without claiming
+  full user interface automation, automated creative assessment,
+  learner-world grading, complete Alice coverage, or real Alice smoke evidence.
 personas:
   instructors: [exercise-forger, debug-coach]
   students: [curious-novice, systems-puzzle-solver]
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
 agentic_flow:
   focus: time-travel-recipe-sequencing
   instructor_goal: >-

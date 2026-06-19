@@ -416,6 +416,110 @@ fn first_lesson_readiness_blocked_save_project_proof_artifact_is_actionable() {
     assert_no_unsupported_readiness_claims(&report_text);
 }
 
+#[test]
+fn sequence_preserves_required_evidence_order_and_unique_readiness_ids() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    let registry_path = fixture.root.join("targets.yaml");
+    fs::write(
+        &registry_path,
+        format!(
+            r#"
+schema_version: eatme.alice-comparison-targets/v1
+targets:
+  baseline:
+    label: Baseline Alice
+    description: Reference target.
+    alice_home: {}
+  modernized:
+    label: Modernized Alice
+    description: Candidate target.
+    alice_home: {}
+"#,
+            fixture.alice_home.display(),
+            fixture.alice_home.display()
+        ),
+    )
+    .unwrap();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let report = run_first_lesson_readiness_sequence(&FirstLessonReadinessOptions {
+        registry_path,
+        baseline_target: "baseline".into(),
+        modernized_target: "modernized".into(),
+        baseline_home_override: None,
+        modernized_home_override: None,
+        run_id: "fake-first-lesson-required-evidence".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        execute: true,
+        starter_project: None,
+    })
+    .unwrap();
+
+    assert_eq!(
+        report.required_evidence,
+        vec![
+            "comparison-manifest.json with baseline and modernized targets",
+            "launch evidence for each target",
+            "modernized Run-window evidence",
+            "modernized desktop-run-pixel-boundary.json status",
+            "modernized desktop-run-pixel-observation.json status",
+            "modernized desktop execution evidence",
+            "screenshot, log, and window artifacts",
+            "automation scenario action evidence",
+            "Save Project proof artifact",
+            "Select Project proof artifact",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        report.required_evidence,
+        report.readiness_report.required_evidence
+    );
+
+    let mut ids = std::collections::HashSet::new();
+    for item in report
+        .shown_evidence
+        .iter()
+        .chain(report.not_yet_shown.iter())
+    {
+        assert!(
+            ids.insert(item.id.clone()),
+            "duplicate readiness evidence id: {}",
+            item.id
+        );
+    }
+
+    let baseline = report
+        .target_statuses
+        .get("baseline")
+        .expect("baseline target status");
+    let modernized = report
+        .target_statuses
+        .get("modernized")
+        .expect("modernized target status");
+    let baseline_path = baseline
+        .ui_action_contract_path
+        .as_ref()
+        .expect("baseline UI action contract path");
+    let modernized_path = modernized
+        .ui_action_contract_path
+        .as_ref()
+        .expect("modernized UI action contract path");
+    assert_eq!(baseline.target_id, "baseline");
+    assert_eq!(modernized.target_id, "modernized");
+    assert_ne!(baseline_path, modernized_path);
+    assert!(baseline_path.contains("fake-first-lesson-required-evidence"));
+    assert!(modernized_path.contains("fake-first-lesson-required-evidence"));
+}
+
 fn assert_action(
     target: &eatme_alice::compare::LessonTargetEvidence,
     action_id: &str,

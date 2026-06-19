@@ -1,0 +1,58 @@
+digraph service_components {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="eatme service components overview"];
+    node [shape=box, style=rounded, fontsize=10];
+
+    subgraph cluster_core {
+        label="eatme-core";
+        color=lightgrey;
+        core_ast [label="ast"];
+        core_command [label="command"];
+        core_manifest [label="manifest"];
+        core_collab [label="collaboration"];
+        core_recovery [label="pr199_recovery"];
+        core_collab -> core_ast;
+        core_recovery -> core_command;
+    }
+
+    subgraph cluster_alice {
+        label="eatme-alice";
+        color=lightgrey;
+        alice_public [label="deps / discover / package / scenario"];
+        alice_launch [label="launch pipeline"];
+        alice_compare [label="compare + readiness"];
+        alice_web [label="web-platform adapter tests"];
+        alice_public -> alice_launch;
+        alice_compare -> alice_launch;
+    }
+
+    subgraph cluster_assets {
+        label="eatme-assets";
+        color=lightgrey;
+        assets_validation [label="schema + discovery + validation"];
+        assets_grading [label="grading modules"];
+        assets_quality [label="quality scoring"];
+        assets_gadugi [label="gadugi generation"];
+        assets_validation -> assets_grading;
+        assets_grading -> assets_quality;
+    }
+
+    subgraph cluster_cli {
+        label="eatme-cli";
+        color=lightgrey;
+        cli_router [label="clap routing"];
+        cli_helpers [label="grading.rs + first_lesson.rs"];
+        cli_output [label="JSON output + errors"];
+        cli_router -> cli_helpers;
+        cli_router -> cli_output;
+    }
+
+    cli_router -> alice_public [label="alice commands"];
+    cli_router -> assets_validation [label="assets validate"];
+    cli_router -> assets_gadugi [label="generate-gadugi"];
+    cli_helpers -> assets_grading [label="grading report"];
+    cli_router -> core_command [label="RealCommandRunner"];
+    alice_launch -> core_command;
+    alice_launch -> core_manifest;
+    assets_grading -> core_ast;
+    alice_web -> assets_validation [style=dashed, label="scenario-driven tests"];
+}

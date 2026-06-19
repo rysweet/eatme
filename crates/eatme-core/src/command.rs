@@ -195,11 +195,108 @@ mod tests {
         let _ = fs::remove_file(counter_path);
     }
 
+    #[test]
+    fn real_runner_stops_retrying_after_first_success() {
+        let counter_path = unique_artifact_path("eatme-command-single-success");
+        fs::create_dir_all(counter_path.parent().unwrap()).unwrap();
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args([
+                        "-c",
+                        "count=$(cat \"$1\" 2>/dev/null || echo 0); count=$((count + 1)); echo \"$count\" > \"$1\"; exit 0",
+                        "sh",
+                        counter_path.to_str().unwrap(),
+                    ])
+                    .retries(3, Duration::from_millis(10)),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(0));
+        assert_eq!(fs::read_to_string(&counter_path).unwrap().trim(), "1");
+        let _ = fs::remove_file(counter_path);
+    }
+
+    #[test]
+    fn retries_clamps_zero_attempts_to_one() {
+        let spec = CommandSpec::new("sh").retries(0, Duration::from_millis(10));
+
+        assert_eq!(spec.attempts, 1);
+        assert_eq!(spec.retry_delay, Duration::from_millis(10));
+    }
+
+    #[test]
+    fn shell_display_joins_program_and_args_without_trailing_spaces() {
+        assert_eq!(CommandSpec::new("cargo").shell_display(), "cargo");
+        assert_eq!(
+            CommandSpec::new("cargo")
+                .args(["test", "--workspace"])
+                .shell_display(),
+            "cargo test --workspace"
+        );
+    }
+
+    #[test]
+    fn real_runner_honors_working_directory_and_environment() {
+        let work_dir = unique_artifact_path("eatme-command-cwd");
+        fs::create_dir_all(&work_dir).unwrap();
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args(["-c", "printf '%s|%s' \"$PWD\" \"$ALICE_TEST_FLAG\""])
+                    .cwd(&work_dir)
+                    .env("ALICE_TEST_FLAG", "enabled"),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(0));
+        assert_eq!(output.stdout, format!("{}|enabled", work_dir.display()));
+
+        let _ = fs::remove_dir_all(work_dir);
+    }
+
+    #[test]
+    fn real_runner_preserves_failed_exit_status_stdout_and_stderr() {
+        let output = RealCommandRunner
+            .run(&CommandSpec::new("sh").args(["-c", "printf 'hello'; printf 'warn' >&2; exit 7"]))
+            .unwrap();
+
+        assert_eq!(output.exit_status, Some(7));
+        assert_eq!(output.stdout, "hello");
+        assert_eq!(output.stderr, "warn");
+    }
+
+    #[test]
+    fn timed_out_commands_keep_existing_stderr_before_timeout_suffix() {
+        let output = RealCommandRunner
+            .run(
+                &CommandSpec::new("sh")
+                    .args(["-c", "printf 'warn' >&2; sleep 2"])
+                    .timeout(Duration::from_millis(100)),
+            )
+            .unwrap();
+
+        assert_eq!(output.exit_status, None);
+        assert!(output.stderr.contains("warn"));
+        assert!(output.stderr.contains("command timed out"));
+    }
+
     fn unique_temp_path(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         env::temp_dir().join(format!("{prefix}-{nonce}"))
+    }
+
+    fn unique_artifact_path(prefix: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        env::current_dir()
+            .unwrap()
+            .join("target/test-artifacts")
+            .join(format!("{prefix}-{nonce}"))
     }
 }

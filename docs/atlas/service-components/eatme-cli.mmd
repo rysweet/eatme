@@ -1,0 +1,30 @@
+graph TD
+    main["main.rs"]
+    clap["Cli::parse()
+clap Parser/Subcommand"]
+    matcher["match cli.command"]
+    runner["RealCommandRunner"]
+    assets_routes["Assets routes"]
+    deps_route["Deps route"]
+    alice_routes["Alice routes"]
+    grading["grading.rs"]
+    first_lesson["first_lesson.rs"]
+    output["print_result + bail formatting"]
+    alice_api["eatme-alice APIs"]
+    assets_api["eatme-assets APIs"]
+
+    main --> clap --> matcher
+    main --> runner
+    matcher --> assets_routes
+    matcher --> deps_route
+    matcher --> alice_routes
+    assets_routes --> grading
+    alice_routes --> first_lesson
+    assets_routes --> assets_api
+    deps_route --> alice_api
+    alice_routes --> alice_api
+    assets_routes --> output
+    deps_route --> output
+    alice_routes --> output
+    deps_route --> runner
+    alice_routes --> runner

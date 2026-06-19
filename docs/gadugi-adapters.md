@@ -113,6 +113,17 @@ inspect the eatme manifest, `workflow_phases[]`, and
 `project-reopen/persisted-state.json` contract documented in
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
 
+## Step block composition
+
+The generator uses shared step-block templates to avoid duplicating expected-
+output patterns across 25+ adapters. Templates live in
+`assets/scenarios/gadugi/step-blocks/` and are embedded at compile time via
+`include_str!()`. The generator substitutes per-scenario values (asset count,
+scenario id) and inlines the result — generated YAML is still self-contained.
+See [Step Block Composition](step-block-composition.md) for template format,
+placeholder reference, and instructions for adding new step blocks.
+placeholder reference, and instructions for adding new step blocks.
+
 ## Editing policy
 
 Do not hand-edit generated Gadugi adapters to change mission intent. If a prompt,

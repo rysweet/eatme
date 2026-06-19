@@ -96,6 +96,50 @@ fn after_place_object_and_edit_procedure_pass_next_proof_names_run_world() {
 }
 
 #[test]
+fn after_place_object_edit_procedure_and_run_world_pass_next_proof_names_save_project() {
+    // When only save-project remains unproven, next_missing_real_desktop_proof
+    // must advance to save-project and cite tools/eatme-save-project.
+    let manifest_path = write_manifest(DesktopFixture {
+        run_frame_present: true,
+        vm_statement_execution_present: true,
+        visible_desktop_screenshot_present: true,
+        pixel_boundary_present: true,
+        pixel_observation: PixelObservationFixture::Observed,
+        first_lesson_next_action: FirstLessonNextActionFixture::Missing,
+        hook_actions_passed: &[
+            "place_object_ui_action",
+            "edit_procedure_ui_action",
+            "run_world_ui_action",
+        ],
+    });
+
+    let report = check_lesson_session_readiness(&manifest_path).unwrap();
+
+    let next_proof = report
+        .evidence_progress
+        .next_missing_real_desktop_proof
+        .as_deref()
+        .expect("next_missing_real_desktop_proof should be set when save-project hook is unproven");
+
+    assert!(
+        next_proof.contains("save-project"),
+        "expected save-project hook guidance; got: {next_proof:?}"
+    );
+    assert!(
+        next_proof.contains("tools/eatme-save-project"),
+        "expected tools/eatme-save-project path; got: {next_proof:?}"
+    );
+    assert!(
+        next_proof.contains("does not prove full UI automation"),
+        "expected explicit automation limit statement; got: {next_proof:?}"
+    );
+    assert!(
+        !next_proof.contains("missing desktop next-action evidence"),
+        "next-action artifact should not be requested before save-project; got: {next_proof:?}"
+    );
+}
+
+#[test]
 fn after_all_four_hooks_pass_next_proof_names_missing_next_action_artifact() {
     // Once the hook action chain is proven, readiness still requires the
     // next-action proof artifact before reporting RabbitHole evidence as complete.

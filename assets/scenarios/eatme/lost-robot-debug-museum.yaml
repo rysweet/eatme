@@ -21,14 +21,19 @@ purpose: >-
   Help an instructor design a debugging-mystery mission where a museum robot
   visits exhibits in the wrong order or skips one stop. Students read an
   expected tour plan, run the Alice world, compare observed behavior to
-  expected behavior, write one hypothesis, make one minimal change, rerun, and
-  record what changed. This scenario covers the reflective-debugger student
-  persona without claiming full user interface automation, automated creative
-  assessment, learner-world grading, complete Alice coverage, or real Alice
-  smoke evidence.
+  expected behavior, write one hypothesis, pause at one breakpoint or explicit
+  debug checkpoint, make one minimal change, rerun, and record what changed.
+  This scenario covers the reflective-debugger student persona without claiming
+  full user interface automation, automated creative assessment,
+  learner-world grading, complete Alice coverage, or real Alice smoke
+  evidence.
 personas:
   instructors: [debug-coach, exercise-forger]
   students: [reflective-debugger, collaborative-peer-mentor]
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
 agentic_flow:
   focus: lost-robot-debug-museum
   instructor_goal: >-

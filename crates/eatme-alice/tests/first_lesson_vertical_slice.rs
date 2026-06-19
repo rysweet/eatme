@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 #[allow(dead_code)]
 mod launch_smoke_support;
-use launch_smoke_support::{PathOverride, TestFixture};
+use launch_smoke_support::{PathOverride, TestFixture, alice_home, lock_env, real_alice_enabled};
 
 // ─── Step-evidence helper ────────────────────────────────────────────
 
@@ -152,9 +152,23 @@ fn fake_toolchain_vertical_slice_reports_step_by_step_evidence() {
         ],
     );
 
-    // Validate that the contract includes required_actions list
+    // Validate that the contract preserves the full first-lesson action chain.
     let required_actions = contract["required_actions"].as_array().unwrap();
-    assert!(required_actions.len() >= 4, "need ≥4 required_actions");
+    let required_action_ids: Vec<_> = required_actions
+        .iter()
+        .map(|action| action["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        required_action_ids,
+        vec![
+            "verify-specific-alice-window",
+            "activate-specific-alice-window",
+            "place-object",
+            "edit-procedure-or-code-block",
+            "run-world",
+            "save-project",
+        ]
+    );
 
     assert_eq!(
         contract["preflight_evidence"]["specific_alice_window_detected"],
@@ -178,6 +192,8 @@ fn real_alice_vertical_slice_captures_per_step_evidence() {
         eprintln!("skipping real-Alice vertical-slice test (set EATME_REAL_ALICE=1)");
         return;
     }
+
+    let _env_guard = lock_env();
 
     let runs_dir = env::current_dir()
         .unwrap()
@@ -355,14 +371,4 @@ fn assert_manifest_assertion(
         .get(key)
         .unwrap_or_else(|| panic!("missing manifest assertion '{key}'"));
     assert_eq!(result.passed, expected_passed, "{key}: {}", result.detail);
-}
-
-fn real_alice_enabled() -> bool {
-    env::var("EATME_REAL_ALICE")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-fn alice_home() -> PathBuf {
-    PathBuf::from(env::var("ALICE_HOME").unwrap_or_else(|_| "/opt/alice3".into()))
 }

@@ -128,3 +128,78 @@ fn required_index(command: QaCommand) -> usize {
         QaCommand::QualityGatesWithTmpdir => 4,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{QaCommand, QaOutcome, ScopedQaRunner};
+
+    #[test]
+    fn summarize_rejects_missing_required_commands() {
+        let error = ScopedQaRunner::summarize(vec![
+            QaOutcome::passed(QaCommand::CargoWorkspaceAllFeatures),
+            QaOutcome::passed(QaCommand::AssetsValidateJson),
+            QaOutcome::passed(QaCommand::GenerateGadugiCheckJson),
+            QaOutcome::passed(QaCommand::MkdocsBuildStrict),
+        ])
+        .unwrap_err();
+
+        assert_eq!(error.code(), "scoped_qa_missing_command");
+        assert!(
+            error
+                .to_string()
+                .contains("TMPDIR=/tmp ./scripts/quality-gates.sh")
+        );
+    }
+
+    #[test]
+    fn summarize_marks_all_required_passes_as_successful_and_includable() {
+        let report = ScopedQaRunner::summarize(vec![
+            QaOutcome::passed(QaCommand::CargoWorkspaceAllFeatures),
+            QaOutcome::passed(QaCommand::AssetsValidateJson),
+            QaOutcome::passed(QaCommand::GenerateGadugiCheckJson),
+            QaOutcome::passed(QaCommand::MkdocsBuildStrict),
+            QaOutcome::passed(QaCommand::QualityGatesWithTmpdir),
+        ])
+        .unwrap();
+
+        assert!(report.passed);
+        assert!(report.blockers.is_empty());
+        assert!(report.includes(QaCommand::MkdocsBuildStrict));
+        assert!(report.includes(QaCommand::CargoWorkspaceAllFeatures));
+        assert_eq!(report.commands[0].summary, "passed");
+    }
+
+    #[test]
+    fn summarize_collects_multiple_failures_as_blockers() {
+        let report = ScopedQaRunner::summarize(vec![
+            QaOutcome::failed(
+                QaCommand::CargoWorkspaceAllFeatures,
+                2,
+                "workspace tests failed",
+            ),
+            QaOutcome::passed(QaCommand::AssetsValidateJson),
+            QaOutcome::failed(
+                QaCommand::GenerateGadugiCheckJson,
+                3,
+                "gadugi artifact drift",
+            ),
+            QaOutcome::passed(QaCommand::MkdocsBuildStrict),
+            QaOutcome::passed(QaCommand::QualityGatesWithTmpdir),
+        ])
+        .unwrap();
+
+        assert!(!report.passed);
+        assert_eq!(report.blockers.len(), 2);
+        assert!(report.blockers.iter().any(|blocker| {
+            blocker
+                .subject
+                .contains("cargo test --workspace --all-features")
+        }));
+        assert!(
+            report
+                .blockers
+                .iter()
+                .any(|blocker| blocker.reason.contains("gadugi artifact drift"))
+        );
+    }
+}

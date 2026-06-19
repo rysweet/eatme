@@ -1,0 +1,9 @@
+# Step-block template: alice-launch-smoke
+# Shared launch-smoke base expected_stdout frame.
+# Placeholder: {{scenario-id}} — replaced with scenario ID at generation time.
+# Note: failure_category varies by scenario kind and stays computed by the generator.
+steps:
+  - id: launch-smoke
+    expected_stdout:
+      - '"scenario_id": "{{scenario-id}}"'
+      - '"real_alice_execution_evidence": {'

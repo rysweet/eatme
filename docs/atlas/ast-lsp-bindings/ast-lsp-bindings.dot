@@ -1,0 +1,44 @@
+digraph ast_lsp_bindings {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="eatme public API surface (static approximation)"];
+    node [shape=record, fontsize=10];
+
+    cli [label="{eatme-cli|crate-root alice imports + direct eatme_assets calls}"];
+
+    subgraph cluster_core {
+        label="eatme-core exports";
+        color=lightgrey;
+        core_ast [label="{ast|Procedure|Program|Statement}"];
+        core_cmd [label="{command|CommandOutput|CommandRunner|CommandSpec|RealCommandRunner}"];
+        core_manifest [label="{manifest|ArtifactInfo|AssertionResult|LaunchSmokeManifest}"];
+        core_misc [label="{other public surface|collaboration|fs_hash|pr199_recovery}"];
+    }
+
+    subgraph cluster_alice {
+        label="eatme-alice exports";
+        color=lightgrey;
+        alice_compare [label="{compare|comparison + readiness APIs}"];
+        alice_ops [label="{deps/discover/package|DependencyReport|AliceDiscovery|PackageOptions}"];
+        alice_launch [label="{launch surface|run_launch_smoke|LaunchSmokeOptions|LaunchSmokeScenario|write_preflight_blocked_manifest}"];
+    }
+
+    subgraph cluster_assets {
+        label="eatme-assets exports";
+        color=lightgrey;
+        assets_assess [label="{assessment + sharing|creative_assessment|sharing_platform}"];
+        assets_grade [label="{grading surface|GradingReport + lesson-specific graders}"];
+        assets_validate [label="{validation/report/gadugi|validate_assets|validate_persona_crew|validate_scenario_asset|generate_gadugi_adapters}"];
+    }
+
+    alice_compare -> core_manifest;
+    alice_ops -> core_cmd;
+    alice_launch -> core_cmd;
+    alice_launch -> core_manifest;
+    alice_launch -> core_misc;
+    assets_grade -> core_ast;
+    cli -> alice_compare;
+    cli -> alice_ops;
+    cli -> alice_launch;
+    cli -> assets_assess;
+    cli -> assets_grade;
+    cli -> assets_validate;
+}

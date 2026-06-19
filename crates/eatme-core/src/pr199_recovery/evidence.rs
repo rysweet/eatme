@@ -295,3 +295,86 @@ impl PushOrNoopDecisionGate {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pr199_recovery::{CheckConclusion, CheckRollup, CheckRun};
+
+    fn existing_file() -> ExistingEvidenceFile {
+        ExistingEvidenceFile {
+            path: PathBuf::from("evidence/pr199.md"),
+            head_sha: "abc123".into(),
+            branch: "feat/pr-199".into(),
+            check_rollup: CheckRollup::from_runs(vec![CheckRun::completed(
+                "workspace",
+                CheckConclusion::Success,
+            )]),
+            qa_summary: "cargo test".into(),
+            blocker_codes: vec![MISSING_REAL_ACTION_EVIDENCE.into()],
+            default_workflow_run_id: "run-1".into(),
+        }
+    }
+
+    #[test]
+    fn with_existing_blocker_code_deduplicates_and_marks_missing_status() {
+        let snapshot = EvidenceSnapshot::for_pr199_recovery()
+            .with_existing_blocker_code(MISSING_REAL_ACTION_EVIDENCE)
+            .with_existing_blocker_code(MISSING_REAL_ACTION_EVIDENCE);
+
+        assert_eq!(
+            snapshot.blocker_codes,
+            vec![MISSING_REAL_ACTION_EVIDENCE.to_string()]
+        );
+        assert_eq!(snapshot.blockers.len(), 1);
+        assert_eq!(snapshot.original_alice_action_evidence.status, "missing");
+        assert!(snapshot.has_blocker_code(MISSING_REAL_ACTION_EVIDENCE));
+    }
+
+    #[test]
+    fn preserve_rejects_synthetic_original_alice_sources() {
+        let mut snapshot = EvidenceSnapshot::for_pr199_recovery();
+        snapshot
+            .original_alice_action_evidence
+            .synthetic_sources
+            .push("reconstructed-from-summary".into());
+
+        let error = AliceEvidenceBlockerPreserver::preserve(snapshot).unwrap_err();
+
+        assert_eq!(error.code(), "synthetic_alice_evidence_forbidden");
+    }
+
+    #[test]
+    fn decision_gate_pushes_for_changed_snapshot_and_noops_when_matching() {
+        let existing = existing_file();
+        let changed_snapshot = EvidenceSnapshot::from_existing(&existing)
+            .with_head_sha("def456")
+            .with_branch("feat/pr-199-refresh")
+            .with_default_workflow_run_id("run-2");
+        let changed_delta =
+            EvidenceDelta::from_existing_and_current(&existing, &changed_snapshot).unwrap();
+
+        let push = PushOrNoopDecisionGate::decide(changed_delta).unwrap();
+        match push {
+            RecoveryDecision::Push { files, message } => {
+                assert_eq!(files, vec![PathBuf::from("evidence/pr199.md")]);
+                assert!(message.contains(MISSING_REAL_ACTION_EVIDENCE));
+            }
+            other => panic!("expected push decision, got {other:?}"),
+        }
+
+        let matching_delta = EvidenceDelta::from_existing_and_current(
+            &existing,
+            &EvidenceSnapshot::from_existing(&existing),
+        )
+        .unwrap();
+        let noop = PushOrNoopDecisionGate::decide(matching_delta).unwrap();
+        match noop {
+            RecoveryDecision::NoOp { justification } => {
+                assert!(justification.contains("No-op"));
+                assert!(justification.contains("missing_real_action_evidence remains explicit"));
+            }
+            other => panic!("expected noop decision, got {other:?}"),
+        }
+    }
+}

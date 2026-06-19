@@ -1,0 +1,13 @@
+digraph scenario_validation {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="scenario validation journey"];
+    node [shape=box, style=rounded, fontsize=10];
+    Author -> YAML [label="1 write YAML"];
+    Author -> CLI [label="2 assets validate"];
+    CLI -> Assets [label="3 validate_scenario_asset / validate_assets"];
+    Assets -> CLI [label="4 validation report"];
+    Author -> CLI [label="5 generate-gadugi --check"];
+    CLI -> Gadugi [label="6 generate_gadugi_adapters"];
+    Gadugi -> CLI [label="7 adapter report"];
+    CI -> CLI [label="8 rerun gates"];
+    CLI -> CI [label="9 pass/fail"];
+}

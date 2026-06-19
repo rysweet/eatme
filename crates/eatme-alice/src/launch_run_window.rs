@@ -197,7 +197,6 @@ pub(crate) fn probe_run_window_after_toolbar_button(
             "blocked: desktop Run toolbar dispatch must pass before Run window observation",
         );
     }
-    std::thread::sleep(Duration::from_secs(2));
     if let Some(probe) = run_window_created_sentinel_probe(
         "observe-run-window-after-toolbar-button",
         "observed RabbitHole Run-window-created sentinel after Run toolbar click; this records Alice preparing the desktop Run frame, not world completion",
@@ -206,38 +205,12 @@ pub(crate) fn probe_run_window_after_toolbar_button(
     ) {
         return with_run_window_screenshot(runner, display, run_dir, probe);
     }
-    match capture_window_text(runner, display) {
-        Ok((command, text)) if has_run_window_evidence(&text) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "passed".into(),
-            detail: "observed a window listing consistent with an Alice Run window after Run toolbar click; this indicates desktop Run window opening, not world completion".into(),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some(command),
-            exit_status: Some(0),
-            stdout: text,
-            stderr: String::new(),
-        },
-        Ok((command, text)) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "failed".into(),
-            detail: "Run toolbar click succeeded, but no Alice Run window was observed".into(),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some(command),
-            exit_status: Some(0),
-            stdout: text,
-            stderr: String::new(),
-        },
-        Err(error) => UiActionProbe {
-            id: "observe-run-window-after-toolbar-button".into(),
-            status: "failed".into(),
-            detail: format!("could not inspect windows after Run toolbar click: {error}"),
-            window_id: toolbar_probe.window_id.clone(),
-            command: Some("wmctrl -lx; xwininfo -root -tree".into()),
-            exit_status: None,
-            stdout: String::new(),
-            stderr: String::new(),
-        },
-    }
+    crate::launch_run_window_poll::poll_for_run_window(
+        runner,
+        display,
+        toolbar_probe.window_id.as_deref(),
+    )
+    .into_toolbar_probe(toolbar_probe.window_id.clone())
 }
 
 fn run_window_created_sentinel_probe(
@@ -412,8 +385,11 @@ fn capture_window_text(
                 .retries(2, Duration::from_millis(100)),
         )
         .map_err(|error| format!("{error:#}"))?;
-    if wmctrl.exit_status == Some(0) && !command_text(&wmctrl.stdout, &wmctrl.stderr).is_empty() {
-        return Ok((wmctrl.command, command_text(&wmctrl.stdout, &wmctrl.stderr)));
+    if wmctrl.exit_status == Some(0) {
+        let text = command_text(&wmctrl.stdout, &wmctrl.stderr);
+        if !text.is_empty() {
+            return Ok((wmctrl.command, text));
+        }
     }
     let xwininfo = runner
         .run(
@@ -445,12 +421,9 @@ fn command_text(stdout: &str, stderr: &str) -> String {
 }
 
 fn has_run_window_evidence(window_text: &str) -> bool {
-    window_text.lines().any(|line| {
-        let normalized = line.to_ascii_lowercase();
-        (normalized.contains(" run") || normalized.contains("\"run"))
-            && normalized.contains("org.alice")
-            && !normalized.contains("firefox")
-    })
+    window_text
+        .lines()
+        .any(crate::launch_run_window_poll::line_is_alice_run_window)
 }
 
 fn sentinel_content_indicates_run_window_created(content: &str) -> bool {
@@ -487,5 +460,44 @@ fn blocked_probe(id: &str, detail: &str) -> UiActionProbe {
         exit_status: None,
         stdout: String::new(),
         stderr: String::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sentinel_content_requires_schema_status_and_created_marker() {
+        assert!(sentinel_content_indicates_run_window_created(
+            r#"{"schema_version":"eatme.alice-run-window-created/v1","status":"created"}"#
+        ));
+        assert!(!sentinel_content_indicates_run_window_created(
+            r#"{"schema_version":"eatme.alice-run-window-created/v1","status":"pending"}"#
+        ));
+        assert!(!sentinel_content_indicates_run_window_created(
+            r#"{"status":"created"}"#
+        ));
+    }
+
+    #[test]
+    fn geometry_matches_fixed_launch_window_requires_expected_dimensions() {
+        assert!(geometry_matches_fixed_launch_window(
+            "WIDTH=1000\nHEIGHT=740\n"
+        ));
+        assert!(!geometry_matches_fixed_launch_window(
+            "WIDTH=999\nHEIGHT=740\n"
+        ));
+        assert!(!geometry_matches_fixed_launch_window(
+            "WIDTH=1000\nHEIGHT=739\n"
+        ));
+    }
+
+    #[test]
+    fn shell_value_ignores_invalid_numbers_and_missing_keys() {
+        let text = "WIDTH=1000\nHEIGHT=oops\n";
+        assert_eq!(shell_value(text, "WIDTH"), Some(1000));
+        assert_eq!(shell_value(text, "HEIGHT"), None);
+        assert_eq!(shell_value(text, "X"), None);
     }
 }

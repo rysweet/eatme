@@ -135,4 +135,70 @@ mod tests {
 
         assert!(errors.is_empty(), "{errors:?}");
     }
+
+    #[test]
+    fn class_portability_detection_accepts_matching_id_or_kind() {
+        let scenario = class_portability_scenario();
+        assert!(is_class_portability_scenario(&scenario));
+
+        let by_kind = EatmeScenarioAsset {
+            id: "another-scenario".into(),
+            ..scenario.clone()
+        };
+        assert!(is_class_portability_scenario(&by_kind));
+
+        let unrelated = EatmeScenarioAsset {
+            id: "creative-world".into(),
+            kind: "alice_scene_building".into(),
+            ..scenario
+        };
+        assert!(!is_class_portability_scenario(&unrelated));
+    }
+
+    #[test]
+    fn class_portability_reports_missing_acceptance_and_portability_fields() {
+        let scenario = EatmeScenarioAsset {
+            kind: "wrong-kind".into(),
+            owner: "other".into(),
+            real_alice: Some(EatmeScenarioRealAlice {
+                gated_by: "REAL_ALICE=1".into(),
+            }),
+            smoke_ready: Some(EatmeScenarioSmokeReady { evidence: vec![] }),
+            acceptance_criteria: vec![EatmeScenarioAcceptanceCriterion {
+                given: "".into(),
+                when: "".into(),
+                then: "".into(),
+            }],
+            portability: Some(EatmeScenarioPortability {
+                source_project: "".into(),
+                destination_project: "".into(),
+                modified_class: "".into(),
+                share_channel: "".into(),
+                evidence_after_import: vec![],
+            }),
+            ..class_portability_scenario()
+        };
+        let mut errors = Vec::new();
+        validate_class_portability_scenario(&scenario, &mut errors);
+
+        for expected in [
+            "kind must be alice_class_portability_smoke",
+            "owner must be eatme",
+            "real_alice.gated_by must be EATME_REAL_ALICE=1",
+            "smoke_ready.evidence must contain non-empty values",
+            "acceptance_criteria[0].given must not be empty",
+            "acceptance_criteria[0].when must not be empty",
+            "acceptance_criteria[0].then must not be empty",
+            "portability.source_project must not be empty",
+            "portability.destination_project must not be empty",
+            "portability.modified_class must not be empty",
+            "portability.share_channel must not be empty",
+            "portability.evidence_after_import must contain non-empty values",
+        ] {
+            assert!(
+                errors.iter().any(|error| error.contains(expected)),
+                "missing expected error {expected:?} in {errors:?}"
+            );
+        }
+    }
 }

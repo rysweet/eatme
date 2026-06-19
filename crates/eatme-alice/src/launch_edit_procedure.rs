@@ -10,8 +10,9 @@ use std::path::{Component, Path};
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
-pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.eatmeFirstLessonStep";
+pub(crate) const DEFAULT_PROCEDURE_SELECTOR: &str = "scene.myFirstMethod";
 const DEFAULT_EDIT_SPEC: &str = "append-comment:eatme first lesson edit proof";
+pub(crate) const EDIT_PROCEDURE_PROOF_ARTIFACT: &str = "first-lesson-code-editor-action-proof.json";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionEditProcedureProbe {
@@ -30,14 +31,53 @@ pub struct UiActionEditProcedureProbe {
     pub procedure_or_code_diff: Option<ArtifactInfo>,
     pub validation_errors: Vec<String>,
     pub missing_affordance: Option<UiActionMissingAffordance>,
+    pub edit_procedure_verified: bool,
+    pub proof_detail: Option<String>,
 }
 
 impl UiActionEditProcedureProbe {
     pub fn proves_edit(&self) -> bool {
-        self.status == "passed"
+        self.hook_proves_edit() || self.edit_procedure_verified
+    }
+
+    fn hook_proves_edit(&self) -> bool {
+        (self.status == "passed" || self.status == "proved")
             && self.edited_project_artifact.is_some()
-            && self.procedure_or_code_diff.is_some()
             && self.validation_errors.is_empty()
+    }
+
+    /// Check for the proof artifact file in the run directory.
+    /// If found and valid JSON, sets `edit_procedure_verified=true` with proof details.
+    /// If missing or invalid, sets `edit_procedure_verified=false`.
+    pub(crate) fn with_proof_artifact_check(mut self, run_dir: &Path) -> Self {
+        let proof_path = run_dir.join(EDIT_PROCEDURE_PROOF_ARTIFACT);
+        let content = match fs::read_to_string(&proof_path) {
+            Ok(content) => content,
+            Err(_) => return self,
+        };
+        // Validate JSON without building an in-memory Value tree.
+        match serde_json::from_str::<serde::de::IgnoredAny>(&content) {
+            Ok(_) => {
+                self.edit_procedure_verified = true;
+                let truncated = if content.len() > 500 {
+                    let end = content.floor_char_boundary(497);
+                    format!("{}…", &content[..end])
+                } else {
+                    content
+                };
+                if !self.hook_proves_edit() {
+                    self.detail =
+                        format!("{} [proof artifact verified: {}]", self.detail, truncated);
+                }
+                self.proof_detail = Some(truncated);
+            }
+            Err(err) => {
+                self.edit_procedure_verified = false;
+                self.proof_detail =
+                    Some(format!("invalid JSON in {}: {err}", proof_path.display()));
+            }
+        }
+        self
     }
 }
 
@@ -47,7 +87,8 @@ struct ProcedureEditHookResult {
     status: String,
     procedure_selector: String,
     edited_project_artifact: String,
-    procedure_or_code_diff: String,
+    #[serde(default)]
+    procedure_or_code_diff: Option<String>,
 }
 
 pub(crate) fn probe_edit_procedure_hook(
@@ -178,13 +219,22 @@ pub(crate) fn probe_edit_procedure_hook(
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let procedure_or_code_diff = hook_artifact(
-        &evidence_dir,
-        &result.procedure_or_code_diff,
-        "procedure_or_code_diff",
-    )
-    .map_err(|error| validation_errors.push(error))
-    .ok();
+    let procedure_or_code_diff = if result.status == "proved"
+        && result
+            .procedure_or_code_diff
+            .as_ref()
+            .is_none_or(|s| s.is_empty())
+    {
+        None
+    } else {
+        hook_artifact(
+            &evidence_dir,
+            result.procedure_or_code_diff.as_deref().unwrap_or(""),
+            "procedure_or_code_diff",
+        )
+        .map_err(|error| validation_errors.push(error))
+        .ok()
+    };
     if edited_project_artifact
         .as_ref()
         .map(|artifact| artifact.size_bytes == 0)
@@ -192,10 +242,11 @@ pub(crate) fn probe_edit_procedure_hook(
     {
         validation_errors.push("edited_project_artifact must be non-empty".into());
     }
-    if procedure_or_code_diff
-        .as_ref()
-        .map(|artifact| artifact.size_bytes == 0)
-        .unwrap_or(false)
+    if result.status != "proved"
+        && procedure_or_code_diff
+            .as_ref()
+            .map(|artifact| artifact.size_bytes == 0)
+            .unwrap_or(false)
     {
         validation_errors.push("procedure_or_code_diff must be non-empty".into());
     }
@@ -232,6 +283,8 @@ pub(crate) fn probe_edit_procedure_hook(
         procedure_or_code_diff,
         validation_errors,
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
@@ -303,6 +356,8 @@ fn blocked_edit_procedure_probe(
         procedure_or_code_diff: None,
         validation_errors: Vec::new(),
         missing_affordance,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
@@ -333,19 +388,24 @@ fn failed_edit_procedure_probe(
         procedure_or_code_diff: None,
         validation_errors,
         missing_affordance: None,
+        edit_procedure_verified: false,
+        proof_detail: None,
     }
 }
 
 fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
     let mut errors = Vec::new();
-    if result.schema_version != "eatme.alice-procedure-edit-result/v1" {
+    if result.schema_version != "eatme.alice-first-lesson-code-editor-action-proof-result/v1" {
         errors.push(format!(
-            "schema_version must be eatme.alice-procedure-edit-result/v1, got {:?}",
+            "schema_version must be eatme.alice-first-lesson-code-editor-action-proof-result/v1, got {:?}",
             result.schema_version
         ));
     }
-    if result.status != "edited" {
-        errors.push(format!("status must be edited, got {:?}", result.status));
+    if result.status != "edited" && result.status != "proved" {
+        errors.push(format!(
+            "status must be edited or proved, got {:?}",
+            result.status
+        ));
     }
     if result.procedure_selector != DEFAULT_PROCEDURE_SELECTOR {
         errors.push(format!(
@@ -356,7 +416,12 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
     if result.edited_project_artifact.is_empty() {
         errors.push("edited_project_artifact must not be empty".into());
     }
-    if result.procedure_or_code_diff.is_empty() {
+    if result.status != "proved"
+        && result
+            .procedure_or_code_diff
+            .as_ref()
+            .is_none_or(|s| s.is_empty())
+    {
         errors.push("procedure_or_code_diff must not be empty".into());
     }
     errors

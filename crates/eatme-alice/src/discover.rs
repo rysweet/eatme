@@ -106,3 +106,76 @@ fn ensure_success(output: &CommandOutput, action: &str) -> Result<()> {
         output.stderr
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use eatme_core::CommandOutput;
+    use eatme_test_support::FakeCommandRunner;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn test_alice_home() -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target/test-work/discover-tests")
+            .join(format!("{nonce}"));
+        fs::create_dir_all(root.join("alice-ide/target/lib")).unwrap();
+        fs::create_dir_all(
+            root.join("core/resources/target/distribution/application/starter-projects"),
+        )
+        .unwrap();
+        fs::write(root.join("pom.xml"), "<project/>").unwrap();
+        fs::write(root.join("alice-ide/target/alice-ide-1.0.0.jar"), "jar").unwrap();
+        fs::write(
+            root.join("core/resources/target/distribution/application/starter-projects/africa.a3p"),
+            "starter",
+        )
+        .unwrap();
+        root
+    }
+
+    #[test]
+    fn first_non_empty_prefers_primary_then_fallback() {
+        assert_eq!(first_non_empty("\n  Java 21  \n", "Maven"), "Java 21");
+        assert_eq!(first_non_empty("\n\n", "  Maven 3.9  \n"), "Maven 3.9");
+    }
+
+    #[test]
+    fn discover_alice_reports_trimmed_versions_and_expected_artifacts() {
+        let alice_home = test_alice_home();
+        let runner = FakeCommandRunner::default();
+        runner.push_output(CommandOutput {
+            command: "git rev-parse HEAD".into(),
+            exit_status: Some(0),
+            stdout: "abc123\n".into(),
+            stderr: String::new(),
+        });
+        runner.push_output(CommandOutput {
+            command: "java -version".into(),
+            exit_status: Some(0),
+            stdout: String::new(),
+            stderr: "\nopenjdk version \"21\"\n".into(),
+        });
+        runner.push_output(CommandOutput {
+            command: "mvn -version".into(),
+            exit_status: Some(0),
+            stdout: "\nApache Maven 3.9.9\n".into(),
+            stderr: String::new(),
+        });
+
+        let discovery = discover_alice(&alice_home, &runner).unwrap();
+
+        assert_eq!(discovery.git_commit, "abc123");
+        assert_eq!(discovery.java_version, "openjdk version \"21\"");
+        assert_eq!(discovery.maven_version, "Apache Maven 3.9.9");
+        assert!(discovery.alice_ide_jar_exists);
+        assert!(discovery.target_lib_exists);
+        assert!(discovery.starter_project_exists);
+
+        let _ = fs::remove_dir_all(alice_home);
+    }
+}

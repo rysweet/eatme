@@ -1,0 +1,55 @@
+digraph data_flow {
+    graph [rankdir=LR, fontsize=10, labelloc=t, label="eatme data flow"];
+    node [shape=box, style=rounded, fontsize=10];
+
+    subgraph cluster_scenario {
+        label="Scenario YAML to runtime";
+        color=lightgrey;
+        yaml [label="Scenario YAML"];
+        yaml_parse [label="serde_yaml parse"];
+        schema [label="EatmeScenarioAsset
+or GadugiScenarioAsset"];
+        validate [label="validate_scenario_asset
+validate_assets"];
+        validation_report [label="ScenarioAssetValidationReport"];
+        launch_contract [label="launch contract
+or web step plan"];
+        alice_runtime [label="Alice desktop
+or TS web port"];
+        yaml -> yaml_parse -> schema -> validate -> validation_report -> launch_contract -> alice_runtime;
+    }
+
+    subgraph cluster_grading {
+        label="CLI grading preflight";
+        color=lightgrey;
+        grading_cli [label="assets grading-report"];
+        validate_assets [label="validate_assets(Path)"];
+        depcheck [label="check_dependencies"];
+        grade [label="grade_first_lesson_readiness"];
+        grading_report [label="GradingReport"];
+        grading_cli -> validate_assets -> depcheck -> grade -> grading_report;
+    }
+
+    subgraph cluster_cli {
+        label="CLI launch smoke";
+        color=lightgrey;
+        invoke [label="eatme CLI invocation"];
+        depcheck_launch [label="check_dependencies"];
+        build [label="package_alice"];
+        launch_smoke [label="run_launch_smoke"];
+        evidence [label="window list / screenshot
+ui_action_contract / log"];
+        manifest [label="LaunchSmokeManifest JSON"];
+        invoke -> depcheck_launch -> build -> launch_smoke -> evidence -> manifest;
+    }
+
+    subgraph cluster_web {
+        label="Web platform assertions";
+        color=lightgrey;
+        request [label="HTTP request from ureq"];
+        ts_server [label="TypeScript server"];
+        response [label="JSON response"];
+        assert [label="StepResult / verdict"];
+        request -> ts_server -> response -> assert;
+    }
+}
