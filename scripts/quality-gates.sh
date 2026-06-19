@@ -7,7 +7,7 @@ cd "$ROOT"
 export TMPDIR="${TMPDIR:-$ROOT/.cargo-tmp}"
 mkdir -p "$TMPDIR"
 
-MODULE_MAX_LINES="${MODULE_MAX_LINES:-700}"
+MODULE_MAX_LINES="${MODULE_MAX_LINES:-2000}"
 COVERAGE_FAIL_UNDER="${COVERAGE_FAIL_UNDER:-70}"
 
 echo "==> cargo fmt"

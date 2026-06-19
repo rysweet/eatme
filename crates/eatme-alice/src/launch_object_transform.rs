@@ -5,12 +5,12 @@ use crate::launch_ui_actions::{
 };
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_OBJECT_TRANSFORM_HOOK: &str = "tools/eatme-transform-object";
-const DEFAULT_OBJECT_IDENTIFIER: &str = "alice-gallery://animals/bunny";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct UiActionObjectTransformProbe {
@@ -19,6 +19,7 @@ pub struct UiActionObjectTransformProbe {
     pub status: String,
     pub detail: String,
     pub object_identifier: String,
+    pub object_id: String,
     pub candidate_hook_path: String,
     pub command: Option<String>,
     pub exit_status: Option<i32>,
@@ -26,6 +27,7 @@ pub struct UiActionObjectTransformProbe {
     pub stderr: String,
     pub transform_artifact: Option<ArtifactInfo>,
     pub transformed_project_artifact: Option<ArtifactInfo>,
+    pub transform: Option<Value>,
     pub validation_errors: Vec<String>,
     pub missing_affordance: Option<UiActionMissingAffordance>,
 }
@@ -43,9 +45,23 @@ impl UiActionObjectTransformProbe {
 struct ObjectTransformHookResult {
     schema_version: String,
     status: String,
-    object_identifier: String,
+    #[serde(default)]
+    object_id: Option<String>,
+    #[serde(default)]
+    object_identifier: Option<String>,
     transform_artifact: String,
     transformed_project_artifact: String,
+    #[serde(default)]
+    transform: Option<Value>,
+}
+
+impl ObjectTransformHookResult {
+    fn object_id(&self) -> String {
+        self.object_id
+            .clone()
+            .or_else(|| self.object_identifier.clone())
+            .unwrap_or_default()
+    }
 }
 
 pub(crate) fn probe_object_transform_hook(
@@ -53,20 +69,27 @@ pub(crate) fn probe_object_transform_hook(
     alice_home: &Path,
     run_dir: &Path,
     object_placement_probe: &UiActionObjectPlacementProbe,
+    starter_project: &Path,
     display: &str,
 ) -> UiActionObjectTransformProbe {
     let hook_path = alice_home.join(DEFAULT_OBJECT_TRANSFORM_HOOK);
     let evidence_dir = run_dir.join("object-transform");
     let placed_project = run_dir.join("object-placement").join("placed-project.a3p");
+    let project = if placed_project.is_file() {
+        placed_project.as_path()
+    } else {
+        starter_project
+    };
+
     if !object_placement_probe.proves_placement() {
-        return blocked_object_transform_probe(
+        return blocked_transform_probe(
             &hook_path,
-            "blocked: visible object proof is required before object transform would be safe",
+            "blocked: object placement proof is required before object transform would be safe",
             Some(missing_object_transform_affordance()),
         );
     }
     if !hook_path.is_file() {
-        return blocked_object_transform_probe(
+        return blocked_transform_probe(
             &hook_path,
             &format!(
                 "blocked: Alice checkout does not expose {DEFAULT_OBJECT_TRANSFORM_HOOK}; object transform remains unproven"
@@ -74,26 +97,15 @@ pub(crate) fn probe_object_transform_hook(
             Some(missing_object_transform_affordance()),
         );
     }
-    if !placed_project.is_file() {
-        return failed_object_transform_probe(
-            &hook_path,
-            None,
-            None,
-            String::new(),
-            String::new(),
-            vec![format!(
-                "object placement did not leave a placed project at {}",
-                placed_project.display()
-            )],
-        );
-    }
     if let Err(error) = fs::create_dir_all(&evidence_dir) {
-        return failed_object_transform_probe(
+        return failed_transform_probe(
             &hook_path,
             None,
             None,
             String::new(),
             String::new(),
+            String::new(),
+            None,
             vec![format!(
                 "creating object transform evidence dir {} failed: {error}",
                 evidence_dir.display()
@@ -105,13 +117,9 @@ pub(crate) fn probe_object_transform_hook(
         &CommandSpec::new(hook_path.display().to_string())
             .args([
                 "--project".to_string(),
-                placed_project.display().to_string(),
-                "--object".to_string(),
-                DEFAULT_OBJECT_IDENTIFIER.to_string(),
-                "--position".to_string(),
-                "1.5,0.0,-2.0".to_string(),
-                "--scale".to_string(),
-                "1.25".to_string(),
+                project.display().to_string(),
+                "--object-identifier".to_string(),
+                object_placement_probe.object_identifier.clone(),
                 "--evidence-dir".to_string(),
                 evidence_dir.display().to_string(),
                 "--json".to_string(),
@@ -124,29 +132,34 @@ pub(crate) fn probe_object_transform_hook(
     let output = match output {
         Ok(output) => output,
         Err(error) => {
-            return failed_object_transform_probe(
+            return failed_transform_probe(
                 &hook_path,
                 Some(format!(
-                    "{} --project {} --object {} --position 1.5,0.0,-2.0 --scale 1.25 --evidence-dir {} --json",
+                    "{} --project {} --object-identifier {} --evidence-dir {} --json",
                     hook_path.display(),
-                    placed_project.display(),
-                    DEFAULT_OBJECT_IDENTIFIER,
+                    project.display(),
+                    object_placement_probe.object_identifier,
                     evidence_dir.display()
                 )),
                 None,
                 String::new(),
                 String::new(),
+                String::new(),
+                None,
                 vec![format!("object transform hook failed to run: {error:#}")],
             );
         }
     };
+
     if output.exit_status != Some(0) {
-        return failed_object_transform_probe(
+        return failed_transform_probe(
             &hook_path,
             Some(output.command),
             output.exit_status,
             output.stdout,
             output.stderr,
+            String::new(),
+            None,
             vec!["object transform hook exited unsuccessfully".into()],
         );
     }
@@ -154,12 +167,14 @@ pub(crate) fn probe_object_transform_hook(
     let result = match serde_json::from_str::<ObjectTransformHookResult>(&output.stdout) {
         Ok(result) => result,
         Err(error) => {
-            return failed_object_transform_probe(
+            return failed_transform_probe(
                 &hook_path,
                 Some(output.command),
                 output.exit_status,
                 output.stdout,
                 output.stderr,
+                String::new(),
+                None,
                 vec![format!(
                     "object transform hook stdout is not valid transform JSON: {error}"
                 )],
@@ -176,6 +191,14 @@ pub(crate) fn probe_object_transform_hook(
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
+    let transform = result.transform.clone().or_else(|| {
+        transform_artifact.as_ref().and_then(|artifact| {
+            fs::read_to_string(&artifact.path)
+                .ok()
+                .and_then(|content| serde_json::from_str::<Value>(&content).ok())
+                .and_then(|value| value.get("transform").cloned().or(Some(value)))
+        })
+    });
     let transformed_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.transformed_project_artifact,
@@ -206,7 +229,8 @@ pub(crate) fn probe_object_transform_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side object transform hook returned non-empty transform evidence for {DEFAULT_OBJECT_IDENTIFIER}"
+            "Alice-side object transform hook returned transform and transformed project evidence for {}",
+            result.object_id()
         )
     } else {
         format!(
@@ -220,7 +244,11 @@ pub(crate) fn probe_object_transform_hook(
         action_id: "transform-object".into(),
         status: status.into(),
         detail,
-        object_identifier: DEFAULT_OBJECT_IDENTIFIER.into(),
+        object_identifier: result
+            .object_identifier
+            .clone()
+            .unwrap_or_else(|| object_placement_probe.object_identifier.clone()),
+        object_id: result.object_id(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -228,6 +256,7 @@ pub(crate) fn probe_object_transform_hook(
         stderr: output.stderr,
         transform_artifact,
         transformed_project_artifact,
+        transform,
         validation_errors,
         missing_affordance: None,
     }
@@ -260,71 +289,9 @@ pub(crate) fn probe_object_transform_preconditions(
             UiActionPrecondition {
                 id: "deterministic-alice-object-transform-affordance".into(),
                 passed: false,
-                detail: "missing stable backend command, accessibility target, or scene-graph verification hook for positioning a named object".into(),
+                detail: "missing stable backend command, accessibility target, or scene graph transform hook for proving object transform".into(),
             },
         ],
-    }
-}
-
-fn missing_object_transform_affordance() -> UiActionMissingAffordance {
-    UiActionMissingAffordance {
-        id: "deterministic-alice-object-transform-affordance".into(),
-        kind: "backend_or_ui_affordance".into(),
-        required_capability: "Given a project after visible object placement, deterministically position or transform that object and return transform proof.".into(),
-        missing_contract: format!("No Alice-side command at {DEFAULT_OBJECT_TRANSFORM_HOOK}, accessibility target, or scene-graph verification hook currently accepts a named object and returns transform proof."),
-        next_implementation: "Add one stable affordance: either an Alice-side object transform command hook defined by this contract, or a UI automation contract with named scene-graph verification.".into(),
-    }
-}
-
-fn blocked_object_transform_probe(
-    hook_path: &Path,
-    detail: &str,
-    missing_affordance: Option<UiActionMissingAffordance>,
-) -> UiActionObjectTransformProbe {
-    UiActionObjectTransformProbe {
-        id: "alice-side-object-transform-command-hook".into(),
-        action_id: "transform-object".into(),
-        status: "blocked".into(),
-        detail: detail.into(),
-        object_identifier: DEFAULT_OBJECT_IDENTIFIER.into(),
-        candidate_hook_path: hook_path.display().to_string(),
-        command: None,
-        exit_status: None,
-        stdout: String::new(),
-        stderr: String::new(),
-        transform_artifact: None,
-        transformed_project_artifact: None,
-        validation_errors: Vec::new(),
-        missing_affordance,
-    }
-}
-
-fn failed_object_transform_probe(
-    hook_path: &Path,
-    command: Option<String>,
-    exit_status: Option<i32>,
-    stdout: String,
-    stderr: String,
-    validation_errors: Vec<String>,
-) -> UiActionObjectTransformProbe {
-    UiActionObjectTransformProbe {
-        id: "alice-side-object-transform-command-hook".into(),
-        action_id: "transform-object".into(),
-        status: "failed".into(),
-        detail: format!(
-            "object transform hook did not prove transform: {}",
-            validation_errors.join("; ")
-        ),
-        object_identifier: DEFAULT_OBJECT_IDENTIFIER.into(),
-        candidate_hook_path: hook_path.display().to_string(),
-        command,
-        exit_status,
-        stdout,
-        stderr,
-        transform_artifact: None,
-        transformed_project_artifact: None,
-        validation_errors,
-        missing_affordance: None,
     }
 }
 
@@ -342,11 +309,8 @@ fn validate_transform_hook_result(result: &ObjectTransformHookResult) -> Vec<Str
             result.status
         ));
     }
-    if result.object_identifier != DEFAULT_OBJECT_IDENTIFIER {
-        errors.push(format!(
-            "object_identifier must be {:?}, got {:?}",
-            DEFAULT_OBJECT_IDENTIFIER, result.object_identifier
-        ));
+    if result.object_id().is_empty() {
+        errors.push("object_id or object_identifier must not be empty".into());
     }
     if result.transform_artifact.is_empty() {
         errors.push("transform_artifact must not be empty".into());
@@ -355,4 +319,73 @@ fn validate_transform_hook_result(result: &ObjectTransformHookResult) -> Vec<Str
         errors.push("transformed_project_artifact must not be empty".into());
     }
     errors
+}
+
+fn missing_object_transform_affordance() -> UiActionMissingAffordance {
+    UiActionMissingAffordance {
+        id: "deterministic-alice-object-transform-affordance".into(),
+        kind: "backend_or_ui_affordance".into(),
+        required_capability: "Given a placed Alice object, deterministically transform it and return object identity plus transform evidence.".into(),
+        missing_contract: format!("No Alice-side command at {DEFAULT_OBJECT_TRANSFORM_HOOK}, accessibility target, or scene graph transform hook currently returns object transform proof."),
+        next_implementation: "Add one stable affordance: either the Alice-side transform-object command hook defined by this contract, or UI automation with scene-graph verification of the transformed object.".into(),
+    }
+}
+
+fn blocked_transform_probe(
+    hook_path: &Path,
+    detail: &str,
+    missing_affordance: Option<UiActionMissingAffordance>,
+) -> UiActionObjectTransformProbe {
+    UiActionObjectTransformProbe {
+        id: "alice-side-object-transform-command-hook".into(),
+        action_id: "transform-object".into(),
+        status: "blocked".into(),
+        detail: detail.into(),
+        object_identifier: String::new(),
+        object_id: String::new(),
+        candidate_hook_path: hook_path.display().to_string(),
+        command: None,
+        exit_status: None,
+        stdout: String::new(),
+        stderr: String::new(),
+        transform_artifact: None,
+        transformed_project_artifact: None,
+        transform: None,
+        validation_errors: Vec::new(),
+        missing_affordance,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn failed_transform_probe(
+    hook_path: &Path,
+    command: Option<String>,
+    exit_status: Option<i32>,
+    stdout: String,
+    stderr: String,
+    object_id: String,
+    transform: Option<Value>,
+    validation_errors: Vec<String>,
+) -> UiActionObjectTransformProbe {
+    UiActionObjectTransformProbe {
+        id: "alice-side-object-transform-command-hook".into(),
+        action_id: "transform-object".into(),
+        status: "failed".into(),
+        detail: format!(
+            "object transform hook did not prove transform: {}",
+            validation_errors.join("; ")
+        ),
+        object_identifier: String::new(),
+        object_id,
+        candidate_hook_path: hook_path.display().to_string(),
+        command,
+        exit_status,
+        stdout,
+        stderr,
+        transform_artifact: None,
+        transformed_project_artifact: None,
+        transform,
+        validation_errors,
+        missing_affordance: None,
+    }
 }

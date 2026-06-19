@@ -61,6 +61,14 @@ pub struct LaunchSmokeManifest {
     pub log_error: Option<String>,
     pub fatal_log_scan: Vec<String>,
     pub assertions: BTreeMap<String, AssertionResult>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scenario: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub persistence_assertions: Option<serde_json::Value>,
     pub failure_category: Option<String>,
 }
 
@@ -167,6 +175,10 @@ mod tests {
             log_error: None,
             fatal_log_scan: vec!["SEVERE missing texture".into()],
             assertions: BTreeMap::from([("launch".into(), AssertionResult::pass("ok"))]),
+            command: None,
+            scenario: None,
+            evidence: None,
+            persistence_assertions: None,
             failure_category: Some("screenshot-mismatch".into()),
         };
 

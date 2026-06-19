@@ -62,7 +62,8 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Installation](./installation.md)
 - [CLI usage](./cli-usage.md)
 - [Alice integration](./alice-integration.md)
-- [Alice Objects-First World Specification](./alice-objects-first-world.md)
+- [Alice Objects-First Full Path](./alice-objects-first-full-path.md)
+- [Alice Objects-First World](./alice-objects-first-world.md)
 - [Web platform testing](./web-platform-testing.md)
 
 ## Documentation map
@@ -75,7 +76,8 @@ cargo run -q -p eatme-cli -- assets validate --json
 ### Curriculum Scenarios
 
 - [Scenario authoring](./scenario-authoring.md)
-- [Alice Objects-First World Specification](./alice-objects-first-world.md)
+- [Alice Objects-First Full Path](./alice-objects-first-full-path.md)
+- [Alice Objects-First World](./alice-objects-first-world.md)
 - [Student missions](./student-missions.md)
 - [Instructor missions](./instructor-missions.md)
 - [Alice lesson smoke](./alice-lesson-smoke.md)
@@ -103,6 +105,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 
 - [Grading module architecture](./grading-module-architecture.md)
 - [Evidence artifact contract](./evidence-artifact-contract.md)
+- [Alice Objects-First Full Path Reference](./alice-objects-first-full-path-reference.md)
 - [Alice Objects-First World Reference](./alice-objects-first-world-reference.md)
 - [Lesson readiness module boundary](./lesson-readiness-module-boundary.md)
 - [First-lesson vertical slice](./first-lesson-vertical-slice.md)

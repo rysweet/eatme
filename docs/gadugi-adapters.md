@@ -94,7 +94,8 @@ the generated adapters as consumers of eatme's explicit contracts:
 | --- | --- |
 | `real-alice-launch-smoke` | Run the launch smoke and inspect manifest-level launch evidence. |
 | `first-lessons-real-ui-actions` | Preserve the action-contract boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
-| `alice-objects-first-world` | When implemented, run the objects-first workflow and require object placement, transform, movement procedure, run, save, reopen, and persisted-state evidence. |
+| `alice-objects-first-full-path` | Run `alice objects-first-full-path` and require command evidence, scenario copy, phase artifacts, project state before/after save, reopen verification, and persistence assertions. |
+| `alice-objects-first-world` | Run the objects-first workflow and require object placement, transform, movement procedure, run, save, reopen, and persisted-state evidence. |
 | `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
 
 Standard launch-smoke adapters expect command success and a `null`
@@ -112,6 +113,15 @@ full workflow to pass once the workflow exists. It must not accept a run that
 only starts Alice. It should inspect the eatme manifest, `workflow_phases[]`, and
 `project-reopen/persisted-state.json` contract documented in
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
+
+The `alice-objects-first-full-path` adapter is stricter and command-bound. It
+must call `alice objects-first-full-path`, not `alice launch-smoke`, and inspect
+`objects_first_full_path.workflow_phases[]`,
+`project-save/pre-save-project-state.json`,
+`project-save/post-save-project-state.json`,
+`project-reopen/reopen-verification.json`, and
+`project-reopen/persistence-assertions.json` as documented in
+[Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md).
 
 ## Step block composition
 

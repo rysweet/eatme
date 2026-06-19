@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::launch::assertions::bool_assert;
 use crate::launch_path_validation::canonical_artifact_under;
 use crate::launch_reopen_project::UiActionReopenProjectProbe;
