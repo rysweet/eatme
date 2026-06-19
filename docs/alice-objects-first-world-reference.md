@@ -30,7 +30,7 @@ For the learner workflow and implementation checklist, see
 | Canonical source | `assets/scenarios/eatme/alice-objects-first-world.yaml` |
 | Generated adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` |
 | Primary runner | `eatme_alice::objects_first_workflow` |
-| Primary Alice target | `/home/azureuser/src/alice` |
+| Primary Alice target | `$ALICE_HOME` |
 
 The canonical eatme scenario owns mission wording, required steps, required
 evidence, acceptance criteria, artifact names, and unsupported behavior. The
@@ -144,7 +144,7 @@ Validation rules to add with the implementation:
 | Name | Required | Description |
 | --- | --- | --- |
 | `EATME_REAL_ALICE=1` | Yes for execution | Enables real Alice desktop execution for non-baseline scenarios. |
-| `ALICE_HOME=/home/azureuser/src/alice` | Yes for RabbitHole validation | Points to the RabbitHole Alice checkout. |
+| `ALICE_HOME=$ALICE_HOME` | Yes for RabbitHole validation | Points to the RabbitHole Alice checkout. |
 | `NODE_OPTIONS=--max-old-space-size=32768` | Yes for Node-backed wrappers | Gives Node-backed wrappers enough memory. |
 | `--run-id <id>` | Yes | Names the evidence directory for this run. |
 | `--runs-dir <path>` | Optional | Defaults to `runs`. |
@@ -163,7 +163,7 @@ Preferred command:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
@@ -286,7 +286,7 @@ use eatme_alice::objects_first_workflow::{
 };
 
 let report = run_objects_first_workflow(ObjectsFirstWorkflowOptions {
-    alice_home: "/home/azureuser/src/alice".into(),
+    alice_home: "$ALICE_HOME".into(),
     run_id: "local-alice-objects-first-world".into(),
     runs_dir: "runs".into(),
     starter_project: None,

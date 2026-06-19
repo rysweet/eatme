@@ -128,7 +128,7 @@ workflows add their own evidence requirements on top of the same packaging,
 display, process, log, window, and screenshot foundation.
 
 `alice-objects-first-world` is the planned full objects-first workflow. It uses
-RabbitHole Alice at `/home/azureuser/src/alice` as the primary target and must
+RabbitHole Alice at `$ALICE_HOME` as the primary target and must
 record separate proof for project create/open, visible object placement, object
 transform, movement procedure edit, run-world, save, reopen, and persisted-state
 verification. A launch-only run must be rejected for this scenario.
@@ -139,7 +139,7 @@ paths are evidence-root-relative summaries, artifact contents are never read or
 emitted, and blocker details are normalized before reporting.
 
 TypeScript prototype coverage is future and conditional. Do not require
-`/home/azureuser/src/alice-web-prototype` for this workflow until a prototype
+`$ALICE_WEB_PROTOTYPE_ROOT` for this workflow until a prototype
 adapter is implemented. If RabbitHole Alice or a supported prototype claims a
 workflow phase but cannot produce valid evidence, eatme reports sanitized
 product-issue details for follow-up.

@@ -186,7 +186,7 @@ a movement procedure, run the world, save, reopen, and verify the saved state.
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
@@ -479,7 +479,7 @@ procedure:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \

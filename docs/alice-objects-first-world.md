@@ -66,7 +66,7 @@ command:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
@@ -109,7 +109,7 @@ run, save, reopen, and persisted-state checks.
 | Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-world.yaml` |
 | Generated Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` |
 | Planned Rust coordinator | `eatme_alice::objects_first_workflow` |
-| Primary Alice target | `/home/azureuser/src/alice` |
+| Primary Alice target | `$ALICE_HOME` |
 | Node memory setting | `NODE_OPTIONS=--max-old-space-size=32768` |
 | Real Alice gate | `EATME_REAL_ALICE=1` |
 | Evidence root | `runs/alice-objects-first-world/<run-id>/` |
@@ -139,7 +139,7 @@ RabbitHole Alice:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
