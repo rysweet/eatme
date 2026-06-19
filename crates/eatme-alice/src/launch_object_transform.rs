@@ -7,6 +7,7 @@ use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::io::BufReader;
 use std::path::Path;
 use std::time::Duration;
 
@@ -192,12 +193,9 @@ pub(crate) fn probe_object_transform_hook(
     .map_err(|error| validation_errors.push(error))
     .ok();
     let transform = result.transform.clone().or_else(|| {
-        transform_artifact.as_ref().and_then(|artifact| {
-            fs::read_to_string(&artifact.path)
-                .ok()
-                .and_then(|content| serde_json::from_str::<Value>(&content).ok())
-                .and_then(|value| value.get("transform").cloned().or(Some(value)))
-        })
+        transform_artifact
+            .as_ref()
+            .and_then(|_| read_transform_artifact(&evidence_dir.join(&result.transform_artifact)))
     });
     let transformed_project_artifact = artifact_info_under(
         &evidence_dir,
@@ -214,6 +212,7 @@ pub(crate) fn probe_object_transform_hook(
     {
         validation_errors.push("transform_artifact must be non-empty".into());
     }
+
     if transformed_project_artifact
         .as_ref()
         .map(|artifact| artifact.size_bytes == 0)
@@ -260,6 +259,12 @@ pub(crate) fn probe_object_transform_hook(
         validation_errors,
         missing_affordance: None,
     }
+}
+
+fn read_transform_artifact(path: &Path) -> Option<Value> {
+    let file = fs::File::open(path).ok()?;
+    let value = serde_json::from_reader::<_, Value>(BufReader::new(file)).ok()?;
+    value.get("transform").cloned().or(Some(value))
 }
 
 pub(crate) fn probe_object_transform_preconditions(
