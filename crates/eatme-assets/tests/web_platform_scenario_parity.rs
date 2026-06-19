@@ -147,9 +147,9 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        30,
+        31,
         web_capable_ids.len(),
-        "expected 30 web-capable desktop scenarios, found {:?}",
+        "expected 31 web-capable desktop scenarios, found {:?}",
         web_capable_ids
     );
     assert!(
@@ -282,6 +282,7 @@ fn every_web_scenario_has_health_launch_action_and_verification_structure() {
         fn is_launch_entrypoint(command: &str) -> bool {
             command.contains("alice launch-smoke")
                 || command.contains("alice objects-first-full-path")
+                || command.contains("alice run-objects-first-world")
         }
     }
 

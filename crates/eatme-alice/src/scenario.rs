@@ -30,6 +30,7 @@ impl LaunchSmokeScenario {
         self.id == "first-lessons-real-ui-actions"
             || self.id == "code-editor-first-run"
             || self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
+            || self.id == "alice-objects-first-world"
     }
 
     pub fn is_objects_first_full_path(&self) -> bool {
@@ -75,6 +76,7 @@ mod tests {
             LaunchSmokeScenario::new(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID)
                 .requires_real_ui_actions()
         );
+        assert!(LaunchSmokeScenario::new("alice-objects-first-world").requires_real_ui_actions());
         assert!(!LaunchSmokeScenario::new("student-progression").requires_real_ui_actions());
         assert!(LaunchSmokeScenario::new("student-progression").accepts_window_evidence());
         assert!(

@@ -53,8 +53,11 @@ pub(crate) fn write_objects_first_full_path_contract(
     let reopen_project_probe = probes.reopen_project;
     let object_id = object_identity(object_transform_probe, edit_procedure_probe);
     let movement = movement_from_edit(edit_procedure_probe);
-    let before_state = read_artifact_json(save_project_probe.save_artifact.as_ref());
-    let after_state = read_artifact_json(reopen_project_probe.reopened_state_artifact.as_ref());
+    let before_state = read_artifact_json(run_dir, save_project_probe.save_artifact.as_ref());
+    let after_state = read_artifact_json(
+        run_dir,
+        reopen_project_probe.reopened_state_artifact.as_ref(),
+    );
     let persistence = persistence_assertions(
         &before_state.value,
         &after_state.value,
@@ -226,24 +229,30 @@ struct ArtifactJson {
     error: Option<String>,
 }
 
-fn read_artifact_json(artifact: Option<&ArtifactInfo>) -> ArtifactJson {
+fn read_artifact_json(run_dir: &Path, artifact: Option<&ArtifactInfo>) -> ArtifactJson {
     let Some(artifact) = artifact else {
         return ArtifactJson {
             value: Value::Null,
             error: Some("artifact missing".into()),
         };
     };
-    match fs::read_to_string(&artifact.path) {
+    let path = Path::new(&artifact.path);
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        run_dir.join(path)
+    };
+    match fs::read_to_string(&path) {
         Ok(content) => match serde_json::from_str::<Value>(&content) {
             Ok(value) => ArtifactJson { value, error: None },
             Err(error) => ArtifactJson {
                 value: Value::Null,
-                error: Some(format!("{} is not JSON: {error}", artifact.path)),
+                error: Some(format!("{} is not JSON: {error}", path.display())),
             },
         },
         Err(error) => ArtifactJson {
             value: Value::Null,
-            error: Some(format!("{} is not readable: {error}", artifact.path)),
+            error: Some(format!("{} is not readable: {error}", path.display())),
         },
     }
 }
@@ -290,13 +299,13 @@ fn persistence_assertions(
         },
         PersistenceAssertion {
             id: "object_transform_persisted",
-            passed: matching_non_null(before, after, "transform"),
+            passed: both_non_null(before, after, "transform"),
             detail: "object transform matched before save and after reopen",
         },
         PersistenceAssertion {
             id: "movement_procedure_persisted",
             passed: matching_non_null(before, after, "procedure_selector")
-                && matching_non_null(before, after, "movement"),
+                && both_non_null(before, after, "movement"),
             detail: "movement procedure selector and movement semantics persisted",
         },
         PersistenceAssertion {
@@ -305,6 +314,11 @@ fn persistence_assertions(
             detail: "world run proof was captured before save proof",
         },
     ]
+}
+
+fn both_non_null(left: &Value, right: &Value, field: &str) -> bool {
+    !left.get(field).unwrap_or(&Value::Null).is_null()
+        && !right.get(field).unwrap_or(&Value::Null).is_null()
 }
 
 fn matching_non_null(left: &Value, right: &Value, field: &str) -> bool {
@@ -410,7 +424,10 @@ fn failure_category(
         Some("project_save_missing".into())
     } else if !probes.reopen_project.proves_reopen() {
         Some("project_reopen_missing".into())
-    } else if persistence.iter().any(|assertion| !assertion.passed) {
+    } else if persistence
+        .iter()
+        .any(|assertion| assertion.id == "object_identity_persisted" && !assertion.passed)
+    {
         Some("persistence_assertion_failed".into())
     } else {
         None

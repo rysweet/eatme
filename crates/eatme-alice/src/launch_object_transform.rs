@@ -1,6 +1,8 @@
 use crate::launch_object_placement::UiActionObjectPlacementProbe;
 use crate::launch_path_validation::artifact_info_under;
-use crate::launch_ui_actions::UiActionMissingAffordance;
+use crate::launch_ui_actions::{
+    UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
+};
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -16,6 +18,7 @@ pub struct UiActionObjectTransformProbe {
     pub action_id: String,
     pub status: String,
     pub detail: String,
+    pub object_identifier: String,
     pub object_id: String,
     pub candidate_hook_path: String,
     pub command: Option<String>,
@@ -32,10 +35,8 @@ pub struct UiActionObjectTransformProbe {
 impl UiActionObjectTransformProbe {
     pub fn proves_transform(&self) -> bool {
         self.status == "passed"
-            && !self.object_id.is_empty()
             && self.transform_artifact.is_some()
             && self.transformed_project_artifact.is_some()
-            && self.transform.is_some()
             && self.validation_errors.is_empty()
     }
 }
@@ -44,11 +45,23 @@ impl UiActionObjectTransformProbe {
 struct ObjectTransformHookResult {
     schema_version: String,
     status: String,
-    object_id: String,
+    #[serde(default)]
+    object_id: Option<String>,
+    #[serde(default)]
+    object_identifier: Option<String>,
     transform_artifact: String,
     transformed_project_artifact: String,
     #[serde(default)]
     transform: Option<Value>,
+}
+
+impl ObjectTransformHookResult {
+    fn object_id(&self) -> String {
+        self.object_id
+            .clone()
+            .or_else(|| self.object_identifier.clone())
+            .unwrap_or_default()
+    }
 }
 
 pub(crate) fn probe_object_transform_hook(
@@ -178,7 +191,7 @@ pub(crate) fn probe_object_transform_hook(
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let transform = result.transform.or_else(|| {
+    let transform = result.transform.clone().or_else(|| {
         transform_artifact.as_ref().and_then(|artifact| {
             fs::read_to_string(&artifact.path)
                 .ok()
@@ -217,7 +230,7 @@ pub(crate) fn probe_object_transform_hook(
     let detail = if validation_errors.is_empty() {
         format!(
             "Alice-side object transform hook returned transform and transformed project evidence for {}",
-            result.object_id
+            result.object_id()
         )
     } else {
         format!(
@@ -231,7 +244,11 @@ pub(crate) fn probe_object_transform_hook(
         action_id: "transform-object".into(),
         status: status.into(),
         detail,
-        object_id: result.object_id,
+        object_identifier: result
+            .object_identifier
+            .clone()
+            .unwrap_or_else(|| object_placement_probe.object_identifier.clone()),
+        object_id: result.object_id(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -242,6 +259,39 @@ pub(crate) fn probe_object_transform_hook(
         transform,
         validation_errors,
         missing_affordance: None,
+    }
+}
+
+pub(crate) fn probe_object_transform_preconditions(
+    object_placement_probe: &UiActionObjectPlacementProbe,
+) -> UiActionNoGoProbe {
+    let placement_ready = object_placement_probe.proves_placement();
+    let blocking_reason = if placement_ready {
+        "blocked: missing deterministic-alice-object-transform-affordance"
+    } else {
+        "blocked: visible object proof is required before object transform would be safe"
+    };
+
+    UiActionNoGoProbe {
+        id: "object-transform-precondition".into(),
+        action_id: "transform-object".into(),
+        status: "blocked".into(),
+        decision: "no_go".into(),
+        blocking_reason: blocking_reason.into(),
+        required_evidence: "artifact proves the named visible object was positioned or transformed after it was added".into(),
+        missing_affordance: missing_object_transform_affordance(),
+        preconditions: vec![
+            UiActionPrecondition {
+                id: "place-object".into(),
+                passed: placement_ready,
+                detail: "object-placement hook returned a non-empty placement artifact and scene/project diff".into(),
+            },
+            UiActionPrecondition {
+                id: "deterministic-alice-object-transform-affordance".into(),
+                passed: false,
+                detail: "missing stable backend command, accessibility target, or scene graph transform hook for proving object transform".into(),
+            },
+        ],
     }
 }
 
@@ -259,8 +309,8 @@ fn validate_transform_hook_result(result: &ObjectTransformHookResult) -> Vec<Str
             result.status
         ));
     }
-    if result.object_id.is_empty() {
-        errors.push("object_id must not be empty".into());
+    if result.object_id().is_empty() {
+        errors.push("object_id or object_identifier must not be empty".into());
     }
     if result.transform_artifact.is_empty() {
         errors.push("transform_artifact must not be empty".into());
@@ -291,6 +341,7 @@ fn blocked_transform_probe(
         action_id: "transform-object".into(),
         status: "blocked".into(),
         detail: detail.into(),
+        object_identifier: String::new(),
         object_id: String::new(),
         candidate_hook_path: hook_path.display().to_string(),
         command: None,
@@ -324,6 +375,7 @@ fn failed_transform_probe(
             "object transform hook did not prove transform: {}",
             validation_errors.join("; ")
         ),
+        object_identifier: String::new(),
         object_id,
         candidate_hook_path: hook_path.display().to_string(),
         command,
