@@ -46,6 +46,10 @@ fn full_path_contract_requires_transform_and_movement_procedure_evidence() {
     );
     assert_phase_passed(&contract, "place-object");
     assert_phase_passed(&contract, "transform-object");
+    assert_eq!(
+        contract["phases"]["transform-object"]["transform"]["x"], 1.25,
+        "transform evidence should be loaded from the transform artifact without reparsing stdout later"
+    );
     assert_phase_passed(&contract, "edit-movement-procedure");
     assert_eq!(
         contract["phases"]["edit-movement-procedure"]["procedure_selector"],

@@ -164,7 +164,7 @@ pub(super) fn build_manifest(
 
 pub(super) fn write_manifest(run_dir: &Path, manifest: &LaunchSmokeManifest) -> Result<()> {
     let path = run_dir.join("manifest.json");
-    let json = serde_json::to_string_pretty(manifest)?;
-    fs::write(path, json)?;
+    let file = fs::File::create(path)?;
+    serde_json::to_writer_pretty(file, manifest)?;
     Ok(())
 }

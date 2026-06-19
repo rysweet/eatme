@@ -10,6 +10,7 @@ use eatme_core::{ArtifactInfo, AssertionResult};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::fs;
+use std::io::BufReader;
 use std::path::Path;
 
 const CONTRACT_SCHEMA: &str = "eatme.alice-objects-first-full-path/v1";
@@ -51,8 +52,8 @@ pub(crate) fn write_objects_first_full_path_contract(
     let run_world_probe = probes.run_world;
     let save_project_probe = probes.save_project;
     let reopen_project_probe = probes.reopen_project;
-    let object_id = object_identity(object_transform_probe, edit_procedure_probe);
     let movement = movement_from_edit(edit_procedure_probe);
+    let object_id = object_identity(object_transform_probe, movement.as_ref());
     let before_state = read_artifact_json(run_dir, save_project_probe.save_artifact.as_ref());
     let after_state = read_artifact_json(
         run_dir,
@@ -65,6 +66,7 @@ pub(crate) fn write_objects_first_full_path_contract(
         save_project_probe,
         reopen_project_probe,
     );
+    let phase_statuses = FullPathPhaseStatus::from(&probes, movement.as_ref(), &persistence);
     let persistence_json = persistence
         .iter()
         .map(PersistenceAssertion::as_contract_json)
@@ -88,45 +90,41 @@ pub(crate) fn write_objects_first_full_path_contract(
             "starter_project": "core/resources/target/distribution/application/starter-projects/africa.a3p"
         },
         "place-object": {
-            "status": phase_status(object_placement_probe.proves_placement()),
+            "status": phase_status(phase_statuses.object_placement),
             "object_identifier": object_placement_probe.object_identifier,
             "object_id": object_id
         },
         "transform-object": {
-            "status": phase_status(object_transform_probe.proves_transform()),
+            "status": phase_status(phase_statuses.object_transform),
             "object_id": object_transform_probe.object_id,
             "transform": object_transform_probe.transform
         },
         "edit-movement-procedure": {
-            "status": phase_status(edit_procedure_probe.proves_edit() && movement.is_some()),
+            "status": phase_status(phase_statuses.movement_procedure),
             "procedure_selector": edit_procedure_probe.procedure_selector,
             "movement": movement
         },
         "run-world": {
-            "status": phase_status(run_world_probe.proves_run()),
+            "status": phase_status(phase_statuses.run_world),
             "run_selector": run_world_probe.run_selector
         },
         "save-project": {
-            "status": phase_status(save_project_probe.proves_save()),
+            "status": phase_status(phase_statuses.save_project),
             "save_selector": save_project_probe.save_selector
         },
         "reopen-project": {
-            "status": phase_status(reopen_project_probe.proves_reopen()),
+            "status": phase_status(phase_statuses.reopen_project),
             "reopen_selector": reopen_project_probe.reopen_selector,
             "source_saved_project_artifact": reopen_project_probe.source_saved_project_artifact
         },
         "verify-persistence": {
-            "status": phase_status(persistence.iter().all(|assertion| assertion.passed))
+            "status": phase_status(phase_statuses.persistence)
         }
     });
 
     let contract = json!({
         "schema_version": CONTRACT_SCHEMA,
-        "status": phase_status(all_phases_passed(
-            &probes,
-            movement.as_ref(),
-            &persistence,
-        )),
+        "status": phase_status(phase_statuses.all_passed()),
         "phases": phases,
         "project_state": {
             "before_reopen": before_state.value,
@@ -137,7 +135,8 @@ pub(crate) fn write_objects_first_full_path_contract(
         "persistence_assertions": persistence_json
     });
     let contract_path = run_dir.join("objects-first-full-path-contract.json");
-    fs::write(&contract_path, serde_json::to_vec_pretty(&contract)?)?;
+    let contract_file = fs::File::create(&contract_path)?;
+    serde_json::to_writer_pretty(contract_file, &contract)?;
     let contract_artifact = artifact_info(&contract_path)?;
 
     let phase_artifacts = phase_artifacts(visual.ui_action_contract, &contract_artifact, &probes);
@@ -148,11 +147,11 @@ pub(crate) fn write_objects_first_full_path_contract(
     let assertions = manifest_assertions(
         object_transform_probe,
         edit_procedure_probe,
-        movement.as_ref(),
         reopen_project_probe,
+        phase_statuses,
         &persistence,
     );
-    let failure_category = failure_category(&probes, movement.as_ref(), &persistence);
+    let failure_category = failure_category(phase_statuses);
 
     Ok(ObjectsFirstFullPathEvidence {
         assertions,
@@ -164,19 +163,43 @@ pub(crate) fn write_objects_first_full_path_contract(
     })
 }
 
-fn all_phases_passed(
-    probes: &FullPathPhaseProbes<'_>,
-    movement: Option<&Value>,
-    persistence: &[PersistenceAssertion],
-) -> bool {
-    probes.object_placement.proves_placement()
-        && probes.object_transform.proves_transform()
-        && probes.edit_procedure.proves_edit()
-        && movement.is_some()
-        && probes.run_world.proves_run()
-        && probes.save_project.proves_save()
-        && probes.reopen_project.proves_reopen()
-        && persistence.iter().all(|assertion| assertion.passed)
+#[derive(Clone, Copy)]
+struct FullPathPhaseStatus {
+    object_placement: bool,
+    object_transform: bool,
+    movement_procedure: bool,
+    run_world: bool,
+    save_project: bool,
+    reopen_project: bool,
+    persistence: bool,
+}
+
+impl FullPathPhaseStatus {
+    fn from(
+        probes: &FullPathPhaseProbes<'_>,
+        movement: Option<&Value>,
+        persistence: &[PersistenceAssertion],
+    ) -> Self {
+        Self {
+            object_placement: probes.object_placement.proves_placement(),
+            object_transform: probes.object_transform.proves_transform(),
+            movement_procedure: probes.edit_procedure.proves_edit() && movement.is_some(),
+            run_world: probes.run_world.proves_run(),
+            save_project: probes.save_project.proves_save(),
+            reopen_project: probes.reopen_project.proves_reopen(),
+            persistence: persistence.iter().all(|assertion| assertion.passed),
+        }
+    }
+
+    fn all_passed(self) -> bool {
+        self.object_placement
+            && self.object_transform
+            && self.movement_procedure
+            && self.run_world
+            && self.save_project
+            && self.reopen_project
+            && self.persistence
+    }
 }
 
 fn phase_status(passed: bool) -> &'static str {
@@ -185,18 +208,14 @@ fn phase_status(passed: bool) -> &'static str {
 
 fn object_identity(
     object_transform_probe: &UiActionObjectTransformProbe,
-    edit_procedure_probe: &UiActionEditProcedureProbe,
+    movement: Option<&Value>,
 ) -> String {
     if !object_transform_probe.object_id.is_empty() {
         return object_transform_probe.object_id.clone();
     }
-    movement_from_edit(edit_procedure_probe)
-        .and_then(|movement| {
-            movement
-                .get("object_id")
-                .and_then(Value::as_str)
-                .map(str::to_string)
-        })
+    movement
+        .and_then(|movement| movement.get("object_id").and_then(Value::as_str))
+        .map(str::to_string)
         .unwrap_or_default()
 }
 
@@ -242,8 +261,8 @@ fn read_artifact_json(run_dir: &Path, artifact: Option<&ArtifactInfo>) -> Artifa
     } else {
         run_dir.join(path)
     };
-    match fs::read_to_string(&path) {
-        Ok(content) => match serde_json::from_str::<Value>(&content) {
+    match fs::File::open(&path) {
+        Ok(file) => match serde_json::from_reader::<_, Value>(BufReader::new(file)) {
             Ok(value) => ArtifactJson { value, error: None },
             Err(error) => ArtifactJson {
                 value: Value::Null,
@@ -280,8 +299,8 @@ fn persistence_assertions(
     run_world_probe: &UiActionRunWorldProbe,
     save_project_probe: &UiActionSaveProjectProbe,
     reopen_project_probe: &UiActionReopenProjectProbe,
-) -> Vec<PersistenceAssertion> {
-    vec![
+) -> [PersistenceAssertion; 6] {
+    [
         PersistenceAssertion {
             id: "saved_project_artifact_exists",
             passed: save_project_probe.proves_save(),
@@ -359,29 +378,29 @@ fn screenshot_status(screenshot: Option<&ArtifactInfo>, screenshot_error: Option
 fn manifest_assertions(
     object_transform_probe: &UiActionObjectTransformProbe,
     edit_procedure_probe: &UiActionEditProcedureProbe,
-    movement: Option<&Value>,
     reopen_project_probe: &UiActionReopenProjectProbe,
+    phase_statuses: FullPathPhaseStatus,
     persistence: &[PersistenceAssertion],
 ) -> BTreeMap<String, AssertionResult> {
     let mut assertions = BTreeMap::new();
     assertions.insert(
         "transform_object".into(),
         assertion_from_bool(
-            object_transform_probe.proves_transform(),
+            phase_statuses.object_transform,
             object_transform_probe.detail.clone(),
         ),
     );
     assertions.insert(
         "edit_movement_procedure".into(),
         assertion_from_bool(
-            edit_procedure_probe.proves_edit() && movement.is_some(),
+            phase_statuses.movement_procedure,
             edit_procedure_probe.detail.clone(),
         ),
     );
     assertions.insert(
         "reopen_project".into(),
         assertion_from_bool(
-            reopen_project_probe.proves_reopen(),
+            phase_statuses.reopen_project,
             reopen_project_probe.detail.clone(),
         ),
     );
@@ -402,24 +421,20 @@ fn assertion_from_bool(passed: bool, detail: impl Into<String>) -> AssertionResu
     }
 }
 
-fn failure_category(
-    probes: &FullPathPhaseProbes<'_>,
-    movement: Option<&Value>,
-    persistence: &[PersistenceAssertion],
-) -> Option<String> {
-    if !probes.object_placement.proves_placement() {
+fn failure_category(phase_statuses: FullPathPhaseStatus) -> Option<String> {
+    if !phase_statuses.object_placement {
         Some("object_placement_missing".into())
-    } else if !probes.object_transform.proves_transform() {
+    } else if !phase_statuses.object_transform {
         Some("object_transform_missing".into())
-    } else if !probes.edit_procedure.proves_edit() || movement.is_none() {
+    } else if !phase_statuses.movement_procedure {
         Some("movement_procedure_missing".into())
-    } else if !probes.run_world.proves_run() {
+    } else if !phase_statuses.run_world {
         Some("world_run_missing".into())
-    } else if !probes.save_project.proves_save() {
+    } else if !phase_statuses.save_project {
         Some("project_save_missing".into())
-    } else if !probes.reopen_project.proves_reopen() {
+    } else if !phase_statuses.reopen_project {
         Some("project_reopen_missing".into())
-    } else if persistence.iter().any(|assertion| !assertion.passed) {
+    } else if !phase_statuses.persistence {
         Some("persistence_assertion_failed".into())
     } else {
         None
