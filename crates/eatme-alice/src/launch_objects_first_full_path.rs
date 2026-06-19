@@ -299,13 +299,13 @@ fn persistence_assertions(
         },
         PersistenceAssertion {
             id: "object_transform_persisted",
-            passed: both_non_null(before, after, "transform"),
+            passed: matching_non_null(before, after, "transform"),
             detail: "object transform matched before save and after reopen",
         },
         PersistenceAssertion {
             id: "movement_procedure_persisted",
             passed: matching_non_null(before, after, "procedure_selector")
-                && both_non_null(before, after, "movement"),
+                && matching_non_null(before, after, "movement"),
             detail: "movement procedure selector and movement semantics persisted",
         },
         PersistenceAssertion {
@@ -314,11 +314,6 @@ fn persistence_assertions(
             detail: "world run proof was captured before save proof",
         },
     ]
-}
-
-fn both_non_null(left: &Value, right: &Value, field: &str) -> bool {
-    !left.get(field).unwrap_or(&Value::Null).is_null()
-        && !right.get(field).unwrap_or(&Value::Null).is_null()
 }
 
 fn matching_non_null(left: &Value, right: &Value, field: &str) -> bool {
@@ -424,10 +419,7 @@ fn failure_category(
         Some("project_save_missing".into())
     } else if !probes.reopen_project.proves_reopen() {
         Some("project_reopen_missing".into())
-    } else if persistence
-        .iter()
-        .any(|assertion| assertion.id == "object_identity_persisted" && !assertion.passed)
-    {
+    } else if persistence.iter().any(|assertion| !assertion.passed) {
         Some("persistence_assertion_failed".into())
     } else {
         None
