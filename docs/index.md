@@ -7,8 +7,7 @@ TypeScript web port.
 
 ## What it tests
 
-The suite covers **52 curriculum scenarios** across the Alice.org learning
-path.
+The suite covers the Alice.org learning path.
 
 | Curriculum area | Example work |
 | --- | --- |
@@ -20,17 +19,31 @@ path.
 | Collections | Arrays and grouped object behavior |
 | Camera and audio | Camera movement, viewpoint, sound, and media cues |
 | Games and stories | Score, timer, win/lose, branching narrative |
-| Project management | Open, save, export, and evidence review |
+| Project management | Open, save, export, reopen, and evidence review |
 | Instructor tools | Lesson prep, rubrics, and classroom handoff |
-| Student workflow | Build, run, reflect, and share |
+| Student workflow | Build, run, reflect, save, reopen, and share |
 
 ## How eatme works
 
 Eatme has three testing layers:
 
-- **Offline tests** validate scenario files, grading logic, and project parsing without launching Alice.
-- **Desktop tests** launch the real Java Alice app when `EATME_REAL_ALICE=1` is set.
-- **Web platform tests** hit the TypeScript web port when `EATME_WEB_PLATFORM=1` is set.
+- **Offline tests** validate scenario files, grading logic, and project parsing
+  without launching Alice.
+- **Desktop tests** launch the real Java Alice app when `EATME_REAL_ALICE=1` is
+  set.
+- **Web platform tests** hit the TypeScript web port when
+  `EATME_WEB_PLATFORM=1` is set.
+
+`alice-objects-first-world` is a desktop workflow scenario. It proves that a
+project is created or opened, a visible object is added, the object is changed, a
+movement procedure is edited, the world runs, the project is saved, the saved
+project is reopened, and the reopened state still contains the expected object
+and behavior evidence.
+
+Launch-only Alice scenarios prove startup evidence for a scenario-labeled Alice
+run. They do not score learner creativity, inspect private Alice implementation
+details, or grade saved learner worlds. The objects-first workflow has its own
+full-workflow evidence contract and still does not replace instructor judgment.
 
 ## Quick start
 
@@ -47,6 +60,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Installation](./installation.md)
 - [CLI usage](./cli-usage.md)
 - [Alice integration](./alice-integration.md)
+- [Alice Objects-First World](./alice-objects-first-world.md)
 - [Web platform testing](./web-platform-testing.md)
 
 ## Documentation map
@@ -59,6 +73,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 ### Curriculum Scenarios
 
 - [Scenario authoring](./scenario-authoring.md)
+- [Alice Objects-First World](./alice-objects-first-world.md)
 - [Student missions](./student-missions.md)
 - [Instructor missions](./instructor-missions.md)
 - [Alice lesson smoke](./alice-lesson-smoke.md)
@@ -86,6 +101,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 
 - [Grading module architecture](./grading-module-architecture.md)
 - [Evidence artifact contract](./evidence-artifact-contract.md)
+- [Alice Objects-First World Reference](./alice-objects-first-world-reference.md)
 - [Lesson readiness module boundary](./lesson-readiness-module-boundary.md)
 - [First-lesson vertical slice](./first-lesson-vertical-slice.md)
 - [First-Lesson Evidence Readiness](./first-lesson-evidence-readiness.md)
