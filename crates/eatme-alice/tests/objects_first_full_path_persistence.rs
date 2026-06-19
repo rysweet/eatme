@@ -13,27 +13,10 @@ const SCENARIO_ID: &str = "alice-objects-first-full-path";
 
 #[test]
 fn save_reopen_verification_fails_when_object_state_changes_after_reopen() {
-    let fixture = TestFixture::new();
-    fixture.write_fake_tools();
-    fixture.write_fake_alice_repo();
-    fixture.write_fake_object_placement_hook();
-    write_full_path_hooks(
-        &fixture,
+    let (fixture, manifest) = run_with_reopened_state(
+        "mismatch-run",
         reopened_state("bunny-2", "world.myFirstMethod", 1.25, 1.0),
     );
-    let _path_override = PathOverride::prepend(&fixture.bin);
-
-    let manifest = run_launch_smoke(&LaunchSmokeOptions {
-        alice_home: fixture.alice_home.clone(),
-        run_id: "mismatch-run".into(),
-        runs_dir: fixture.root.join("runs"),
-        timeout_seconds: 1,
-        json: true,
-        no_memory: true,
-        offline_package: true,
-        scenario: LaunchSmokeScenario::new(SCENARIO_ID),
-    })
-    .unwrap();
 
     assert_eq!(
         manifest.failure_category.as_deref(),
@@ -58,28 +41,53 @@ fn save_reopen_verification_fails_when_object_state_changes_after_reopen() {
 }
 
 #[test]
+fn save_reopen_verification_fails_when_transform_changes_after_reopen() {
+    let (fixture, manifest) = run_with_reopened_state(
+        "transform-mismatch-run",
+        reopened_state("bunny-1", "world.myFirstMethod", 9.99, 1.0),
+    );
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("persistence_assertion_failed"),
+        "saved/reopened transform mismatch must be a hard failure"
+    );
+    let contract = read_json(fixture.root.join(format!(
+        "runs/{SCENARIO_ID}/transform-mismatch-run/objects-first-full-path-contract.json"
+    )));
+    assert_eq!(
+        assertion_status(&contract, "object_transform_persisted"),
+        "failed"
+    );
+}
+
+#[test]
+fn save_reopen_verification_fails_when_movement_procedure_changes_after_reopen() {
+    let (fixture, manifest) = run_with_reopened_state(
+        "movement-mismatch-run",
+        reopened_state("bunny-1", "world.myFirstMethod", 1.25, 2.0),
+    );
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("persistence_assertion_failed"),
+        "saved/reopened movement mismatch must be a hard failure"
+    );
+    let contract = read_json(fixture.root.join(format!(
+        "runs/{SCENARIO_ID}/movement-mismatch-run/objects-first-full-path-contract.json"
+    )));
+    assert_eq!(
+        assertion_status(&contract, "movement_procedure_persisted"),
+        "failed"
+    );
+}
+
+#[test]
 fn save_reopen_verification_passes_only_when_object_transform_procedure_and_run_persist() {
-    let fixture = TestFixture::new();
-    fixture.write_fake_tools();
-    fixture.write_fake_alice_repo();
-    fixture.write_fake_object_placement_hook();
-    write_full_path_hooks(
-        &fixture,
+    let (fixture, manifest) = run_with_reopened_state(
+        "persistence-run",
         reopened_state("bunny-1", "world.myFirstMethod", 1.25, 1.0),
     );
-    let _path_override = PathOverride::prepend(&fixture.bin);
-
-    let manifest = run_launch_smoke(&LaunchSmokeOptions {
-        alice_home: fixture.alice_home.clone(),
-        run_id: "persistence-run".into(),
-        runs_dir: fixture.root.join("runs"),
-        timeout_seconds: 1,
-        json: true,
-        no_memory: true,
-        offline_package: true,
-        scenario: LaunchSmokeScenario::new(SCENARIO_ID),
-    })
-    .unwrap();
 
     assert_eq!(
         manifest.failure_category, None,
@@ -110,6 +118,32 @@ fn save_reopen_verification_passes_only_when_object_transform_procedure_and_run_
     ] {
         assert_eq!(assertion_status(&contract, assertion), "passed");
     }
+}
+
+fn run_with_reopened_state(
+    run_id: &str,
+    reopened_state: Value,
+) -> (TestFixture, eatme_core::LaunchSmokeManifest) {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    fixture.write_fake_object_placement_hook();
+    write_full_path_hooks(&fixture, reopened_state);
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: run_id.into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new(SCENARIO_ID),
+    })
+    .unwrap();
+
+    (fixture, manifest)
 }
 
 fn assertion_status<'a>(contract: &'a Value, id: &str) -> &'a str {
