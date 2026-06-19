@@ -1,9 +1,9 @@
-use crate::launch_artifacts::artifact_info;
+use crate::launch_path_validation::artifact_info_under;
 use crate::launch_ui_actions::UiActionMissingAffordance;
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_OBJECT_PLACEMENT_HOOK: &str = "tools/eatme-place-object";
@@ -172,17 +172,19 @@ pub(crate) fn probe_object_placement_hook(
     };
 
     let mut validation_errors = validate_hook_result(&result, object_identifier);
-    let placement_artifact = hook_artifact(
+    let placement_artifact = artifact_info_under(
         &evidence_dir,
         &result.placement_artifact,
         "placement_artifact",
+        "object-placement evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
-    let scene_or_project_diff = hook_artifact(
+    let scene_or_project_diff = artifact_info_under(
         &evidence_dir,
         &result.scene_or_project_diff,
         "scene_or_project_diff",
+        "object-placement evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
@@ -292,36 +294,6 @@ fn validate_hook_result(
         errors.push("scene_or_project_diff must not be empty".into());
     }
     errors
-}
-
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!(
-            "{field} must be a simple relative path under object-placement evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    let mut artifact = artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })?;
-    artifact.path = Path::new("object-placement")
-        .join(path)
-        .display()
-        .to_string();
-    Ok(artifact)
 }
 
 #[cfg(test)]
@@ -451,6 +423,67 @@ mod tests {
                 .validation_errors
                 .iter()
                 .any(|error| error.contains("simple relative path"))
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn object_placement_hook_rejects_symlink_escape_from_evidence_dir() {
+        let root = unique_test_dir("object-placement-hook-symlink-escape");
+        let alice_home = root.join("alice");
+        let tools = alice_home.join("tools");
+        let run_dir = root.join("runs");
+        let evidence_dir = run_dir.join("object-placement");
+        let outside_dir = root.join("outside");
+        let project = alice_home.join("starter.a3p");
+        fs::create_dir_all(&tools).unwrap();
+        fs::create_dir_all(&evidence_dir).unwrap();
+        fs::create_dir_all(&outside_dir).unwrap();
+        fs::write(tools.join("eatme-place-object"), "#!/bin/sh\n").unwrap();
+        fs::write(&project, "project").unwrap();
+        fs::write(outside_dir.join("placement.json"), r#"{"placed":true}"#).unwrap();
+        fs::write(
+            evidence_dir.join("scene.diff.json"),
+            r#"{"added":["bunny"]}"#,
+        )
+        .unwrap();
+        std::os::unix::fs::symlink(
+            outside_dir.join("placement.json"),
+            evidence_dir.join("placement.json"),
+        )
+        .unwrap();
+        let runner = FakeCommandRunner::default();
+        runner.push_output(CommandOutput {
+            command: "tools/eatme-place-object --json".into(),
+            exit_status: Some(0),
+            stdout: serde_json::json!({
+                "schema_version": "eatme.alice-object-placement-result/v1",
+                "status": "placed",
+                "object_identifier": default_object_identifier(),
+                "placement_artifact": "placement.json",
+                "scene_or_project_diff": "scene.diff.json"
+            })
+            .to_string(),
+            stderr: String::new(),
+        });
+
+        let probe = probe_object_placement_hook(
+            &runner,
+            &alice_home,
+            &run_dir,
+            &project,
+            default_object_identifier(),
+            ":99",
+        );
+
+        assert_eq!(probe.status, "failed");
+        assert!(!probe.proves_placement());
+        assert!(
+            probe
+                .validation_errors
+                .iter()
+                .any(|error| error.contains("must stay under"))
         );
         let _ = fs::remove_dir_all(root);
     }

@@ -18,7 +18,8 @@ use crate::launch_save_project::{
 };
 use crate::launch_ui_actions::{UiActionNoGoProbe, UiActionProbe};
 use anyhow::Result;
-use std::fs;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 #[allow(clippy::too_many_arguments)]
@@ -47,10 +48,12 @@ pub fn write_ui_action_contract(
     let placement_status = object_placement_probe
         .map(|probe| probe.status.as_str())
         .unwrap_or("blocked");
-    let action_precondition_probes = place_object_precondition_probe
-        .into_iter()
-        .filter(|_| placement_status != "passed")
-        .collect::<Vec<_>>();
+    let mut action_precondition_probes = Vec::new();
+    if placement_status != "passed"
+        && let Some(probe) = place_object_precondition_probe
+    {
+        action_precondition_probes.push(probe);
+    }
     let edit_procedure_proven =
         edit_procedure_candidate_probe.is_some_and(UiActionEditProcedureProbe::proves_edit);
     let run_world_proven = run_world_candidate_probe.is_some_and(UiActionRunWorldProbe::proves_run);
@@ -75,22 +78,18 @@ pub fn write_ui_action_contract(
                 .map(probe_object_transform_preconditions)
         })
         .flatten();
-    let transform_precondition_probes = transform_no_go_probe.iter().collect::<Vec<_>>();
     let edit_procedure_no_go_probe = object_placement_probe
         .filter(|probe| probe.proves_placement())
         .filter(|_| !edit_procedure_proven)
         .map(probe_edit_procedure_preconditions);
-    let edit_procedure_precondition_probes = edit_procedure_no_go_probe.iter().collect::<Vec<_>>();
     let run_world_no_go_probe = edit_procedure_candidate_probe
         .filter(|probe| probe.proves_edit())
         .filter(|_| !run_world_proven)
         .map(probe_run_world_preconditions);
-    let run_world_precondition_probes = run_world_no_go_probe.iter().collect::<Vec<_>>();
     let save_project_no_go_probe = run_world_candidate_probe
         .filter(|probe| probe.proves_run())
         .filter(|_| !save_project_proven)
         .map(probe_project_save_preconditions);
-    let save_project_precondition_probes = save_project_no_go_probe.iter().collect::<Vec<_>>();
     let reopen_project_no_go_probe = include_objects_first_actions
         .then(|| {
             save_project_candidate_probe
@@ -99,7 +98,11 @@ pub fn write_ui_action_contract(
                 .map(probe_project_reopen_preconditions)
         })
         .flatten();
-    let reopen_project_precondition_probes = reopen_project_no_go_probe.iter().collect::<Vec<_>>();
+    action_precondition_probes.extend(transform_no_go_probe.iter());
+    action_precondition_probes.extend(edit_procedure_no_go_probe.iter());
+    action_precondition_probes.extend(run_world_no_go_probe.iter());
+    action_precondition_probes.extend(save_project_no_go_probe.iter());
+    action_precondition_probes.extend(reopen_project_no_go_probe.iter());
     let candidate_affordance_probes = object_placement_probe
         .into_iter()
         .map(serde_json::to_value)
@@ -153,18 +156,14 @@ pub fn write_ui_action_contract(
             .chain(run_window_after_toolbar_probe)
             .chain(desktop_run_execution_probe)
             .collect::<Vec<_>>(),
-        "action_precondition_probes": action_precondition_probes
-            .into_iter()
-            .chain(transform_precondition_probes)
-            .chain(edit_procedure_precondition_probes)
-            .chain(run_world_precondition_probes)
-            .chain(save_project_precondition_probes)
-            .chain(reopen_project_precondition_probes)
-            .collect::<Vec<_>>(),
+        "action_precondition_probes": action_precondition_probes,
         "candidate_affordance_probes": candidate_affordance_probes,
         "required_actions": required_actions
     });
-    fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
+    let file = File::create(&path)?;
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, &json)?;
+    writer.flush()?;
     artifact_info(&path)
 }
 
@@ -310,6 +309,7 @@ fn ui_action_blocking_reason(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
