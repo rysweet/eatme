@@ -1,12 +1,12 @@
-use crate::launch_artifacts::artifact_info;
 use crate::launch_edit_procedure::UiActionEditProcedureProbe;
+use crate::launch_path_validation::artifact_info_under;
 use crate::launch_ui_actions::{
     UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
 };
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_WORLD_RUN_HOOK: &str = "tools/eatme-run-world";
@@ -166,13 +166,19 @@ pub(crate) fn probe_run_world_hook(
     };
 
     let mut validation_errors = validate_run_hook_result(&result);
-    let run_artifact = hook_artifact(&evidence_dir, &result.run_artifact, "run_artifact")
-        .map_err(|error| validation_errors.push(error))
-        .ok();
-    let runtime_or_log_evidence = hook_artifact(
+    let run_artifact = artifact_info_under(
+        &evidence_dir,
+        &result.run_artifact,
+        "run_artifact",
+        "world-run evidence dir",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
+    let runtime_or_log_evidence = artifact_info_under(
         &evidence_dir,
         &result.runtime_or_log_evidence,
         "runtime_or_log_evidence",
+        "world-run evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
@@ -344,33 +350,6 @@ fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
         errors.push("runtime_or_log_evidence must not be empty".into());
     }
     errors
-}
-
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!(
-            "{field} must be a simple relative path under world-run evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    let mut artifact = artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })?;
-    artifact.path = Path::new("world-run").join(path).display().to_string();
-    Ok(artifact)
 }
 
 #[cfg(test)]

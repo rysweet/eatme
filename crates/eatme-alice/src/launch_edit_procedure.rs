@@ -1,12 +1,12 @@
-use crate::launch_artifacts::artifact_info;
 use crate::launch_object_placement::UiActionObjectPlacementProbe;
+use crate::launch_path_validation::{artifact_info_under, canonical_relative_artifact_under};
 use crate::launch_ui_actions::{
     UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
 };
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_PROCEDURE_EDIT_HOOK: &str = "tools/eatme-edit-procedure";
@@ -47,7 +47,7 @@ impl UiActionEditProcedureProbe {
     }
 
     /// Check for the proof artifact file in the run directory.
-    /// If found and valid JSON, sets `edit_procedure_verified=true` with proof details.
+    /// If found and valid movement-proof JSON, sets `edit_procedure_verified=true`.
     /// If missing or invalid, sets `edit_procedure_verified=false`.
     pub(crate) fn with_proof_artifact_check(mut self, run_dir: &Path) -> Self {
         let proof_path = run_dir.join(EDIT_PROCEDURE_PROOF_ARTIFACT);
@@ -55,8 +55,7 @@ impl UiActionEditProcedureProbe {
             Ok(content) => content,
             Err(_) => return self,
         };
-        // Validate JSON without building an in-memory Value tree.
-        match serde_json::from_str::<serde::de::IgnoredAny>(&content) {
+        match validate_procedure_proof_artifact(&content) {
             Ok(_) => {
                 self.edit_procedure_verified = true;
                 let truncated = if content.len() > 500 {
@@ -73,8 +72,10 @@ impl UiActionEditProcedureProbe {
             }
             Err(err) => {
                 self.edit_procedure_verified = false;
-                self.proof_detail =
-                    Some(format!("invalid JSON in {}: {err}", proof_path.display()));
+                self.proof_detail = Some(format!(
+                    "invalid procedure edit proof in {}: {err}",
+                    proof_path.display()
+                ));
             }
         }
         self
@@ -89,6 +90,22 @@ struct ProcedureEditHookResult {
     edited_project_artifact: String,
     #[serde(default)]
     procedure_or_code_diff: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProcedureEditProofArtifact {
+    #[serde(default)]
+    schema_version: String,
+    #[serde(default)]
+    procedure_selector: String,
+    #[serde(default)]
+    movement: Option<ProcedureEditProofMovement>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProcedureEditProofMovement {
+    object: String,
+    method: String,
 }
 
 pub(crate) fn probe_edit_procedure_hook(
@@ -212,10 +229,11 @@ pub(crate) fn probe_edit_procedure_hook(
     };
 
     let mut validation_errors = validate_edit_hook_result(&result);
-    let edited_project_artifact = hook_artifact(
+    let edited_project_artifact = artifact_info_under(
         &evidence_dir,
         &result.edited_project_artifact,
         "edited_project_artifact",
+        "procedure-edit evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
@@ -227,10 +245,11 @@ pub(crate) fn probe_edit_procedure_hook(
     {
         None
     } else {
-        hook_artifact(
+        artifact_info_under(
             &evidence_dir,
             result.procedure_or_code_diff.as_deref().unwrap_or(""),
             "procedure_or_code_diff",
+            "procedure-edit evidence dir",
         )
         .map_err(|error| validation_errors.push(error))
         .ok()
@@ -432,33 +451,6 @@ fn validate_edit_hook_result(result: &ProcedureEditHookResult) -> Vec<String> {
     errors
 }
 
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!(
-            "{field} must be a simple relative path under procedure-edit evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    let mut artifact = artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })?;
-    artifact.path = Path::new("procedure-edit").join(path).display().to_string();
-    Ok(artifact)
-}
-
 fn project_after_object_change_path(run_dir: &Path) -> std::path::PathBuf {
     let transformed_project = run_dir
         .join("object-transform")
@@ -471,15 +463,15 @@ fn project_after_object_change_path(run_dir: &Path) -> std::path::PathBuf {
 }
 
 fn validate_movement_diff(evidence_dir: &Path, relative_path: &str) -> Vec<String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return vec!["procedure_or_code_diff must be a simple relative path".into()];
-    }
-    let full_path = evidence_dir.join(path);
+    let full_path = match canonical_relative_artifact_under(
+        evidence_dir,
+        relative_path,
+        "procedure_or_code_diff",
+        "procedure-edit evidence dir",
+    ) {
+        Ok(path) => path,
+        Err(error) => return vec![error],
+    };
     let content = match fs::read_to_string(&full_path) {
         Ok(content) => content.to_ascii_lowercase(),
         Err(error) => {
@@ -497,6 +489,45 @@ fn validate_movement_diff(evidence_dir: &Path, relative_path: &str) -> Vec<Strin
         errors.push("procedure_or_code_diff must prove movement intent".into());
     }
     errors
+}
+
+fn validate_procedure_proof_artifact(content: &str) -> std::result::Result<(), String> {
+    let proof: ProcedureEditProofArtifact =
+        serde_json::from_str(content).map_err(|error| format!("JSON is malformed: {error}"))?;
+    let mut errors = Vec::new();
+    if proof.schema_version != "eatme.alice-first-lesson-code-editor-action-proof-result/v1" {
+        errors.push(format!(
+            "schema_version must be eatme.alice-first-lesson-code-editor-action-proof-result/v1, got {:?}",
+            proof.schema_version
+        ));
+    }
+    if proof.procedure_selector != DEFAULT_PROCEDURE_SELECTOR {
+        errors.push(format!(
+            "procedure_selector must be {:?}, got {:?}",
+            DEFAULT_PROCEDURE_SELECTOR, proof.procedure_selector
+        ));
+    }
+    if let Some(movement) = &proof.movement {
+        if movement.object != "bunny" {
+            errors.push(format!(
+                "movement.object must be bunny, got {:?}",
+                movement.object
+            ));
+        }
+        if movement.method != "move" {
+            errors.push(format!(
+                "movement.method must be move, got {:?}",
+                movement.method
+            ));
+        }
+    } else {
+        errors.push("movement proof is required".into());
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
 }
 
 #[cfg(test)]

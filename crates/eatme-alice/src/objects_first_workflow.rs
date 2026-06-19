@@ -1,10 +1,11 @@
 use crate::launch::assertions::bool_assert;
-use crate::launch_path_validation::canonical_artifact_under;
+use crate::launch_path_validation::{canonical_artifact_under, normal_components};
 use crate::launch_reopen_project::UiActionReopenProjectProbe;
 use anyhow::Result;
 use eatme_core::{ArtifactInfo, AssertionResult};
 use serde::Deserialize;
-use std::fs;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 pub const OBJECTS_FIRST_SCENARIO_ID: &str = "alice-objects-first-world";
@@ -106,7 +107,10 @@ pub(crate) fn record_evidence_summary(
             "detail": persisted_state.detail
         }
     });
-    fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
+    let file = File::create(&path)?;
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, &json)?;
+    writer.flush()?;
     let mut artifact = crate::launch_artifacts::artifact_info(&path)?;
     artifact.path = "objects-first-evidence.json".into();
     Ok(artifact)
@@ -135,11 +139,10 @@ fn persisted_state_errors(
         "reopened_state_artifact",
         "project-reopen evidence dir",
     )?;
-    let state: PersistedState = serde_json::from_str(
-        &fs::read_to_string(&state_path)
-            .map_err(|error| format!("reading persisted state failed: {error:#}"))?,
-    )
-    .map_err(|error| format!("persisted state JSON is malformed: {error}"))?;
+    let file = File::open(&state_path)
+        .map_err(|error| format!("reading persisted state failed: {error:#}"))?;
+    let state: PersistedState = serde_json::from_reader(BufReader::new(file))
+        .map_err(|error| format!("persisted state JSON is malformed: {error}"))?;
     let mut errors = Vec::new();
     if state.object.name != "bunny" {
         errors.push(format!(
@@ -190,8 +193,42 @@ fn persisted_state_errors(
 fn artifact_path(run_dir: &Path, artifact: &ArtifactInfo) -> std::result::Result<PathBuf, String> {
     let path = Path::new(&artifact.path);
     if path.is_absolute() {
-        Ok(path.to_path_buf())
-    } else {
-        Ok(run_dir.join(path))
+        return Err("reopened_state_artifact must be a simple relative path".into());
+    }
+    if normal_components(path).is_none() {
+        return Err("reopened_state_artifact must be a simple relative path".into());
+    }
+    Ok(run_dir.join(path))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn artifact(path: &str) -> ArtifactInfo {
+        ArtifactInfo {
+            path: path.into(),
+            size_bytes: 1,
+            sha256: "sha".into(),
+        }
+    }
+
+    #[test]
+    fn artifact_path_rejects_absolute_paths() {
+        let result = artifact_path(
+            Path::new("/tmp/run"),
+            &artifact("/tmp/run/project-reopen/state.json"),
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("simple relative path"));
+    }
+
+    #[test]
+    fn artifact_path_rejects_parent_traversal() {
+        let result = artifact_path(Path::new("/tmp/run"), &artifact("../state.json"));
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("simple relative path"));
     }
 }

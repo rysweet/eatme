@@ -153,6 +153,67 @@ fn edit_procedure_hook_rejects_paths_outside_evidence_dir() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[cfg(unix)]
+#[test]
+fn edit_procedure_hook_rejects_symlink_escape_from_evidence_dir() {
+    let root = unique_test_dir("edit-procedure-hook-symlink-escape");
+    let alice_home = root.join("alice");
+    let tools = alice_home.join("tools");
+    let run_dir = root.join("runs");
+    let object_evidence_dir = run_dir.join("object-placement");
+    let edit_evidence_dir = run_dir.join("procedure-edit");
+    let outside_dir = root.join("outside");
+    fs::create_dir_all(&tools).unwrap();
+    fs::create_dir_all(&object_evidence_dir).unwrap();
+    fs::create_dir_all(&edit_evidence_dir).unwrap();
+    fs::create_dir_all(&outside_dir).unwrap();
+    fs::write(tools.join("eatme-edit-procedure"), "#!/bin/sh\n").unwrap();
+    fs::write(object_evidence_dir.join("placed-project.a3p"), "project").unwrap();
+    fs::write(outside_dir.join("edited-project.a3p"), "edited").unwrap();
+    fs::write(
+        edit_evidence_dir.join("procedure.diff.json"),
+        r#"{"procedure":"scene.myFirstMethod","movement":{"object":"bunny","method":"move"}}"#,
+    )
+    .unwrap();
+    std::os::unix::fs::symlink(
+        outside_dir.join("edited-project.a3p"),
+        edit_evidence_dir.join("edited-project.a3p"),
+    )
+    .unwrap();
+    let runner = FakeCommandRunner::default();
+    runner.push_output(CommandOutput {
+        command: "tools/eatme-edit-procedure --json".into(),
+        exit_status: Some(0),
+        stdout: serde_json::json!({
+            "schema_version": "eatme.alice-first-lesson-code-editor-action-proof-result/v1",
+            "status": "edited",
+            "procedure_selector": DEFAULT_PROCEDURE_SELECTOR,
+            "edited_project_artifact": "edited-project.a3p",
+            "procedure_or_code_diff": "procedure.diff.json"
+        })
+        .to_string(),
+        stderr: String::new(),
+    });
+
+    let probe = probe_edit_procedure_hook(
+        &runner,
+        &alice_home,
+        &run_dir,
+        &object_placement_probe_with_status("passed"),
+        ":99",
+    );
+
+    assert_eq!(probe.status, "failed");
+    assert!(!probe.proves_edit());
+    assert!(
+        probe
+            .validation_errors
+            .iter()
+            .any(|error| error.contains("must stay under"))
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
 fn object_placement_probe_with_status(status: &str) -> UiActionObjectPlacementProbe {
     UiActionObjectPlacementProbe {
         id: "alice-side-object-placement-command-hook".into(),
@@ -199,7 +260,7 @@ fn proof_artifact_valid_json_sets_verified_true() {
     fs::create_dir_all(&run_dir).unwrap();
     fs::write(
         run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT),
-        r#"{"action":"code-editor","lesson":"first","timestamp":"2026-05-12T00:00:00Z"}"#,
+        r#"{"schema_version":"eatme.alice-first-lesson-code-editor-action-proof-result/v1","procedure_selector":"scene.myFirstMethod","movement":{"object":"bunny","method":"move"}}"#,
     )
     .unwrap();
 
@@ -221,7 +282,7 @@ fn proof_artifact_valid_json_sets_verified_true() {
     );
     let detail = probe.proof_detail.as_deref().unwrap();
     assert!(
-        detail.contains("code-editor") || detail.contains("first"),
+        detail.contains("bunny") && detail.contains("move"),
         "proof_detail should summarize the proof contents: {detail}"
     );
     // OR-logic: proof artifact provides alternative verification path
@@ -229,6 +290,38 @@ fn proof_artifact_valid_json_sets_verified_true() {
         probe.proves_edit(),
         "proves_edit() should return true when proof artifact validates, \
          even if the hook itself did not prove editing"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn proof_artifact_placeholder_json_does_not_verify() {
+    let root = unique_test_dir("proof-artifact-placeholder");
+    let run_dir = root.join("runs");
+    fs::create_dir_all(&run_dir).unwrap();
+    fs::write(
+        run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT),
+        r#"{"action":"code-editor","lesson":"first","timestamp":"2026-05-12T00:00:00Z"}"#,
+    )
+    .unwrap();
+
+    let probe = blocked_edit_procedure_probe(
+        Path::new("tools/eatme-edit-procedure"),
+        "blocked: hook not available",
+        None,
+    )
+    .with_proof_artifact_check(&run_dir);
+
+    assert!(
+        !probe.edit_procedure_verified,
+        "placeholder JSON must not prove movement intent"
+    );
+    assert!(!probe.proves_edit());
+    assert!(
+        probe
+            .proof_detail
+            .as_deref()
+            .is_some_and(|detail| detail.contains("movement"))
     );
     let _ = fs::remove_dir_all(root);
 }
@@ -295,7 +388,9 @@ fn proof_artifact_large_json_is_truncated() {
     fs::create_dir_all(&run_dir).unwrap();
     // Build a valid JSON object larger than 500 bytes.
     let large_value = "x".repeat(600);
-    let content = format!(r#"{{"padding":"{large_value}"}}"#);
+    let content = format!(
+        r#"{{"schema_version":"eatme.alice-first-lesson-code-editor-action-proof-result/v1","procedure_selector":"scene.myFirstMethod","movement":{{"object":"bunny","method":"move"}},"padding":"{large_value}"}}"#
+    );
     assert!(content.len() > 500, "test fixture must exceed 500 bytes");
     fs::write(run_dir.join(super::EDIT_PROCEDURE_PROOF_ARTIFACT), &content).unwrap();
 
@@ -365,6 +460,34 @@ fn movement_diff_must_name_bunny_and_move() {
     );
     assert!(
         errors.iter().any(|error| error.contains("movement")),
+        "{errors:?}"
+    );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn movement_diff_rejects_symlink_escape() {
+    let root = unique_test_dir("movement-diff-symlink-escape");
+    let evidence_dir = root.join("procedure-edit");
+    let outside_dir = root.join("outside");
+    fs::create_dir_all(&evidence_dir).unwrap();
+    fs::create_dir_all(&outside_dir).unwrap();
+    fs::write(
+        outside_dir.join("procedure.diff.json"),
+        r#"{"procedure":"scene.myFirstMethod","movement":{"object":"bunny","method":"move"}}"#,
+    )
+    .unwrap();
+    std::os::unix::fs::symlink(
+        outside_dir.join("procedure.diff.json"),
+        evidence_dir.join("procedure.diff.json"),
+    )
+    .unwrap();
+
+    let errors = validate_movement_diff(&evidence_dir, "procedure.diff.json");
+
+    assert!(
+        errors.iter().any(|error| error.contains("must stay under")),
         "{errors:?}"
     );
     let _ = fs::remove_dir_all(root);
