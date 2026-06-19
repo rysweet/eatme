@@ -531,28 +531,35 @@ impl TsPortStatement {
     }
 }
 
-fn ts_port_root() -> PathBuf {
+fn ts_port_root() -> Option<PathBuf> {
     if let Ok(root) = env::var("ALICE_WEB_PROTOTYPE_ROOT") {
-        return PathBuf::from(root);
+        let root = PathBuf::from(root);
+        return root.join("package.json").exists().then_some(root);
     }
 
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     for ancestor in manifest_dir.ancestors() {
         let candidate = ancestor.join("alice-web-prototype");
         if candidate.join("package.json").exists() {
-            return candidate;
+            return Some(candidate);
         }
     }
 
-    manifest_dir.join("../../../alice-web-prototype")
+    None
 }
 
-fn ensure_ts_port_server_build() {
-    let root = ts_port_root();
+fn ensure_ts_port_server_build() -> Option<PathBuf> {
+    let root = match ts_port_root() {
+        Some(root) => root,
+        None => {
+            eprintln!("skipping TS round-trip test: alice-web-prototype checkout not found");
+            return None;
+        }
+    };
     if root.join("dist-server/code-generation.js").exists()
         && root.join("dist-server/tweedle-parser.js").exists()
     {
-        return;
+        return Some(root);
     }
 
     let status = Command::new("npm")
@@ -562,11 +569,11 @@ fn ensure_ts_port_server_build() {
         .status()
         .expect("failed to build alice-web-prototype server artifacts");
     assert!(status.success(), "npm run build:server failed");
+    Some(root)
 }
 
-fn run_ts_round_trip(mode: &str) -> TsRoundTrip {
-    ensure_ts_port_server_build();
-    let root = ts_port_root();
+fn run_ts_round_trip(mode: &str) -> Option<TsRoundTrip> {
+    let root = ensure_ts_port_server_build()?;
     let script = r#"
 import { pathToFileURL } from 'node:url';
 
@@ -615,7 +622,7 @@ console.log(JSON.stringify({ source, ast }));
         String::from_utf8_lossy(&output.stderr)
     );
 
-    serde_json::from_slice(&output.stdout).expect("invalid TS round-trip JSON")
+    Some(serde_json::from_slice(&output.stdout).expect("invalid TS round-trip JSON"))
 }
 
 fn sequence_blocks_from_round_trip(round_trip: &TsRoundTrip) -> Vec<SequenceBlock> {
@@ -1130,7 +1137,9 @@ fn ts_port_arithmetic_operator_round_trips_all_variants() {
 
 #[test]
 fn ts_port_round_trip_grades_complete_sequence_program() {
-    let round_trip = run_ts_round_trip("complete");
+    let Some(round_trip) = run_ts_round_trip("complete") else {
+        return;
+    };
     assert!(round_trip.source.contains("doInOrder"));
     assert!(round_trip.source.contains("doTogether"));
 
@@ -1154,7 +1163,9 @@ fn ts_port_round_trip_grades_complete_sequence_program() {
 
 #[test]
 fn ts_port_round_trip_blocks_when_parallel_sequence_is_missing() {
-    let round_trip = run_ts_round_trip("missing-parallel");
+    let Some(round_trip) = run_ts_round_trip("missing-parallel") else {
+        return;
+    };
     assert!(round_trip.source.contains("doInOrder"));
     assert!(!round_trip.source.contains("doTogether"));
 

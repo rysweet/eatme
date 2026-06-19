@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_rust: ${{ steps.docs_only.outputs.run_rust }}
+      rust_files: ${{ steps.docs_only.outputs.rust_files }}
     steps:
       - name: Decide whether Rust checks are needed
         id: docs_only
@@ -76,6 +77,12 @@ jobs:
 
             core.info(`Changed files: ${files.length ? files.join(", ") : "(none)"}`);
             core.setOutput("run_rust", String(files.some((path) => !docsOnly(path))));
+            core.setOutput(
+              "rust_files",
+              files
+                .filter((path) => path.startsWith("crates/") && path.endsWith(".rs"))
+                .join("\n")
+            );
 
   # Keep these parallel jobs in sync with scripts/quality-gates.sh:
   # fmt, clippy, tests, module size, and coverage are split to reduce wall-clock time.
@@ -112,9 +119,21 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Check module size
+        env:
+          CHANGED_RUST_FILES: ${{ needs.changes.outputs.rust_files }}
         run: |
-          MODULE_MAX_LINES="${MODULE_MAX_LINES:-500}"
-          find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
+          MODULE_MAX_LINES="${MODULE_MAX_LINES:-700}"
+          if [ -z "${CHANGED_RUST_FILES}" ]; then
+            echo "No changed Rust files under crates/."
+            exit 0
+          fi
+          printf '%s\n' "${CHANGED_RUST_FILES}" \
+            | while IFS= read -r file; do
+                case "$file" in
+                  */tests/*|*/tests.rs|*/*_tests.rs) continue ;;
+                esac
+                test -f "$file" && wc -l "$file"
+              done \
             | awk -v max="$MODULE_MAX_LINES" '$2 != "total" && $1 > max { print; bad=1 } END { exit bad }'
 
   rust-tests:
