@@ -62,6 +62,11 @@ pub fn write_ui_action_contract(
         reopen_project_candidate_probe.is_some_and(UiActionReopenProjectProbe::proves_reopen);
     let include_objects_first_actions =
         object_transform_probe.is_some() || reopen_project_candidate_probe.is_some();
+    let contract_passed = if include_objects_first_actions {
+        reopen_project_proven
+    } else {
+        save_project_proven
+    };
     let transform_no_go_probe = include_objects_first_actions
         .then(|| {
             object_placement_probe
@@ -131,7 +136,7 @@ pub fn write_ui_action_contract(
     );
     let json = serde_json::json!({
         "schema_version": "eatme.ui-action-contract/v1",
-        "status": if reopen_project_proven { "passed" } else { "blocked" },
+        "status": if contract_passed { "passed" } else { "blocked" },
         "blocking_reason": ui_action_blocking_reason(placement_status, object_transform_proven, edit_procedure_proven, run_world_proven, save_project_proven, reopen_project_proven, include_objects_first_actions),
         "preflight_evidence": {
             "specific_alice_window_detected": specific_alice_window_detected,
