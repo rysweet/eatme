@@ -7,9 +7,9 @@ resource_basis:
   - name: Alice 3 desktop source
     url: https://github.com/TheAliceProject/alice3
   - name: RabbitHole local validation checkout
-    url: file:///home/azureuser/src/alice
+    url: https://github.com/rysweet/RabbitHole
   - name: Alice TypeScript prototype validation checkout
-    url: file:///home/azureuser/src/alice-web-prototype
+    url: https://github.com/rysweet/alice-web-prototype
 purpose: >-
   Execute the objects-first Alice user path without manual intervention:
   create or open a project, add a visible object, transform it, edit a movement

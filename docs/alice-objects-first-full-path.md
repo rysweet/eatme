@@ -42,8 +42,8 @@ Run from the eatme repository root:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
-export ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype
+export ALICE_HOME=/path/to/RabbitHole
+export ALICE_WEB_PROTOTYPE_HOME=/path/to/alice-web-prototype
 
 EATME_REAL_ALICE=1 eatme alice objects-first-full-path \
   --alice-home "${ALICE_HOME}" \
@@ -88,8 +88,8 @@ assets/scenarios/gadugi/alice-objects-first-full-path.yaml
 | Scenario id | `alice-objects-first-full-path` |
 | Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-full-path.yaml` |
 | Generated Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-full-path.yaml` |
-| Primary Alice target | `/home/azureuser/src/alice` |
-| TypeScript prototype target | `/home/azureuser/src/alice-web-prototype` |
+| Primary Alice target | `$ALICE_HOME` |
+| TypeScript prototype target | `$ALICE_WEB_PROTOTYPE_HOME` |
 | Required real-Alice gate | `EATME_REAL_ALICE=1` |
 | Node-backed adapter/check memory setting | `NODE_OPTIONS=--max-old-space-size=32768` |
 | Evidence root | `runs/alice-objects-first-full-path/<run-id>/` |
@@ -121,7 +121,7 @@ Run the full path against RabbitHole Alice:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=/path/to/RabbitHole
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path \
   --alice-home "${ALICE_HOME}" \
@@ -306,8 +306,8 @@ The command validates applicable behavior against:
 
 | Target | Path | Purpose |
 | --- | --- | --- |
-| RabbitHole Alice | `/home/azureuser/src/alice` | Primary executable desktop target. |
-| TypeScript port | `/home/azureuser/src/alice-web-prototype` | Comparable web-port behavior where supported. |
+| RabbitHole Alice | `$ALICE_HOME` | Primary executable desktop target. |
+| TypeScript port | `$ALICE_WEB_PROTOTYPE_HOME` | Comparable web-port behavior where supported. |
 
 RabbitHole validation is required for the full path. TypeScript validation records
 `present`, `unsupported`, `blocked`, or `invalid` for comparable hooks and state

@@ -34,8 +34,8 @@ For step-by-step usage, see
 | Generated adapter | `assets/scenarios/gadugi/alice-objects-first-full-path.yaml` |
 | Primary command | `eatme alice objects-first-full-path` |
 | Primary runner | `eatme_alice::run_launch_smoke` with `LaunchSmokeScenario::new("alice-objects-first-full-path")` |
-| Primary Alice target | `/home/azureuser/src/alice` |
-| Comparable prototype target | `/home/azureuser/src/alice-web-prototype` |
+| Primary Alice target | `$ALICE_HOME` |
+| Comparable prototype target | `$ALICE_WEB_PROTOTYPE_HOME` |
 
 The canonical eatme scenario owns the ordered phase list, expected hook names,
 required evidence, acceptance criteria, artifact names, and unsupported behavior
@@ -48,7 +48,7 @@ Installed binary:
 
 ```bash
 eatme alice objects-first-full-path \
-  --alice-home /home/azureuser/src/alice \
+  --alice-home "$ALICE_HOME" \
   --run-id local-alice-objects-first-full-path \
   --runs-dir runs \
   --timeout 900 \
@@ -61,7 +61,7 @@ Source checkout:
 
 ```bash
 cargo run -q -p eatme-cli -- alice objects-first-full-path \
-  --alice-home /home/azureuser/src/alice \
+  --alice-home "$ALICE_HOME" \
   --run-id local-alice-objects-first-full-path \
   --runs-dir runs \
   --timeout 900 \
@@ -99,9 +99,9 @@ binds the canonical scenario automatically.
 | Name | Required | Contract |
 | --- | --- | --- |
 | `EATME_REAL_ALICE=1` | Yes | Enables real Alice execution for this non-baseline scenario. |
-| `ALICE_HOME=/home/azureuser/src/alice` | Yes unless `--alice-home` is set | RabbitHole Alice checkout. |
+| `ALICE_HOME=/path/to/RabbitHole` | Yes unless `--alice-home` is set | RabbitHole Alice checkout. |
 | `NODE_OPTIONS=--max-old-space-size=32768` | For Node-backed checks/adapters | Required for generated Gadugi adapters, Node-backed asset checks, or surrounding Node-based agent tooling; not required by the Rust command itself. |
-| `ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype` | For TypeScript validation | TypeScript prototype checkout. |
+| `ALICE_WEB_PROTOTYPE_HOME=/path/to/alice-web-prototype` | For TypeScript validation | TypeScript prototype checkout. |
 | `GH_TOKEN` or existing `gh` auth | For issue filing | Used only to file sanitized product-gap issues when product support is claimed but invalid. |
 
 The command records the effective configuration in `manifest.json` after
@@ -378,7 +378,7 @@ contract.
 use eatme_alice::{run_launch_smoke, LaunchSmokeOptions, LaunchSmokeScenario};
 
 let manifest = run_launch_smoke(&LaunchSmokeOptions {
-    alice_home: "/home/azureuser/src/alice".into(),
+    alice_home: "/path/to/RabbitHole".into(),
     run_id: "local-alice-objects-first-full-path".into(),
     runs_dir: "runs".into(),
     scenario: LaunchSmokeScenario::new("alice-objects-first-full-path"),

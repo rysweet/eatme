@@ -138,7 +138,7 @@ For usage and contracts, see
 [Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md).
 
 `alice-objects-first-world` is the full objects-first workflow. It uses
-RabbitHole Alice at `/home/azureuser/src/alice` as the primary target and records
+RabbitHole Alice at `$ALICE_HOME` as the primary target and records
 separate proof for project create/open, visible object placement, object
 transform, movement procedure edit, run-world, save, reopen, and persisted-state
 verification. A launch-only run must be rejected for this scenario.

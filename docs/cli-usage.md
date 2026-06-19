@@ -218,8 +218,8 @@ and persisted state.
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
-export ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype
+export ALICE_HOME=/path/to/RabbitHole
+export ALICE_WEB_PROTOTYPE_HOME=/path/to/alice-web-prototype
 
 EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path \
   --alice-home "${ALICE_HOME}" \
