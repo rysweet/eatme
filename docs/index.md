@@ -34,7 +34,8 @@ Eatme has three testing layers:
 - **Web platform tests** hit the TypeScript web port when
   `EATME_WEB_PLATFORM=1` is set.
 
-`alice-objects-first-world` is a desktop workflow scenario. It proves that a
+`alice-objects-first-world` is the planned desktop workflow specification for
+objects-first save/reopen evidence. When implemented, it must prove that a
 project is created or opened, a visible object is added, the object is changed, a
 movement procedure is edited, the world runs, the project is saved, the saved
 project is reopened, and the reopened state still contains the expected object
@@ -42,8 +43,9 @@ and behavior evidence.
 
 Launch-only Alice scenarios prove startup evidence for a scenario-labeled Alice
 run. They do not score learner creativity, inspect private Alice implementation
-details, or grade saved learner worlds. The objects-first workflow has its own
-full-workflow evidence contract and still does not replace instructor judgment.
+details, or grade saved learner worlds. The objects-first workflow specification
+defines a future full-workflow evidence contract and still does not replace
+instructor judgment.
 
 ## Quick start
 
@@ -60,7 +62,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Installation](./installation.md)
 - [CLI usage](./cli-usage.md)
 - [Alice integration](./alice-integration.md)
-- [Alice Objects-First World](./alice-objects-first-world.md)
+- [Alice Objects-First World Specification](./alice-objects-first-world.md)
 - [Web platform testing](./web-platform-testing.md)
 
 ## Documentation map
@@ -73,7 +75,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 ### Curriculum Scenarios
 
 - [Scenario authoring](./scenario-authoring.md)
-- [Alice Objects-First World](./alice-objects-first-world.md)
+- [Alice Objects-First World Specification](./alice-objects-first-world.md)
 - [Student missions](./student-missions.md)
 - [Instructor missions](./instructor-missions.md)
 - [Alice lesson smoke](./alice-lesson-smoke.md)

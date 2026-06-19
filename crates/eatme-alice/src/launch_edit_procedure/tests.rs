@@ -73,7 +73,7 @@ fn edit_procedure_hook_passes_only_with_edited_project_and_diff_proof() {
     fs::write(edit_evidence_dir.join("edited-project.a3p"), "edited").unwrap();
     fs::write(
         edit_evidence_dir.join("procedure.diff.json"),
-        r#"{"edited":["scene.myFirstMethod"]}"#,
+        r#"{"procedure":"scene.myFirstMethod","movement":{"object":"bunny","method":"move","direction":"FORWARD","amount":1.0}}"#,
     )
     .unwrap();
     let runner = FakeCommandRunner::default();
@@ -344,6 +344,30 @@ fn validate_accepts_edited_with_diff() {
     };
     let errors = validate_edit_hook_result(&result);
     assert!(errors.is_empty(), "Expected no errors, got: {:?}", errors);
+}
+
+#[test]
+fn movement_diff_must_name_bunny_and_move() {
+    let root = unique_test_dir("movement-diff-missing-intent");
+    let evidence_dir = root.join("procedure-edit");
+    fs::create_dir_all(&evidence_dir).unwrap();
+    fs::write(
+        evidence_dir.join("procedure.diff.json"),
+        r#"{"edited":true}"#,
+    )
+    .unwrap();
+
+    let errors = validate_movement_diff(&evidence_dir, "procedure.diff.json");
+
+    assert!(
+        errors.iter().any(|error| error.contains("bunny")),
+        "{errors:?}"
+    );
+    assert!(
+        errors.iter().any(|error| error.contains("movement")),
+        "{errors:?}"
+    );
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

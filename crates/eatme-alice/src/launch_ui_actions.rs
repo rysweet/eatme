@@ -5,6 +5,12 @@ use crate::launch_edit_procedure::{
 use crate::launch_object_placement::{
     UiActionObjectPlacementProbe, missing_object_placement_affordance,
 };
+use crate::launch_object_transform::{
+    UiActionObjectTransformProbe, probe_object_transform_preconditions,
+};
+use crate::launch_reopen_project::{
+    UiActionReopenProjectProbe, probe_project_reopen_preconditions,
+};
 use crate::launch_run_world::{UiActionRunWorldProbe, probe_run_world_preconditions};
 use crate::launch_save_project::{UiActionSaveProjectProbe, probe_project_save_preconditions};
 use crate::launch_window_activation::activation_failure_detail;
@@ -54,7 +60,99 @@ pub struct UiActionMissingAffordance {
     pub next_implementation: String,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn record_ui_action_blockers(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    artifact: &ArtifactInfo,
+    place_object_precondition_probe: &UiActionNoGoProbe,
+    object_placement_probe: &UiActionObjectPlacementProbe,
+    object_transform_probe: &UiActionObjectTransformProbe,
+    edit_procedure_probe: &UiActionEditProcedureProbe,
+    run_world_probe: &UiActionRunWorldProbe,
+    save_project_probe: &UiActionSaveProjectProbe,
+    reopen_project_probe: &UiActionReopenProjectProbe,
+) {
+    record_place_object_probe(
+        assertions,
+        place_object_precondition_probe,
+        object_placement_probe,
+    );
+    assertions.insert(
+        "place_object_ui_action".into(),
+        bool_assert(
+            object_placement_probe.proves_placement(),
+            object_placement_probe.detail.clone(),
+        ),
+    );
+    record_object_transform_probe(assertions, object_transform_probe);
+    if object_placement_probe.proves_placement() && !object_transform_probe.proves_transform() {
+        let transform_precondition_probe =
+            probe_object_transform_preconditions(object_placement_probe);
+        record_object_transform_precondition_no_go(assertions, &transform_precondition_probe);
+    }
+    assertions.insert(
+        "transform_object_ui_action".into(),
+        bool_assert(
+            object_transform_probe.proves_transform(),
+            object_transform_probe.detail.clone(),
+        ),
+    );
+    assertions.insert(
+        "edit_procedure_ui_action".into(),
+        bool_assert(
+            edit_procedure_probe.proves_edit(),
+            edit_procedure_probe.detail.clone(),
+        ),
+    );
+    assertions.insert(
+        "edit_movement_procedure_ui_action".into(),
+        bool_assert(
+            edit_procedure_probe.proves_edit(),
+            edit_procedure_probe.detail.clone(),
+        ),
+    );
+    record_edit_procedure_probe(assertions, edit_procedure_probe);
+    if object_placement_probe.proves_placement() && !edit_procedure_probe.proves_edit() {
+        let edit_precondition_probe = probe_edit_procedure_preconditions(object_placement_probe);
+        record_edit_procedure_precondition_no_go(assertions, &edit_precondition_probe);
+    }
+    record_run_world_probe(assertions, run_world_probe);
+    if edit_procedure_probe.proves_edit() && !run_world_probe.proves_run() {
+        let run_world_probe = probe_run_world_preconditions(edit_procedure_probe);
+        record_run_world_precondition_no_go(assertions, &run_world_probe);
+    }
+    assertions.insert(
+        "run_world_ui_action".into(),
+        bool_assert(run_world_probe.proves_run(), run_world_probe.detail.clone()),
+    );
+    record_save_project_probe(assertions, save_project_probe);
+    if run_world_probe.proves_run() && !save_project_probe.proves_save() {
+        let save_project_probe = probe_project_save_preconditions(run_world_probe);
+        record_save_project_precondition_no_go(assertions, &save_project_probe);
+    }
+    assertions.insert(
+        "save_project_ui_action".into(),
+        bool_assert(
+            save_project_probe.proves_save(),
+            save_project_probe.detail.clone(),
+        ),
+    );
+    record_reopen_project_probe(assertions, reopen_project_probe);
+    if save_project_probe.proves_save() && !reopen_project_probe.proves_reopen() {
+        let reopen_project_probe = probe_project_reopen_preconditions(save_project_probe);
+        record_reopen_project_precondition_no_go(assertions, &reopen_project_probe);
+    }
+    assertions.insert(
+        "reopen_project_ui_action".into(),
+        bool_assert(
+            reopen_project_probe.proves_reopen(),
+            reopen_project_probe.detail.clone(),
+        ),
+    );
+    record_ui_action_artifact(assertions, artifact);
+}
+
+pub fn record_legacy_ui_action_blockers(
     assertions: &mut BTreeMap<String, AssertionResult>,
     artifact: &ArtifactInfo,
     place_object_precondition_probe: &UiActionNoGoProbe,
@@ -152,6 +250,10 @@ pub fn record_preflight_ui_action_blockers(
     assertions.insert(
         "save_project_ui_action".into(),
         AssertionResult::fail("preflight blocked before project save could run"),
+    );
+    assertions.insert(
+        "reopen_project_ui_action".into(),
+        AssertionResult::fail("preflight blocked before project reopen could run"),
     );
     record_place_object_precondition_no_go(assertions, place_object_probe);
 }
@@ -433,6 +535,37 @@ fn record_edit_procedure_probe(
     );
 }
 
+fn record_object_transform_probe(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    object_transform_probe: &UiActionObjectTransformProbe,
+) {
+    assertions.insert(
+        "transform_object_candidate_hook_probe".into(),
+        bool_assert(
+            object_transform_probe.action_id == "transform-object"
+                && object_transform_probe.id == "alice-side-object-transform-command-hook"
+                && ["passed", "blocked", "failed"]
+                    .contains(&object_transform_probe.status.as_str()),
+            object_transform_probe.detail.clone(),
+        ),
+    );
+}
+
+fn record_object_transform_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "transform_object_precondition_no_go_probe".into(),
+        bool_assert(
+            precondition_probe.action_id == "transform-object"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
+        ),
+    );
+}
+
 fn record_edit_procedure_precondition_no_go(
     assertions: &mut BTreeMap<String, AssertionResult>,
     precondition_probe: &UiActionNoGoProbe,
@@ -486,6 +619,31 @@ fn record_save_project_precondition_no_go(
         "save_project_precondition_no_go_probe".into(),
         bool_assert(
             precondition_probe.action_id == "save-project"
+                && precondition_probe.status == "blocked"
+                && precondition_probe.decision == "no_go",
+            precondition_probe.blocking_reason.clone(),
+        ),
+    );
+}
+
+fn record_reopen_project_probe(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    probe: &UiActionReopenProjectProbe,
+) {
+    assertions.insert(
+        "reopen_project_candidate_hook_probe".into(),
+        bool_assert(probe.proves_reopen(), probe.detail.clone()),
+    );
+}
+
+fn record_reopen_project_precondition_no_go(
+    assertions: &mut BTreeMap<String, AssertionResult>,
+    precondition_probe: &UiActionNoGoProbe,
+) {
+    assertions.insert(
+        "reopen_project_precondition_no_go_probe".into(),
+        bool_assert(
+            precondition_probe.action_id == "reopen-project"
                 && precondition_probe.status == "blocked"
                 && precondition_probe.decision == "no_go",
             precondition_probe.blocking_reason.clone(),

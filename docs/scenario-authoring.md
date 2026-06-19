@@ -40,7 +40,7 @@ assets/personas/
 | --- | --- |
 | `real-alice-launch-smoke` | Baseline deterministic Alice desktop smoke |
 | Alice lesson smoke scenarios | Scenario-labeled launch readiness for Alice.org-grounded lesson scenarios |
-| `alice-objects-first-world` | Full objects-first workflow with visible object, transform, movement, run, save, reopen, and persisted-state evidence |
+| `alice-objects-first-world` | Planned full objects-first workflow with visible object, transform, movement, run, save, reopen, and persisted-state evidence |
 | Instructor agentic flows | Instructor-facing mission prompts, acceptance probes, and rubrics |
 
 Lesson smoke scenarios route through:
@@ -56,10 +56,14 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 Instructor agentic flows stay at the prompt, acceptance-probe, and rubric
 boundary. They do not own Alice desktop launch internals.
 
-The objects-first workflow is a full Alice desktop scenario. Its asset must
-require separate proof for project create/open, object placement, object
+The objects-first workflow is a planned full Alice desktop scenario. Its asset
+must require separate proof for project create/open, object placement, object
 transform, movement procedure edit, run-world, save, reopen, and persisted-state
 verification. A launch-only manifest is not enough evidence for this scenario.
+Prefer a dedicated command such as `alice run-objects-first-world`; if
+`alice launch-smoke --scenario alice-objects-first-world` remains available, it
+must dispatch to the same full-workflow coordinator and inherit the same
+pass/fail rules.
 
 ## Required scenario shape
 
@@ -192,6 +196,6 @@ scenario owns that evidence and validation path.
 For the instructor/student readiness state machine, JSON fields, and no-go
 contract wording, see [Lesson Session Readiness](lesson-session-readiness.md).
 
-For the finished objects-first workflow contract, see
-[Alice Objects-First World](alice-objects-first-world.md) and
+For the planned objects-first workflow contract, see
+[Alice Objects-First World Specification](alice-objects-first-world.md) and
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).

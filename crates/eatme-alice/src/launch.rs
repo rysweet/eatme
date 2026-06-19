@@ -23,7 +23,9 @@ use crate::launch_desktop_execution::probe_toolbar_run_and_execution;
 use crate::launch_edit_procedure::probe_edit_procedure_hook;
 use crate::launch_license::seed_license_preferences_if_requested;
 use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
+use crate::launch_object_transform::probe_object_transform_hook;
 use crate::launch_options::LaunchSmokeOptions;
+use crate::launch_reopen_project::probe_project_reopen_hook;
 use crate::launch_run_window::probe_run_window_after_shortcut;
 use crate::launch_run_world::probe_run_world_hook;
 use crate::launch_ui_action_contract::write_ui_action_contract;
@@ -33,6 +35,10 @@ use crate::launch_ui_actions::{
 };
 use crate::launch_window_activation::ui_action_activation_failure_category;
 use crate::launch_window_targeting::alice_window_search;
+use crate::objects_first_workflow::{
+    create_or_open_project_assertion, is_objects_first_scenario, persisted_state_assertion,
+    record_evidence_summary,
+};
 use crate::package::{PackageOptions, package_alice};
 use anyhow::Result;
 use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
@@ -245,6 +251,15 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     if !process_started {
         failure_category = Some("alice_process_exited".into());
     }
+    if is_objects_first_scenario(&options.scenario.id) {
+        assertions.insert(
+            "create_or_open_project_ui_action".into(),
+            create_or_open_project_assertion(
+                process_started,
+                &options.alice_home.join(&options.scenario.starter_project),
+            ),
+        );
+    }
     let (window_text, window_list_error) =
         capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));
     let (window_list, window_info_error) = artifact_or_error(&run_dir.join("window-list.txt"));
@@ -369,6 +384,15 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             default_object_identifier(),
             display.name(),
         );
+        let object_transform_probe = is_objects_first_scenario(&options.scenario.id).then(|| {
+            probe_object_transform_hook(
+                &runner,
+                &options.alice_home,
+                &run_dir,
+                &object_placement_probe,
+                display.name(),
+            )
+        });
         let edit_procedure_probe = probe_edit_procedure_hook(
             &runner,
             &options.alice_home,
@@ -430,6 +454,25 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             &run_world_probe,
             display.name(),
         );
+        let reopen_project_probe = is_objects_first_scenario(&options.scenario.id).then(|| {
+            probe_project_reopen_hook(
+                &runner,
+                &options.alice_home,
+                &run_dir,
+                &save_project_probe,
+                display.name(),
+            )
+        });
+        let persisted_state = is_objects_first_scenario(&options.scenario.id).then(|| {
+            reopen_project_probe
+                .as_ref()
+                .map(|probe| persisted_state_assertion(&run_dir, probe))
+                .unwrap_or_else(|| {
+                    eatme_core::AssertionResult::fail(
+                        "project reopen proof is required before persisted state can be trusted",
+                    )
+                })
+        });
         let artifact = write_ui_action_contract(
             &run_dir,
             specific_alice_window_ok,
@@ -445,20 +488,63 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             Some(&desktop_run_execution_probe),
             Some(&place_object_probe),
             Some(&object_placement_probe),
+            object_transform_probe.as_ref(),
             Some(&edit_procedure_probe),
             Some(&run_world_probe),
             Some(&save_project_probe),
+            reopen_project_probe.as_ref(),
         )?;
-        record_ui_action_blockers(
-            &mut assertions,
-            &artifact,
-            &place_object_probe,
-            &object_placement_probe,
-            &edit_procedure_probe,
-            &run_world_probe,
-            &save_project_probe,
-        );
-        if failure_category.is_none() {
+        if let (Some(object_transform_probe), Some(reopen_project_probe)) = (
+            object_transform_probe.as_ref(),
+            reopen_project_probe.as_ref(),
+        ) {
+            record_ui_action_blockers(
+                &mut assertions,
+                &artifact,
+                &place_object_probe,
+                &object_placement_probe,
+                object_transform_probe,
+                &edit_procedure_probe,
+                &run_world_probe,
+                &save_project_probe,
+                reopen_project_probe,
+            );
+        } else {
+            crate::launch_ui_actions::record_legacy_ui_action_blockers(
+                &mut assertions,
+                &artifact,
+                &place_object_probe,
+                &object_placement_probe,
+                &edit_procedure_probe,
+                &run_world_probe,
+                &save_project_probe,
+            );
+        }
+        if let Some(persisted_state) = persisted_state {
+            assertions.insert("persisted_state_verified".into(), persisted_state.clone());
+            let all_required_proof = object_placement_probe.proves_placement()
+                && object_transform_probe
+                    .as_ref()
+                    .is_some_and(|probe| probe.proves_transform())
+                && edit_procedure_probe.proves_edit()
+                && run_world_probe.proves_run()
+                && save_project_probe.proves_save()
+                && reopen_project_probe
+                    .as_ref()
+                    .is_some_and(|probe| probe.proves_reopen());
+            let evidence_summary =
+                record_evidence_summary(&run_dir, all_required_proof, &persisted_state)?;
+            assertions.insert(
+                "objects_first_evidence_recorded".into(),
+                bool_assert(
+                    all_required_proof && persisted_state.passed && evidence_summary.size_bytes > 0,
+                    "objects-first evidence summary records every major learner workflow step",
+                ),
+            );
+            if failure_category.is_none() && !(all_required_proof && persisted_state.passed) {
+                failure_category = Some("objects_first_workflow_incomplete".into());
+            }
+        } else if failure_category.is_none() {
             failure_category = Some(ui_action_failure_category(&object_placement_probe).into());
         }
         Some(artifact)
