@@ -26,7 +26,9 @@ impl LaunchSmokeScenario {
     }
 
     pub fn requires_real_ui_actions(&self) -> bool {
-        self.id == "first-lessons-real-ui-actions" || self.id == "code-editor-first-run"
+        self.id == "first-lessons-real-ui-actions"
+            || self.id == "code-editor-first-run"
+            || self.id == "alice-objects-first-world"
     }
 
     pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {

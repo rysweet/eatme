@@ -17,12 +17,18 @@ pub(crate) fn artifact_info_under(
 
     let full_path = root_dir.join(path);
     canonical_artifact_under(root_dir, &full_path, field, root_label)?;
-    artifact_info(&full_path).map_err(|error| {
+    let mut artifact = artifact_info(&full_path).map_err(|error| {
         format!(
             "{field} {} is not a readable artifact: {error:#}",
             full_path.display()
         )
-    })
+    })?;
+    let root_name = root_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| format!("{root_label} must have a stable artifact directory name"))?;
+    artifact.path = Path::new(root_name).join(path).display().to_string();
+    Ok(artifact)
 }
 
 pub(crate) fn canonical_artifact_under(

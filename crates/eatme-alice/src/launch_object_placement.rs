@@ -311,12 +311,17 @@ fn hook_artifact(
     }
 
     let full_path = evidence_dir.join(path);
-    artifact_info(&full_path).map_err(|error| {
+    let mut artifact = artifact_info(&full_path).map_err(|error| {
         format!(
             "{field} {} is not a readable artifact: {error:#}",
             full_path.display()
         )
-    })
+    })?;
+    artifact.path = Path::new("object-placement")
+        .join(path)
+        .display()
+        .to_string();
+    Ok(artifact)
 }
 
 #[cfg(test)]

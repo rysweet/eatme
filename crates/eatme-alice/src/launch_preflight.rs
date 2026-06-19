@@ -49,6 +49,8 @@ pub fn write_preflight_blocked_manifest(
             None,
             None,
             None,
+            None,
+            None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)

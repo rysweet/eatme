@@ -1,40 +1,143 @@
 # Alice Objects-First World Reference
 
-This reference defines the scenario asset, command contract, configuration,
-evidence files, and hook APIs for `alice-objects-first-world`.
+This reference defines the planned scenario asset, target command, workflow phase
+contracts, evidence files, manifest fields, and safety rules for
+`alice-objects-first-world`.
 
-For step-by-step use, see
-[Alice Objects-First World](alice-objects-first-world.md).
+For the learner workflow and implementation checklist, see
+[Alice Objects-First World Specification](alice-objects-first-world.md).
 
 ## Contents
 
 - [Scenario identity](#scenario-identity)
+- [Scenario YAML contract](#scenario-yaml-contract)
 - [Configuration](#configuration)
-- [Command contract](#command-contract)
+- [Target command contract](#target-command-contract)
+- [Workflow phase contracts](#workflow-phase-contracts)
 - [Evidence contract](#evidence-contract)
 - [Manifest fields](#manifest-fields)
-- [Alice-side hook API](#alice-side-hook-api)
 - [Rust API](#rust-api)
 - [TypeScript prototype adapter](#typescript-prototype-adapter)
 - [Path and issue safety](#path-and-issue-safety)
 
 ## Scenario identity
 
-| Field | Value |
+| Field | Target value |
 | --- | --- |
 | Scenario id | `alice-objects-first-world` |
 | Title | Alice Objects-First World |
 | Kind | `alice_objects_first_workflow` |
 | Canonical source | `assets/scenarios/eatme/alice-objects-first-world.yaml` |
 | Generated adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` |
-| Primary runner | `eatme-alice::objects_first_workflow` |
+| Primary runner | `eatme_alice::objects_first_workflow` |
 | Primary Alice target | `/home/azureuser/src/alice` |
-| Comparable prototype target | `/home/azureuser/src/alice-web-prototype` |
 
 The canonical eatme scenario owns mission wording, required steps, required
 evidence, acceptance criteria, artifact names, and unsupported behavior. The
-Gadugi adapter is generated from the canonical scenario and must not be edited by
-hand for mission intent.
+Gadugi adapter must be generated from the canonical scenario and must not be
+hand-edited for mission intent.
+
+## Scenario YAML contract
+
+The implementation must add a canonical scenario asset using the repository's
+`eatme.scenario/v1` shape, plus objects-first validation fields that the asset
+validator enforces when `kind: alice_objects_first_workflow`.
+
+```yaml
+schema_version: eatme.scenario/v1
+id: alice-objects-first-world
+title: Alice Objects-First World
+kind: alice_objects_first_workflow
+owner: eatme
+tags:
+  - alice
+  - desktop
+  - objects-first
+  - save-reopen
+  - persisted-state
+launcher:
+  command: alice run-objects-first-world
+  scenario: alice-objects-first-world
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  students:
+    - curious-novice
+    - reflective-debugger
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - xwininfo
+    - xdotool
+    - screenshot-tool
+workflow_phases:
+  - project-open
+  - object-placement
+  - object-transform
+  - procedure-edit
+  - run-world
+  - project-save
+  - project-reopen
+  - persisted-state
+smoke_ready:
+  evidence:
+    - project_open_evidence
+    - object_placement_evidence
+    - object_transform_evidence
+    - procedure_movement_evidence
+    - run_world_evidence
+    - saved_project_artifact
+    - reopened_project_evidence
+    - persisted_state_evidence
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: run-objects-first-world
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+    evidence:
+      - manifest scenario_id equals alice-objects-first-world
+      - manifest workflow_phases contains every required phase in order
+      - persisted-state evidence links to project-save/saved-project.a3p
+artifacts:
+  manifest: runs/alice-objects-first-world/${RUN_ID}/manifest.json
+  persisted_state: runs/alice-objects-first-world/${RUN_ID}/project-reopen/persisted-state.json
+  saved_project: runs/alice-objects-first-world/${RUN_ID}/project-save/saved-project.a3p
+unsupported_policy: >-
+  Missing host tools, missing EATME_REAL_ALICE=1, unsupported Alice project
+  creation, unavailable deterministic object placement, missing movement edit,
+  missing run-world proof, missing save proof, missing reopen proof, or unsafe
+  artifact paths must fail loudly. Do not substitute launch-only evidence.
+```
+
+Validation rules to add with the implementation:
+
+| Rule | Requirement |
+| --- | --- |
+| Filename alignment | The canonical filename must be `alice-objects-first-world.yaml`. |
+| Kind-specific tags | `alice`, `desktop`, `objects-first`, `save-reopen`, and `persisted-state` must be present. |
+| Phase coverage | `workflow_phases` must contain the eight required phases exactly once and in order. |
+| Step reference | A `run-objects-first-world` step must invoke the full workflow command or a compatibility command that dispatches to the same coordinator. |
+| Evidence coverage | `smoke_ready.evidence`, `steps[].evidence`, and `artifacts` must reference persisted-state and same-run saved-project proof. |
+| Boundary wording | `unsupported_policy` must reject launch-only proof and silent fallback behavior. |
 
 ## Configuration
 
@@ -42,8 +145,7 @@ hand for mission intent.
 | --- | --- | --- |
 | `EATME_REAL_ALICE=1` | Yes for execution | Enables real Alice desktop execution for non-baseline scenarios. |
 | `ALICE_HOME=/home/azureuser/src/alice` | Yes for RabbitHole validation | Points to the RabbitHole Alice checkout. |
-| `NODE_OPTIONS=--max-old-space-size=32768` | Yes for Node-backed checks | Gives Node-backed wrappers enough memory. |
-| `ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype` | Only for prototype checks | Points to the TypeScript prototype checkout. |
+| `NODE_OPTIONS=--max-old-space-size=32768` | Yes for Node-backed wrappers | Gives Node-backed wrappers enough memory. |
 | `--run-id <id>` | Yes | Names the evidence directory for this run. |
 | `--runs-dir <path>` | Optional | Defaults to `runs`. |
 | `--starter-project <path>` | Optional | Opens a prepared starter project when Alice project creation is not available. |
@@ -55,17 +157,16 @@ Evidence artifacts must use paths relative to the run evidence directory. Any
 artifact path that is absolute, escapes with `..`, points through a symlink
 escape, or resolves outside the run directory is rejected.
 
-## Command contract
+## Target command contract
 
-Run the scenario:
+Preferred command:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
 export ALICE_HOME=/home/azureuser/src/alice
 
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
-  --scenario alice-objects-first-world \
   --run-id local-alice-objects-first-world \
   --runs-dir runs \
   --timeout 900 \
@@ -78,18 +179,31 @@ The command exits successfully only when every required workflow phase is
 accepted. It exits with failure when the run launches Alice but does not prove
 the full workflow.
 
-Required phases:
+If `alice launch-smoke --scenario alice-objects-first-world` remains supported,
+it must be a compatibility path that dispatches to this same coordinator and
+inherits the same pass/fail rules.
+
+## Workflow phase contracts
+
+The coordinator runs these phases in order and stops on the first missing
+prerequisite. It does not mark later phases as passed when an earlier phase is
+blocked.
 
 | Phase id | Required proof |
 | --- | --- |
 | `project-open` | A new project was created, or the configured starter project was opened. |
 | `object-placement` | A named visible object was added to the world. |
 | `object-transform` | The object position, rotation, or scale changed from its initial state. |
-| `procedure-edit` | A procedure contains movement for the named object. |
+| `procedure-edit` | A procedure contains executable movement for the named object. |
 | `run-world` | The world ran after the movement edit and produced visible run evidence. |
 | `project-save` | The edited project was saved under the current run evidence directory. |
 | `project-reopen` | The saved project artifact was reopened, not the starter project. |
 | `persisted-state` | The reopened project still contains the object, transform, and movement procedure. |
+
+This contract does not invent Alice-side `tools/eatme-*` commands for every
+phase. The implementation may use a Rust coordinator, existing documented
+save/reopen hooks, desktop automation, Alice APIs, or a combination of those
+mechanisms, but each phase must produce the evidence schemas below.
 
 ## Evidence contract
 
@@ -135,7 +249,7 @@ Required artifacts:
     "movement_operation": "move",
     "target_object_id": "bunny"
   },
-  "source_saved_project_artifact": "../project-save/saved-project.a3p"
+  "source_saved_project_artifact": "project-save/saved-project.a3p"
 }
 ```
 
@@ -155,7 +269,6 @@ The scenario extends the existing Alice run manifest with workflow evidence:
 | `workflow_phases[]` | Ordered phase statuses from project open through persisted-state verification. |
 | `artifacts[]` | Relative artifact paths and content digests for required evidence. |
 | `persisted_state.path` | Relative path to `project-reopen/persisted-state.json`. |
-| `typescript_prototype` | Comparable prototype result when the prototype check is requested. |
 | `product_issue_candidates[]` | Sanitized issue-ready summaries for claimed product behavior that blocked the workflow. |
 | `failure_category` | `null` on pass; otherwise the blocked or invalid phase category. |
 
@@ -163,107 +276,9 @@ Consumers must use `workflow_phases[]`, `persisted_state`, and
 `failure_category` instead of inferring success from process startup or
 screenshots alone.
 
-## Alice-side hook API
-
-Eatme invokes deterministic hooks from the Alice checkout when the desktop
-workflow reaches each phase. Hook paths are relative to `ALICE_HOME`.
-
-### Project create/open
-
-```bash
-tools/eatme-open-project \
-  --scenario alice-objects-first-world \
-  --starter-project core/resources/target/distribution/application/starter-projects/africa.a3p \
-  --evidence-dir runs/alice-objects-first-world/local/project-open \
-  --json
-```
-
-The hook prints `eatme.alice-project-open/v1` JSON and writes the opened or
-created project artifact under the evidence directory.
-
-### Object placement
-
-```bash
-tools/eatme-place-object \
-  --project runs/alice-objects-first-world/local/project-open/opened-project.a3p \
-  --object-id bunny \
-  --evidence-dir runs/alice-objects-first-world/local/object-placement \
-  --json
-```
-
-The hook must prove that the object is visible and connected to the opened
-project.
-
-### Object transform
-
-```bash
-tools/eatme-transform-object \
-  --project runs/alice-objects-first-world/local/object-placement/placed-object-project.a3p \
-  --object-id bunny \
-  --move-x 1.0 \
-  --rotate-y 15 \
-  --evidence-dir runs/alice-objects-first-world/local/object-transform \
-  --json
-```
-
-The hook must record before and after transform values for the same object.
-
-### Procedure edit
-
-```bash
-tools/eatme-edit-procedure \
-  --project runs/alice-objects-first-world/local/object-transform/transformed-object-project.a3p \
-  --procedure world.myFirstMethod \
-  --object-id bunny \
-  --movement "move forward 1 meter" \
-  --evidence-dir runs/alice-objects-first-world/local/procedure-edit \
-  --json
-```
-
-The hook must record executable movement intent. Placeholder text, comments, or
-unattached procedure notes are rejected.
-
-### Run world
-
-```bash
-tools/eatme-run-world \
-  --project runs/alice-objects-first-world/local/procedure-edit/edited-project.a3p \
-  --object-id bunny \
-  --evidence-dir runs/alice-objects-first-world/local/run-world \
-  --json
-```
-
-The hook must record that the world ran after the procedure edit and that the
-named object movement was observed or captured through accepted evidence.
-
-### Save project
-
-```bash
-tools/eatme-save-project \
-  --project runs/alice-objects-first-world/local/procedure-edit/edited-project.a3p \
-  --evidence-dir runs/alice-objects-first-world/local/project-save \
-  --json
-```
-
-The hook must write `saved-project.a3p` under `project-save/`.
-
-### Reopen project
-
-```bash
-tools/eatme-reopen-project \
-  --saved-project runs/alice-objects-first-world/local/project-save/saved-project.a3p \
-  --object-id bunny \
-  --evidence-dir runs/alice-objects-first-world/local/project-reopen \
-  --json
-```
-
-The hook must reopen the saved project artifact and write
-`persisted-state.json`. The persisted-state proof must reference the same saved
-project artifact from the same run.
-
 ## Rust API
 
-The workflow coordinator is exposed by `eatme-alice`:
+The planned workflow coordinator is exposed by `eatme-alice`:
 
 ```rust
 use eatme_alice::objects_first_workflow::{
@@ -292,22 +307,13 @@ Important public types:
 | `WorkflowPhaseEvidence` | One phase status with required artifact references and failure category. |
 | `PersistedStateEvidence` | Parsed object, transform, and procedure movement state from the reopened project. |
 
-The coordinator runs phases in order and stops on the first missing prerequisite.
-It does not mark later phases as passed when an earlier phase is blocked.
-
 ## TypeScript prototype adapter
 
-The prototype adapter validates comparable behavior against the TypeScript port
-when the port exposes the needed feature.
+Prototype coverage is future and conditional. Do not require
+`ALICE_WEB_PROTOTYPE_HOME` or document a `ts_prototype_adapter` test as part of
+the runnable workflow until that adapter exists.
 
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype
-
-cargo test -p eatme-alice --test ts_prototype_adapter -- --ignored
-```
-
-Adapter outputs use these states:
+When implemented, adapter outputs must use these states:
 
 | State | Meaning |
 | --- | --- |
@@ -316,9 +322,9 @@ Adapter outputs use these states:
 | `blocked` | The prototype claims the behavior, but the adapter cannot collect valid evidence. |
 | `invalid` | The prototype returned malformed, unsafe, or out-of-run evidence. |
 
-Reopen and transform gaps are product issues only when the TypeScript port
-claims those behaviors. Otherwise they remain explicit unsupported gaps in the
-adapter result.
+Reopen and transform gaps are product issues only when the TypeScript port claims
+those behaviors. Otherwise they remain explicit unsupported gaps in the adapter
+result.
 
 ## Path and issue safety
 
@@ -331,7 +337,7 @@ When a product bug blocks the workflow, issue-ready output includes only:
 - scenario id;
 - run id;
 - blocked phase;
-- target name (`RabbitHole Alice` or `TypeScript prototype`);
+- target name (`RabbitHole Alice` or supported prototype);
 - display-safe summary;
 - expected behavior;
 - observed behavior;

@@ -156,7 +156,7 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         status: status.into(),
         detail: "edit probe detail".into(),
         procedure_selector: "scene.myFirstMethod".into(),
-        edit_spec: "append-comment:eatme first lesson edit proof".into(),
+        edit_spec: "append-movement:bunny.move(FORWARD,1.0)".into(),
         candidate_hook_path: "tools/eatme-edit-procedure".into(),
         command: Some("tools/eatme-edit-procedure --json".into()),
         exit_status: Some(0),

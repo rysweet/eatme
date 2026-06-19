@@ -8,6 +8,7 @@ mod launch_desktop_execution;
 mod launch_edit_procedure;
 mod launch_license;
 mod launch_object_placement;
+mod launch_object_transform;
 mod launch_options;
 mod launch_path_validation;
 mod launch_preflight;
@@ -22,6 +23,7 @@ mod launch_ui_action_contract;
 mod launch_ui_actions;
 mod launch_window_activation;
 mod launch_window_targeting;
+mod objects_first_workflow;
 pub mod package;
 pub mod scenario;
 

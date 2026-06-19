@@ -7,8 +7,8 @@
 Multiple docs pages still hardcode `93` scenario assets even though the current validator and generated adapters now use `105`.
 
 ## Evidence
-- PASS 1 validation run: `cargo run -q -p eatme-cli -- assets validate --json` returned `"scenario_asset_count": 105` with empty `errors` and `warnings`.
-- `assets/scenarios/gadugi/building-a-scene-first-world.yaml:36-39` now expects `"scenario_asset_count": 105`.
+- PASS 1 validation run: `cargo run -q -p eatme-cli -- assets validate --json` returned `"scenario_asset_count": 107` with empty `errors` and `warnings`.
+- `assets/scenarios/gadugi/building-a-scene-first-world.yaml:36-39` now expects `"scenario_asset_count": 107`.
 - `docs/generated-asset-consistency.md:52-69` still says the committed inventory has 93 scenario YAML files and shows adapters expecting `"scenario_asset_count": 93`.
 - `docs/first-lesson-grading-report.md:69-70` and `:123-124` still show `All 93 scenario assets passed validation`.
 

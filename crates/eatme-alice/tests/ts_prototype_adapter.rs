@@ -65,6 +65,13 @@ struct SaveResponse {
     status: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct ReopenResponse {
+    status: String,
+    #[serde(rename = "persistedState")]
+    persisted_state: Value,
+}
+
 fn http_client() -> ureq::Agent {
     ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(5))
@@ -1249,4 +1256,118 @@ fn ts_prototype_silver_thread_journey() {
     assert_eq!(save.status, "saved");
 
     eprintln!("TS prototype silver thread: all 6 steps passed");
+}
+
+#[test]
+fn ts_prototype_objects_first_workflow_when_port_claims_support() {
+    if !ts_enabled() {
+        eprintln!("skipping TS prototype objects-first test (set EATME_TS_PROTOTYPE=1)");
+        return;
+    }
+
+    let base = base_url();
+    let client = http_client();
+    let health: Value = client
+        .get(&format!("{base}/api/health"))
+        .call()
+        .expect("health check failed")
+        .into_json()
+        .expect("invalid health JSON");
+
+    if !claims_objects_first_support(&health) {
+        eprintln!("skipping TS prototype objects-first workflow: port does not claim support");
+        return;
+    }
+
+    let launch: LaunchResponse = client
+        .post(&format!("{base}/api/launch"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first launch failed")
+        .into_json()
+        .expect("invalid objects-first launch JSON");
+    assert_eq!(launch.status, "launched");
+
+    let add: AddObjectResponse = client
+        .post(&format!("{base}/api/scene/add-object"))
+        .send_json(ureq::json!({
+            "className": "org.lgna.story.SBiped",
+            "name": "bunny",
+            "visible": true
+        }))
+        .expect("objects-first add visible object failed")
+        .into_json()
+        .expect("invalid add visible object JSON");
+    assert_eq!(add.status, "added");
+
+    let transform: Value = client
+        .post(&format!("{base}/api/scene/transform-object"))
+        .send_json(ureq::json!({
+            "name": "bunny",
+            "position": { "x": 1.5, "y": 0.0, "z": -2.0 },
+            "scale": 1.25
+        }))
+        .expect("objects-first transform failed")
+        .into_json()
+        .expect("invalid transform JSON");
+    assert_eq!(transform["status"], "transformed");
+    assert_eq!(transform["object"]["visible"], true);
+
+    let edit: EditResponse = client
+        .post(&format!("{base}/api/code/edit-procedure"))
+        .send_json(ureq::json!({
+            "procedureSelector": "scene.myFirstMethod",
+            "editSpec": {
+                "kind": "append-movement",
+                "object": "bunny",
+                "method": "move",
+                "direction": "FORWARD",
+                "amount": 1.0
+            }
+        }))
+        .expect("objects-first movement edit failed")
+        .into_json()
+        .expect("invalid movement edit JSON");
+    assert!(
+        edit.status == "edited" || edit.status == "proved",
+        "movement edit must be edited/proved, got {}",
+        edit.status
+    );
+    assert!(!edit.evidence_artifact.is_empty());
+
+    let run: RunResponse = client
+        .post(&format!("{base}/api/world/run"))
+        .send_json(ureq::json!({ "procedureSelector": "scene.myFirstMethod" }))
+        .expect("objects-first run failed")
+        .into_json()
+        .expect("invalid objects-first run JSON");
+    assert_eq!(run.status, "completed");
+
+    let save: SaveResponse = client
+        .post(&format!("{base}/api/project/save"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first save failed")
+        .into_json()
+        .expect("invalid objects-first save JSON");
+    assert_eq!(save.status, "saved");
+
+    let reopen: ReopenResponse = client
+        .post(&format!("{base}/api/project/reopen"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first reopen failed")
+        .into_json()
+        .expect("invalid objects-first reopen JSON");
+    assert_eq!(reopen.status, "reopened");
+    assert_eq!(reopen.persisted_state["object"]["name"], "bunny");
+    assert_eq!(reopen.persisted_state["object"]["visible"], true);
+    assert_eq!(
+        reopen.persisted_state["procedure"]["movement"]["object"],
+        "bunny"
+    );
+}
+
+fn claims_objects_first_support(health: &Value) -> bool {
+    let text = serde_json::to_string(health)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    text.contains("objects-first") || text.contains("object_transform") || text.contains("reopen")
 }

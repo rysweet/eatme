@@ -57,10 +57,31 @@ enum AliceCommand {
     Discover(AliceHomeArgs),
     Package(PackageArgs),
     LaunchSmoke(LaunchSmokeArgs),
+    RunObjectsFirstWorld(ObjectsFirstWorldArgs),
     CompareLaunchSmoke(CompareLaunchSmokeArgs),
     CheckLessonSession(CheckLessonSessionArgs),
     CheckLessonReadiness(CheckLessonSessionArgs),
     RunFirstLessonReadiness(RunFirstLessonReadinessArgs),
+}
+
+#[derive(Args)]
+struct ObjectsFirstWorldArgs {
+    #[arg(long, env = "ALICE_HOME")]
+    alice_home: PathBuf,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, default_value = "runs")]
+    runs_dir: PathBuf,
+    #[arg(long, default_value_t = 900)]
+    timeout: u64,
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    no_memory: bool,
+    #[arg(long)]
+    offline_package: bool,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
 }
 
 #[derive(Args)]
@@ -234,6 +255,27 @@ fn main() -> Result<()> {
                 print_result(args.json, &manifest)?;
                 if let Some(category) = manifest.failure_category {
                     bail!("launch smoke failed: {category}");
+                }
+            }
+            AliceCommand::RunObjectsFirstWorld(args) => {
+                ensure_real_alice_gate("alice-objects-first-world")?;
+                let mut scenario = LaunchSmokeScenario::new("alice-objects-first-world");
+                if let Some(starter_project) = args.starter_project {
+                    scenario = scenario.with_starter_project(starter_project);
+                }
+                let manifest = run_launch_smoke(&LaunchSmokeOptions {
+                    alice_home: args.alice_home,
+                    run_id: args.run_id,
+                    runs_dir: args.runs_dir,
+                    timeout_seconds: args.timeout,
+                    json: args.json,
+                    no_memory: args.no_memory,
+                    offline_package: args.offline_package,
+                    scenario,
+                })?;
+                print_result(args.json, &manifest)?;
+                if let Some(category) = manifest.failure_category {
+                    bail!("objects-first workflow failed: {category}");
                 }
             }
             AliceCommand::CompareLaunchSmoke(args) => {
