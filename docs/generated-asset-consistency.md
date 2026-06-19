@@ -68,7 +68,7 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 105'
+    - '"scenario_asset_count": 107'
 ```
 
 Instructor agentic generated adapters still run `assets validate --json`, but
@@ -261,7 +261,7 @@ includes:
 {
   "schema_version": "eatme.assets/validation/v1",
   "passed": true,
-  "scenario_asset_count": 105,
+  "scenario_asset_count": 107,
   "errors": []
 }
 ```
@@ -272,7 +272,7 @@ count:
 ```yaml
 stdout_contains:
   - '"passed": true'
-  - '"scenario_asset_count": 105'
+  - '"scenario_asset_count": 107'
 ```
 
 ### Stale adapter check

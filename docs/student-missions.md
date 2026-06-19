@@ -24,7 +24,7 @@ The canonical student persona crew lives in:
 assets/personas/alice-user-crew.yaml
 ```
 
-Student personas include:
+Student personas include examples such as:
 
 | Persona | Learner focus |
 | --- | --- |
@@ -47,21 +47,18 @@ Student personas include:
 Student-facing scenarios cover Alice modernization from visible learner outcomes,
 not internal Alice implementation details.
 
-Current audit inventory:
-
-- 36 canonical scenario assets under `assets/scenarios/eatme/`
-- 37 Gadugi scenario assets under `assets/scenarios/gadugi/` (36 generated
-  adapters and 1 hand-authored validation regression)
-- 24 personas in `assets/personas/alice-user-crew.yaml`
-- 35 canonical scenarios name at least one student persona; `real-alice-launch-smoke`
-  is the baseline launch evidence scenario and names no student persona
+Current inventory is discovered from committed assets instead of hard-coded in
+this page. Use `cargo run -q -p eatme-cli -- assets validate --json` for
+`scenario_asset_count`, persona counts, errors, and warnings. Generated adapter
+freshness is checked with `cargo run -q -p eatme-cli -- assets generate-gadugi
+--check --json`.
 
 Committed student-facing scenario assets currently include:
 
 | Scenario id | Primary student personas | Student outcome |
 | --- | --- | --- |
 | `hour-of-code-studio-kickoff` | `curious-novice`, `creative-storyteller`, `reflective-debugger` | Build a tiny first scene or fallback studio role, record first animation evidence, and connect one visible change to a student choice. |
-| `alice-objects-first-world` | `curious-novice`, `reflective-debugger` | Create or open a world, add a visible object, change it, make it move, run, save, reopen, and confirm the saved behavior remains. |
+| `alice-objects-first-world` | `curious-novice`, `reflective-debugger` | Planned workflow: create or open a world, add a visible object, change it, make it move, run, save, reopen, and confirm the saved behavior remains. |
 | `starter-project-open-save-export-preflight` | `creative-storyteller`, `accessibility-advocate` | Open the bundled starter project and collect bounded preflight evidence before any save, reopen, or export journey is trusted. |
 | `first-lessons-real-ui-actions` | `curious-novice`, `creative-storyteller` | Record the first object, procedure, run, and save action contract plus learner packet expectations without claiming full UI automation. |
 | `building-a-scene-first-world` | `curious-novice`, `creative-storyteller` | Build a small world, predict audience focus, run Alice, revise one visible scene choice. |

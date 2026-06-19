@@ -44,6 +44,10 @@ use crate::launch_ui_actions::{
 };
 use crate::launch_window_activation::ui_action_activation_failure_category;
 use crate::launch_window_targeting::alice_window_search;
+use crate::objects_first_workflow::{
+    create_or_open_project_assertion, is_objects_first_scenario, persisted_state_assertion,
+    record_evidence_summary,
+};
 use crate::package::{PackageOptions, package_alice};
 use anyhow::Result;
 use eatme_core::{LaunchSmokeManifest, RealCommandRunner};
@@ -255,6 +259,15 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     );
     if !process_started {
         failure_category = Some("alice_process_exited".into());
+    }
+    if is_objects_first_scenario(&options.scenario.id) {
+        assertions.insert(
+            "create_or_open_project_ui_action".into(),
+            create_or_open_project_assertion(
+                process_started,
+                &options.alice_home.join(&options.scenario.starter_project),
+            ),
+        );
     }
     let (window_text, window_list_error) =
         capture_text_or_error(capture_window_list(&runner, display.name(), &run_dir));

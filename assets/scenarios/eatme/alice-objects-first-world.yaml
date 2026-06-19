@@ -1,0 +1,181 @@
+schema_version: eatme.scenario/v1
+id: alice-objects-first-world
+title: Alice Objects-First World
+kind: alice_objects_first_workflow
+owner: eatme
+resource_basis:
+  - name: Alice.org Objects First with Alice
+    url: https://www.alice.org/resources/
+    use: Ground the journey in Alice learning where students first meet objects as visible parts of a world.
+  - name: Alice.org Alice 3 lessons
+    url: https://www.alice.org/resources/alice-3-lessons/
+    use: "Keep the workflow learner-facing: add an object, change it, give it movement, run, save, and reopen."
+purpose: >-
+  Walk a learner through a real Alice objects-first workflow: create or open an
+  Alice project, add one visible object, position and transform it, add movement
+  to a procedure, run the world, save the project, reopen it, verify persisted
+  state, and record evidence for every major step.
+launcher:
+  command: alice run-objects-first-world
+  scenario: alice-objects-first-world
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - concept-cartographer
+    - debug-coach
+  students:
+    - curious-novice
+    - reflective-debugger
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+    - alice-object-placement-hook
+    - alice-object-transform-hook
+    - alice-procedure-movement-hook
+    - alice-world-run-hook
+    - alice-project-save-hook
+    - alice-project-reopen-hook
+  optional:
+    - glxinfo
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+    - alice-rabbithole
+    - alice-web-prototype
+agentic_test_prompt: >-
+  Build one Alice world the way a learner would: create or open the project,
+  add a visible bunny, move it into place, add bunny movement to
+  scene.myFirstMethod, run the world, save, reopen, verify the saved world still
+  contains the visible transformed bunny and movement procedure, then record the
+  evidence artifacts.
+acceptance_criteria:
+  - given: Real Alice is available at the configured ALICE_HOME
+    when: alice run-objects-first-world starts the scenario
+    then: the manifest identifies scenario_id alice-objects-first-world and records create_or_open_project_ui_action
+  - given: the project is open
+    when: the learner adds the bunny object and changes its position and scale
+    then: object placement and object transform artifacts prove the bunny is visible and transformed
+  - given: the transformed bunny is in the world
+    when: the learner edits scene.myFirstMethod
+    then: procedure evidence proves a movement command for bunny, not placeholder text
+  - given: the movement procedure exists
+    when: the learner runs, saves, and reopens the world
+    then: run, save, reopen, and persisted state artifacts prove the saved world still contains the expected object, transform, movement, and run state
+acceptance_probes:
+  - manifest assertions include create_or_open_project_ui_action passed=true
+  - manifest assertions include place_object_ui_action passed=true
+  - manifest assertions include transform_object_ui_action passed=true
+  - manifest assertions include edit_movement_procedure_ui_action passed=true
+  - manifest assertions include run_world_ui_action passed=true
+  - manifest assertions include save_project_ui_action passed=true
+  - manifest assertions include reopen_project_ui_action passed=true
+  - manifest assertions include persisted_state_verified passed=true
+  - objects-first evidence summary lists every major workflow step
+rubric:
+  - criterion: Open a project before changing it.
+    evidence:
+      - manifest assertion create_or_open_project_ui_action passed=true
+  - criterion: Add and transform one visible object.
+    evidence:
+      - object-placement placement artifact names bunny and visible=true
+      - object-transform artifact records position x=1.5 y=0.0 z=-2.0 and scale=1.25
+  - criterion: Make the object move from a procedure.
+    evidence:
+      - procedure-edit artifact names scene.myFirstMethod and bunny move movement
+  - criterion: Prove the saved world can be trusted after reopen.
+    evidence:
+      - project-reopen persisted-state.json contains the bunny object, transform, movement procedure, and world run status
+avoid:
+  - Do not use launch-only checks as evidence for the learner workflow.
+  - Do not accept placeholder procedure text as movement proof.
+  - Do not accept absolute evidence paths, parent-directory paths, or artifacts outside the run directory.
+  - Do not store credentials, tokens, full environment dumps, or unrelated desktop captures in evidence.
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes this scenario asset
+  - id: check-dependencies
+    command: cargo run -q -p eatme-cli -- deps check --json
+    evidence:
+      - stdout JSON has all_required_available=true
+  - id: create-or-open-project
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+    evidence:
+      - manifest artifact assertion create_or_open_project_ui_action passed=true
+      - manifest scenario_id equals alice-objects-first-world
+  - id: add-visible-object
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/object-placement/placement.json
+    evidence:
+      - object-placement artifact proves a visible object named bunny was added
+      - manifest assertion place_object_ui_action passed=true
+  - id: position-and-transform-object
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/object-transform/object-transform.json
+    evidence:
+      - object-transform artifact proves bunny position and scale changed
+      - manifest assertion transform_object_ui_action passed=true
+  - id: edit-movement-procedure
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/procedure-edit/procedure-movement.json
+    evidence:
+      - procedure-edit artifact proves scene.myFirstMethod contains bunny move movement
+      - manifest assertion edit_movement_procedure_ui_action passed=true
+  - id: run-world
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/world-run/world-run.json
+    evidence:
+      - world-run artifact proves the world ran after the movement procedure edit
+      - manifest assertion run_world_ui_action passed=true
+  - id: save-project
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/project-save/project-save.json
+    evidence:
+      - project-save artifact proves the edited world was saved
+      - manifest assertion save_project_ui_action passed=true
+  - id: reopen-project
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/project-reopen/project-reopen.json
+    evidence:
+      - project-reopen artifact proves the saved project was reopened
+      - manifest assertion reopen_project_ui_action passed=true
+  - id: verify-persisted-state
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/project-reopen/persisted-state.json
+    evidence:
+      - persisted state artifact proves bunny remains visible, transformed, movable through scene.myFirstMethod, and run-ready after reopen
+      - manifest assertion persisted_state_verified passed=true
+  - id: record-evidence
+    command: inspect runs/alice-objects-first-world/${RUN_ID}/objects-first-evidence.json
+    evidence:
+      - evidence summary lists create/open, object add, transform, movement procedure edit, run the world, save, reopen, and persisted state proof
+      - manifest assertion objects_first_evidence_recorded passed=true
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-objects-first-world/${RUN_ID}/manifest.json
+  ui_action_contract: runs/alice-objects-first-world/${RUN_ID}/ui-action-contract.json
+  object_placement: runs/alice-objects-first-world/${RUN_ID}/object-placement/placement.json
+  object_transform: runs/alice-objects-first-world/${RUN_ID}/object-transform/object-transform.json
+  procedure_edit: runs/alice-objects-first-world/${RUN_ID}/procedure-edit/procedure-movement.json
+  world_run: runs/alice-objects-first-world/${RUN_ID}/world-run/world-run.json
+  project_save: runs/alice-objects-first-world/${RUN_ID}/project-save/project-save.json
+  project_reopen: runs/alice-objects-first-world/${RUN_ID}/project-reopen/project-reopen.json
+  persisted_state: runs/alice-objects-first-world/${RUN_ID}/project-reopen/persisted-state.json
+  evidence_summary: runs/alice-objects-first-world/${RUN_ID}/objects-first-evidence.json
+unsupported_policy: >-
+  If real Alice, desktop dependencies, or any required Alice-side hook is missing,
+  fail loudly with a product gap. Do not substitute launch-only proof, mocked
+  object state, placeholder movement text, or evidence outside the run directory.

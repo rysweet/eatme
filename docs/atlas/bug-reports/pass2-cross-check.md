@@ -46,7 +46,7 @@
 **Pass 1 verdict:** FAIL — docs still teach the old scenario-asset count  
 **Pass 2 verdict:** **CONFIRMED**
 
-**Rationale:** The repository now treats `105` as the canonical count. `crates/eatme-assets/src/lib.rs:199-204` asserts `report.scenario_asset_count == 105`, and `assets/scenarios/gadugi/building-a-scene-first-world.yaml:34-39` expects `"scenario_asset_count": 105`. The stale references remain in `docs/generated-asset-consistency.md:52-69` and `docs/first-lesson-grading-report.md:69-70` plus `docs/first-lesson-grading-report.md:122-129`, so Pass 1 is fully supported.
+**Rationale:** The repository now treats `105` as the canonical count. `crates/eatme-assets/src/lib.rs:199-204` asserts `report.scenario_asset_count == 105`, and `assets/scenarios/gadugi/building-a-scene-first-world.yaml:34-39` expects `"scenario_asset_count": 107`. The stale references remain in `docs/generated-asset-consistency.md:52-69` and `docs/first-lesson-grading-report.md:69-70` plus `docs/first-lesson-grading-report.md:122-129`, so Pass 1 is fully supported.
 
 ### `pass1-web-load-is-synthetic.md`
 

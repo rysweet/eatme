@@ -193,7 +193,7 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         status: status.into(),
         detail: "edit probe detail".into(),
         procedure_selector: "scene.myFirstMethod".into(),
-        edit_spec: "append-comment:eatme first lesson edit proof".into(),
+        edit_spec: "append-movement:bunny.move(FORWARD,1.0)".into(),
         candidate_hook_path: "tools/eatme-edit-procedure".into(),
         command: Some("tools/eatme-edit-procedure --json".into()),
         exit_status: Some(0),
@@ -205,6 +205,28 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         missing_affordance: None,
         edit_procedure_verified: false,
         proof_detail: None,
+    }
+}
+
+fn object_transform_probe_with_status(status: &str) -> UiActionObjectTransformProbe {
+    UiActionObjectTransformProbe {
+        id: "alice-side-object-transform-command-hook".into(),
+        action_id: "transform-object".into(),
+        status: status.into(),
+        detail: "transform probe detail".into(),
+        object_identifier: "alice-gallery://animals/bunny".into(),
+        candidate_hook_path: "tools/eatme-transform-object".into(),
+        command: Some("tools/eatme-transform-object --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        transform_artifact: artifact_if_passed(status, "object-transform/object-transform.json"),
+        transformed_project_artifact: artifact_if_passed(
+            status,
+            "object-transform/transformed-project.a3p",
+        ),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
     }
 }
 
@@ -249,6 +271,27 @@ fn save_project_probe_with_status(status: &str) -> UiActionSaveProjectProbe {
         stderr: String::new(),
         saved_project_artifact: artifact_if_passed(status, "project-save/project.a3p"),
         save_artifact: artifact_if_passed(status, "project-save/save.json"),
+        validation_errors: Vec::new(),
+        missing_affordance: None,
+    }
+}
+
+fn reopen_project_probe_with_status(status: &str) -> UiActionReopenProjectProbe {
+    UiActionReopenProjectProbe {
+        id: "alice-side-project-reopen-command-hook".into(),
+        action_id: "reopen-project".into(),
+        status: status.into(),
+        detail: "reopen project detail".into(),
+        reopen_selector: "scene.myFirstMethod".into(),
+        candidate_hook_path: "tools/eatme-reopen-project".into(),
+        command: Some("tools/eatme-reopen-project --json".into()),
+        exit_status: Some(0),
+        stdout: String::new(),
+        stderr: String::new(),
+        source_saved_project_artifact: "project-save/project.a3p".into(),
+        reopened_project_artifact: artifact_if_passed(status, "project-reopen/reopened.a3p"),
+        reopen_artifact: artifact_if_passed(status, "project-reopen/reopen.json"),
+        reopened_state_artifact: artifact_if_passed(status, "project-reopen/persisted-state.json"),
         validation_errors: Vec::new(),
         missing_affordance: None,
     }
@@ -335,9 +378,11 @@ fn record_ui_action_blockers_records_artifact_and_run_world_no_go() {
     let place_object_precondition_probe =
         probe_place_object_preconditions(true, true, true, Some(&activation_probe));
     let object_placement_probe = object_placement_probe_with_status("passed");
+    let object_transform_probe = object_transform_probe_with_status("passed");
     let edit_procedure_probe = edit_procedure_probe_with_status("passed");
     let run_world_probe = run_world_probe_with_status("blocked");
     let save_project_probe = save_project_probe_with_status("blocked");
+    let reopen_project_probe = reopen_project_probe_with_status("blocked");
     let mut assertions = std::collections::BTreeMap::new();
 
     record_ui_action_blockers(
@@ -349,13 +394,16 @@ fn record_ui_action_blockers_records_artifact_and_run_world_no_go() {
         },
         &place_object_precondition_probe,
         &object_placement_probe,
+        &object_transform_probe,
         &edit_procedure_probe,
         &run_world_probe,
         &save_project_probe,
+        &reopen_project_probe,
     );
 
     assert!(assertions["place_object_ui_action"].passed);
     assert!(assertions["edit_procedure_ui_action"].passed);
+    assert!(assertions["transform_object_ui_action"].passed);
     assert!(!assertions["run_world_ui_action"].passed);
     assert!(assertions.contains_key("run_world_precondition_no_go_probe"));
     assert!(assertions["ui_action_artifact_captured"].passed);

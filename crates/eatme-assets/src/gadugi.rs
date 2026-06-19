@@ -250,6 +250,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
             author: "eatme".into(),
             test_type: match scenario.kind.as_str() {
                 "alice_real_ui_action_contract" => "ui-action-contract",
+                "alice_objects_first_workflow" => "objects-first-workflow",
                 _ => "launch-smoke",
             }
             .into(),

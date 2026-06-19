@@ -108,9 +108,9 @@ Readiness consumers should inspect the normalized `status`,
 `lesson_session_readiness`, and `no_go_contracts` fields documented in
 [Lesson Session Readiness](lesson-session-readiness.md).
 
-The `alice-objects-first-world` adapter is different: it expects the full
-workflow to pass. It must not accept a run that only starts Alice. It should
-inspect the eatme manifest, `workflow_phases[]`, and
+The planned `alice-objects-first-world` adapter is different: it expects the
+full workflow to pass once the workflow exists. It must not accept a run that
+only starts Alice. It should inspect the eatme manifest, `workflow_phases[]`, and
 `project-reopen/persisted-state.json` contract documented in
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
 
@@ -131,7 +131,6 @@ output patterns across 25+ adapters. Templates live in
 `include_str!()`. The generator substitutes per-scenario values (asset count,
 scenario id) and inlines the result — generated YAML is still self-contained.
 See [Step Block Composition](step-block-composition.md) for template format,
-placeholder reference, and instructions for adding new step blocks.
 placeholder reference, and instructions for adding new step blocks.
 
 ## Editing policy

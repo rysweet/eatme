@@ -116,7 +116,7 @@ pub(crate) fn probe_edit_procedure_hook(
 ) -> UiActionEditProcedureProbe {
     let hook_path = alice_home.join(DEFAULT_PROCEDURE_EDIT_HOOK);
     let evidence_dir = run_dir.join("procedure-edit");
-    let placed_project = run_dir.join("object-placement").join("placed-project.a3p");
+    let project_after_object_change = project_after_object_change_path(run_dir);
     if !object_placement_probe.proves_placement() {
         return blocked_edit_procedure_probe(
             &hook_path,
@@ -134,7 +134,7 @@ pub(crate) fn probe_edit_procedure_hook(
             Some(missing_procedure_edit_affordance()),
         );
     }
-    if !placed_project.is_file() {
+    if !project_after_object_change.is_file() {
         return failed_edit_procedure_probe(
             &hook_path,
             None,
@@ -142,8 +142,8 @@ pub(crate) fn probe_edit_procedure_hook(
             String::new(),
             String::new(),
             vec![format!(
-                "object placement did not leave a placed project at {}",
-                placed_project.display()
+                "object placement or transform did not leave a project at {}",
+                project_after_object_change.display()
             )],
         );
     }
@@ -166,7 +166,7 @@ pub(crate) fn probe_edit_procedure_hook(
         &CommandSpec::new(hook_path.display().to_string())
             .args([
                 "--project".to_string(),
-                placed_project.display().to_string(),
+                project_after_object_change.display().to_string(),
                 "--procedure-selector".to_string(),
                 DEFAULT_PROCEDURE_SELECTOR.to_string(),
                 "--edit-spec".to_string(),
@@ -188,7 +188,7 @@ pub(crate) fn probe_edit_procedure_hook(
                 Some(format!(
                     "{} --project {} --procedure-selector {} --edit-spec {} --evidence-dir {} --json",
                     hook_path.display(),
-                    placed_project.display(),
+                    project_after_object_change.display(),
                     DEFAULT_PROCEDURE_SELECTOR,
                     DEFAULT_EDIT_SPEC,
                     evidence_dir.display()
@@ -267,6 +267,11 @@ pub(crate) fn probe_edit_procedure_hook(
     {
         validation_errors.push("procedure_or_code_diff must be non-empty".into());
     }
+    if result.status != "proved"
+        && let Some(diff_path) = result.procedure_or_code_diff.as_deref()
+    {
+        validation_errors.extend(validate_movement_diff(&evidence_dir, diff_path));
+    }
 
     let status = if validation_errors.is_empty() {
         "passed"
@@ -275,7 +280,7 @@ pub(crate) fn probe_edit_procedure_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side procedure edit hook returned non-empty edited project and procedure/code diff for {DEFAULT_PROCEDURE_SELECTOR}"
+            "Alice-side procedure edit hook returned non-empty edited project and movement diff for {DEFAULT_PROCEDURE_SELECTOR}"
         )
     } else {
         format!(
@@ -517,7 +522,7 @@ pub(crate) fn probe_edit_procedure_preconditions(
         decision: "no_go".into(),
         blocking_reason: blocking_reason.into(),
         required_evidence:
-            "artifact proves a procedure or code block was edited in the project after object placement"
+            "artifact proves a movement command was added to the procedure after object placement and transform"
                 .into(),
         missing_affordance: missing_procedure_edit_affordance(),
         preconditions: vec![
@@ -541,8 +546,8 @@ fn missing_procedure_edit_affordance() -> UiActionMissingAffordance {
     UiActionMissingAffordance {
         id: "deterministic-alice-procedure-edit-affordance".into(),
         kind: "backend_or_ui_affordance".into(),
-        required_capability: "Given a project after object placement plus a named procedure or code-block selector, deterministically edit that procedure or code block and return proof of the edit.".into(),
-        missing_contract: format!("No Alice-side command at {DEFAULT_PROCEDURE_EDIT_HOOK}, accessibility target, or editor automation contract currently accepts a procedure/code-block selector and returns an edited project artifact plus a procedure/code diff."),
+        required_capability: "Given a project after object placement and transform plus a named procedure selector, deterministically add object movement and return proof of the edit.".into(),
+        missing_contract: format!("No Alice-side command at {DEFAULT_PROCEDURE_EDIT_HOOK}, accessibility target, or editor automation contract currently accepts a procedure selector and returns an edited project artifact plus a movement diff."),
         next_implementation: "Add one stable affordance: either an Alice-side procedure edit command hook defined by this contract, or a UI automation contract with a named editor target plus saved-project or AST diff verification.".into(),
     }
 }
@@ -746,12 +751,54 @@ fn hook_artifact(
     }
 
     let full_path = evidence_dir.join(path);
-    artifact_info(&full_path).map_err(|error| {
+    let mut artifact = artifact_info(&full_path).map_err(|error| {
         format!(
             "{field} {} is not a readable artifact: {error:#}",
             full_path.display()
         )
-    })
+    })?;
+    artifact.path = Path::new("procedure-edit").join(path).display().to_string();
+    Ok(artifact)
+}
+
+fn project_after_object_change_path(run_dir: &Path) -> std::path::PathBuf {
+    let transformed_project = run_dir
+        .join("object-transform")
+        .join("transformed-project.a3p");
+    if transformed_project.is_file() {
+        transformed_project
+    } else {
+        run_dir.join("object-placement").join("placed-project.a3p")
+    }
+}
+
+fn validate_movement_diff(evidence_dir: &Path, relative_path: &str) -> Vec<String> {
+    let path = Path::new(relative_path);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return vec!["procedure_or_code_diff must be a simple relative path".into()];
+    }
+    let full_path = evidence_dir.join(path);
+    let content = match fs::read_to_string(&full_path) {
+        Ok(content) => content.to_ascii_lowercase(),
+        Err(error) => {
+            return vec![format!(
+                "procedure_or_code_diff {} is not readable movement proof: {error:#}",
+                full_path.display()
+            )];
+        }
+    };
+    let mut errors = Vec::new();
+    if !content.contains("bunny") {
+        errors.push("procedure_or_code_diff must name the moved object bunny".into());
+    }
+    if !content.contains("move") && !content.contains("movement") {
+        errors.push("procedure_or_code_diff must prove movement intent".into());
+    }
+    errors
 }
 
 #[cfg(test)]

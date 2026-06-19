@@ -135,20 +135,163 @@ fn validate_eatme_scenario(
         "alice_class_portability_smoke" => {
             portability::validate_class_portability_scenario(scenario, &mut errors)
         }
+        "alice_objects_first_workflow" => {
+            validate_objects_first_workflow(scenario, persona_index, persona_diagnostics, &mut errors)
+        }
         "instructor_agentic_flow" => validate_instructor_agentic_flow(scenario, &mut errors),
         "" if scenario.id == "real-alice-launch-smoke" => {
             validate_legacy_launch_smoke(scenario, &mut errors)
         }
         "" => errors.push("kind must be defined".into()),
         other => errors.push(format!(
-            "kind must be alice_lesson_smoke, alice_real_ui_action_contract, alice_class_portability_smoke, or instructor_agentic_flow, got {other}"
+            "kind must be alice_lesson_smoke, alice_real_ui_action_contract, alice_class_portability_smoke, alice_objects_first_workflow, or instructor_agentic_flow, got {other}"
         )),
+    }
+
+    fn validate_objects_first_workflow(
+        scenario: &EatmeScenarioAsset,
+        persona_index: Option<&PersonaReferenceIndex>,
+        persona_diagnostics: &[String],
+        errors: &mut Vec<String>,
+    ) {
+        if scenario.id != "alice-objects-first-world" {
+            errors.push("alice_objects_first_workflow id must be alice-objects-first-world".into());
+        }
+        if scenario.owner != "eatme" {
+            errors.push("owner must be eatme".into());
+        }
+        match &scenario.real_alice {
+            Some(real_alice) if real_alice.gated_by == "EATME_REAL_ALICE=1" => {}
+            Some(real_alice) => errors.push(format!(
+                "real_alice.gated_by must be EATME_REAL_ALICE=1, got {}",
+                real_alice.gated_by
+            )),
+            None => errors.push("real_alice.gated_by must be EATME_REAL_ALICE=1".into()),
+        }
+        match &scenario.personas {
+            Some(personas) => validate_scenario_personas(
+                &scenario.id,
+                personas,
+                persona_index,
+                persona_diagnostics,
+                errors,
+            ),
+            None => {
+                errors.push("personas.instructors and personas.students must be defined".into())
+            }
+        }
+        validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+        validate_rubric(&scenario.rubric, errors);
+        require_timeout_and_policy(scenario, errors);
+
+        let launch_command = scenario
+            .launcher
+            .as_ref()
+            .map(|launcher| launcher.command.as_str())
+            .unwrap_or("");
+        if launch_command != "alice run-objects-first-world" {
+            errors.push("launcher.command must be alice run-objects-first-world".into());
+        }
+        if scenario
+            .steps
+            .iter()
+            .any(|step| step.command.contains("alice launch-smoke"))
+        {
+            errors.push("objects-first workflow steps must not use alice launch-smoke".into());
+        }
+        for required in [
+            "validate-assets",
+            "check-dependencies",
+            "create-or-open-project",
+            "add-visible-object",
+            "position-and-transform-object",
+            "edit-movement-procedure",
+            "run-world",
+            "save-project",
+            "reopen-project",
+            "verify-persisted-state",
+            "record-evidence",
+        ] {
+            if !scenario.steps.iter().any(|step| step.id == required) {
+                errors.push(format!(
+                    "objects-first workflow step {required} must be defined"
+                ));
+            }
+        }
+        for artifact in [
+            "manifest",
+            "ui_action_contract",
+            "object_placement",
+            "object_transform",
+            "procedure_edit",
+            "world_run",
+            "project_save",
+            "project_reopen",
+            "persisted_state",
+            "evidence_summary",
+        ] {
+            if !scenario.artifacts.contains_key(artifact) {
+                errors.push(format!("artifacts.{artifact} must be defined"));
+            }
+        }
+        let text = objects_first_text(scenario).to_ascii_lowercase();
+        for required in [
+            "visible object",
+            "transform",
+            "movement",
+            "procedure",
+            "run the world",
+            "save",
+            "reopen",
+            "persisted state",
+            "evidence",
+        ] {
+            if !text.contains(required) {
+                errors.push(format!(
+                    "objects-first workflow text must mention {required}"
+                ));
+            }
+        }
+        if text.contains("smoke test") {
+            errors.push("objects-first workflow text must not use the forbidden label".into());
+        }
+    }
+
+    fn objects_first_text(scenario: &EatmeScenarioAsset) -> String {
+        let mut text = vec![
+            scenario.title.clone(),
+            scenario.purpose.clone(),
+            scenario.agentic_test_prompt.clone(),
+            scenario.unsupported_policy.clone(),
+        ];
+        text.extend(scenario.acceptance_probes.iter().cloned());
+        text.extend(scenario.avoid.iter().cloned());
+        for criterion in &scenario.acceptance_criteria {
+            text.push(criterion.given.clone());
+            text.push(criterion.when.clone());
+            text.push(criterion.then.clone());
+        }
+        for item in &scenario.rubric {
+            text.push(item.criterion.clone());
+            text.extend(item.evidence.iter().cloned());
+        }
+        for step in &scenario.steps {
+            text.push(step.id.clone());
+            text.push(step.command.clone());
+            text.extend(step.evidence.iter().cloned());
+        }
+        text.extend(scenario.artifacts.keys().cloned());
+        text.extend(scenario.artifacts.values().cloned());
+        text.join("\n")
     }
     if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
         validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
     } else if !matches!(
         scenario.kind.as_str(),
-        "alice_lesson_smoke" | "alice_real_ui_action_contract" | "instructor_agentic_flow"
+        "alice_lesson_smoke"
+            | "alice_real_ui_action_contract"
+            | "alice_objects_first_workflow"
+            | "instructor_agentic_flow"
     ) && let Some(personas) = &scenario.personas
     {
         validate_scenario_personas(

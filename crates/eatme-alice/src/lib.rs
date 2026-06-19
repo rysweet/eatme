@@ -24,6 +24,7 @@ mod launch_ui_action_contract;
 mod launch_ui_actions;
 mod launch_window_activation;
 mod launch_window_targeting;
+mod objects_first_workflow;
 pub mod package;
 pub mod scenario;
 

@@ -1,53 +1,75 @@
-# Alice Objects-First World
+# Alice Objects-First World Specification
 
-`alice-objects-first-world` is the Alice learning workflow that proves a
-learner can build, run, save, and reopen a small world with an object that
-moves.
+`alice-objects-first-world` is the implementation specification for a planned
+Alice learning workflow. The feature must prove that a learner can create or
+open a small world, add one visible object, change it, make it move, run the
+world, save the project, reopen the saved project, and verify the reopened state.
 
-Use this page when you want to run or review the full workflow. For field
-names, hook contracts, and artifact schemas, see
+This page is not a runnable user guide until the implementation lands. Treat it
+as the contract for the scenario asset, generated Gadugi adapter, Alice workflow
+coordinator, evidence files, and tests that need to be built. For field names,
+asset validation rules, and artifact schemas, see
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
 
 ## Contents
 
-- [What the workflow does](#what-the-workflow-does)
-- [Quick start](#quick-start)
+- [Implementation status](#implementation-status)
+- [What the workflow must prove](#what-the-workflow-must-prove)
+- [Target command contract](#target-command-contract)
 - [Configuration](#configuration)
-- [Run the workflow](#run-the-workflow)
-- [Review the evidence](#review-the-evidence)
-- [Tutorial: the learner journey](#tutorial-the-learner-journey)
-- [TypeScript prototype check](#typescript-prototype-check)
-- [When the workflow is blocked](#when-the-workflow-is-blocked)
+- [Implementation validation checklist](#implementation-validation-checklist)
+- [Review the target evidence](#review-the-target-evidence)
+- [Learner journey represented by the scenario](#learner-journey-represented-by-the-scenario)
+- [TypeScript prototype coverage](#typescript-prototype-coverage)
+- [Blocked workflow behavior](#blocked-workflow-behavior)
 
-## What the workflow does
+## Implementation status
+
+The documentation defines the feature to build. The implementation is complete
+only when these repository surfaces exist and pass validation:
+
+| Surface | Required result |
+| --- | --- |
+| Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-world.yaml` exists and validates. |
+| Generated Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` is generated from the canonical asset. |
+| CLI entrypoint | A clear full-workflow command exists, preferably `alice run-objects-first-world`. |
+| Alice coordinator | `eatme-alice` owns a workflow module that runs each phase in order. |
+| Evidence validation | Runtime validation rejects launch-only, unsafe, missing, or out-of-run evidence. |
+| Tests | Asset, adapter, coordinator, evidence, and failure-path tests cover the contract. |
+
+Until those surfaces exist, do not describe this scenario as available to
+students or instructors.
+
+## What the workflow must prove
 
 The workflow follows the objects-first Alice learning path:
 
-1. Create a new Alice project, or open the prepared starter project when project
-   creation is not available.
+1. Create a new Alice project, or open a prepared starter project when project
+   creation is not available to automation.
 2. Add one visible object to the world.
-3. Change the object's position or transform so the change can be observed.
-4. Edit a procedure so the object moves when the world runs.
+3. Change the object's position, rotation, or scale so the change can be
+   observed.
+4. Edit a procedure so the same object moves when the world runs.
 5. Run the world and record the visible result.
-6. Save the project.
-7. Reopen the saved project.
-8. Verify the reopened project still contains the object, transform, procedure
-   movement, and saved run evidence.
+6. Save the edited project under the run evidence directory.
+7. Reopen that saved project artifact.
+8. Verify the reopened project still contains the object, transform, movement
+   procedure, and same-run saved artifact link.
 
-A run only passes when each step has its own evidence. Opening Alice by itself
-does not satisfy this scenario.
+A run only passes when each phase has its own accepted evidence. Opening Alice
+or recording a launch manifest by itself does not satisfy this scenario.
 
-## Quick start
+## Target command contract
 
-Run from the eatme repository root:
+The preferred command surface for the feature is a dedicated full-workflow
+command:
 
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
+export ALICE_HOME=$ALICE_HOME
 
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
-  --scenario alice-objects-first-world \
   --run-id local-alice-objects-first-world \
   --runs-dir runs \
   --timeout 900 \
@@ -56,67 +78,16 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The command name is shared with the existing Alice runner. This scenario is not
-accepted unless the full object, procedure, run, save, reopen, and persisted
-state evidence exists.
+If implementation keeps `alice launch-smoke --scenario alice-objects-first-world`
+for compatibility, that path must dispatch to the same full-workflow
+coordinator. It must not pass on launch-only evidence.
 
-## Configuration
-
-| Setting | Value |
-| --- | --- |
-| Scenario id | `alice-objects-first-world` |
-| Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-world.yaml` |
-| Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` |
-| Primary Alice target | `/home/azureuser/src/alice` |
-| TypeScript prototype target | `/home/azureuser/src/alice-web-prototype` |
-| Node memory setting | `NODE_OPTIONS=--max-old-space-size=32768` |
-| Real Alice gate | `EATME_REAL_ALICE=1` |
-| Evidence root | `runs/alice-objects-first-world/<run-id>/` |
-
-Set `ALICE_HOME` to the RabbitHole Alice checkout before running the full
-workflow. Set `ALICE_WEB_PROTOTYPE_HOME` only when running the TypeScript
-prototype check.
-
-## Run the workflow
-
-Validate the scenario asset:
+Use a prepared starter project only when Alice project creation is not exposed to
+automation:
 
 ```bash
-cargo run -q -p eatme-cli -- assets validate \
-  --path assets/scenarios/eatme/alice-objects-first-world.yaml \
-  --json
-```
-
-Check the generated Gadugi adapter:
-
-```bash
-cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
-```
-
-Run the workflow against RabbitHole Alice:
-
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_HOME=/home/azureuser/src/alice
-
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
   --alice-home "${ALICE_HOME}" \
-  --scenario alice-objects-first-world \
-  --run-id local-alice-objects-first-world \
-  --runs-dir runs \
-  --timeout 900 \
-  --json \
-  --no-memory \
-  --offline-package
-```
-
-Use a prepared starter project only when Alice project creation is not exposed
-to automation:
-
-```bash
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
-  --alice-home "${ALICE_HOME}" \
-  --scenario alice-objects-first-world \
   --starter-project core/resources/target/distribution/application/starter-projects/africa.a3p \
   --run-id local-alice-objects-first-world-starter \
   --runs-dir runs \
@@ -126,40 +97,90 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
   --offline-package
 ```
 
-The run report records whether the project was created or opened. Both paths
-must continue through the same object, transform, procedure, run, save, reopen,
-and persisted-state checks.
+The run report must record whether the project was created or opened from a
+starter. Both paths must continue through the same object, transform, procedure,
+run, save, reopen, and persisted-state checks.
 
-## Review the evidence
+## Configuration
+
+| Setting | Target value |
+| --- | --- |
+| Scenario id | `alice-objects-first-world` |
+| Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-world.yaml` |
+| Generated Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-world.yaml` |
+| Planned Rust coordinator | `eatme_alice::objects_first_workflow` |
+| Primary Alice target | `$ALICE_HOME` |
+| Node memory setting | `NODE_OPTIONS=--max-old-space-size=32768` |
+| Real Alice gate | `EATME_REAL_ALICE=1` |
+| Evidence root | `runs/alice-objects-first-world/<run-id>/` |
+
+The TypeScript web prototype target is optional and future-facing. Do not require
+`ALICE_WEB_PROTOTYPE_HOME` for this workflow until a prototype adapter is
+implemented and documented as conditional coverage.
+
+## Implementation validation checklist
+
+After the scenario asset exists, validate it directly:
+
+```bash
+cargo run -q -p eatme-cli -- assets validate \
+  --path assets/scenarios/eatme/alice-objects-first-world.yaml \
+  --json
+```
+
+After the generated adapter exists, check freshness:
+
+```bash
+cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
+```
+
+After the coordinator and CLI entrypoint exist, run the full workflow against
+RabbitHole Alice:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_HOME=$ALICE_HOME
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world \
+  --alice-home "${ALICE_HOME}" \
+  --run-id local-alice-objects-first-world \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+## Review the target evidence
 
 A complete run writes this evidence layout:
 
 ```text
 runs/alice-objects-first-world/local-alice-objects-first-world/
-├── manifest.json
-├── alice.log
-├── window-list.txt
-├── screenshots/
-│   ├── object-visible.png
-│   ├── object-transformed.png
-│   └── world-ran.png
-├── project-open/
-│   └── project-open.json
-├── object-placement/
-│   └── object-placement.json
-├── object-transform/
-│   └── object-transform.json
-├── procedure-edit/
-│   ├── procedure-edit.json
-│   └── edited-project.a3p
-├── run-world/
-│   └── run-world.json
-├── project-save/
-│   ├── project-save.json
-│   └── saved-project.a3p
-└── project-reopen/
-    ├── project-reopen.json
-    └── persisted-state.json
+|-- manifest.json
+|-- alice.log
+|-- window-list.txt
+|-- screenshots/
+|   |-- object-visible.png
+|   |-- object-transformed.png
+|   `-- world-ran.png
+|-- project-open/
+|   `-- project-open.json
+|-- object-placement/
+|   `-- object-placement.json
+|-- object-transform/
+|   `-- object-transform.json
+|-- procedure-edit/
+|   |-- procedure-edit.json
+|   `-- edited-project.a3p
+|-- run-world/
+|   `-- run-world.json
+|-- project-save/
+|   |-- project-save.json
+|   `-- saved-project.a3p
+`-- project-reopen/
+    |-- project-reopen.json
+    `-- persisted-state.json
 ```
 
 Review the scenario id and final status:
@@ -172,15 +193,14 @@ jq '{scenario_id, passed, failure_category}' \
 Review the persisted state:
 
 ```bash
-jq '.persisted_state' \
+jq . \
   runs/alice-objects-first-world/local-alice-objects-first-world/project-reopen/persisted-state.json
 ```
 
-The persisted state is accepted only when it shows the same learner object, the
-saved transform, the movement procedure, and the reopened project artifact from
-the same run.
+The persisted state is accepted only when it shows the same learner object, saved
+transform, movement procedure, and saved project artifact from the same run.
 
-## Tutorial: the learner journey
+## Learner journey represented by the scenario
 
 This is the learner-facing activity the scenario represents.
 
@@ -228,8 +248,8 @@ Example learner intent:
 When the world starts, bunny moves forward 1 meter.
 ```
 
-The procedure evidence must describe movement. Placeholder text or a comment
-that does not move the object is not accepted.
+The procedure evidence must describe executable movement. Placeholder text or a
+comment that does not move the object is not accepted.
 
 ### Run and observe
 
@@ -252,30 +272,31 @@ project. The reopened project must still show:
 - the movement in the procedure;
 - the saved project artifact used for the reopen step.
 
-## TypeScript prototype check
+## TypeScript prototype coverage
 
-The TypeScript prototype check runs the comparable pieces that the prototype
-supports:
+Prototype coverage is future and conditional. Do not document
+`ALICE_WEB_PROTOTYPE_HOME` or a `ts_prototype_adapter` test as required workflow
+steps until the adapter exists.
 
-```bash
-export NODE_OPTIONS=--max-old-space-size=32768
-export ALICE_WEB_PROTOTYPE_HOME=/home/azureuser/src/alice-web-prototype
+When prototype support is added, the adapter should report each comparable phase
+as one of:
 
-cargo test -p eatme-alice --test ts_prototype_adapter -- --ignored
-```
+| State | Meaning |
+| --- | --- |
+| `present` | The prototype claims and proves the comparable behavior. |
+| `unsupported` | The prototype does not claim the behavior. This is documented, not filed as a product bug. |
+| `blocked` | The prototype claims the behavior, but the adapter cannot collect valid evidence. |
+| `invalid` | The prototype returned malformed, unsafe, or out-of-run evidence. |
 
-The prototype check records supported workflow pieces such as object creation,
-visible transform state, or procedure movement when those features exist in the
-prototype. Unsupported reopen or transform behavior is documented as an
-unsupported gap only when the prototype does not claim that feature.
+Unsupported prototype behavior is an explicit gap, not a silent pass.
 
-## When the workflow is blocked
+## Blocked workflow behavior
 
 The scenario fails closed when required proof is missing or malformed. A blocked
 run reports the missing phase and writes sanitized issue-ready details without
 raw screenshots, secrets, full environment dumps, or local evidence files.
 
-File a product issue when RabbitHole Alice or the TypeScript prototype claims to
-support a workflow phase but the phase cannot produce valid evidence. Link the
-issue to the run id and scenario id, then start follow-up default-workflow work
-for that product defect.
+File a product issue when RabbitHole Alice or a supported prototype claims a
+workflow phase but the phase cannot produce valid evidence. Link the issue to the
+run id and scenario id, then start follow-up implementation work for that product
+defect.

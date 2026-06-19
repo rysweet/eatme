@@ -65,6 +65,13 @@ struct SaveResponse {
     status: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct ReopenResponse {
+    status: String,
+    #[serde(rename = "persistedState")]
+    persisted_state: Value,
+}
+
 fn http_client() -> ureq::Agent {
     ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(5))
@@ -524,28 +531,35 @@ impl TsPortStatement {
     }
 }
 
-fn ts_port_root() -> PathBuf {
+fn ts_port_root() -> Option<PathBuf> {
     if let Ok(root) = env::var("ALICE_WEB_PROTOTYPE_ROOT") {
-        return PathBuf::from(root);
+        let root = PathBuf::from(root);
+        return root.join("package.json").exists().then_some(root);
     }
 
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     for ancestor in manifest_dir.ancestors() {
         let candidate = ancestor.join("alice-web-prototype");
         if candidate.join("package.json").exists() {
-            return candidate;
+            return Some(candidate);
         }
     }
 
-    manifest_dir.join("../../../alice-web-prototype")
+    None
 }
 
-fn ensure_ts_port_server_build() {
-    let root = ts_port_root();
+fn ensure_ts_port_server_build() -> Option<PathBuf> {
+    let root = match ts_port_root() {
+        Some(root) => root,
+        None => {
+            eprintln!("skipping TS round-trip test: alice-web-prototype checkout not found");
+            return None;
+        }
+    };
     if root.join("dist-server/code-generation.js").exists()
         && root.join("dist-server/tweedle-parser.js").exists()
     {
-        return;
+        return Some(root);
     }
 
     let status = Command::new("npm")
@@ -555,11 +569,11 @@ fn ensure_ts_port_server_build() {
         .status()
         .expect("failed to build alice-web-prototype server artifacts");
     assert!(status.success(), "npm run build:server failed");
+    Some(root)
 }
 
-fn run_ts_round_trip(mode: &str) -> TsRoundTrip {
-    ensure_ts_port_server_build();
-    let root = ts_port_root();
+fn run_ts_round_trip(mode: &str) -> Option<TsRoundTrip> {
+    let root = ensure_ts_port_server_build()?;
     let script = r#"
 import { pathToFileURL } from 'node:url';
 
@@ -608,7 +622,7 @@ console.log(JSON.stringify({ source, ast }));
         String::from_utf8_lossy(&output.stderr)
     );
 
-    serde_json::from_slice(&output.stdout).expect("invalid TS round-trip JSON")
+    Some(serde_json::from_slice(&output.stdout).expect("invalid TS round-trip JSON"))
 }
 
 fn sequence_blocks_from_round_trip(round_trip: &TsRoundTrip) -> Vec<SequenceBlock> {
@@ -1123,7 +1137,9 @@ fn ts_port_arithmetic_operator_round_trips_all_variants() {
 
 #[test]
 fn ts_port_round_trip_grades_complete_sequence_program() {
-    let round_trip = run_ts_round_trip("complete");
+    let Some(round_trip) = run_ts_round_trip("complete") else {
+        return;
+    };
     assert!(round_trip.source.contains("doInOrder"));
     assert!(round_trip.source.contains("doTogether"));
 
@@ -1147,7 +1163,9 @@ fn ts_port_round_trip_grades_complete_sequence_program() {
 
 #[test]
 fn ts_port_round_trip_blocks_when_parallel_sequence_is_missing() {
-    let round_trip = run_ts_round_trip("missing-parallel");
+    let Some(round_trip) = run_ts_round_trip("missing-parallel") else {
+        return;
+    };
     assert!(round_trip.source.contains("doInOrder"));
     assert!(!round_trip.source.contains("doTogether"));
 
@@ -1249,4 +1267,118 @@ fn ts_prototype_silver_thread_journey() {
     assert_eq!(save.status, "saved");
 
     eprintln!("TS prototype silver thread: all 6 steps passed");
+}
+
+#[test]
+fn ts_prototype_objects_first_workflow_when_port_claims_support() {
+    if !ts_enabled() {
+        eprintln!("skipping TS prototype objects-first test (set EATME_TS_PROTOTYPE=1)");
+        return;
+    }
+
+    let base = base_url();
+    let client = http_client();
+    let health: Value = client
+        .get(&format!("{base}/api/health"))
+        .call()
+        .expect("health check failed")
+        .into_json()
+        .expect("invalid health JSON");
+
+    if !claims_objects_first_support(&health) {
+        eprintln!("skipping TS prototype objects-first workflow: port does not claim support");
+        return;
+    }
+
+    let launch: LaunchResponse = client
+        .post(&format!("{base}/api/launch"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first launch failed")
+        .into_json()
+        .expect("invalid objects-first launch JSON");
+    assert_eq!(launch.status, "launched");
+
+    let add: AddObjectResponse = client
+        .post(&format!("{base}/api/scene/add-object"))
+        .send_json(ureq::json!({
+            "className": "org.lgna.story.SBiped",
+            "name": "bunny",
+            "visible": true
+        }))
+        .expect("objects-first add visible object failed")
+        .into_json()
+        .expect("invalid add visible object JSON");
+    assert_eq!(add.status, "added");
+
+    let transform: Value = client
+        .post(&format!("{base}/api/scene/transform-object"))
+        .send_json(ureq::json!({
+            "name": "bunny",
+            "position": { "x": 1.5, "y": 0.0, "z": -2.0 },
+            "scale": 1.25
+        }))
+        .expect("objects-first transform failed")
+        .into_json()
+        .expect("invalid transform JSON");
+    assert_eq!(transform["status"], "transformed");
+    assert_eq!(transform["object"]["visible"], true);
+
+    let edit: EditResponse = client
+        .post(&format!("{base}/api/code/edit-procedure"))
+        .send_json(ureq::json!({
+            "procedureSelector": "scene.myFirstMethod",
+            "editSpec": {
+                "kind": "append-movement",
+                "object": "bunny",
+                "method": "move",
+                "direction": "FORWARD",
+                "amount": 1.0
+            }
+        }))
+        .expect("objects-first movement edit failed")
+        .into_json()
+        .expect("invalid movement edit JSON");
+    assert!(
+        edit.status == "edited" || edit.status == "proved",
+        "movement edit must be edited/proved, got {}",
+        edit.status
+    );
+    assert!(!edit.evidence_artifact.is_empty());
+
+    let run: RunResponse = client
+        .post(&format!("{base}/api/world/run"))
+        .send_json(ureq::json!({ "procedureSelector": "scene.myFirstMethod" }))
+        .expect("objects-first run failed")
+        .into_json()
+        .expect("invalid objects-first run JSON");
+    assert_eq!(run.status, "completed");
+
+    let save: SaveResponse = client
+        .post(&format!("{base}/api/project/save"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first save failed")
+        .into_json()
+        .expect("invalid objects-first save JSON");
+    assert_eq!(save.status, "saved");
+
+    let reopen: ReopenResponse = client
+        .post(&format!("{base}/api/project/reopen"))
+        .send_json(ureq::json!({ "scenario": "alice-objects-first-world" }))
+        .expect("objects-first reopen failed")
+        .into_json()
+        .expect("invalid objects-first reopen JSON");
+    assert_eq!(reopen.status, "reopened");
+    assert_eq!(reopen.persisted_state["object"]["name"], "bunny");
+    assert_eq!(reopen.persisted_state["object"]["visible"], true);
+    assert_eq!(
+        reopen.persisted_state["procedure"]["movement"]["object"],
+        "bunny"
+    );
+}
+
+fn claims_objects_first_support(health: &Value) -> bool {
+    let text = serde_json::to_string(health)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    text.contains("objects-first") || text.contains("object_transform") || text.contains("reopen")
 }

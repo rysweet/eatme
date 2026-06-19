@@ -69,6 +69,26 @@ enum AliceCommand {
 }
 
 #[derive(Args)]
+struct ObjectsFirstWorldArgs {
+    #[arg(long, env = "ALICE_HOME")]
+    alice_home: PathBuf,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, default_value = "runs")]
+    runs_dir: PathBuf,
+    #[arg(long, default_value_t = 900)]
+    timeout: u64,
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    no_memory: bool,
+    #[arg(long)]
+    offline_package: bool,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
+}
+
+#[derive(Args)]
 struct JsonFlag {
     #[arg(long)]
     json: bool,
