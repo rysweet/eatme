@@ -22,7 +22,7 @@ order: `Shown`, `Not yet shown`, optional `Desktop next action`, optional
 | `deps check` | Check host dependencies for real Alice smoke runs |
 | `alice discover` | Inspect an Alice checkout |
 | `alice package` | Package Alice through Maven |
-| `alice launch-smoke` | Launch Alice and record deterministic evidence |
+| `alice launch-smoke` | Launch Alice and record deterministic evidence; selected scenarios may require full workflow proof |
 | `alice compare-launch-smoke` | Write or execute a two-target launch-smoke comparison manifest |
 | `alice check-lesson-session` | Check that a comparison manifest carries a usable lesson-session contract |
 | `alice check-lesson-readiness` | Report first-lesson readiness evidence with shown, not-yet-shown, optional desktop next-action, and unproven summaries |
@@ -175,6 +175,33 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
 | `--offline-package` | Package Alice in offline mode before launching. |
 
 Non-baseline scenarios fail fast unless `EATME_REAL_ALICE=1` is present.
+
+## Run the Alice objects-first workflow
+
+Use `alice-objects-first-world` when the claim is a complete learner workflow:
+create or open a project, add a visible object, change the object, edit a
+movement procedure, run the world, save, reopen, and verify the saved state.
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_HOME=/home/azureuser/src/alice
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario alice-objects-first-world \
+  --run-id local-alice-objects-first-world \
+  --runs-dir runs \
+  --timeout 900 \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+The scenario fails when the run only starts Alice. Review
+`runs/alice-objects-first-world/<run-id>/project-reopen/persisted-state.json`
+for the reopened object, transform, and procedure movement proof. See
+[Alice Objects-First World](alice-objects-first-world.md) for the full usage
+guide.
 
 ## Compare two Alice targets
 
@@ -441,6 +468,28 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 Instructor remix evidence is a teacher plan, student handout, exit ticket, and
 review/remix probe set. It may cite launch evidence, but it does not grade
 learner worlds or assess creativity automatically.
+
+Use the objects-first workflow scenario when the claim includes save/reopen
+persistence proof for a learner-created object and movement procedure:
+
+```bash
+export NODE_OPTIONS=--max-old-space-size=32768
+export ALICE_HOME=/home/azureuser/src/alice
+
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+  --alice-home "${ALICE_HOME}" \
+  --scenario alice-objects-first-world \
+  --run-id local-alice-objects-first-world \
+  --runs-dir runs \
+  --json \
+  --no-memory \
+  --offline-package
+```
+
+This scenario is complete only when the reopened-state proof matches the object,
+transform, and procedure evidence from the same run. For reference fields and
+artifact schemas, see
+[Alice Objects-First World Reference](alice-objects-first-world-reference.md).
 
 ## Output contract
 

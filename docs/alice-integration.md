@@ -123,18 +123,27 @@ replaying Alice internals.
 
 ## Current scope
 
-The real Alice integration proves launch readiness. It does not yet drive a full
-lesson UI path, edit procedures, run the world, save projects, grade a student
-world, or automate creative assessment. Readiness reports can consume Save
-Project and Select Project proof-artifact declarations from RabbitHole evidence,
-but those declarations report artifact availability only. Both categories remain
-visible as `missing` when declarations are absent. Emitted proof-artifact paths
-are evidence-root-relative summaries, artifact contents are never read or
-emitted, and blocker details are normalized before reporting. The
-`first-lessons-real-ui-actions` scenario now probes one deterministic
-object-placement candidate:
-`tools/eatme-place-object` inside the Alice checkout. That Alice-side command
-must accept the opened project, named object identifier, and evidence directory,
-then return JSON with non-empty `placement_artifact` and
-`scene_or_project_diff` files before eatme marks object placement as proven.
-Absent or invalid hook evidence remains an explicit blocked result.
+The baseline Alice integration proves launch readiness. Scenario-specific Alice
+workflows add their own evidence requirements on top of the same packaging,
+display, process, log, window, and screenshot foundation.
+
+`alice-objects-first-world` is the full objects-first workflow. It uses
+RabbitHole Alice at `/home/azureuser/src/alice` as the primary target and records
+separate proof for project create/open, visible object placement, object
+transform, movement procedure edit, run-world, save, reopen, and persisted-state
+verification. A launch-only run is rejected for this scenario.
+
+Readiness reports can also consume Save Project and Select Project
+proof-artifact declarations from RabbitHole evidence. Emitted proof-artifact
+paths are evidence-root-relative summaries, artifact contents are never read or
+emitted, and blocker details are normalized before reporting.
+
+The TypeScript prototype adapter validates comparable supported behavior against
+`/home/azureuser/src/alice-web-prototype`. Unsupported prototype behavior is
+reported as an explicit gap only when the prototype does not claim support. If
+RabbitHole Alice or the prototype claims a workflow phase but cannot produce
+valid evidence, eatme reports sanitized product-issue details for follow-up.
+
+For usage, evidence layout, and hook APIs, see
+[Alice Objects-First World](alice-objects-first-world.md) and
+[Alice Objects-First World Reference](alice-objects-first-world-reference.md).

@@ -17,6 +17,8 @@ nav:
   - Validation and Quality Gates: validation-quality-gates.md
   - Outside-in Alice Test Modules: outside-in-alice-test-modules.md
   - Alice Integration: alice-integration.md
+  - Alice Objects-First World: alice-objects-first-world.md
+  - Alice Objects-First World Reference: alice-objects-first-world-reference.md
   - Deterministic Real-Alice Smoke Test: deterministic-real-alice-smoke-test.md
   - Lesson Session Readiness: lesson-session-readiness.md
   - First-Lesson Evidence Readiness: first-lesson-evidence-readiness.md

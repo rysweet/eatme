@@ -26,6 +26,8 @@ Eatme has three layers:
 | Checking a change | [Validation and Quality Gates](validation-quality-gates.md) |
 | Maintaining outside-in Alice Rust tests | [Outside-in Alice Test Modules](outside-in-alice-test-modules.md) |
 | Running real Alice | [Alice Integration](alice-integration.md) |
+| Running the objects-first Alice workflow | [Alice Objects-First World](alice-objects-first-world.md) |
+| Reviewing the objects-first workflow contract | [Alice Objects-First World Reference](alice-objects-first-world-reference.md) |
 | Running the deterministic real-Alice integration test | [Deterministic Real-Alice Smoke Test](deterministic-real-alice-smoke-test.md) |
 | Reviewing post-focus screenshot evidence | [Post-focus Screenshot Evidence](post-focus-screenshot-evidence.md) |
 | Checking RabbitHole evidence needed before first-lesson readiness | [Lesson Session Readiness](lesson-session-readiness.md) |
@@ -55,6 +57,12 @@ they are used by people or agents. For real Alice smoke scenarios, it also prove
 that the desktop application can be packaged, launched, observed, and reported
 through deterministic artifacts.
 
+For `alice-objects-first-world`, eatme proves a full objects-first workflow: a
+project is created or opened, a visible object is added, the object is changed, a
+movement procedure is edited, the world runs, the project is saved, the saved
+project is reopened, and the reopened state still contains the expected object
+and behavior evidence.
+
 A passing launch smoke records:
 
 - dependency-check results
@@ -70,10 +78,14 @@ A passing launch smoke records:
 
 ## What eatme does not pretend to prove
 
-The real Alice lesson scenarios are launch-smoke scenarios. They prove smoke-ready
-evidence for a scenario-labeled Alice run. They do not drive an entire lesson
-through the Alice interface, score learner creativity, inspect private Alice
-implementation details, or grade saved learner worlds.
+Launch-only Alice scenarios prove startup evidence for a scenario-labeled Alice
+run. They do not score learner creativity, inspect private Alice implementation
+details, or grade saved learner worlds.
+
+The `alice-objects-first-world` scenario has a separate full-workflow evidence
+contract. It proves the required object, procedure, run, save, reopen, and
+persisted-state steps, but it still does not grade creative quality or replace
+instructor judgment.
 
 Instructor and student mission docs describe the intended classroom and agentic
 contract. Runtime validation stays explicit about which parts are deterministic
@@ -88,6 +100,7 @@ Alice launch path without overstating what the launch smoke proves.
 | --- | --- | --- |
 | `real-alice-launch-smoke` | Harness and CI/manual preflight | Baseline Alice launch, manifest, log, window, screenshot, and deterministic assertion evidence. |
 | `first-lessons-real-ui-actions` | Instructors, students, and reviewers | First-lesson readiness evidence for original Alice and RabbitHole; the report summarizes shown evidence, optional desktop next-action evidence, not-yet-shown states, and explicit unproven claims. |
+| `alice-objects-first-world` | Learners, instructors, and reviewers | Full objects-first workflow evidence for project create/open, visible object placement, transform, movement procedure edit, run-world, save, reopen, and persisted-state verification. |
 | `instructor-lesson-materials-remix` | Instructors and instructor agents | Teacher plan, student handout, exit ticket, acceptance probes, and review/remix language derived from Alice resources. |
 
 Use the manifest from a real Alice run as setup evidence, then use the mission
@@ -119,6 +132,9 @@ Review the conservative first-lesson evidence boundary contract:
 
 Review the save/reopen artifact and reopened-state evidence boundary:
 [Save/reopen Readiness](save-reopen-readiness.md).
+
+Run and review the full objects-first Alice workflow:
+[Alice Objects-First World](alice-objects-first-world.md).
 
 Audit the readiness artifact shape and wording contract:
 [Evidence Artifact Contract](evidence-artifact-contract.md).
