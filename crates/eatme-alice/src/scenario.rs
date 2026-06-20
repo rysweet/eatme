@@ -8,6 +8,7 @@ pub const OBJECTS_FIRST_FULL_PATH_SCENARIO_ID: &str = "alice-objects-first-full-
 pub struct LaunchSmokeScenario {
     pub id: String,
     pub starter_project: PathBuf,
+    require_user_journey: bool,
 }
 
 impl LaunchSmokeScenario {
@@ -15,6 +16,7 @@ impl LaunchSmokeScenario {
         Self {
             starter_project: PathBuf::from(DEFAULT_STARTER_PROJECT),
             id: id.into(),
+            require_user_journey: false,
         }
     }
 
@@ -27,7 +29,8 @@ impl LaunchSmokeScenario {
     }
 
     pub fn requires_real_ui_actions(&self) -> bool {
-        self.id == "first-lessons-real-ui-actions"
+        self.require_user_journey
+            || self.id == "first-lessons-real-ui-actions"
             || self.id == "code-editor-first-run"
             || self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
             || self.id == "alice-objects-first-world"
@@ -39,6 +42,11 @@ impl LaunchSmokeScenario {
 
     pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
         self.starter_project = starter_project.into();
+        self
+    }
+
+    pub fn with_user_journey(mut self) -> Self {
+        self.require_user_journey = true;
         self
     }
 }
@@ -82,6 +90,11 @@ mod tests {
         assert!(
             !LaunchSmokeScenario::new(OBJECTS_FIRST_FULL_PATH_SCENARIO_ID)
                 .accepts_window_evidence()
+        );
+        assert!(
+            LaunchSmokeScenario::new("student-progression")
+                .with_user_journey()
+                .requires_real_ui_actions()
         );
     }
 

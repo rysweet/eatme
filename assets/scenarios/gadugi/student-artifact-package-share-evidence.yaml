@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Artifact share packet checklist includes artifact or screenshot reference, student change, visible run result, attribution or classroom context, and one next revision.
       Student evidence handoff prompt asks the student to explain one Alice change and the visible behavior after running.
       Instructor review boundary note separates environment evidence from student learning evidence and names what still needs human judgment.

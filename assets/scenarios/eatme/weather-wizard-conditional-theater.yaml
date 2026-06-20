@@ -4,136 +4,91 @@ title: Weather Wizard Conditional Theater
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use the conditional and variable concepts from this lesson family to
-      support a weather-reactive scene where character responses branch on a
-      stored weather state variable.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use control structures (if/else) and variables from the Alice 3 lesson
-      list as the coding backbone for weather-state conditional branches.
-purpose: >-
-  Help an instructor design a short Alice lesson where students build a
-  weather-reactive mini-scene that changes visible character or camera behavior
-  based on a simple weather state variable. Students choose at least two weather
-  states (sunny, rainy, windy, or magical), write one conditional branch per
-  state, predict which branch will run before testing, and log what they
-  observed. This scenario covers the creative-storyteller and playful-tinkerer
-  student personas without claiming full user interface automation, automated
-  creative assessment, learner-world grading, complete Alice coverage, or real
-  Alice smoke evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use the conditional and variable concepts from this lesson family to support a weather-reactive scene where character responses branch on a stored weather state variable.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use control structures (if/else) and variables from the Alice 3 lesson list as the coding backbone for weather-state conditional branches.
+purpose: Help an instructor design a short Alice lesson where students build a weather-reactive mini-scene that changes visible character or camera behavior based on a simple weather state variable. Students choose at least two weather states (sunny, rainy, windy, or magical), write one conditional branch per state, predict which branch will run before testing, and log what they observed. This scenario covers the creative-storyteller and playful-tinkerer student personas without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [exercise-forger, debug-coach]
-  students: [creative-storyteller, playful-tinkerer]
+  instructors:
+  - exercise-forger
+  - debug-coach
+  students:
+  - creative-storyteller
+  - playful-tinkerer
 agentic_flow:
   focus: weather-wizard-conditional-theater
-  instructor_goal: >-
-    Prepare a lesson brief and student activity sheet for a weather-reactive
-    Alice mini-scene: a state-table frame, at least two conditional branches
-    with distinct visible behavior, a before-test prediction prompt, and an
-    after-test observation log.
+  instructor_goal: 'Prepare a lesson brief and student activity sheet for a weather-reactive Alice mini-scene: a state-table frame, at least two conditional branches with distinct visible behavior, a before-test prediction prompt, and an after-test observation log.'
   prompt_source: assets/scenarios/eatme/weather-wizard-conditional-theater.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - lesson_brief
-    - student_activity_sheet
-    - state_table_frame
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a weather-reactive Alice
-  lesson. Produce a lesson brief, student activity sheet, and starter
-  state-table frame grounded in the listed resources and this
-  weather-wizard-conditional-theater scenario. The lesson brief must frame each
-  conditional as "If the world state is X, characters respond with Y" and
-  provide a starter table of two or more weather states with corresponding
-  character responses and audience clues. The student activity sheet must
-  prompt: choose at least two weather states, write one conditional branch for
-  each, predict which branch will run before testing, run the world, and record
-  what visible behavior changed. The state-table frame must cover at least
-  sunny and rainy states without requiring specific Alice assets. State
-  explicitly that this is not full user interface automation, not automated
-  creative assessment, not learner-world grading, and not complete Alice
-  coverage.
+  - lesson_brief
+  - student_activity_sheet
+  - state_table_frame
+agentic_test_prompt: 'Act as an instructor acceptance agent preparing a weather-reactive Alice lesson. Produce a lesson brief, student activity sheet, and starter state-table frame grounded in the listed resources and this weather-wizard-conditional-theater scenario. The lesson brief must frame each conditional as "If the world state is X, characters respond with Y" and provide a starter table of two or more weather states with corresponding character responses and audience clues. The student activity sheet must prompt: choose at least two weather states, write one conditional branch for each, predict which branch will run before testing, run the world, and record what visible behavior changed. The state-table frame must cover at least sunny and rainy states without requiring specific Alice assets. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.'
 acceptance_criteria:
-  - given: >-
-      an instructor wants to run a conditional-logic lesson using a
-      weather-reactive Alice scene
-    when: >-
-      the lesson brief is prepared
-    then: >-
-      the brief frames conditionals as state-based branches, provides a
-      state-table with at least two weather states and distinct visible
-      responses, and does not require specific Alice assets
-  - given: >-
-      a student is building a weather-reactive mini-scene
-    when: >-
-      the student activity sheet is used
-    then: >-
-      the sheet prompts the student to choose at least two states, write one
-      conditional branch per state, write a prediction before running, and
-      record observed behavior after running
-  - given: >-
-      a playful-tinkerer student wants to extend the scene
-    when: >-
-      the activity sheet extension section is reached
-    then: >-
-      the extension suggests adding a third state or varying the audience
-      clue without prescribing exact assets or UI steps
+- given: an instructor wants to run a conditional-logic lesson using a weather-reactive Alice scene
+  when: the lesson brief is prepared
+  then: the brief frames conditionals as state-based branches, provides a state-table with at least two weather states and distinct visible responses, and does not require specific Alice assets
+- given: a student is building a weather-reactive mini-scene
+  when: the student activity sheet is used
+  then: the sheet prompts the student to choose at least two states, write one conditional branch per state, write a prediction before running, and record observed behavior after running
+- given: a playful-tinkerer student wants to extend the scene
+  when: the activity sheet extension section is reached
+  then: the extension suggests adding a third state or varying the audience clue without prescribing exact assets or UI steps
 acceptance_probes:
-  - Lesson brief frames each conditional as "If the world state is X, characters respond with Y."
-  - State-table frame covers at least two weather states with distinct visible character or camera behavior.
-  - Student activity sheet prompts a written prediction before any test run.
-  - Student activity sheet prompts recording of observed visible behavior after the run.
-  - Output connects creative-storyteller and playful-tinkerer student personas to visible classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Lesson brief frames each conditional as "If the world state is X, characters respond with Y."
+- State-table frame covers at least two weather states with distinct visible character or camera behavior.
+- Student activity sheet prompts a written prediction before any test run.
+- Student activity sheet prompts recording of observed visible behavior after the run.
+- Output connects creative-storyteller and playful-tinkerer student personas to visible classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Conditional structure clarity
-    evidence:
-      - Each branch in the state table maps one weather state to one distinct visible behavior.
-      - Instructor framing uses state-based language, not step-by-step UI instructions.
-  - criterion: Prediction before test
-    evidence:
-      - Student activity sheet records a written prediction before the test run.
-      - Observation log captures what actually changed after the run.
-  - criterion: Asset independence
-    evidence:
-      - State-table frame names at least sunny and rainy states without referencing specific Alice asset files.
-      - Extension suggestion does not prescribe exact assets or UI steps.
+- criterion: Conditional structure clarity
+  evidence:
+  - Each branch in the state table maps one weather state to one distinct visible behavior.
+  - Instructor framing uses state-based language, not step-by-step UI instructions.
+- criterion: Prediction before test
+  evidence:
+  - Student activity sheet records a written prediction before the test run.
+  - Observation log captures what actually changed after the run.
+- criterion: Asset independence
+  evidence:
+  - State-table frame names at least sunny and rainy states without referencing specific Alice asset files.
+  - Extension suggestion does not prescribe exact assets or UI steps.
 avoid:
-  - Exact asset requirements or fixed UI steps.
-  - Claiming that a specific Alice asset set is required for the lesson to work.
-  - Skipping the prediction step or letting students test before writing an expectation.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Exact asset requirements or fixed UI steps.
+- Claiming that a specific Alice asset set is required for the lesson to work.
+- Skipping the prediction step or letting students test before writing an expectation.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes weather-wizard-conditional-theater
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/weather-wizard-conditional-theater.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes weather-wizard-conditional-theater
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/weather-wizard-conditional-theater.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   lesson_brief: agentic://instructor/lesson-brief
   student_activity_sheet: agentic://student/activity-sheet
   state_table_frame: agentic://instructor/state-table-frame
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+adapter:
+  targets:
+  - lookingglass

@@ -120,13 +120,21 @@ fn validate_eatme_scenario(
     validate_eatme_steps(scenario, &mut errors);
 
     let is_known_lesson_smoke = known_lesson_smoke(&scenario.id);
-    if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
-        errors.push("kind must be alice_lesson_smoke".into());
+    if is_known_lesson_smoke
+        && !matches!(
+            scenario.kind.as_str(),
+            "alice_lesson_smoke" | "alice_howto_user_journey"
+        )
+    {
+        errors.push("kind must be alice_lesson_smoke or alice_howto_user_journey".into());
     }
 
     match scenario.kind.as_str() {
         "alice_lesson_smoke" => {
             validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors)
+        }
+        "alice_howto_user_journey" => {
+            validate_howto_user_journey(scenario, persona_index, persona_diagnostics, &mut errors)
         }
         "alice_real_ui_action_contract" => {
             validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
@@ -144,7 +152,7 @@ fn validate_eatme_scenario(
         }
         "" => errors.push("kind must be defined".into()),
         other => errors.push(format!(
-            "kind must be alice_lesson_smoke, alice_real_ui_action_contract, alice_class_portability_smoke, alice_objects_first_workflow, or instructor_agentic_flow, got {other}"
+            "kind must be alice_lesson_smoke, alice_howto_user_journey, alice_real_ui_action_contract, alice_class_portability_smoke, alice_objects_first_workflow, or instructor_agentic_flow, got {other}"
         )),
     }
 
@@ -284,11 +292,17 @@ fn validate_eatme_scenario(
         text.extend(scenario.artifacts.values().cloned());
         text.join("\n")
     }
-    if is_known_lesson_smoke && scenario.kind != "alice_lesson_smoke" {
+    if is_known_lesson_smoke
+        && !matches!(
+            scenario.kind.as_str(),
+            "alice_lesson_smoke" | "alice_howto_user_journey"
+        )
+    {
         validate_lesson_smoke(scenario, persona_index, persona_diagnostics, &mut errors);
     } else if !matches!(
         scenario.kind.as_str(),
         "alice_lesson_smoke"
+            | "alice_howto_user_journey"
             | "alice_real_ui_action_contract"
             | "alice_objects_first_workflow"
             | "instructor_agentic_flow"
@@ -304,6 +318,7 @@ fn validate_eatme_scenario(
     }
     if portability::is_class_portability_scenario(scenario)
         && scenario.kind != "alice_class_portability_smoke"
+        && scenario.kind != "alice_howto_user_journey"
     {
         portability::validate_class_portability_scenario(scenario, &mut errors);
     }
@@ -445,6 +460,68 @@ fn validate_lesson_smoke(
     validate_launch_smoke_real_evidence(scenario, errors);
 }
 
+fn validate_howto_user_journey(
+    scenario: &EatmeScenarioAsset,
+    persona_index: Option<&PersonaReferenceIndex>,
+    persona_diagnostics: &[String],
+    errors: &mut Vec<String>,
+) {
+    if scenario.owner != "eatme" {
+        errors.push("owner must be eatme".into());
+    }
+    match &scenario.real_alice {
+        Some(real_alice) if real_alice.gated_by == "EATME_REAL_ALICE=1" => {}
+        Some(real_alice) => errors.push(format!(
+            "real_alice.gated_by must be EATME_REAL_ALICE=1, got {}",
+            real_alice.gated_by
+        )),
+        None => errors.push("real_alice.gated_by must be EATME_REAL_ALICE=1".into()),
+    }
+    match &scenario.personas {
+        Some(personas) => validate_scenario_personas(
+            &scenario.id,
+            personas,
+            persona_index,
+            persona_diagnostics,
+            errors,
+        ),
+        None => errors.push("personas.instructors and personas.students must be defined".into()),
+    }
+    validate_acceptance_criteria(&scenario.acceptance_criteria, errors);
+    validate_rubric(&scenario.rubric, errors);
+    require_timeout_and_policy(scenario, errors);
+
+    let has_howto_command = scenario
+        .launcher
+        .as_ref()
+        .is_some_and(|launcher| launcher.command == "alice run-howto")
+        || scenario
+            .steps
+            .iter()
+            .any(|step| step.command.contains("alice run-howto"));
+    if !has_howto_command {
+        errors.push("HowTo scenario must route runtime through alice run-howto".into());
+    }
+    for artifact in ["manifest", "log"] {
+        if !scenario.artifacts.contains_key(artifact) {
+            errors.push(format!("artifacts.{artifact} must be defined"));
+        }
+    }
+    let has_user_action_evidence = scenario.steps.iter().any(|step| {
+        step.command.contains("alice run-howto")
+            && step.evidence.iter().any(|evidence| {
+                evidence.contains("UI action evidence")
+                    || evidence.contains("expected visible result")
+                    || evidence.contains("behavior result")
+            })
+    });
+    if !has_user_action_evidence {
+        errors.push(
+            "HowTo scenario must inspect UI action evidence and expected user results".into(),
+        );
+    }
+}
+
 fn validate_legacy_launch_smoke(scenario: &EatmeScenarioAsset, errors: &mut Vec<String>) {
     validate_launch_smoke_contract(scenario, errors);
 }
@@ -486,6 +563,7 @@ fn validate_launch_smoke_real_evidence(scenario: &EatmeScenarioAsset, errors: &m
 
 fn is_launch_runtime_command(scenario: &EatmeScenarioAsset, command: &str) -> bool {
     command.contains("alice launch-smoke")
+        || command.contains("alice run-howto")
         || (scenario.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
             && command.contains("alice objects-first-full-path"))
 }

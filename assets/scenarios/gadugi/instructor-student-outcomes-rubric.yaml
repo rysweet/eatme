@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Rubric has instructor-friendly levels and student-visible evidence.
       Feedback references visible Alice project behavior plus learner explanation.
       Outcome checks include creativity, debugging process, reflection, and accessibility/audience when relevant.

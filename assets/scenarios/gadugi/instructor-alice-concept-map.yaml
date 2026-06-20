@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Concept map has visible behavior, Alice vocabulary, CS vocabulary, and misconception columns.
       Prediction and debugging questions are answerable from the student artifact.
       Transfer prompt helps students bridge Alice to text-based programming.

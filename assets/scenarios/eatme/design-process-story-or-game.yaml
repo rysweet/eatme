@@ -1,195 +1,112 @@
 schema_version: eatme.scenario/v1
 id: design-process-story-or-game
-title: Design Process — Story or Game
+title: "Design Process \u2014 Story or Game"
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use the scene setup, character animation, and event-driven interaction
-      concepts from this lesson family as the design vocabulary for a lesson
-      where students plan a short Alice story or game before building it,
-      distinguishing between story-mode sequencing and game-mode event loops,
-      and choosing which mode fits their creative goal.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use the storytelling and game-design topics from the Alice 3 lesson list
-      to frame a structured design process where students sketch at least two
-      scenes or game states, identify the characters, the key actions, and the
-      player or viewer role, and write a design brief before opening the Alice
-      editor.
-purpose: >-
-  Help an instructor guide students through a lightweight design process before
-  they begin coding an Alice project. Students choose whether their project is
-  a story (with a beginning, middle, and end driven by a sequence of Alice
-  method calls) or a game (with an event loop, win or lose conditions, and
-  player actions), sketch at least two scenes or game states, name the
-  characters and their key actions, write a short design brief that states the
-  project type and goal, and complete a design-to-code bridge card that maps
-  each sketched scene or state to at least one Alice concept (such as a method,
-  event handler, or variable). An optional extension asks students to write one
-  revision note after their first playthrough, comparing what they planned
-  against what they actually built. This scenario covers the
-  creative-storyteller, systems-puzzle-solver, and reflective-debugger student
-  personas without claiming full user interface automation, automated creative
-  assessment, learner-world grading, complete Alice coverage, or real Alice
-  smoke evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use the scene setup, character animation, and event-driven interaction concepts from this lesson family as the design vocabulary for a lesson where students plan a short Alice story or game before building it, distinguishing between story-mode sequencing and game-mode event loops, and choosing which mode fits their creative goal.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use the storytelling and game-design topics from the Alice 3 lesson list to frame a structured design process where students sketch at least two scenes or game states, identify the characters, the key actions, and the player or viewer role, and write a design brief before opening the Alice editor.
+purpose: Help an instructor guide students through a lightweight design process before they begin coding an Alice project. Students choose whether their project is a story (with a beginning, middle, and end driven by a sequence of Alice method calls) or a game (with an event loop, win or lose conditions, and player actions), sketch at least two scenes or game states, name the characters and their key actions, write a short design brief that states the project type and goal, and complete a design-to-code bridge card that maps each sketched scene or state to at least one Alice concept (such as a method, event handler, or variable). An optional extension asks students to write one revision note after their first playthrough, comparing what they planned against what they actually built. This scenario covers the creative-storyteller, systems-puzzle-solver, and reflective-debugger student personas without claiming full user interface automation, automated creative assessment, learner-world grading,
+  complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [studio-facilitator, assessment-curator]
-  students: [creative-storyteller, systems-puzzle-solver, reflective-debugger]
+  instructors:
+  - studio-facilitator
+  - assessment-curator
+  students:
+  - creative-storyteller
+  - systems-puzzle-solver
+  - reflective-debugger
 agentic_flow:
   focus: design-process-story-or-game
-  instructor_goal: >-
-    Prepare a design-process guide, a student scene-sketch card, and a
-    design-to-code bridge card for an Alice story-or-game lesson: a
-    story-vs-game framing that explains the key structural difference (sequence
-    versus event loop) and lets students choose, a scene-sketch card where the
-    student draws or describes at least two scenes or game states and names the
-    characters and key actions in each, a design brief template where the
-    student states whether the project is a story or a game and what goal or
-    message it conveys, a design-to-code bridge card that maps each sketch to
-    at least one Alice concept, and a reflection prompt asking what changed
-    between the design and the first playthrough. The optional revision note
-    extension does not block learners who complete only the brief and bridge
-    card.
+  instructor_goal: 'Prepare a design-process guide, a student scene-sketch card, and a design-to-code bridge card for an Alice story-or-game lesson: a story-vs-game framing that explains the key structural difference (sequence versus event loop) and lets students choose, a scene-sketch card where the student draws or describes at least two scenes or game states and names the characters and key actions in each, a design brief template where the student states whether the project is a story or a game and what goal or message it conveys, a design-to-code bridge card that maps each sketch to at least one Alice concept, and a reflection prompt asking what changed between the design and the first playthrough. The optional revision note extension does not block learners who complete only the brief and bridge card.'
   prompt_source: assets/scenarios/eatme/design-process-story-or-game.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - design_process_guide
-    - student_scene_sketch_card
-    - design_to_code_bridge_card
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a design-process story-or-game
-  Alice lesson. Produce a design-process guide, student scene-sketch card, and
-  design-to-code bridge card grounded in the listed resources and this
-  design-process-story-or-game scenario. The design-process guide must open with
-  a story-vs-game framing: explain that a story project uses a sequence of Alice
-  method calls to move characters through a beginning, middle, and end, while a
-  game project uses an event loop with player-triggered actions and win or lose
-  conditions, and state that students choose whichever type fits their creative
-  goal. The student scene-sketch card must prompt the student to: choose story
-  or game mode and write one sentence stating why, sketch or describe at least
-  two scenes (for a story) or two game states (for a game), name at least one
-  character and one key action per scene or state, and write a one-sentence
-  design brief stating the project goal or message. The design-to-code bridge
-  card must prompt the student to map each sketched scene or state to at least
-  one Alice concept by name (such as a method, event handler, variable, or
-  conditional), explain what that concept controls in the scene or state, and
-  note whether any planned action does not yet have a corresponding Alice
-  concept. The reflection prompt must ask what changed between the design sketch
-  and the first playthrough, why the change happened, and whether the change
-  improved the project or revealed a gap to address next. Include a note that
-  narrated text overlays, simplified scene layouts, or reduced character counts
-  are valid accessibility choices that do not weaken the design. Include an
-  optional extension that asks students to write one revision note comparing
-  plan to first playthrough, and make clear that the extension does not block
-  learners who complete only the brief and bridge card. State explicitly that
-  this is not full user interface automation, not automated creative assessment,
-  not learner-world grading, and not complete Alice coverage.
+  - design_process_guide
+  - student_scene_sketch_card
+  - design_to_code_bridge_card
+agentic_test_prompt: 'Act as an instructor acceptance agent preparing a design-process story-or-game Alice lesson. Produce a design-process guide, student scene-sketch card, and design-to-code bridge card grounded in the listed resources and this design-process-story-or-game scenario. The design-process guide must open with a story-vs-game framing: explain that a story project uses a sequence of Alice method calls to move characters through a beginning, middle, and end, while a game project uses an event loop with player-triggered actions and win or lose conditions, and state that students choose whichever type fits their creative goal. The student scene-sketch card must prompt the student to: choose story or game mode and write one sentence stating why, sketch or describe at least two scenes (for a story) or two game states (for a game), name at least one character and one key action per scene or state, and write a one-sentence design brief stating the project goal or message. The design-to-code
+  bridge card must prompt the student to map each sketched scene or state to at least one Alice concept by name (such as a method, event handler, variable, or conditional), explain what that concept controls in the scene or state, and note whether any planned action does not yet have a corresponding Alice concept. The reflection prompt must ask what changed between the design sketch and the first playthrough, why the change happened, and whether the change improved the project or revealed a gap to address next. Include a note that narrated text overlays, simplified scene layouts, or reduced character counts are valid accessibility choices that do not weaken the design. Include an optional extension that asks students to write one revision note comparing plan to first playthrough, and make clear that the extension does not block learners who complete only the brief and bridge card. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world
+  grading, and not complete Alice coverage.'
 acceptance_criteria:
-  - given: >-
-      an instructor wants to teach structured design thinking before students
-      open the Alice editor
-    when: >-
-      the design-process guide is prepared
-    then: >-
-      the guide opens with the story-vs-game framing and does not require
-      specific Alice assets, exact scene content, or real personal data
-  - given: >-
-      a student is planning a story or game project
-    when: >-
-      the student scene-sketch card is used
-    then: >-
-      the card prompts the student to choose a project type with a reason,
-      sketch or describe at least two scenes or states, name characters and key
-      actions, and write a one-sentence design brief before reaching the bridge
-      card
-  - given: >-
-      a student is ready to move from design to coding
-    when: >-
-      the design-to-code bridge card is used
-    then: >-
-      the card prompts the student to map each scene or state to at least one
-      named Alice concept and note any planned action that does not yet have a
-      concept match
-  - given: >-
-      an accessibility-aware student or instructor is concerned about scene
-      complexity
-    when: >-
-      reviewing the scene-sketch card
-    then: >-
-      the card notes that narrated text overlays, simplified layouts, or
-      reduced character counts are valid accessibility choices
-  - given: >-
-      a reflective-debugger student wants to improve their project
-    when: >-
-      the optional revision note extension is reached
-    then: >-
-      the extension prompts a comparison of plan to first playthrough without
-      blocking learners who skip the extension
+- given: an instructor wants to teach structured design thinking before students open the Alice editor
+  when: the design-process guide is prepared
+  then: the guide opens with the story-vs-game framing and does not require specific Alice assets, exact scene content, or real personal data
+- given: a student is planning a story or game project
+  when: the student scene-sketch card is used
+  then: the card prompts the student to choose a project type with a reason, sketch or describe at least two scenes or states, name characters and key actions, and write a one-sentence design brief before reaching the bridge card
+- given: a student is ready to move from design to coding
+  when: the design-to-code bridge card is used
+  then: the card prompts the student to map each scene or state to at least one named Alice concept and note any planned action that does not yet have a concept match
+- given: an accessibility-aware student or instructor is concerned about scene complexity
+  when: reviewing the scene-sketch card
+  then: the card notes that narrated text overlays, simplified layouts, or reduced character counts are valid accessibility choices
+- given: a reflective-debugger student wants to improve their project
+  when: the optional revision note extension is reached
+  then: the extension prompts a comparison of plan to first playthrough without blocking learners who skip the extension
 acceptance_probes:
-  - Design-process guide opens with a story-vs-game framing that explains the sequence-versus-event-loop structural difference.
-  - Student scene-sketch card prompts the student to choose story or game mode and state a reason.
-  - Student scene-sketch card prompts at least two scenes or game states with characters and key actions named.
-  - Student scene-sketch card includes a one-sentence design brief stating the project goal or message.
-  - Design-to-code bridge card prompts mapping each scene or state to at least one named Alice concept.
-  - Design-to-code bridge card asks the student to note any planned action without a concept match.
-  - Output notes that narrated text overlays, simplified layouts, or reduced character counts are valid accessibility choices.
-  - Optional revision note extension is clearly optional and does not block learners who complete only the brief and bridge card.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Design-process guide opens with a story-vs-game framing that explains the sequence-versus-event-loop structural difference.
+- Student scene-sketch card prompts the student to choose story or game mode and state a reason.
+- Student scene-sketch card prompts at least two scenes or game states with characters and key actions named.
+- Student scene-sketch card includes a one-sentence design brief stating the project goal or message.
+- Design-to-code bridge card prompts mapping each scene or state to at least one named Alice concept.
+- Design-to-code bridge card asks the student to note any planned action without a concept match.
+- Output notes that narrated text overlays, simplified layouts, or reduced character counts are valid accessibility choices.
+- Optional revision note extension is clearly optional and does not block learners who complete only the brief and bridge card.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Story-vs-game framing clarity
-    evidence:
-      - Design-process guide explains the sequence-versus-event-loop structural difference before students choose a project type.
-      - Student scene-sketch card confirms the student stated why they chose their project type.
-  - criterion: Design sketch completeness
-    evidence:
-      - Student scene-sketch card records at least two scenes or game states with at least one named character and action each.
-      - Design brief is one sentence that states the project goal or message, not only the project type.
-  - criterion: Design-to-code bridge mapping
-    evidence:
-      - Bridge card lists at least one named Alice concept per scene or state.
-      - Bridge card records any planned action that does not yet have a concept match, leaving a visible gap for the student to address.
-  - criterion: Accessibility awareness
-    evidence:
-      - Scene-sketch card notes narrated text overlays, simplified layouts, or reduced character counts as valid choices.
-      - Accessibility choices are described as equivalents to a full-cast scene, not as fallbacks for failed designs.
+- criterion: Story-vs-game framing clarity
+  evidence:
+  - Design-process guide explains the sequence-versus-event-loop structural difference before students choose a project type.
+  - Student scene-sketch card confirms the student stated why they chose their project type.
+- criterion: Design sketch completeness
+  evidence:
+  - Student scene-sketch card records at least two scenes or game states with at least one named character and action each.
+  - Design brief is one sentence that states the project goal or message, not only the project type.
+- criterion: Design-to-code bridge mapping
+  evidence:
+  - Bridge card lists at least one named Alice concept per scene or state.
+  - Bridge card records any planned action that does not yet have a concept match, leaving a visible gap for the student to address.
+- criterion: Accessibility awareness
+  evidence:
+  - Scene-sketch card notes narrated text overlays, simplified layouts, or reduced character counts as valid choices.
+  - Accessibility choices are described as equivalents to a full-cast scene, not as fallbacks for failed designs.
 avoid:
-  - Requiring specific Alice character models, scene names, or project templates.
-  - Skipping the story-vs-game framing before the scene-sketch card.
-  - Treating the bridge card as purely technical without asking the student to name each Alice concept explicitly.
-  - Making the revision note extension required rather than optional.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Requiring specific Alice character models, scene names, or project templates.
+- Skipping the story-vs-game framing before the scene-sketch card.
+- Treating the bridge card as purely technical without asking the student to name each Alice concept explicitly.
+- Making the revision note extension required rather than optional.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes design-process-story-or-game
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/design-process-story-or-game.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes design-process-story-or-game
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/design-process-story-or-game.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   design_process_guide: agentic://instructor/design-process-guide
   student_scene_sketch_card: agentic://student/scene-sketch-card
   design_to_code_bridge_card: agentic://student/design-to-code-bridge-card
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+adapter:
+  targets:
+  - lookingglass

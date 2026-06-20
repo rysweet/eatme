@@ -1,179 +1,100 @@
 schema_version: eatme.scenario/v1
 id: setup-preflight-ready-to-create
-title: Setup Preflight — Ready to Create
+title: "Setup Preflight \u2014 Ready to Create"
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice 3 download and system requirements page
-    url: https://www.alice.org/get-alice/alice-3/
-    use: >-
-      Use the system requirements, OS coverage, Java and OpenGL dependencies,
-      and Chromebook Linux caveats from this page as the basis for the readiness
-      checklist. The checklist must name the OS-level and graphics-level
-      conditions a device must meet before Alice launches reliably, and must
-      identify at least two no-install fallback paths for students whose devices
-      cannot meet every requirement.
-  - name: Alice.org resources overview
-    url: https://www.alice.org/resources/
-    use: >-
-      Use the teacher support and curriculum overview sections from the resources
-      page to frame the instructor's role in separating environmental setup
-      failures from student programming mistakes. The fallback path guide must
-      ground its pairing, demo, and design-planning options in the classroom
-      support context described on this page.
-purpose: >-
-  Help an instructor run a setup preflight check before the first creation
-  lesson so that environment problems are separated from student learning
-  problems. The instructor prepares a readiness checklist covering OS, graphics
-  capability, Java and OpenGL availability, install permissions, and the
-  Chromebook Linux access case; a student self-check card that guides each
-  student to confirm Alice launches or to identify one specific blocker without
-  shame; and a fallback path guide that offers at least two no-install options
-  (such as pairing with a working device, instructor-led demo mode, or printed
-  design planning) so that every student can begin the creative work even if
-  their device is not fully ready. This scenario covers the curious-novice and
-  collaborative-peer-mentor student personas without claiming full user interface
-  automation, automated creative assessment, learner-world grading, complete
-  Alice coverage, or real Alice smoke evidence.
+- name: Alice 3 download and system requirements page
+  url: https://www.alice.org/get-alice/alice-3/
+  use: Use the system requirements, OS coverage, Java and OpenGL dependencies, and Chromebook Linux caveats from this page as the basis for the readiness checklist. The checklist must name the OS-level and graphics-level conditions a device must meet before Alice launches reliably, and must identify at least two no-install fallback paths for students whose devices cannot meet every requirement.
+- name: Alice.org resources overview
+  url: https://www.alice.org/resources/
+  use: Use the teacher support and curriculum overview sections from the resources page to frame the instructor's role in separating environmental setup failures from student programming mistakes. The fallback path guide must ground its pairing, demo, and design-planning options in the classroom support context described on this page.
+purpose: Help an instructor run a setup preflight check before the first creation lesson so that environment problems are separated from student learning problems. The instructor prepares a readiness checklist covering OS, graphics capability, Java and OpenGL availability, install permissions, and the Chromebook Linux access case; a student self-check card that guides each student to confirm Alice launches or to identify one specific blocker without shame; and a fallback path guide that offers at least two no-install options (such as pairing with a working device, instructor-led demo mode, or printed design planning) so that every student can begin the creative work even if their device is not fully ready. This scenario covers the curious-novice and collaborative-peer-mentor student personas without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [classroom-orchestrator, studio-facilitator]
-  students: [curious-novice, collaborative-peer-mentor]
+  instructors:
+  - classroom-orchestrator
+  - studio-facilitator
+  students:
+  - curious-novice
+  - collaborative-peer-mentor
 agentic_flow:
   focus: setup-preflight-ready-to-create
-  instructor_goal: >-
-    Prepare a setup readiness checklist, a student self-check card, and a
-    fallback path guide for an Alice setup preflight lesson: a readiness
-    checklist that names OS-level conditions, graphics and Java/OpenGL
-    requirements, install permission considerations, and the Chromebook Linux
-    access case; a student self-check card that prompts each student to attempt
-    an Alice launch, record one thing they can do now, and record one specific
-    blocker if setup fails — without framing the blocker as a personal failure;
-    and a fallback path guide that describes at least two no-install options
-    (pairing with a working device, instructor-led demo mode, or printed design
-    planning) so that every student can begin creative work in the same lesson
-    period. The handoff note must instruct the instructor to address every
-    reported blocker before the first creation task begins.
+  instructor_goal: "Prepare a setup readiness checklist, a student self-check card, and a fallback path guide for an Alice setup preflight lesson: a readiness checklist that names OS-level conditions, graphics and Java/OpenGL requirements, install permission considerations, and the Chromebook Linux access case; a student self-check card that prompts each student to attempt an Alice launch, record one thing they can do now, and record one specific blocker if setup fails \u2014 without framing the blocker as a personal failure; and a fallback path guide that describes at least two no-install options (pairing with a working device, instructor-led demo mode, or printed design planning) so that every student can begin creative work in the same lesson period. The handoff note must instruct the instructor to address every reported blocker before the first creation task begins."
   prompt_source: assets/scenarios/eatme/setup-preflight-ready-to-create.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - setup_readiness_checklist
-    - student_self_check_card
-    - fallback_path_guide
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a setup preflight Alice
-  lesson. Produce a setup readiness checklist, student self-check card, and
-  fallback path guide grounded in the listed resources and this
-  setup-preflight-ready-to-create scenario. The setup readiness checklist must
-  name the OS-level conditions Alice requires, identify the Java and OpenGL
-  dependency versions or minimums cited on the Alice download page, note the
-  install permission consideration for school-managed devices, and include the
-  Chromebook Linux access case as a distinct item. The student self-check card
-  must prompt each student to attempt an Alice launch or installation, write
-  one sentence stating what they can do right now in Alice, and write one
-  sentence naming one specific blocker if Alice did not launch — framing the
-  blocker as an environment problem, not a student mistake. The fallback path
-  guide must describe at least two no-install options: a pairing option where
-  a student without a working device works alongside a partner who has one, and
-  either an instructor-led demo option or a printed design-planning option that
-  lets the student complete the creative thinking portion of the lesson without
-  a working device. The handoff note must tell the instructor to collect every
-  reported blocker and address each one before the first creation task begins.
-  Include a note that the readiness checklist items are based on the Alice
-  download page requirements and may need updating when a new Alice version
-  changes system requirements. State explicitly that this is not full user
-  interface automation, not automated creative assessment, not learner-world
-  grading, and not complete Alice coverage.
+  - setup_readiness_checklist
+  - student_self_check_card
+  - fallback_path_guide
+agentic_test_prompt: "Act as an instructor acceptance agent preparing a setup preflight Alice lesson. Produce a setup readiness checklist, student self-check card, and fallback path guide grounded in the listed resources and this setup-preflight-ready-to-create scenario. The setup readiness checklist must name the OS-level conditions Alice requires, identify the Java and OpenGL dependency versions or minimums cited on the Alice download page, note the install permission consideration for school-managed devices, and include the Chromebook Linux access case as a distinct item. The student self-check card must prompt each student to attempt an Alice launch or installation, write one sentence stating what they can do right now in Alice, and write one sentence naming one specific blocker if Alice did not launch \u2014 framing the blocker as an environment problem, not a student mistake. The fallback path guide must describe at least two no-install options: a pairing option where a student without\
+  \ a working device works alongside a partner who has one, and either an instructor-led demo option or a printed design-planning option that lets the student complete the creative thinking portion of the lesson without a working device. The handoff note must tell the instructor to collect every reported blocker and address each one before the first creation task begins. Include a note that the readiness checklist items are based on the Alice download page requirements and may need updating when a new Alice version changes system requirements. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage."
 acceptance_criteria:
-  - given: >-
-      an instructor wants to run a device readiness check before the first
-      Alice creation lesson
-    when: >-
-      the setup readiness checklist is prepared
-    then: >-
-      the checklist names OS conditions, Java and OpenGL dependencies, install
-      permission considerations, and the Chromebook Linux access case as
-      distinct items
-  - given: >-
-      a student needs to confirm whether their device is ready for Alice
-    when: >-
-      the student self-check card is used
-    then: >-
-      the card prompts the student to write one thing they can do now and one
-      specific blocker if Alice did not launch, framed as an environment
-      problem rather than a personal failure
-  - given: >-
-      a student cannot install or launch Alice on their device
-    when: >-
-      the fallback path guide is consulted
-    then: >-
-      the guide offers at least two no-install options so that the student
-      can participate in the creative work of the lesson without being excluded
-  - given: >-
-      the preflight check is complete and blockers have been collected
-    when: >-
-      the instructor reviews the handoff note
-    then: >-
-      the note instructs the instructor to address every reported blocker
-      before the first creation task begins
+- given: an instructor wants to run a device readiness check before the first Alice creation lesson
+  when: the setup readiness checklist is prepared
+  then: the checklist names OS conditions, Java and OpenGL dependencies, install permission considerations, and the Chromebook Linux access case as distinct items
+- given: a student needs to confirm whether their device is ready for Alice
+  when: the student self-check card is used
+  then: the card prompts the student to write one thing they can do now and one specific blocker if Alice did not launch, framed as an environment problem rather than a personal failure
+- given: a student cannot install or launch Alice on their device
+  when: the fallback path guide is consulted
+  then: the guide offers at least two no-install options so that the student can participate in the creative work of the lesson without being excluded
+- given: the preflight check is complete and blockers have been collected
+  when: the instructor reviews the handoff note
+  then: the note instructs the instructor to address every reported blocker before the first creation task begins
 acceptance_probes:
-  - Setup readiness checklist names OS-level conditions, Java and OpenGL requirements, install permission considerations, and the Chromebook Linux access case.
-  - Student self-check card prompts each student to write one thing they can do now in Alice.
-  - Student self-check card prompts each student to write one specific blocker if setup fails, framed as an environment problem.
-  - Fallback path guide describes at least two no-install options including a pairing option.
-  - Handoff note instructs the instructor to address every reported blocker before the first creation task begins.
-  - Output notes that checklist requirements are based on the Alice download page and may need updating for new Alice versions.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- Setup readiness checklist names OS-level conditions, Java and OpenGL requirements, install permission considerations, and the Chromebook Linux access case.
+- Student self-check card prompts each student to write one thing they can do now in Alice.
+- Student self-check card prompts each student to write one specific blocker if setup fails, framed as an environment problem.
+- Fallback path guide describes at least two no-install options including a pairing option.
+- Handoff note instructs the instructor to address every reported blocker before the first creation task begins.
+- Output notes that checklist requirements are based on the Alice download page and may need updating for new Alice versions.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Readiness checklist completeness
-    evidence:
-      - Checklist includes OS conditions, Java and OpenGL requirements, install permissions, and the Chromebook Linux access case.
-      - Checklist items are sourced from the Alice download page requirements rather than invented.
-  - criterion: Student self-check framing
-    evidence:
-      - Self-check card names the blocker as an environment problem, not a student mistake.
-      - Self-check card asks for one specific blocker rather than a general statement of failure.
-  - criterion: Fallback path coverage
-    evidence:
-      - Fallback path guide offers at least two distinct no-install options.
-      - At least one option allows the student to participate in the same lesson period, not a future makeup session.
-  - criterion: Instructor handoff clarity
-    evidence:
-      - Handoff note explicitly instructs the instructor to address all blockers before the first creation task.
-      - Handoff note does not assume all blockers will be resolved the same day.
+- criterion: Readiness checklist completeness
+  evidence:
+  - Checklist includes OS conditions, Java and OpenGL requirements, install permissions, and the Chromebook Linux access case.
+  - Checklist items are sourced from the Alice download page requirements rather than invented.
+- criterion: Student self-check framing
+  evidence:
+  - Self-check card names the blocker as an environment problem, not a student mistake.
+  - Self-check card asks for one specific blocker rather than a general statement of failure.
+- criterion: Fallback path coverage
+  evidence:
+  - Fallback path guide offers at least two distinct no-install options.
+  - At least one option allows the student to participate in the same lesson period, not a future makeup session.
+- criterion: Instructor handoff clarity
+  evidence:
+  - Handoff note explicitly instructs the instructor to address all blockers before the first creation task.
+  - Handoff note does not assume all blockers will be resolved the same day.
 avoid:
-  - Requiring a specific Alice version number or exact Java version that may differ from current requirements.
-  - Framing a setup blocker as a student failure rather than an environment problem.
-  - Making the fallback path a low-status option; all paths must lead to creative participation.
-  - Skipping the Chromebook Linux access case as if all devices are standard Windows or macOS.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Requiring a specific Alice version number or exact Java version that may differ from current requirements.
+- Framing a setup blocker as a student failure rather than an environment problem.
+- Making the fallback path a low-status option; all paths must lead to creative participation.
+- Skipping the Chromebook Linux access case as if all devices are standard Windows or macOS.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes setup-preflight-ready-to-create
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/setup-preflight-ready-to-create.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes setup-preflight-ready-to-create
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/setup-preflight-ready-to-create.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   setup_readiness_checklist: agentic://instructor/setup-readiness-checklist
   student_self_check_card: agentic://student/self-check-card
   fallback_path_guide: agentic://instructor/fallback-path-guide
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
