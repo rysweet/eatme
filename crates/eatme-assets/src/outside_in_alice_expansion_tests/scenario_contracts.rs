@@ -52,19 +52,20 @@ fn target_scenarios_use_required_personas_and_real_alice_gate_without_ci_auto_ru
             .any(|step| step.command.contains("EATME_REAL_ALICE=1"))
         {
             failures.push(format!(
-                "{} must document the explicit manual real-Alice gate in a smoke step",
+                "{} must document the explicit manual real-Alice gate in a scenario step",
                 target.id
             ));
         }
         if !scenario.steps.iter().any(|step| {
-            step.command.contains("alice launch-smoke")
+            (step.command.contains("alice launch-smoke")
+                || step.command.contains("alice run-howto"))
                 && step
                     .evidence
                     .iter()
                     .any(|evidence| evidence.contains("real_alice_execution_evidence"))
         }) {
             failures.push(format!(
-                "{} launch smoke evidence must inspect manifest assertions.real_alice_execution_evidence",
+                "{} real-Alice evidence must inspect manifest assertions.real_alice_execution_evidence",
                 target.id
             ));
         }

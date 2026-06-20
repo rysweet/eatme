@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Lesson brief shows a motivating variable-to-scene-change example before introducing the data-mapping card.
       Student data-mapping card prompts at least two fictional data values mapped to visible scene properties.
       Student data-mapping card prompts a written interpretation-limits sentence for each mapping.

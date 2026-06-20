@@ -57,6 +57,10 @@ enum DepsCommand {
 enum AliceCommand {
     Discover(AliceHomeArgs),
     Package(PackageArgs),
+    #[command(
+        long_about = "Execute an Alice.org HowTo scenario as a real Alice user journey from assets/scenarios/eatme/<scenario>.yaml."
+    )]
+    RunHowto(RunHowtoArgs),
     LaunchSmoke(LaunchSmokeArgs),
     #[command(
         long_about = "Execute the canonical Alice objects-first full path scenario (alice-objects-first-full-path) from assets/scenarios/eatme/alice-objects-first-full-path.yaml."
@@ -146,6 +150,28 @@ struct LaunchSmokeArgs {
     #[arg(long)]
     offline_package: bool,
     #[arg(long, default_value = "real-alice-launch-smoke")]
+    scenario: String,
+    #[arg(long)]
+    starter_project: Option<PathBuf>,
+}
+
+#[derive(Args)]
+struct RunHowtoArgs {
+    #[arg(long, env = "ALICE_HOME")]
+    alice_home: PathBuf,
+    #[arg(long)]
+    run_id: String,
+    #[arg(long, default_value = "runs")]
+    runs_dir: PathBuf,
+    #[arg(long, default_value_t = 900)]
+    timeout: u64,
+    #[arg(long)]
+    json: bool,
+    #[arg(long)]
+    no_memory: bool,
+    #[arg(long)]
+    offline_package: bool,
+    #[arg(long)]
     scenario: String,
     #[arg(long)]
     starter_project: Option<PathBuf>,
@@ -260,6 +286,27 @@ fn main() -> Result<()> {
                     &runner,
                 )?,
             )?,
+            AliceCommand::RunHowto(args) => {
+                ensure_real_alice_gate(&args.scenario)?;
+                let mut scenario = LaunchSmokeScenario::new(args.scenario).with_user_journey();
+                if let Some(starter_project) = args.starter_project {
+                    scenario = scenario.with_starter_project(starter_project);
+                }
+                let manifest = run_launch_smoke(&LaunchSmokeOptions {
+                    alice_home: args.alice_home,
+                    run_id: args.run_id,
+                    runs_dir: args.runs_dir,
+                    timeout_seconds: args.timeout,
+                    json: args.json,
+                    no_memory: args.no_memory,
+                    offline_package: args.offline_package,
+                    scenario,
+                })?;
+                print_result(args.json, &manifest)?;
+                if let Some(category) = manifest.failure_category {
+                    bail!("HowTo scenario failed: {category}");
+                }
+            }
             AliceCommand::LaunchSmoke(args) => {
                 ensure_real_alice_gate(&args.scenario)?;
                 let mut scenario = LaunchSmokeScenario::new(args.scenario);

@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Media cue storyboard includes one sound, timing, camera, or caption cue plus intended audience meaning.
       Student prediction prompt asks for expected visible or audible behavior before running and observed evidence afterward.
       Accessibility fallback note names a caption, visual cue, peer narration, or non-audio fallback.

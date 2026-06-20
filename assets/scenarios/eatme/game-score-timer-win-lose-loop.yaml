@@ -4,107 +4,100 @@ title: Game Score Timer Win Lose Loop
 kind: alice_lesson_smoke
 owner: eatme
 resource_basis:
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-  - name: Alice.org Programming in Alice lesson
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-purpose: >-
-  Prove that the game score/timer/win-lose loop scenario launches through the real
-  Alice desktop harness before instructor/student agents judge collision or
-  proximity-triggered scoring, timer arithmetic, end-state feedback, and student
-  reflection evidence.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+- name: Alice.org Programming in Alice lesson
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+purpose: Prove that the game score/timer/win-lose loop scenario launches through the real Alice desktop harness before instructor/student agents judge collision or proximity-triggered scoring, timer arithmetic, end-state feedback, and student reflection evidence.
 launcher:
-  command: alice launch-smoke
+  command: alice run-howto
   scenario: game-score-timer-win-lose-loop
 real_alice:
   gated_by: EATME_REAL_ALICE=1
 personas:
-  instructors: [concept-cartographer, assessment-curator, debug-coach]
-  students: [systems-puzzle-solver, reflective-debugger, collaborative-peer-mentor]
+  instructors:
+  - concept-cartographer
+  - assessment-curator
+  - debug-coach
+  students:
+  - systems-puzzle-solver
+  - reflective-debugger
+  - collaborative-peer-mentor
 capabilities:
   required:
-    - rust-cli
-    - java-21
-    - maven
-    - xvfb
-    - xdpyinfo
-    - wmctrl
-    - screenshot-tool
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - screenshot-tool
   optional:
-    - glxinfo
+  - glxinfo
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
-    - manifest_assertions
-    - captured_logs
-    - screenshot_or_window_evidence
-    - scenario_id
-    - student_reflection_contract
+  - manifest_assertions
+  - captured_logs
+  - screenshot_or_window_evidence
+  - scenario_id
+  - student_reflection_contract
 acceptance_criteria:
-  - given: Alice launch smoke dependencies are available
-    when: the game-score-timer-win-lose-loop scenario is launched through eatme
-    then: the manifest identifies scenario_id game-score-timer-win-lose-loop
-  - given: the real Alice fork starts under the existing Xvfb launch-smoke path
-    when: instructor/student agents use this score/timer game contract
-    then: agentic judgment is gated on deterministic manifest evidence before lesson reasoning
-  - given: a learner builds on a collision or proximity game
-    when: score and time change during play
-    then: visible arithmetic updates lead to a clear win or lose end state
-  - given: student reflection is required
-    when: the agentic follow-on evaluates the artifact
-    then: it asks for starting values, update rules, timer behavior, and both win and lose playtest evidence
-  - given: gadugi needs to exercise the scenario
-    when: the gadugi adapter runs commands for this scenario
-    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+- given: Alice launch smoke dependencies are available
+  when: the game-score-timer-win-lose-loop scenario is launched through eatme
+  then: the manifest identifies scenario_id game-score-timer-win-lose-loop
+- given: the real Alice fork starts under the existing Xvfb launch-smoke path
+  when: instructor/student agents use this score/timer game contract
+  then: agentic judgment is gated on deterministic manifest evidence before lesson reasoning
+- given: a learner builds on a collision or proximity game
+  when: score and time change during play
+  then: visible arithmetic updates lead to a clear win or lose end state
+- given: student reflection is required
+  when: the agentic follow-on evaluates the artifact
+  then: it asks for starting values, update rules, timer behavior, and both win and lose playtest evidence
+- given: gadugi needs to exercise the scenario
+  when: the gadugi adapter runs commands for this scenario
+  then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes this scenario asset
-      - stdout JSON includes creative_scenario_count 11
-  - id: check-dependencies
-    command: cargo run -q -p eatme-cli -- deps check --json
-    evidence:
-      - stdout JSON has all_required_available=true
-  - id: launch-smoke
-    command: >-
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
-      --alice-home ${ALICE_HOME}
-      --run-id ${RUN_ID}
-      --runs-dir runs
-      --timeout 900
-      --json
-      --no-memory
-      --offline-package
-      --scenario game-score-timer-win-lose-loop
-    evidence:
-      - manifest scenario_id equals game-score-timer-win-lose-loop
-      - manifest failure_category is null
-      - manifest assertions include real_alice_execution_evidence passed=true
-      - manifest assertions all pass
-      - screenshot or window evidence exists and is non-empty
-      - log exists and is non-empty
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes this scenario asset
+  - stdout JSON includes creative_scenario_count 11
+- id: check-dependencies
+  command: cargo run -q -p eatme-cli -- deps check --json
+  evidence:
+  - stdout JSON has all_required_available=true
+- id: launch-smoke
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario game-score-timer-win-lose-loop
+  evidence:
+  - manifest scenario_id equals game-score-timer-win-lose-loop
+  - manifest failure_category is null
+  - manifest assertions include real_alice_execution_evidence passed=true
+  - manifest assertions all pass
+  - screenshot or window evidence exists and is non-empty
+  - log exists and is non-empty
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#game-score-timer-win-lose-loop
   personality_assets:
-    - score-timer-game-loop-card
-    - peer-playtest-card
-    - score-timer-outcome-reflection-card
-  deterministic_gate: >-
-    Run this smoke scenario before asking instructor/student agents to judge whether
-    a learner demonstrated collision or proximity scoring, variable arithmetic,
-    timer behavior, win/lose end state, and reflection through visible play evidence.
+  - score-timer-game-loop-card
+  - peer-playtest-card
+  - score-timer-outcome-reflection-card
+  deterministic_gate: Run this scenario before asking instructor/student agents to judge whether a learner demonstrated collision or proximity scoring, variable arithmetic, timer behavior, win/lose end state, and reflection through visible play evidence.
   required_observables:
-    - collision_or_proximity_trigger_changes_score
-    - timer_or_countdown_changes_over_time
-    - visible_win_or_lose_end_state
-    - student_reflection_names_start_update_timer_and_tests
+  - collision_or_proximity_trigger_changes_score
+  - timer_or_countdown_changes_over_time
+  - visible_win_or_lose_end_state
+  - student_reflection_names_start_update_timer_and_tests
+acceptance_probes:
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -113,8 +106,4 @@ artifacts:
   screenshot: runs/game-score-timer-win-lose-loop/${RUN_ID}/screenshots/startup.png
   log: runs/game-score-timer-win-lose-loop/${RUN_ID}/alice.log
   window_list: runs/game-score-timer-win-lose-loop/${RUN_ID}/window-list.txt
-unsupported_policy: >-
-  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
-  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
-  substitute a mocked Alice runtime. Agentic scoring/timer judgment must wait for
-  deterministic launch evidence.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or substitute a mocked Alice runtime. Agentic scoring/timer judgment must wait for deterministic launch evidence.

@@ -4,136 +4,110 @@ title: Starter Project Open/Save/Export Preflight
 kind: alice_lesson_smoke
 owner: eatme
 resource_basis:
-  - name: Alice 3 desktop launch and starter project flow
-    url: https://www.alice.org/get-alice/alice-3/
-  - name: Alice desktop outside-in open/save/export QA
-    url: "${ALICE_DESKTOP_SCENARIOS:-../alice3-modernization/qa/outside-in/alice-desktop/scenarios}"
-purpose: >-
-  Provide one plain automation scenario for instructors and students to use as
-  a starter-project preflight: launch real Alice, open the bundled starter
-  project, name one small editable starter-world change, attempt to run or
-  observe the opened world, and record the save/reopen/export/readiness gaps before
-  anyone treats the starter project as classroom-ready. The scenario evidence
-  is limited to the opened starter project, the editable starter-world change
-  note, eatme launch-smoke JSON report, log, window or screenshot evidence, and readiness-gap notes
-  that reviewers can cite without treating it as full save/reopen/export
-  coverage.
+- name: Alice 3 desktop launch and starter project flow
+  url: https://www.alice.org/get-alice/alice-3/
+- name: Alice desktop outside-in open/save/export QA
+  url: ${ALICE_DESKTOP_SCENARIOS:-../alice3-modernization/qa/outside-in/alice-desktop/scenarios}
+purpose: 'Provide one plain automation scenario for instructors and students to use as a starter-project preflight: launch real Alice, open the bundled starter project, name one small editable starter-world change, attempt to run or observe the opened world, and record the save/reopen/export/readiness gaps before anyone treats the starter project as classroom-ready. The scenario evidence is limited to the opened starter project, the editable starter-world change note, eatme launch-smoke JSON report, log, window or screenshot evidence, and readiness-gap notes that reviewers can cite without treating it as full save/reopen/export coverage.'
 launcher:
-  command: alice launch-smoke
+  command: alice run-howto
   scenario: starter-project-open-save-export-preflight
 real_alice:
   gated_by: EATME_REAL_ALICE=1
 personas:
   instructors:
-    - classroom-orchestrator
-    - assessment-curator
+  - classroom-orchestrator
+  - assessment-curator
   students:
-    - creative-storyteller
-    - accessibility-advocate
+  - creative-storyteller
+  - accessibility-advocate
 capabilities:
   required:
-    - rust-cli
-    - java-21
-    - maven
-    - xvfb
-    - xdpyinfo
-    - wmctrl
-    - screenshot-tool
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - screenshot-tool
   optional:
-    - glxinfo
+  - glxinfo
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
-    - manifest_assertions
-    - captured_logs
-    - screenshot_or_window_evidence
-    - scenario_id
-    - starter_project_launch_command
-    - editable_starter_world_change_note
-    - run_or_observe_attempt_note
-    - save_reopen_export_readiness_gap_note
-    - starter_project_readiness_report
+  - manifest_assertions
+  - captured_logs
+  - screenshot_or_window_evidence
+  - scenario_id
+  - starter_project_launch_command
+  - editable_starter_world_change_note
+  - run_or_observe_attempt_note
+  - save_reopen_export_readiness_gap_note
+  - starter_project_readiness_report
 acceptance_criteria:
-  - given: Alice launch smoke dependencies are available
-    when: the starter-project-open-save-export-preflight scenario is launched through eatme
-    then: the manifest identifies scenario_id starter-project-open-save-export-preflight
-  - given: an instructor or student needs a starter-world build/change checkpoint
-    when: this automation scenario records the editable change note
-    then: the note names a small starter-world change, such as adding or renaming one visible object, that can be checked later without claiming creative assessment or learner-world grading
-  - given: the harness starts Alice with the bundled africa.a3p starter project
-    when: Alice reaches a smoke-ready desktop session under Xvfb
-    then: screenshot or window evidence and logs are captured for the opened project state as an attempted run or observation, not proof of visible rendering correctness
-  - given: save, reopen, export, and classroom readiness still need fuller user-like checks
-    when: the readiness gap note is recorded
-    then: it names the unproven save/reopen/export/readiness areas without claiming full Save completion or full UI automation
-  - given: an instructor or student needs one plain readiness handoff
-    when: this automation scenario writes the starter-project readiness report
-    then: the report summarizes launch evidence, the editable starter-world change note, the attempted run or observation, and the remaining save/reopen/export/readiness gaps without claiming first-lesson completion
-  - given: open/save/export QA still needs user-like journey evidence
-    when: instructor/student agents plan the next save, reopen, or export pass
-    then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
-  - given: reviewers need bounded starter-project evidence
-    when: they inspect this scenario's artifacts
-    then: they must treat the result as bounded real Alice starter-project evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable readiness notes, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
+- given: Alice launch smoke dependencies are available
+  when: the starter-project-open-save-export-preflight scenario is launched through eatme
+  then: the manifest identifies scenario_id starter-project-open-save-export-preflight
+- given: an instructor or student needs a starter-world build/change checkpoint
+  when: this automation scenario records the editable change note
+  then: the note names a small starter-world change, such as adding or renaming one visible object, that can be checked later without claiming creative assessment or learner-world grading
+- given: the harness starts Alice with the bundled africa.a3p starter project
+  when: Alice reaches a smoke-ready desktop session under Xvfb
+  then: screenshot or window evidence and logs are captured for the opened project state as an attempted run or observation, not proof of visible rendering correctness
+- given: save, reopen, export, and classroom readiness still need fuller user-like checks
+  when: the readiness gap note is recorded
+  then: it names the unproven save/reopen/export/readiness areas without claiming full Save completion or full UI automation
+- given: an instructor or student needs one plain readiness handoff
+  when: this automation scenario writes the starter-project readiness report
+  then: the report summarizes launch evidence, the editable starter-world change note, the attempted run or observation, and the remaining save/reopen/export/readiness gaps without claiming first-lesson completion
+- given: open/save/export QA still needs user-like journey evidence
+  when: instructor/student agents plan the next save, reopen, or export pass
+  then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
+- given: reviewers need bounded starter-project evidence
+  when: they inspect this scenario's artifacts
+  then: they must treat the result as bounded real Alice starter-project evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable readiness notes, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes this scenario asset
-  - id: check-dependencies
-    command: cargo run -q -p eatme-cli -- deps check --json
-    evidence:
-      - stdout JSON has all_required_available=true
-  - id: record-starter-world-change
-    command: >-
-      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}";
-      mkdir -p "$run_dir";
-      printf "%s\n" "starter_world_change=In the next user-like Alice pass, add or rename one visible object in the bundled starter world and record what changed." "why=This keeps the starter-world build/change checkpoint editable and reviewable without grading the student project." "claim_boundary=This note is not creative assessment, not learner-world grading, and not proof of a completed save." > "$run_dir/starter-world-change-note.txt";
-      printf "%s\n" "wrote=$run_dir/starter-world-change-note.txt"'
-    evidence:
-      - starter-world change note names one small editable change for a later user-like Alice pass
-      - note states the change is not creative assessment, not learner-world grading, and not proof of a completed save
-  - id: launch-smoke
-    command: >-
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
-      --alice-home ${ALICE_HOME}
-      --run-id ${RUN_ID}
-      --runs-dir runs
-      --timeout 900
-      --json
-      --no-memory
-      --offline-package
-      --scenario starter-project-open-save-export-preflight
-    evidence:
-      - manifest scenario_id equals starter-project-open-save-export-preflight
-      - manifest launch_command includes africa.a3p
-      - manifest failure_category is null
-      - manifest assertions all pass
-      - manifest assertions include real_alice_execution_evidence passed=true
-      - screenshot or window evidence exists and is non-empty
-      - screenshot or window evidence is treated as an attempted observation only
-      - log exists and is non-empty
-  - id: record-run-observe-readiness-gaps
-    command: >-
-      bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}";
-      mkdir -p "$run_dir";
-      printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt";
-      printf "%s\n" "launch=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence for the opened starter project." "starter_world_change=Review starter-world-change-note.txt for the small editable starter-world change to make in a later user-like Alice pass." "run_or_observe_attempt=Treat the available log and screenshot/window evidence as an attempted run or observation only." "save_reopen_export_readiness_gaps=Save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/starter-project-readiness-report.txt";
-      printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt" "wrote=$run_dir/starter-project-readiness-report.txt"'
-    evidence:
-      - run/observe gap note ties the attempted run or observation to the eatme launch-smoke JSON report, log, and screenshot/window evidence
-      - starter-project readiness report summarizes launch evidence, the editable starter-world change, attempted run or observation, and save/reopen/export/readiness gaps
-      - save/reopen/export/readiness gaps remain explicit and unclaimed
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes this scenario asset
+- id: check-dependencies
+  command: cargo run -q -p eatme-cli -- deps check --json
+  evidence:
+  - stdout JSON has all_required_available=true
+- id: record-starter-world-change
+  command: bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "starter_world_change=In the next user-like Alice pass, add or rename one visible object in the bundled starter world and record what changed." "why=This keeps the starter-world build/change checkpoint editable and reviewable without grading the student project." "claim_boundary=This note is not creative assessment, not learner-world grading, and not proof of a completed save." > "$run_dir/starter-world-change-note.txt"; printf "%s\n" "wrote=$run_dir/starter-world-change-note.txt"'
+  evidence:
+  - starter-world change note names one small editable change for a later user-like Alice pass
+  - note states the change is not creative assessment, not learner-world grading, and not proof of a completed save
+- id: launch-smoke
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario starter-project-open-save-export-preflight
+  evidence:
+  - manifest scenario_id equals starter-project-open-save-export-preflight
+  - manifest launch_command includes africa.a3p
+  - manifest failure_category is null
+  - manifest assertions all pass
+  - manifest assertions include real_alice_execution_evidence passed=true
+  - screenshot or window evidence exists and is non-empty
+  - screenshot or window evidence is treated as an attempted observation only
+  - log exists and is non-empty
+- id: record-run-observe-readiness-gaps
+  command: bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "launch=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence for the opened starter project." "starter_world_change=Review starter-world-change-note.txt for the small editable starter-world change to make in a later user-like Alice pass." "run_or_observe_attempt=Treat
+    the available log and screenshot/window evidence as an attempted run or observation only." "save_reopen_export_readiness_gaps=Save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/starter-project-readiness-report.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt" "wrote=$run_dir/starter-project-readiness-report.txt"'
+  evidence:
+  - run/observe gap note ties the attempted run or observation to the eatme launch-smoke JSON report, log, and screenshot/window evidence
+  - starter-project readiness report summarizes launch evidence, the editable starter-world change, attempted run or observation, and save/reopen/export/readiness gaps
+  - save/reopen/export/readiness gaps remain explicit and unclaimed
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#open-save-export
-  deterministic_gate: >-
-    Run this automation scenario before asking instructor/student agents to judge
-    whether a learner can save, reopen, export, or rely on the opened starter
-    project for classroom readiness.
+  deterministic_gate: Run this automation scenario before asking instructor/student agents to judge whether a learner can save, reopen, export, or rely on the opened starter project for classroom readiness.
+acceptance_probes:
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -145,14 +119,4 @@ artifacts:
   starter_world_change_note: runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-world-change-note.txt
   run_observe_readiness_gaps: runs/starter-project-open-save-export-preflight/${RUN_ID}/run-observe-readiness-gaps.txt
   starter_project_readiness_report: runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-project-readiness-report.txt
-unsupported_policy: >-
-  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
-  EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or
-  substitute mocked open/save/export evidence. This automation scenario records
-  bounded real Alice starter-project evidence for the opened starter project with an editable
-  starter-world change note, a bounded run or observation attempt, manifest/log/window/screenshot
-  evidence, a plain starter-project readiness report, readiness gap notes, and
-  inspectable readiness artifacts only; it is not
-  full UI automation, not visible rendering correctness proof, not first-lesson
-  completion, not grading, not creative assessment, not learner-world grading,
-  not full Save completion, and not complete Alice coverage.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or substitute mocked open/save/export evidence. This automation scenario records bounded real Alice starter-project evidence for the opened starter project with an editable starter-world change note, a bounded run or observation attempt, manifest/log/window/screenshot evidence, a plain starter-project readiness report, readiness gap notes, and inspectable readiness artifacts only; it is not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, not learner-world grading, not full Save completion, and not complete Alice coverage.

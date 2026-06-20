@@ -4,122 +4,87 @@ title: Teacher Community Sharing Loop
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice resources overview
-    url: https://www.alice.org/resources/
-    use: >-
-      Use the Alice resource hub as context for teacher-facing materials, community exchange, and reusable classroom activity notes.
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use lessons, exercises, projects, how-tos, curriculums, and classroom resources as remixable activity sources.
-purpose: >-
-  Prepare a teacher-community share card and classroom handoff note for one Alice
-  learning activity so another teacher can understand the audience, setup, timing,
-  student evidence, attribution, classroom constraints, and remix feedback prompts.
-  This editable scenario supports responsible sharing of teacher-facing activity
-  notes; it is not full UI automation, not creative assessment, not
-  learner-world grading, not complete Alice coverage, and not a deployed
-  community platform.
+- name: Alice resources overview
+  url: https://www.alice.org/resources/
+  use: Use the Alice resource hub as context for teacher-facing materials, community exchange, and reusable classroom activity notes.
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+  use: Use lessons, exercises, projects, how-tos, curriculums, and classroom resources as remixable activity sources.
+purpose: Prepare a teacher-community share card and classroom handoff note for one Alice learning activity so another teacher can understand the audience, setup, timing, student evidence, attribution, classroom constraints, and remix feedback prompts. This editable scenario supports responsible sharing of teacher-facing activity notes; it is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
 personas:
-  instructors: [teacher-community-curator, classroom-orchestrator, assessment-curator]
-  students: [collaborative-peer-mentor, accessibility-advocate]
+  instructors:
+  - teacher-community-curator
+  - classroom-orchestrator
+  - assessment-curator
+  students:
+  - collaborative-peer-mentor
+  - accessibility-advocate
 agentic_flow:
   focus: teacher-community-sharing-loop
-  instructor_goal: >-
-    Package one Alice learning activity for teacher community sharing with a share
-    card, classroom handoff note, attribution, editable scenario and persona links,
-    setup constraints, student evidence, and remix feedback prompts.
+  instructor_goal: Package one Alice learning activity for teacher community sharing with a share card, classroom handoff note, attribution, editable scenario and persona links, setup constraints, student evidence, and remix feedback prompts.
   prompt_source: assets/scenarios/eatme/teacher-community-sharing-loop.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - teacher_community_share_card
-    - classroom_handoff_note
-    - remix_feedback_prompt
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing teacher-community sharing
-  materials for one Alice learning activity. Produce a teacher-community share
-  card, classroom handoff note, and remix feedback prompt grounded in the listed
-  resources and this teacher-community-sharing-loop scenario. Include audience,
-  prerequisites, timing, setup constraints, editable scenario and persona links,
-  attribution, student evidence, accessibility notes, what to hand to the next
-  classroom teacher, and two feedback questions for future remix. Keep language
-  editable and teacher-facing. State explicitly that this is not full UI
-  automation, not creative assessment, not learner-world grading, not complete
-  Alice coverage, and not a deployed community platform.
+  - teacher_community_share_card
+  - classroom_handoff_note
+  - remix_feedback_prompt
+agentic_test_prompt: Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, and remix feedback prompt grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, and two feedback questions for future remix. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
 acceptance_criteria:
-  - given: >-
-      a teacher wants to share an Alice activity with another classroom
-    when: >-
-      the agent prepares the teacher-community share card
-    then: >-
-      the output names the audience, prerequisites, timing, classroom constraints,
-      attribution, editable scenario and persona links, and student evidence
-  - given: >-
-      another teacher needs to run or adapt the activity later
-    when: >-
-      the classroom handoff note is reviewed
-    then: >-
-      the note separates setup assumptions, learner-facing evidence, accessibility
-      considerations, and adaptation choices without claiming a deployed platform
-  - given: >-
-      teachers exchange feedback after using the activity
-    when: >-
-      the remix feedback prompt is applied
-    then: >-
-      the feedback asks for implementation notes, learner evidence, and suggested
-      revisions rather than popularity ranking or automated scoring
+- given: a teacher wants to share an Alice activity with another classroom
+  when: the agent prepares the teacher-community share card
+  then: the output names the audience, prerequisites, timing, classroom constraints, attribution, editable scenario and persona links, and student evidence
+- given: another teacher needs to run or adapt the activity later
+  when: the classroom handoff note is reviewed
+  then: the note separates setup assumptions, learner-facing evidence, accessibility considerations, and adaptation choices without claiming a deployed platform
+- given: teachers exchange feedback after using the activity
+  when: the remix feedback prompt is applied
+  then: the feedback asks for implementation notes, learner evidence, and suggested revisions rather than popularity ranking or automated scoring
 acceptance_probes:
-  - Teacher-community share card includes audience, prerequisites, timing, classroom constraints, attribution, editable scenario and persona links, and student evidence.
-  - Classroom handoff note tells the next teacher what to prepare, what learners produce, what support signals to watch, and what can be adapted.
-  - Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
-  - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
-  - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+- Teacher-community share card includes audience, prerequisites, timing, classroom constraints, attribution, editable scenario and persona links, and student evidence.
+- Classroom handoff note tells the next teacher what to prepare, what learners produce, what support signals to watch, and what can be adapted.
+- Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
+- Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
+- Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
 rubric:
-  - criterion: Share card usefulness
-    evidence:
-      - The share card names the activity purpose, audience, prerequisites, timing, classroom constraints, and attribution.
-      - The share card points to editable scenario and persona links instead of code-maintained packages.
-  - criterion: Classroom handoff clarity
-    evidence:
-      - The handoff note separates setup assumptions, learner-facing evidence, accessibility considerations, and adaptation choices.
-      - The note can be understood by a teacher who did not write the original activity.
-  - criterion: Feedback loop quality
-    evidence:
-      - Remix prompts request implementation notes, learner evidence, and suggested revisions.
-      - The exchange does not rank teachers and does not claim automated creative assessment.
+- criterion: Share card usefulness
+  evidence:
+  - The share card names the activity purpose, audience, prerequisites, timing, classroom constraints, and attribution.
+  - The share card points to editable scenario and persona links instead of code-maintained packages.
+- criterion: Classroom handoff clarity
+  evidence:
+  - The handoff note separates setup assumptions, learner-facing evidence, accessibility considerations, and adaptation choices.
+  - The note can be understood by a teacher who did not write the original activity.
+- criterion: Feedback loop quality
+  evidence:
+  - Remix prompts request implementation notes, learner evidence, and suggested revisions.
+  - The exchange does not rank teachers and does not claim automated creative assessment.
 avoid:
-  - Exact user interface coordinates, menu paths, or private implementation details.
-  - Treating shared materials as final publication with no classroom adaptation notes.
-  - Popularity ranking, automated creative scoring, learner-world grading, or complete Alice coverage claims.
-  - Claims that a teacher community platform has been deployed.
+- Exact user interface coordinates, menu paths, or private implementation details.
+- Treating shared materials as final publication with no classroom adaptation notes.
+- Popularity ranking, automated creative scoring, learner-world grading, or complete Alice coverage claims.
+- Claims that a teacher community platform has been deployed.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes teacher-community-sharing-loop
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/teacher-community-sharing-loop.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes teacher-community-sharing-loop
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/teacher-community-sharing-loop.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   teacher_community_share_card: agentic://instructor/teacher-community-share-card
   classroom_handoff_note: agentic://instructor/classroom-handoff-note
   remix_feedback_prompt: agentic://instructor/remix-feedback-prompt
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice.org resource basis, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with brittle user interface assertions. Do
-  not claim this scenario is full UI automation, creative assessment,
-  learner-world grading, complete Alice coverage, or a deployed community
-  platform.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full UI automation, creative assessment, learner-world grading, complete Alice coverage, or a deployed community platform.

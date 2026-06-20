@@ -281,6 +281,7 @@ fn every_web_scenario_has_health_launch_action_and_verification_structure() {
 
         fn is_launch_entrypoint(command: &str) -> bool {
             command.contains("alice launch-smoke")
+                || command.contains("alice run-howto")
                 || command.contains("alice objects-first-full-path")
                 || command.contains("alice run-objects-first-world")
         }

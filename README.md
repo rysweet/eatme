@@ -3,13 +3,13 @@
 `eatme` tests Alice 3 the way students and instructors actually use it: building
 scenes, writing procedures, running animations, handling events, and working
 through the full [Alice.org](https://www.alice.org) curriculum. It runs real
-end-to-end workflows against both the Java desktop application and the
-TypeScript web port.
+end-to-end workflows against both the Java desktop application and LookingGlass,
+the TypeScript web port.
 
 ## What it tests
 
-The test suite covers **52 curriculum scenarios** spanning every concept taught
-on Alice.org:
+The test suite covers **54 scenario definitions** spanning every concept taught
+on Alice.org plus setup and readiness checks:
 
 | Curriculum Area | Example Scenarios |
 |---|---|
@@ -45,7 +45,7 @@ application under a virtual display, walk through lesson workflows, and capture
 evidence that each step completed correctly.
 
 **Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the same
-curriculum scenarios against the TypeScript web port's REST API, covering 26
+curriculum scenarios against LookingGlass's REST API, covering 26
 curriculum workflows including scene building, procedures, events, loops,
 functions, variables, arrays, camera, audio, vehicles, joints, and more.
 
@@ -82,22 +82,24 @@ export ALICE_HOME="/path/to/alice3"
 cargo run -q -p eatme-cli -- deps check --json
 
 # Run a curriculum scenario end-to-end
-EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke \
+EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto \
   --alice-home "${ALICE_HOME}" \
   --scenario building-a-scene-first-world \
   --run-id local-run \
   --runs-dir runs \
-  --timeout 900 \
+  --timeout 1800 \
   --json
 ```
 
-## Running against the web port
+## Running against LookingGlass
 
-To run curriculum tests against the TypeScript web port:
+To run curriculum tests against LookingGlass:
 
 ```bash
-# Start the web server (in alice-web-prototype repo)
-cd /path/to/alice-web-prototype && npm start
+# Start LookingGlass (in the alice-web-prototype repo)
+cd /path/to/alice-web-prototype
+npm run build:server
+node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
 
 # Run web platform tests
 EATME_WEB_PLATFORM=1 cargo test --workspace
@@ -108,7 +110,7 @@ Set `ALICE_WEB_URL` to override the default `http://localhost:3099`.
 ## Repository layout
 
 ```text
-assets/scenarios/eatme/     52 curriculum scenario definitions (YAML)
+assets/scenarios/eatme/     54 scenario definitions (YAML)
 assets/scenarios/gadugi/    Generated adapter scenarios (do not hand-edit)
 crates/eatme-core/          Core types: AST, collaboration, commands
 crates/eatme-alice/         Alice integration: discovery, launch, web adapter

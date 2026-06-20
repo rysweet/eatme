@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Design-process guide opens with a story-vs-game framing that explains the sequence-versus-event-loop structural difference.
       Student scene-sketch card prompts the student to choose story or game mode and state a reason.
       Student scene-sketch card prompts at least two scenes or game states with characters and key actions named.

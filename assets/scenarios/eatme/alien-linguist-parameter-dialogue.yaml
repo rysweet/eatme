@@ -4,151 +4,98 @@ title: Alien Linguist Parameter Dialogue
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use the procedures, methods, and parameters concepts from this lesson
-      family to support an alien-greeting exercise where a reusable greeting
-      procedure accepts a name, direction, color, or emotion argument and
-      produces different visible behavior for each alien visitor.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use the methods and parameters topic from the Alice 3 lesson list as the
-      coding backbone for a reusable greeting behavior that takes at least one
-      argument and visibly varies the greeting per alien.
-purpose: >-
-  Help an instructor design a short Alice lesson where students build a
-  reusable greeting procedure that accepts a parameter and produces visibly
-  different results when called for at least two different aliens. Students
-  name the parameter, identify what it carries, call the greeting at least
-  twice with different arguments, predict each result before running, and
-  record what they observed. The visible greeting can use say/think speech
-  bubbles or other dialogue cues so the web platform covers Alice dialogue
-  behavior instead of only text output. This scenario covers the curious-novice
-  and creative-storyteller student personas without claiming full user
-  interface automation, automated creative assessment, learner-world grading,
-  complete Alice coverage, or real Alice smoke evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use the procedures, methods, and parameters concepts from this lesson family to support an alien-greeting exercise where a reusable greeting procedure accepts a name, direction, color, or emotion argument and produces different visible behavior for each alien visitor.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use the methods and parameters topic from the Alice 3 lesson list as the coding backbone for a reusable greeting behavior that takes at least one argument and visibly varies the greeting per alien.
+purpose: Help an instructor design a short Alice lesson where students build a reusable greeting procedure that accepts a parameter and produces visibly different results when called for at least two different aliens. Students name the parameter, identify what it carries, call the greeting at least twice with different arguments, predict each result before running, and record what they observed. The visible greeting can use say/think speech bubbles or other dialogue cues so the web platform covers Alice dialogue behavior instead of only text output. This scenario covers the curious-novice and creative-storyteller student personas without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [concept-cartographer, exercise-forger]
-  students: [curious-novice, creative-storyteller]
+  instructors:
+  - concept-cartographer
+  - exercise-forger
+  students:
+  - curious-novice
+  - creative-storyteller
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_flow:
   focus: alien-linguist-parameter-dialogue
-  instructor_goal: >-
-    Prepare a lesson brief and student activity sheet for an alien-greeting
-    Alice exercise: a duplicated-greeting motivator showing repeated code, a
-    reusable procedure with one parameter, at least two call examples with
-    different arguments, a before-test prediction prompt, and an after-test
-    observation log.
+  instructor_goal: 'Prepare a lesson brief and student activity sheet for an alien-greeting Alice exercise: a duplicated-greeting motivator showing repeated code, a reusable procedure with one parameter, at least two call examples with different arguments, a before-test prediction prompt, and an after-test observation log.'
   prompt_source: assets/scenarios/eatme/alien-linguist-parameter-dialogue.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - lesson_brief
-    - student_activity_sheet
-    - greeting_parameter_frame
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing an alien-greeting Alice
-  lesson. Produce a lesson brief, student activity sheet, and greeting
-  parameter frame grounded in the listed resources and this
-  alien-linguist-parameter-dialogue scenario. The lesson brief must show a
-  short duplicated-greeting example first, then ask what should vary, then
-  introduce a reusable procedure with one parameter such as alien name,
-  direction, color, distance, or emotion. The student activity sheet must
-  prompt: choose at least two alien visitors with invented names or traits,
-  write one reusable greeting procedure with a named parameter, call the
-  procedure at least twice with different arguments, predict what will be
-  visible for each call before running, run the world, and record what
-  visible behavior changed. The greeting parameter frame must name the
-  parameter, name the caller, and list at least two argument examples without
-  requiring specific Alice assets. State explicitly that this is not full user
-  interface automation, not automated creative assessment, not learner-world
-  grading, and not complete Alice coverage.
+  - lesson_brief
+  - student_activity_sheet
+  - greeting_parameter_frame
+agentic_test_prompt: 'Act as an instructor acceptance agent preparing an alien-greeting Alice lesson. Produce a lesson brief, student activity sheet, and greeting parameter frame grounded in the listed resources and this alien-linguist-parameter-dialogue scenario. The lesson brief must show a short duplicated-greeting example first, then ask what should vary, then introduce a reusable procedure with one parameter such as alien name, direction, color, distance, or emotion. The student activity sheet must prompt: choose at least two alien visitors with invented names or traits, write one reusable greeting procedure with a named parameter, call the procedure at least twice with different arguments, predict what will be visible for each call before running, run the world, and record what visible behavior changed. The greeting parameter frame must name the parameter, name the caller, and list at least two argument examples without requiring specific Alice assets. State explicitly that this is
+  not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.'
 acceptance_criteria:
-  - given: >-
-      an instructor wants to run a procedures-and-parameters lesson using alien
-      greetings in Alice
-    when: >-
-      the lesson brief is prepared
-    then: >-
-      the brief shows duplicated behavior first, introduces a named parameter
-      that carries what varies, and does not require specific Alice assets or
-      alien character models
-  - given: >-
-      a student is building a reusable alien-greeting procedure
-    when: >-
-      the student activity sheet is used
-    then: >-
-      the sheet prompts the student to name the parameter, call the greeting
-      for at least two different aliens, write a prediction before each run,
-      and record observed visible behavior after running
-  - given: >-
-      a creative-storyteller student wants to extend the exercise
-    when: >-
-      the activity sheet extension section is reached
-    then: >-
-      the extension suggests adding a second parameter or a new alien type
-      without prescribing exact assets, model names, or UI steps
+- given: an instructor wants to run a procedures-and-parameters lesson using alien greetings in Alice
+  when: the lesson brief is prepared
+  then: the brief shows duplicated behavior first, introduces a named parameter that carries what varies, and does not require specific Alice assets or alien character models
+- given: a student is building a reusable alien-greeting procedure
+  when: the student activity sheet is used
+  then: the sheet prompts the student to name the parameter, call the greeting for at least two different aliens, write a prediction before each run, and record observed visible behavior after running
+- given: a creative-storyteller student wants to extend the exercise
+  when: the activity sheet extension section is reached
+  then: the extension suggests adding a second parameter or a new alien type without prescribing exact assets, model names, or UI steps
 acceptance_probes:
-  - Lesson brief shows repeated greeting code before introducing the parameter.
-  - Greeting parameter frame names the parameter and at least two argument examples.
-  - Student activity sheet prompts a written prediction before each test run.
-  - Student activity sheet prompts recording of observed visible behavior after the run.
-  - Output connects curious-novice and creative-storyteller student personas to visible classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Lesson brief shows repeated greeting code before introducing the parameter.
+- Greeting parameter frame names the parameter and at least two argument examples.
+- Student activity sheet prompts a written prediction before each test run.
+- Student activity sheet prompts recording of observed visible behavior after the run.
+- Output connects curious-novice and creative-storyteller student personas to visible classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Parameter naming and purpose
-    evidence:
-      - Lesson brief names the parameter and explains what information it carries.
-      - Greeting frame maps each argument to a distinct visible behavior.
-  - criterion: Reuse evidence
-    evidence:
-      - Student activity sheet shows at least two calls to the same procedure with different arguments.
-      - Student explains why both calls share structure but differ in what is passed.
-  - criterion: Prediction before test
-    evidence:
-      - Student activity sheet records a written prediction before each test run.
-      - Observation log captures what actually changed after the run.
-  - criterion: Asset independence
-    evidence:
-      - Greeting parameter frame names parameter and arguments without referencing specific Alice model files.
-      - Extension suggestion does not prescribe exact assets or UI steps.
+- criterion: Parameter naming and purpose
+  evidence:
+  - Lesson brief names the parameter and explains what information it carries.
+  - Greeting frame maps each argument to a distinct visible behavior.
+- criterion: Reuse evidence
+  evidence:
+  - Student activity sheet shows at least two calls to the same procedure with different arguments.
+  - Student explains why both calls share structure but differ in what is passed.
+- criterion: Prediction before test
+  evidence:
+  - Student activity sheet records a written prediction before each test run.
+  - Observation log captures what actually changed after the run.
+- criterion: Asset independence
+  evidence:
+  - Greeting parameter frame names parameter and arguments without referencing specific Alice model files.
+  - Extension suggestion does not prescribe exact assets or UI steps.
 avoid:
-  - Requiring exact dialogue text, specific model names, or fixed alien character assets.
-  - Skipping the duplicated-code motivator that makes the parameter feel necessary.
-  - Skipping the prediction step or letting students test before writing an expectation.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Requiring exact dialogue text, specific model names, or fixed alien character assets.
+- Skipping the duplicated-code motivator that makes the parameter feel necessary.
+- Skipping the prediction step or letting students test before writing an expectation.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes alien-linguist-parameter-dialogue
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/alien-linguist-parameter-dialogue.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes alien-linguist-parameter-dialogue
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/alien-linguist-parameter-dialogue.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   lesson_brief: agentic://instructor/lesson-brief
   student_activity_sheet: agentic://student/activity-sheet
   greeting_parameter_frame: agentic://instructor/greeting-parameter-frame
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.

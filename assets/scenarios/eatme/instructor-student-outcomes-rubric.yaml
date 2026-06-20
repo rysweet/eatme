@@ -4,114 +4,84 @@ title: Instructor Student Outcomes Rubric
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use lessons, exercises, projects, textbooks, curriculums, and how-tos as context
-      for discussing student-visible evidence.
-  - name: Alice.org Building A Scene lesson
-    url: https://www.alice.org/resources/lessons/building-a-scene/
-    use: >-
-      Use scene artifact evidence such as object choice, positioning, camera, markers, and saving.
-purpose: >-
-  Help instructors discuss student Alice projects with a rubric, project
-  discussion guide, student evidence questions, and instructor boundary note.
-  The discussion names visible Alice project behavior, learner explanation,
-  process evidence, and a student-owned next revision without claiming automated
-  creative assessment. It is not learner-world grading, not full user interface
-  automation, not complete Alice coverage, and not a deployed service.
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+  use: Use lessons, exercises, projects, textbooks, curriculums, and how-tos as context for discussing student-visible evidence.
+- name: Alice.org Building A Scene lesson
+  url: https://www.alice.org/resources/lessons/building-a-scene/
+  use: Use scene artifact evidence such as object choice, positioning, camera, markers, and saving.
+purpose: Help instructors discuss student Alice projects with a rubric, project discussion guide, student evidence questions, and instructor boundary note. The discussion names visible Alice project behavior, learner explanation, process evidence, and a student-owned next revision without claiming automated creative assessment. It is not learner-world grading, not full user interface automation, not complete Alice coverage, and not a deployed service.
 personas:
-  instructors: [assessment-curator, studio-facilitator]
-  students: [reflective-debugger, accessibility-advocate]
+  instructors:
+  - assessment-curator
+  - studio-facilitator
+  students:
+  - reflective-debugger
+  - accessibility-advocate
 agentic_flow:
   focus: checking-student-outcomes-rubrics
-  instructor_goal: >-
-    Discuss student Alice projects with evidence questions that connect visible
-    Alice project behavior, learner explanation, process evidence, and one
-    student-owned next revision without claiming automated creative assessment
-    or learner-world grading.
+  instructor_goal: Discuss student Alice projects with evidence questions that connect visible Alice project behavior, learner explanation, process evidence, and one student-owned next revision without claiming automated creative assessment or learner-world grading.
   prompt_source: assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - student_outcomes_rubric
-    - feedback_frame
-    - revision_next_step
-    - project_discussion_guide
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent helping an instructor discuss a student
-  Alice project. Produce a student outcomes rubric, feedback frame, revision
-  next step, and project discussion guide. Include student evidence questions
-  and an instructor boundary note. Ask for visible Alice project behavior,
-  learner explanation, debugging/process evidence, reflection, and one
-  student-owned next revision. Discuss creative communication as learner
-  evidence without claiming automated creative assessment. State that this is
-  not learner-world grading, not full user interface automation, not complete
-  Alice coverage, and not a deployed service.
+  - student_outcomes_rubric
+  - feedback_frame
+  - revision_next_step
+  - project_discussion_guide
+agentic_test_prompt: Act as an instructor acceptance agent helping an instructor discuss a student Alice project. Produce a student outcomes rubric, feedback frame, revision next step, and project discussion guide. Include student evidence questions and an instructor boundary note. Ask for visible Alice project behavior, learner explanation, debugging/process evidence, reflection, and one student-owned next revision. Discuss creative communication as learner evidence without claiming automated creative assessment. State that this is not learner-world grading, not full user interface automation, not complete Alice coverage, and not a deployed service.
 acceptance_criteria:
-  - given: >-
-      students submit Alice artifacts and reflections
-    when: >-
-      the agent applies the rubric
-    then: >-
-      feedback names visible Alice project behavior, learner explanation,
-      process evidence, and one student-owned next revision
-  - given: >-
-      a project is visually polished but concept evidence is weak
-    when: >-
-      the instructor discussion guide is applied
-    then: >-
-      the rubric explains the evidence gap without over-rewarding polish and
-      without claiming automated creative assessment
-  - given: >-
-      an instructor wants to discuss a student project fairly
-    when: >-
-      the project discussion guide is returned
-    then: >-
-      student evidence questions separate visible project behavior, learner
-      explanation, and the next revision while the instructor boundary note says
-      this is not learner-world grading
+- given: students submit Alice artifacts and reflections
+  when: the agent applies the rubric
+  then: feedback names visible Alice project behavior, learner explanation, process evidence, and one student-owned next revision
+- given: a project is visually polished but concept evidence is weak
+  when: the instructor discussion guide is applied
+  then: the rubric explains the evidence gap without over-rewarding polish and without claiming automated creative assessment
+- given: an instructor wants to discuss a student project fairly
+  when: the project discussion guide is returned
+  then: student evidence questions separate visible project behavior, learner explanation, and the next revision while the instructor boundary note says this is not learner-world grading
 acceptance_probes:
-  - Rubric has instructor-friendly levels and student-visible evidence.
-  - Feedback references visible Alice project behavior plus learner explanation.
-  - Outcome checks include creativity, debugging process, reflection, and accessibility/audience when relevant.
-  - Project discussion guide includes student evidence questions, an instructor boundary note, and a student-owned next revision.
-  - Output says the review is without claiming automated creative assessment, not learner-world grading, and not full user interface automation.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Rubric has instructor-friendly levels and student-visible evidence.
+- Feedback references visible Alice project behavior plus learner explanation.
+- Outcome checks include creativity, debugging process, reflection, and accessibility/audience when relevant.
+- Project discussion guide includes student evidence questions, an instructor boundary note, and a student-owned next revision.
+- Output says the review is without claiming automated creative assessment, not learner-world grading, and not full user interface automation.
 rubric:
-  - criterion: Concept evidence
-    evidence:
-      - Student points to a visible behavior caused by the target Alice concept.
-      - Explanation uses the concept vocabulary accurately.
-  - criterion: Creative communication
-    evidence:
-      - World/story/game choice helps an audience understand the idea.
-      - Creativity does not hide whether the concept works.
-  - criterion: Process and reflection
-    evidence:
-      - Student records prediction, observation, change, and rerun.
-      - Revision is specific and testable.
+- criterion: Concept evidence
+  evidence:
+  - Student points to a visible behavior caused by the target Alice concept.
+  - Explanation uses the concept vocabulary accurately.
+- criterion: Creative communication
+  evidence:
+  - World/story/game choice helps an audience understand the idea.
+  - Creativity does not hide whether the concept works.
+- criterion: Process and reflection
+  evidence:
+  - Student records prediction, observation, change, and rerun.
+  - Revision is specific and testable.
 avoid:
-  - Exact user interface coordinates, menu paths, or private implementation details.
-  - Single correct creative answer; preserve student ownership.
-  - Visual polish as a substitute for concept evidence.
-  - Automated creative assessment, learner-world grading, complete Alice coverage, full user interface automation, or deployed-service claims.
+- Exact user interface coordinates, menu paths, or private implementation details.
+- Single correct creative answer; preserve student ownership.
+- Visual polish as a substitute for concept evidence.
+- Automated creative assessment, learner-world grading, complete Alice coverage, full user interface automation, or deployed-service claims.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes instructor-student-outcomes-rubric
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes instructor-student-outcomes-rubric
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
@@ -119,9 +89,7 @@ artifacts:
   feedback_frame: agentic://instructor/feedback-frame
   revision_next_step: agentic://instructor/revision-next-step
   project_discussion_guide: agentic://instructor/project-discussion-guide
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or
-  the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle user interface
-  assertions. Do not claim automated creative assessment, learner-world grading,
-  complete Alice coverage, full user interface automation, or a deployed service.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim automated creative assessment, learner-world grading, complete Alice coverage, full user interface automation, or a deployed service.
+adapter:
+  targets:
+  - lookingglass

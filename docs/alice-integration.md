@@ -148,11 +148,10 @@ proof-artifact declarations from RabbitHole evidence. Emitted proof-artifact
 paths are evidence-root-relative summaries, artifact contents are never read or
 emitted, and blocker details are normalized before reporting.
 
-TypeScript prototype coverage is future and conditional. Do not require
-`$ALICE_WEB_PROTOTYPE_ROOT` for this workflow until a prototype
-adapter is implemented. If RabbitHole Alice or a supported prototype claims a
-workflow phase but cannot produce valid evidence, eatme reports sanitized
-product-issue details for follow-up.
+LookingGlass coverage is conditional on web support for the workflow phase. Do
+not require `$ALICE_WEB_PROTOTYPE_ROOT` for desktop-only phases. If RabbitHole
+Alice or LookingGlass claims a workflow phase but cannot produce valid evidence,
+eatme reports sanitized product-issue details for follow-up.
 
 For the implementation specification, evidence layout, and phase contracts, see
 [Alice Objects-First World Specification](alice-objects-first-world.md) and

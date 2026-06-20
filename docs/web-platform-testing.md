@@ -1,7 +1,7 @@
-# Web platform testing
+# LookingGlass web-platform testing
 
-Eatme can run the Alice curriculum against the TypeScript web port as well as
-the Java desktop app.
+Eatme can run the Alice curriculum against LookingGlass, the TypeScript web
+port, as well as the Java desktop app.
 
 ## What this covers
 
@@ -20,7 +20,7 @@ It has two layers:
 - **offline checks** that always run and validate scenario shape
 - **live REST API tests** gated behind `EATME_WEB_PLATFORM=1`
 
-## Start the TypeScript server
+## Start LookingGlass
 
 In the `alice-web-prototype` repository:
 
@@ -38,6 +38,8 @@ Check the server before you run live tests:
 ```bash
 curl http://127.0.0.1:3099/api/health
 ```
+
+The health response includes `"runtime": "lookingglass"`.
 
 If you need a different port, point eatme at it:
 
@@ -70,7 +72,7 @@ The live lane covers these curriculum areas:
 
 | Area | Representative workflow |
 | --- | --- |
-| Hello world | Launch, add an object, save |
+| Hello world | Create a project, add an object, run, save |
 | Procedures | Edit a procedure and run it |
 | Events and collision | Register handlers and fire events |
 | Loops and conditionals | Build control-flow edits and run them |
@@ -97,22 +99,22 @@ The live lane covers these curriculum areas:
 | Error recovery | Prove expected failures and recovery paths |
 | Full curriculum sweep | Run the combined scenario set |
 
-The current `Step::Load` check is synthetic. `Step::Save` calls
-`POST /api/project/save`, but reload only compares the remembered save path and
-object count in memory; eatme does not currently exercise a `/api/project/load`
-or instructor-review endpoint.
+Save/reopen scenarios must call a supported save and reload or review API before
+they count as LookingGlass user-journey coverage. In-memory comparisons alone do
+not count as coverage; those flows stay marked as not supported until the API
+can prove the user result.
 
 ## Environment variables
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `EATME_WEB_PLATFORM` | unset | Set to `1` to enable live web-platform tests |
-| `ALICE_WEB_URL` | `http://localhost:3099` | Base URL for the TypeScript server |
+| `ALICE_WEB_URL` | `http://localhost:3099` | Base URL for LookingGlass |
 
 ## What a passing run means
 
-A passing live run proves that the TypeScript server accepts the expected REST
-API calls and returns curriculum-friendly results for the covered workflows.
+A passing live run proves that LookingGlass accepts the expected REST API calls
+and returns curriculum-friendly results for the covered workflows.
 
 It does **not** mean the full browser UI has been tested by a real student, and
-it does **not** replace the desktop launch-smoke or grading lanes.
+it does **not** replace the desktop user-journey or grading lanes.

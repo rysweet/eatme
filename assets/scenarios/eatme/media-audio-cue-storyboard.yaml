@@ -4,116 +4,86 @@ title: Media Audio Cue Storyboard
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use Alice lessons, exercises, how-tos, and the audio library as editable
-      sources for sound, timing, camera, captions, and classroom media choices.
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use procedure, timing, camera, and sound concepts as student-facing
-      evidence for cause and effect in the Alice world.
-purpose: >-
-  Help an instructor and student plan one Alice media cue sequence before a build:
-  what the audience should notice, which sound or camera cue supports it, what
-  caption or fallback makes the cue understandable, what the student predicts
-  before running, and what visible or audible result the student records after
-  running. This editable scenario covers the media-audio-creator student persona
-  without claiming full user interface automation, automated creative assessment,
-  learner-world grading, complete Alice coverage, or a deployed media pipeline.
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+  use: Use Alice lessons, exercises, how-tos, and the audio library as editable sources for sound, timing, camera, captions, and classroom media choices.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use procedure, timing, camera, and sound concepts as student-facing evidence for cause and effect in the Alice world.
+purpose: 'Help an instructor and student plan one Alice media cue sequence before a build: what the audience should notice, which sound or camera cue supports it, what caption or fallback makes the cue understandable, what the student predicts before running, and what visible or audible result the student records after running. This editable scenario covers the media-audio-creator student persona without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or a deployed media pipeline.'
 personas:
-  instructors: [exercise-forger, studio-facilitator, assessment-curator]
-  students: [media-audio-creator, creative-storyteller, accessibility-advocate]
+  instructors:
+  - exercise-forger
+  - studio-facilitator
+  - assessment-curator
+  students:
+  - media-audio-creator
+  - creative-storyteller
+  - accessibility-advocate
 agentic_flow:
   focus: media-audio-cue-storyboard
-  instructor_goal: >-
-    Prepare a media cue storyboard mission for one Alice activity that connects
-    sound, timing, camera, captions or fallback notes, prediction, run evidence,
-    revision, and reflection to student-owned artifact behavior.
+  instructor_goal: Prepare a media cue storyboard mission for one Alice activity that connects sound, timing, camera, captions or fallback notes, prediction, run evidence, revision, and reflection to student-owned artifact behavior.
   prompt_source: assets/scenarios/eatme/media-audio-cue-storyboard.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - media_cue_storyboard
-    - student_prediction_prompt
-    - accessibility_fallback_note
-    - revision_reflection_prompt
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a student media/audio mission
-  for Alice. Produce a media cue storyboard, student prediction prompt,
-  accessibility fallback note, and revision reflection prompt grounded in the
-  listed resources and this media-audio-cue-storyboard scenario. Require one
-  sound, timing, camera, or caption cue; the intended audience meaning; a
-  prediction before running; the visible or audible result after running; one
-  student-owned revision; and a fallback when audio, captioning, or classroom
-  hardware is unavailable. State explicitly that this is not full user interface
-  automation, not automated creative assessment, not learner-world grading, not
-  complete Alice coverage, and not a deployed media pipeline.
+  - media_cue_storyboard
+  - student_prediction_prompt
+  - accessibility_fallback_note
+  - revision_reflection_prompt
+agentic_test_prompt: Act as an instructor acceptance agent preparing a student media/audio mission for Alice. Produce a media cue storyboard, student prediction prompt, accessibility fallback note, and revision reflection prompt grounded in the listed resources and this media-audio-cue-storyboard scenario. Require one sound, timing, camera, or caption cue; the intended audience meaning; a prediction before running; the visible or audible result after running; one student-owned revision; and a fallback when audio, captioning, or classroom hardware is unavailable. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed media pipeline.
 acceptance_criteria:
-  - given: >-
-      a student wants to use audio, camera, timing, or captions to guide audience
-      meaning in an Alice world
-    when: >-
-      the media cue storyboard is prepared
-    then: >-
-      the storyboard names the cue, intended audience meaning, timing or camera
-      context, and how the student will notice whether it worked
-  - given: >-
-      the student has not run the world yet
-    when: >-
-      the prediction prompt is used
-    then: >-
-      the prompt asks what visible or audible result the student expects before
-      running and what evidence they will record afterward
-  - given: >-
-      audio playback, captions, or classroom hardware may be unavailable
-    when: >-
-      the accessibility fallback note is reviewed
-    then: >-
-      it gives a non-audio or captioned fallback without treating the blocker as
-      a student mistake
+- given: a student wants to use audio, camera, timing, or captions to guide audience meaning in an Alice world
+  when: the media cue storyboard is prepared
+  then: the storyboard names the cue, intended audience meaning, timing or camera context, and how the student will notice whether it worked
+- given: the student has not run the world yet
+  when: the prediction prompt is used
+  then: the prompt asks what visible or audible result the student expects before running and what evidence they will record afterward
+- given: audio playback, captions, or classroom hardware may be unavailable
+  when: the accessibility fallback note is reviewed
+  then: it gives a non-audio or captioned fallback without treating the blocker as a student mistake
 acceptance_probes:
-  - Media cue storyboard includes one sound, timing, camera, or caption cue plus intended audience meaning.
-  - Student prediction prompt asks for expected visible or audible behavior before running and observed evidence afterward.
-  - Accessibility fallback note names a caption, visual cue, peer narration, or non-audio fallback.
-  - Revision reflection prompt asks for one student-owned change based on run evidence.
-  - Output connects media-audio-creator, creative-storyteller, and accessibility-advocate personas to reviewable classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed media pipeline.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Media cue storyboard includes one sound, timing, camera, or caption cue plus intended audience meaning.
+- Student prediction prompt asks for expected visible or audible behavior before running and observed evidence afterward.
+- Accessibility fallback note names a caption, visual cue, peer narration, or non-audio fallback.
+- Revision reflection prompt asks for one student-owned change based on run evidence.
+- Output connects media-audio-creator, creative-storyteller, and accessibility-advocate personas to reviewable classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed media pipeline.
 rubric:
-  - criterion: Media cue clarity
-    evidence:
-      - Storyboard connects a sound, timing, camera, or caption cue to audience meaning.
-      - The cue can be reviewed as editable YAML without changing Rust or launcher code.
-  - criterion: Student evidence loop
-    evidence:
-      - Student prediction appears before the run result.
-      - Reflection names the observed visible or audible behavior and one revision.
-  - criterion: Accessibility fallback
-    evidence:
-      - The mission includes a caption, visual cue, peer narration, or non-audio fallback.
-      - Missing audio or hardware is handled as a support condition, not a learner failure.
+- criterion: Media cue clarity
+  evidence:
+  - Storyboard connects a sound, timing, camera, or caption cue to audience meaning.
+  - The cue can be reviewed as editable YAML without changing Rust or launcher code.
+- criterion: Student evidence loop
+  evidence:
+  - Student prediction appears before the run result.
+  - Reflection names the observed visible or audible behavior and one revision.
+- criterion: Accessibility fallback
+  evidence:
+  - The mission includes a caption, visual cue, peer narration, or non-audio fallback.
+  - Missing audio or hardware is handled as a support condition, not a learner failure.
 avoid:
-  - Exact user interface coordinates, brittle selectors, private implementation details, or hidden code inspection.
-  - Treating sound polish alone as proof of learning.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or deployed media-pipeline status.
+- Exact user interface coordinates, brittle selectors, private implementation details, or hidden code inspection.
+- Treating sound polish alone as proof of learning.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or deployed media-pipeline status.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes media-audio-cue-storyboard
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/media-audio-cue-storyboard.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes media-audio-cue-storyboard
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/media-audio-cue-storyboard.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
@@ -121,10 +91,7 @@ artifacts:
   student_prediction_prompt: agentic://student/prediction-prompt
   accessibility_fallback_note: agentic://student/accessibility-fallback-note
   revision_reflection_prompt: agentic://student/revision-reflection-prompt
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence. Do
-  not replace instructor judgment with launch, screenshot, or export-preflight
-  artifacts. Do not claim full user interface automation, automated creative
-  assessment, learner-world grading, complete Alice coverage, or a deployed
-  media pipeline.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or a deployed media pipeline.
+adapter:
+  targets:
+  - lookingglass

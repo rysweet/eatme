@@ -4,116 +4,94 @@ title: Instructor Lesson Materials Remix
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Building A Scene lesson
-    url: https://www.alice.org/resources/lessons/building-a-scene/
-    use: >-
-      Use world creation objectives: objects, positioning, orientation, subparts, camera, markers, and saving.
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use lessons, exercises, projects, textbooks, curriculums, how-tos, and audio library as remixable sources.
-purpose: >-
-  Prepare a short Alice lesson packet from existing resources with teacher notes,
-  student handout, and reflection prompt. The instructor flow verifies that the
-  lesson-material remix path is represented by scenario-labeled assets and
-  agentic probes. It does not grade learner worlds or assess creativity
-  automatically.
+- name: Alice.org Building A Scene lesson
+  url: https://www.alice.org/resources/lessons/building-a-scene/
+  use: 'Use world creation objectives: objects, positioning, orientation, subparts, camera, markers, and saving.'
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+  use: Use lessons, exercises, projects, textbooks, curriculums, how-tos, and audio library as remixable sources.
+purpose: Prepare a short Alice lesson packet from existing resources with teacher notes, student handout, and reflection prompt. The instructor flow verifies that the lesson-material remix path is represented by scenario-labeled assets and agentic probes. It does not grade learner worlds or assess creativity automatically.
 personas:
-  instructors: [studio-facilitator, classroom-orchestrator]
-  students: [curious-novice, reflective-debugger]
+  instructors:
+  - studio-facilitator
+  - classroom-orchestrator
+  students:
+  - curious-novice
+  - reflective-debugger
 agentic_flow:
   focus: preparing-lesson-materials
-  instructor_goal: >-
-    Prepare a short Alice lesson packet from existing resources with teacher
-    notes, student handout, reflection prompt, and review/remix contract grounded
-    in scenario-labeled Alice lesson assets.
+  instructor_goal: Prepare a short Alice lesson packet from existing resources with teacher notes, student handout, reflection prompt, and review/remix contract grounded in scenario-labeled Alice lesson assets.
   prompt_source: assets/scenarios/eatme/instructor-lesson-materials-remix.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - teacher_plan
-    - student_handout
-    - exit_ticket
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing lesson materials. Produce a one-page
-  teacher plan, student handout, and exit ticket for an Alice lesson grounded in
-  the listed resources and this instructor-lesson-materials-remix scenario.
-  Include setup assumptions, concept vocabulary, predicted visible world
-  changes, run/revise checkpoints, an instructor review/remix note, and a
-  reflection question. Keep language editable and classroom-facing. Do not claim
-  automated creative grading or learner-world assessment.
+  - teacher_plan
+  - student_handout
+  - exit_ticket
+agentic_test_prompt: Act as an instructor acceptance agent preparing lesson materials. Produce a one-page teacher plan, student handout, and exit ticket for an Alice lesson grounded in the listed resources and this instructor-lesson-materials-remix scenario. Include setup assumptions, concept vocabulary, predicted visible world changes, run/revise checkpoints, an instructor review/remix note, and a reflection question. Keep language editable and classroom-facing. Do not claim automated creative grading or learner-world assessment.
 acceptance_criteria:
-  - given: >-
-      an instructor has limited prep time
-    when: >-
-      the agent remixes Alice.org materials
-    then: >-
-      the output separates teacher plan, student handout, timing, and exit ticket
-  - given: >-
-      the lesson uses Alice world creation
-    when: >-
-      students run and revise
-    then: >-
-      the materials ask students to predict, observe, and revise a visible world behavior
-  - given: >-
-      an instructor reviews the generated lesson packet
-    when: >-
-      the agentic probes are applied to the teacher plan, student handout, and exit ticket
-    then: >-
-      the output shows the lesson-material remix path without claiming automated creative grading or learner-world assessment
+- given: an instructor has limited prep time
+  when: the agent remixes Alice.org materials
+  then: the output separates teacher plan, student handout, timing, and exit ticket
+- given: the lesson uses Alice world creation
+  when: students run and revise
+  then: the materials ask students to predict, observe, and revise a visible world behavior
+- given: an instructor reviews the generated lesson packet
+  when: the agentic probes are applied to the teacher plan, student handout, and exit ticket
+  then: the output shows the lesson-material remix path without claiming automated creative grading or learner-world assessment
 acceptance_probes:
-  - Teacher plan has a time-boxed launch, make/run/revise cycle, and share-out.
-  - Student handout names the Alice concept in learner-friendly language.
-  - Exit ticket checks concept understanding, not just completion.
-  - Instructor review/remix note names the scenario-labeled lesson-material path.
-  - Output avoids automated creative grading and learner-world assessment claims.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Teacher plan has a time-boxed launch, make/run/revise cycle, and share-out.
+- Student handout names the Alice concept in learner-friendly language.
+- Exit ticket checks concept understanding, not just completion.
+- Instructor review/remix note names the scenario-labeled lesson-material path.
+- Output avoids automated creative grading and learner-world assessment claims.
 rubric:
-  - criterion: Teacher readiness
-    evidence:
-      - Materials state prerequisites and backup instructions.
-      - The plan can be followed without editing Rust or code.
-  - criterion: Student clarity
-    evidence:
-      - Handout uses observable Alice behavior as the reference point.
-      - Reflection prompt asks why behavior happened.
-  - criterion: Resource grounding
-    evidence:
-      - At least one official Alice.org resource is named.
-      - The remix does not invent unsupported Alice features.
-  - criterion: Instructor review/remix contract
-    evidence:
-      - Materials identify the scenario-labeled lesson-material remix path.
-      - Agentic probes review teacher plan, student handout, and exit ticket without grading learner worlds.
+- criterion: Teacher readiness
+  evidence:
+  - Materials state prerequisites and backup instructions.
+  - The plan can be followed without editing Rust or code.
+- criterion: Student clarity
+  evidence:
+  - Handout uses observable Alice behavior as the reference point.
+  - Reflection prompt asks why behavior happened.
+- criterion: Resource grounding
+  evidence:
+  - At least one official Alice.org resource is named.
+  - The remix does not invent unsupported Alice features.
+- criterion: Instructor review/remix contract
+  evidence:
+  - Materials identify the scenario-labeled lesson-material remix path.
+  - Agentic probes review teacher plan, student handout, and exit ticket without grading learner worlds.
 avoid:
-  - Exact user interface coordinates, menu paths, or private implementation details.
-  - Single correct creative answer; preserve student ownership.
-  - Visual polish as a substitute for concept evidence.
-  - Automated creative grading or learner-world assessment claims.
+- Exact user interface coordinates, menu paths, or private implementation details.
+- Single correct creative answer; preserve student ownership.
+- Visual polish as a substitute for concept evidence.
+- Automated creative grading or learner-world assessment claims.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes instructor-lesson-materials-remix
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-lesson-materials-remix.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes instructor-lesson-materials-remix
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-lesson-materials-remix.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   teacher_plan: agentic://instructor/teacher-plan
   student_handout: agentic://instructor/student-handout
   exit_ticket: agentic://instructor/exit-ticket
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or
-  the cited Alice.org resource basis, fail visibly and report the missing
-  evidence. Do not replace instructor judgment with brittle user interface assertions,
-  automated creative grading, or learner-world assessment.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions, automated creative grading, or learner-world assessment.
+adapter:
+  targets:
+  - lookingglass

@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Lesson brief shows the no-loop motivating example before introducing the procedure-and-loop version.
       Loop-frame reference names the procedure, loop, and repeat count without referencing specific Alice character files.
       Student choreography card prompts a written prediction of the visible outcome before running.

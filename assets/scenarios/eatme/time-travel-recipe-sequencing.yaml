@@ -4,147 +4,94 @@ title: Time Travel Recipe Sequencing
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use the procedures and sequential execution concepts from this lesson
-      family as the coding backbone for a time-travel recipe that runs a
-      fixed series of named steps in order, showing students why sequence
-      matters and what happens when steps are swapped or skipped.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use the methods and sequential control flow topic from the Alice 3
-      lesson list to frame a recipe-style program where each step is a named
-      procedure call, the calls execute top-to-bottom, and reordering them
-      changes the visible outcome.
-purpose: >-
-  Help an instructor design a short Alice lesson where students build a
-  time-travel recipe as a sequence of named procedure calls. Students write
-  at least three steps in a deliberate order, predict what the scene will look
-  like after each step runs, swap two steps to observe the changed outcome,
-  and record why order mattered. The lesson can name the sequence explicitly as
-  a doInOrder-style routine so the web platform covers Alice sequential
-  execution instead of only generic procedure calls. This scenario covers the
-  curious-novice and systems-puzzle-solver student personas without claiming
-  full user interface automation, automated creative assessment,
-  learner-world grading, complete Alice coverage, or real Alice smoke evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use the procedures and sequential execution concepts from this lesson family as the coding backbone for a time-travel recipe that runs a fixed series of named steps in order, showing students why sequence matters and what happens when steps are swapped or skipped.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use the methods and sequential control flow topic from the Alice 3 lesson list to frame a recipe-style program where each step is a named procedure call, the calls execute top-to-bottom, and reordering them changes the visible outcome.
+purpose: Help an instructor design a short Alice lesson where students build a time-travel recipe as a sequence of named procedure calls. Students write at least three steps in a deliberate order, predict what the scene will look like after each step runs, swap two steps to observe the changed outcome, and record why order mattered. The lesson can name the sequence explicitly as a doInOrder-style routine so the web platform covers Alice sequential execution instead of only generic procedure calls. This scenario covers the curious-novice and systems-puzzle-solver student personas without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [exercise-forger, debug-coach]
-  students: [curious-novice, systems-puzzle-solver]
+  instructors:
+  - exercise-forger
+  - debug-coach
+  students:
+  - curious-novice
+  - systems-puzzle-solver
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_flow:
   focus: time-travel-recipe-sequencing
-  instructor_goal: >-
-    Prepare a lesson brief and student activity sheet for an Alice
-    time-travel recipe sequencing lesson: a motivating example showing three
-    procedure calls in a chosen order, a step-swap exercise that changes the
-    visible outcome, a before-run prediction prompt for the original order,
-    and an after-swap observation log comparing the two runs.
+  instructor_goal: 'Prepare a lesson brief and student activity sheet for an Alice time-travel recipe sequencing lesson: a motivating example showing three procedure calls in a chosen order, a step-swap exercise that changes the visible outcome, a before-run prediction prompt for the original order, and an after-swap observation log comparing the two runs.'
   prompt_source: assets/scenarios/eatme/time-travel-recipe-sequencing.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - lesson_brief
-    - student_activity_sheet
-    - step_sequence_frame
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a time-travel recipe
-  sequencing Alice lesson. Produce a lesson brief, student activity sheet,
-  and step-sequence frame grounded in the listed resources and this
-  time-travel-recipe-sequencing scenario. The lesson brief must show a short
-  motivating example of three named procedure calls running in order, explain
-  why top-to-bottom sequence matters, and include a step-swap exercise that
-  asks students to predict how swapping two calls changes the visible outcome.
-  The student activity sheet must prompt the student to name at least three
-  recipe steps, write the steps in a deliberate order, record a written
-  prediction of what the scene will look like after each step, run the
-  sequence, then swap two steps and record what changed. The step-sequence
-  frame must name each step as a procedure call without referencing specific
-  Alice assets or character models. State explicitly that this is not full
-  user interface automation, not automated creative assessment, not
-  learner-world grading, and not complete Alice coverage.
+  - lesson_brief
+  - student_activity_sheet
+  - step_sequence_frame
+agentic_test_prompt: Act as an instructor acceptance agent preparing a time-travel recipe sequencing Alice lesson. Produce a lesson brief, student activity sheet, and step-sequence frame grounded in the listed resources and this time-travel-recipe-sequencing scenario. The lesson brief must show a short motivating example of three named procedure calls running in order, explain why top-to-bottom sequence matters, and include a step-swap exercise that asks students to predict how swapping two calls changes the visible outcome. The student activity sheet must prompt the student to name at least three recipe steps, write the steps in a deliberate order, record a written prediction of what the scene will look like after each step, run the sequence, then swap two steps and record what changed. The step-sequence frame must name each step as a procedure call without referencing specific Alice assets or character models. State explicitly that this is not full user interface automation, not automated
+  creative assessment, not learner-world grading, and not complete Alice coverage.
 acceptance_criteria:
-  - given: >-
-      an instructor wants to teach sequential execution using a time-travel
-      recipe framing in Alice
-    when: >-
-      the lesson brief is prepared
-    then: >-
-      the brief shows at least three named procedure calls in a deliberate
-      order, explains why sequence matters, and includes a step-swap exercise
-      without requiring specific Alice assets or character models
-  - given: >-
-      a student is building a time-travel recipe program in Alice
-    when: >-
-      the student activity sheet is used
-    then: >-
-      the sheet prompts the student to name at least three steps, write them
-      in order, record a prediction before running, run the sequence, then
-      swap two steps and record what changed in the visible outcome
-  - given: >-
-      a systems-puzzle-solver student wants to explore why order matters
-    when: >-
-      the activity sheet swap section is reached
-    then: >-
-      the swap section asks the student to predict the changed outcome before
-      running and compare prediction to observation, without prescribing
-      exact assets or UI steps
+- given: an instructor wants to teach sequential execution using a time-travel recipe framing in Alice
+  when: the lesson brief is prepared
+  then: the brief shows at least three named procedure calls in a deliberate order, explains why sequence matters, and includes a step-swap exercise without requiring specific Alice assets or character models
+- given: a student is building a time-travel recipe program in Alice
+  when: the student activity sheet is used
+  then: the sheet prompts the student to name at least three steps, write them in order, record a prediction before running, run the sequence, then swap two steps and record what changed in the visible outcome
+- given: a systems-puzzle-solver student wants to explore why order matters
+  when: the activity sheet swap section is reached
+  then: the swap section asks the student to predict the changed outcome before running and compare prediction to observation, without prescribing exact assets or UI steps
 acceptance_probes:
-  - Lesson brief shows at least three named procedure calls in a deliberate order before explaining sequencing.
-  - Step-sequence frame names each step as a procedure call without referencing specific Alice assets.
-  - Student activity sheet prompts a written prediction of scene state after each step before any test run.
-  - Student activity sheet includes a step-swap exercise that asks the student to predict and then record the changed outcome.
-  - Output connects curious-novice and systems-puzzle-solver student personas to visible classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Lesson brief shows at least three named procedure calls in a deliberate order before explaining sequencing.
+- Step-sequence frame names each step as a procedure call without referencing specific Alice assets.
+- Student activity sheet prompts a written prediction of scene state after each step before any test run.
+- Student activity sheet includes a step-swap exercise that asks the student to predict and then record the changed outcome.
+- Output connects curious-novice and systems-puzzle-solver student personas to visible classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Sequence motivation clarity
-    evidence:
-      - Lesson brief shows at least three procedure calls in a named order before introducing the sequencing concept.
-      - Instructor framing explains what changes when steps are swapped, not only how to add procedure calls.
-  - criterion: Prediction before run
-    evidence:
-      - Student activity sheet records a written prediction of scene state after each step before the run.
-      - Observation log captures what actually changed when two steps were swapped.
-  - criterion: Asset independence
-    evidence:
-      - Step-sequence frame names procedure steps without referencing specific Alice character files.
-      - Swap exercise does not prescribe exact assets or UI steps.
+- criterion: Sequence motivation clarity
+  evidence:
+  - Lesson brief shows at least three procedure calls in a named order before introducing the sequencing concept.
+  - Instructor framing explains what changes when steps are swapped, not only how to add procedure calls.
+- criterion: Prediction before run
+  evidence:
+  - Student activity sheet records a written prediction of scene state after each step before the run.
+  - Observation log captures what actually changed when two steps were swapped.
+- criterion: Asset independence
+  evidence:
+  - Step-sequence frame names procedure steps without referencing specific Alice character files.
+  - Swap exercise does not prescribe exact assets or UI steps.
 avoid:
-  - Exact asset requirements or fixed UI steps.
-  - Claiming that a specific Alice character set is required for the lesson to work.
-  - Skipping the prediction step or letting students run before writing an expectation.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Exact asset requirements or fixed UI steps.
+- Claiming that a specific Alice character set is required for the lesson to work.
+- Skipping the prediction step or letting students run before writing an expectation.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes time-travel-recipe-sequencing
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/time-travel-recipe-sequencing.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes time-travel-recipe-sequencing
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/time-travel-recipe-sequencing.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   lesson_brief: agentic://instructor/lesson-brief
   student_activity_sheet: agentic://student/activity-sheet
   step_sequence_frame: agentic://instructor/step-sequence-frame
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
