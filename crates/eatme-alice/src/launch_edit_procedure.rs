@@ -26,6 +26,10 @@ pub struct UiActionEditProcedureProbe {
     pub detail: String,
     pub procedure_selector: String,
     pub edit_spec: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub object_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub movement: Option<Value>,
     pub candidate_hook_path: String,
     pub command: Option<String>,
     pub exit_status: Option<i32>,
@@ -315,6 +319,8 @@ pub(crate) fn probe_edit_procedure_hook(
         detail,
         procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
         edit_spec: DEFAULT_EDIT_SPEC.into(),
+        object_id: None,
+        movement: None,
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -510,6 +516,8 @@ pub(crate) fn probe_movement_procedure_hook(
         detail,
         procedure_selector: OBJECTS_FIRST_PROCEDURE_SELECTOR.into(),
         edit_spec: OBJECTS_FIRST_MOVEMENT_EDIT_SPEC.into(),
+        object_id: Some(result.object_id.clone()),
+        movement: Some(movement_with_object_id(&result)),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -583,6 +591,8 @@ fn blocked_edit_procedure_probe(
         detail: detail.into(),
         procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
         edit_spec: DEFAULT_EDIT_SPEC.into(),
+        object_id: None,
+        movement: None,
         candidate_hook_path: hook_path.display().to_string(),
         command: None,
         exit_status: None,
@@ -615,6 +625,8 @@ fn failed_edit_procedure_probe(
         ),
         procedure_selector: DEFAULT_PROCEDURE_SELECTOR.into(),
         edit_spec: DEFAULT_EDIT_SPEC.into(),
+        object_id: None,
+        movement: None,
         candidate_hook_path: hook_path.display().to_string(),
         command,
         exit_status,
@@ -721,6 +733,14 @@ fn validate_movement_edit_hook_result(
     errors
 }
 
+fn movement_with_object_id(result: &MovementProcedureEditHookResult) -> Value {
+    let mut movement = result.movement.clone();
+    if let Value::Object(ref mut object) = movement {
+        object.insert("object_id".into(), Value::String(result.object_id.clone()));
+    }
+    movement
+}
+
 fn failed_movement_procedure_probe(
     hook_path: &Path,
     command: Option<String>,
@@ -739,6 +759,8 @@ fn failed_movement_procedure_probe(
         ),
         procedure_selector: OBJECTS_FIRST_PROCEDURE_SELECTOR.into(),
         edit_spec: OBJECTS_FIRST_MOVEMENT_EDIT_SPEC.into(),
+        object_id: None,
+        movement: None,
         candidate_hook_path: hook_path.display().to_string(),
         command,
         exit_status,

@@ -52,8 +52,12 @@ pub(crate) fn write_objects_first_full_path_contract(
     let run_world_probe = probes.run_world;
     let save_project_probe = probes.save_project;
     let reopen_project_probe = probes.reopen_project;
-    let movement = movement_from_edit(edit_procedure_probe);
-    let object_id = object_identity(object_transform_probe, movement.as_ref());
+    let movement = edit_procedure_probe.movement.clone();
+    let object_id = object_identity(
+        object_transform_probe,
+        edit_procedure_probe,
+        movement.as_ref(),
+    );
     let before_state = read_artifact_json(run_dir, save_project_probe.save_artifact.as_ref());
     let after_state = read_artifact_json(
         run_dir,
@@ -208,39 +212,23 @@ fn phase_status(passed: bool) -> &'static str {
 
 fn object_identity(
     object_transform_probe: &UiActionObjectTransformProbe,
+    edit_procedure_probe: &UiActionEditProcedureProbe,
     movement: Option<&Value>,
 ) -> String {
     if !object_transform_probe.object_id.is_empty() {
         return object_transform_probe.object_id.clone();
     }
+    if let Some(object_id) = edit_procedure_probe
+        .object_id
+        .as_deref()
+        .filter(|object_id| !object_id.is_empty())
+    {
+        return object_id.to_string();
+    }
     movement
         .and_then(|movement| movement.get("object_id").and_then(Value::as_str))
         .map(str::to_string)
         .unwrap_or_default()
-}
-
-fn movement_from_edit(edit_procedure_probe: &UiActionEditProcedureProbe) -> Option<Value> {
-    serde_json::from_str::<Value>(&edit_procedure_probe.stdout)
-        .ok()
-        .and_then(|value| {
-            let object_id = value.get("object_id").and_then(Value::as_str)?;
-            let movement = value.get("movement")?;
-            if movement.get("operation").and_then(Value::as_str) != Some("move") {
-                return None;
-            }
-            if movement
-                .get("distance_meters")
-                .and_then(Value::as_f64)
-                .is_none_or(|distance| distance <= 0.0)
-            {
-                return None;
-            }
-            let mut movement = movement.clone();
-            if let Value::Object(ref mut object) = movement {
-                object.insert("object_id".into(), Value::String(object_id.to_string()));
-            }
-            Some(movement)
-        })
 }
 
 struct ArtifactJson {

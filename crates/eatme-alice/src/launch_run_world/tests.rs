@@ -214,6 +214,8 @@ fn edit_procedure_probe_with_status(status: &str) -> UiActionEditProcedureProbe 
         detail: "edit probe detail".into(),
         procedure_selector: "scene.myFirstMethod".into(),
         edit_spec: "append-movement:bunny.move(FORWARD,1.0)".into(),
+        object_id: None,
+        movement: None,
         candidate_hook_path: "tools/eatme-edit-procedure".into(),
         command: Some("tools/eatme-edit-procedure --json".into()),
         exit_status: Some(0),

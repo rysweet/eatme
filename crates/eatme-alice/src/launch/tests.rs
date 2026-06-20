@@ -40,6 +40,49 @@ fn rejects_non_kebab_case_scenario_names() {
 }
 
 #[test]
+fn objects_first_full_path_preflight_reports_missing_required_hooks() {
+    let root = unique_test_dir("objects-first-missing-hooks");
+    let tools = root.join("alice/tools");
+    fs::create_dir_all(&tools).unwrap();
+    for hook in [
+        DEFAULT_OBJECT_PLACEMENT_HOOK,
+        DEFAULT_PROCEDURE_EDIT_HOOK,
+        DEFAULT_WORLD_RUN_HOOK,
+        DEFAULT_PROJECT_SAVE_HOOK,
+        DEFAULT_PROJECT_REOPEN_HOOK,
+    ] {
+        fs::write(root.join("alice").join(hook), "#!/bin/sh\n").unwrap();
+    }
+
+    let missing = missing_objects_first_full_path_hooks(&root.join("alice"));
+
+    assert_eq!(missing, vec![DEFAULT_OBJECT_TRANSFORM_HOOK]);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn objects_first_full_path_preflight_accepts_complete_hook_set() {
+    let root = unique_test_dir("objects-first-complete-hooks");
+    let tools = root.join("alice/tools");
+    fs::create_dir_all(&tools).unwrap();
+    for hook in [
+        DEFAULT_OBJECT_PLACEMENT_HOOK,
+        DEFAULT_OBJECT_TRANSFORM_HOOK,
+        DEFAULT_PROCEDURE_EDIT_HOOK,
+        DEFAULT_WORLD_RUN_HOOK,
+        DEFAULT_PROJECT_SAVE_HOOK,
+        DEFAULT_PROJECT_REOPEN_HOOK,
+    ] {
+        fs::write(root.join("alice").join(hook), "#!/bin/sh\n").unwrap();
+    }
+
+    let missing = missing_objects_first_full_path_hooks(&root.join("alice"));
+
+    assert!(missing.is_empty(), "unexpected missing hooks: {missing:?}");
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn relative_runs_dir_resolves_to_absolute_launch_evidence_path() {
     let run_dir = launch_run_dir(
         PathBuf::from("runs").as_path(),
