@@ -21,21 +21,27 @@ use crate::discover::discover_alice;
 use crate::launch_desktop_controls::{probe_desktop_run_shortcut, probe_desktop_save_shortcut};
 use crate::launch_desktop_execution::probe_toolbar_run_and_execution;
 use crate::launch_edit_procedure::{
-    OBJECTS_FIRST_PROCEDURE_SELECTOR, probe_edit_procedure_hook, probe_movement_procedure_hook,
+    DEFAULT_PROCEDURE_EDIT_HOOK, OBJECTS_FIRST_PROCEDURE_SELECTOR, probe_edit_procedure_hook,
+    probe_movement_procedure_hook,
 };
 use crate::launch_license::seed_license_preferences_if_requested;
-use crate::launch_object_placement::{default_object_identifier, probe_object_placement_hook};
-use crate::launch_object_transform::probe_object_transform_hook;
+use crate::launch_object_placement::{
+    DEFAULT_OBJECT_PLACEMENT_HOOK, default_object_identifier, probe_object_placement_hook,
+};
+use crate::launch_object_transform::{DEFAULT_OBJECT_TRANSFORM_HOOK, probe_object_transform_hook};
 use crate::launch_objects_first_full_path::{
     FullPathPhaseProbes, FullPathVisualEvidence, write_objects_first_full_path_contract,
 };
 use crate::launch_options::LaunchSmokeOptions;
-use crate::launch_reopen_project::probe_project_reopen_hook_with_selector;
+use crate::launch_reopen_project::{
+    DEFAULT_PROJECT_REOPEN_HOOK, probe_project_reopen_hook_with_selector,
+};
 use crate::launch_run_window::probe_run_window_after_shortcut;
-use crate::launch_run_world::probe_run_world_hook;
-use crate::launch_run_world::probe_run_world_hook_with_selector;
+use crate::launch_run_world::{
+    DEFAULT_WORLD_RUN_HOOK, probe_run_world_hook, probe_run_world_hook_with_selector,
+};
 use crate::launch_save_project::{
-    OBJECTS_FIRST_SAVE_SELECTOR, probe_project_save_hook_with_selector,
+    DEFAULT_PROJECT_SAVE_HOOK, OBJECTS_FIRST_SAVE_SELECTOR, probe_project_save_hook_with_selector,
 };
 use crate::launch_ui_action_contract::write_ui_action_contract;
 use crate::launch_ui_actions::{
@@ -108,6 +114,37 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
             );
         }
     };
+    if options.scenario.is_objects_first_full_path() {
+        let missing_hooks = missing_objects_first_full_path_hooks(&options.alice_home);
+        let hooks_available = missing_hooks.is_empty();
+        let detail = if hooks_available {
+            "all Alice-side objects-first full-path hooks are present".to_string()
+        } else {
+            format!(
+                "preflight blocked: Alice checkout is missing required objects-first full-path hooks: {}",
+                missing_hooks.join(", ")
+            )
+        };
+        assertions.insert(
+            "alice_objects_first_required_hooks_available".into(),
+            bool_assert(hooks_available, detail.clone()),
+        );
+        if !hooks_available {
+            return write_blocked_manifest(
+                options,
+                &run_dir,
+                deps,
+                &eatme_commit,
+                Some(&discovery),
+                None,
+                None,
+                None,
+                "alice_required_hook_missing",
+                detail,
+                assertions,
+            );
+        }
+    }
     let package = match package_alice(
         PackageOptions {
             alice_home: &options.alice_home,
@@ -741,5 +778,20 @@ pub fn run_launch_smoke(options: &LaunchSmokeOptions) -> Result<LaunchSmokeManif
     manifest_write?;
     Ok(manifest)
 }
+
+fn missing_objects_first_full_path_hooks(alice_home: &Path) -> Vec<&'static str> {
+    [
+        DEFAULT_OBJECT_PLACEMENT_HOOK,
+        DEFAULT_OBJECT_TRANSFORM_HOOK,
+        DEFAULT_PROCEDURE_EDIT_HOOK,
+        DEFAULT_WORLD_RUN_HOOK,
+        DEFAULT_PROJECT_SAVE_HOOK,
+        DEFAULT_PROJECT_REOPEN_HOOK,
+    ]
+    .into_iter()
+    .filter(|relative_path| !alice_home.join(relative_path).is_file())
+    .collect()
+}
+
 #[cfg(test)]
 mod tests;
