@@ -36,8 +36,8 @@ Each covered scenario records:
 
 | Target | Path | Used for |
 | --- | --- | --- |
-| RabbitHole | `/home/azureuser/src/alice` | Desktop Alice behavior, save/reopen, UI action hooks, instructor-facing Alice workflows |
-| LookingGlass | `/home/azureuser/src/alice-web-prototype` | Supported web-port flows through the REST API and generated evidence artifacts |
+| RabbitHole | `$ALICE_HOME` | Desktop Alice behavior, save/reopen, UI action hooks, instructor-facing Alice workflows |
+| LookingGlass | `$LOOKINGGLASS_HOME` | Supported web tasks and generated evidence artifacts |
 | eatme | current repository | Scenario source, validation, generated Gadugi assets, and evidence comparison |
 
 LookingGlass is validated only for flows it supports. Desktop-only items stay
@@ -49,8 +49,8 @@ exists.
 Use these environment variables for local validation:
 
 ```bash
-export ALICE_HOME=/home/azureuser/src/alice
-export LOOKINGGLASS_HOME=/home/azureuser/src/alice-web-prototype
+export ALICE_HOME=/path/to/alice
+export LOOKINGGLASS_HOME=/path/to/alice-web-prototype
 export ALICE_WEB_URL=http://127.0.0.1:3099
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
@@ -114,9 +114,9 @@ problem is reported as a bug and linked to a GitHub issue.
 
 ## Coverage inventory
 
-This table lists HowTo and curriculum-journey coverage. It excludes
-`real-alice-launch-smoke` because startup-only evidence is a readiness check,
-not Alice.org HowTo coverage.
+This table lists HowTo and curriculum-journey coverage. It excludes Alice
+startup checks because opening the app by itself checks readiness, not
+Alice.org HowTo coverage.
 
 | HowTo area | Scenario | User journey covered | RabbitHole | LookingGlass |
 | --- | --- | --- | --- | --- |
@@ -125,9 +125,9 @@ not Alice.org HowTo coverage.
 | Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Covered | Not supported |
 | Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Covered | Not supported |
 | First scene | `building-a-scene-first-world` | Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project. | Covered | Covered |
-| First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Covered where REST flow supports it |
-| First scene | `alice-objects-first-full-path` | Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions. | Covered | Covered where hooks support it |
-| First lessons | `first-lessons-real-ui-actions` | Student completes first-lesson UI actions and records object, code-edit, run, and save proof. | Covered | Covered where REST flow supports it |
+| First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Covered where the web version supports the task |
+| First scene | `alice-objects-first-full-path` | Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions. | Covered | Covered where the web version supports the needed actions |
+| First lessons | `first-lessons-real-ui-actions` | Student completes first-lesson UI actions and records object, code-edit, run, and save proof. | Covered | Covered where the web version supports the task |
 | Code editor | `code-editor-first-run` | Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result. | Covered | Covered |
 | Procedures | `reusable-methods-and-parameters` | Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes. | Covered | Covered |
 | Procedures | `alien-linguist-parameter-dialogue` | Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results. | Covered | Covered |
@@ -148,16 +148,16 @@ not Alice.org HowTo coverage.
 | Debugging | `lost-robot-debug-museum` | Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction. | Covered | Covered |
 | Games | `game-score-timer-win-lose-loop` | Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions. | Covered | Covered |
 | Narrative | `mythic-choice-event-tree` | Student builds a branching story with event choices and checks that each choice reaches the expected scene result. | Covered | Covered |
-| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Covered where REST flow supports it |
+| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Covered where the web version supports the task |
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
 | Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
-| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Covered where REST flow supports it |
+| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Covered where the web version supports the task |
 | VR | `vr-player-comfort-playtest` | Student playtests VR comfort rules, records observations, and revises the project. | Covered | Not supported |
-| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Covered where REST flow supports it |
+| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Covered where the web version supports the task |
 | Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Covered where export flow supports it |
-| Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where Project IO supports it |
-| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered where asset support exists |
+| Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where the web version can open, save, and export projects |
+| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered where the web version can use the imported asset |
 | Alice 2 migration | `alice-2-migration-bridge` | Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result. | Covered | Not supported |
 | Classes | `modified-class-portability` | Student saves a modified class, imports it into another project, and checks that behavior travels with it. | Covered | Not supported |
 | Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Covered where browser accessibility applies |
@@ -170,7 +170,7 @@ not Alice.org HowTo coverage.
 | Instructor review | `instructor-student-outcomes-rubric` | Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence. | Covered | Covered |
 | Student review | `student-reflection-artifact-review` | Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes. | Covered | Covered |
 | Sharing | `student-artifact-package-share-evidence` | Student packages project, screenshot, notes, and share evidence for review. | Covered | Covered |
-| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered where review API supports it |
+| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered where the web review tools support it |
 | Sharing | `teacher-community-sharing-loop` | Teacher packages a reusable classroom resource and checks community-sharing metadata. | Covered | Not supported |
 | Data storytelling | `neighborhood-data-story` | Student turns local data into an Alice story and verifies that values drive scene behavior. | Covered | Covered |
 
