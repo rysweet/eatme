@@ -94,6 +94,7 @@ the generated adapters as consumers of eatme's explicit contracts:
 | --- | --- |
 | `real-alice-launch-smoke` | Run the launch smoke and inspect manifest-level launch evidence. |
 | `first-lessons-real-ui-actions` | Preserve the action-contract boundary and do not convert `ui_action_automation_unimplemented` into a full UI pass. |
+| `alice-objects-first-full-path` | Run `alice objects-first-full-path` and require command evidence, scenario copy, phase artifacts, project state before/after save, reopen verification, and persistence assertions. |
 | `alice-objects-first-world` | Run the objects-first workflow and require object placement, transform, movement procedure, run, save, reopen, and persisted-state evidence. |
 | `instructor-lesson-materials-remix` | Evaluate instructor packet outputs and acceptance probes without launching Alice or grading learner worlds. |
 
@@ -107,11 +108,20 @@ Readiness consumers should inspect the normalized `status`,
 `lesson_session_readiness`, and `no_go_contracts` fields documented in
 [Lesson Session Readiness](lesson-session-readiness.md).
 
-The `alice-objects-first-world` adapter is different: it expects the full
-workflow to pass. It must not accept a run that only starts Alice. It should
-inspect the eatme manifest, `workflow_phases[]`, and
+The planned `alice-objects-first-world` adapter is different: it expects the
+full workflow to pass once the workflow exists. It must not accept a run that
+only starts Alice. It should inspect the eatme manifest, `workflow_phases[]`, and
 `project-reopen/persisted-state.json` contract documented in
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
+
+The `alice-objects-first-full-path` adapter is stricter and command-bound. It
+must call `alice objects-first-full-path`, not `alice launch-smoke`, and inspect
+`objects_first_full_path.workflow_phases[]`,
+`project-save/pre-save-project-state.json`,
+`project-save/post-save-project-state.json`,
+`project-reopen/reopen-verification.json`, and
+`project-reopen/persistence-assertions.json` as documented in
+[Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md).
 
 ## Step block composition
 
@@ -121,7 +131,6 @@ output patterns across 25+ adapters. Templates live in
 `include_str!()`. The generator substitutes per-scenario values (asset count,
 scenario id) and inlines the result — generated YAML is still self-contained.
 See [Step Block Composition](step-block-composition.md) for template format,
-placeholder reference, and instructions for adding new step blocks.
 placeholder reference, and instructions for adding new step blocks.
 
 ## Editing policy

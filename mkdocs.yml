@@ -15,10 +15,11 @@ nav:
     - "CLI usage": "cli-usage.md"
   - "Curriculum Scenarios":
     - "Scenario authoring": "scenario-authoring.md"
-    - "Alice Objects-First World": "alice-objects-first-world.md"
+    - "Alice.org HowTo coverage": "eatme/alice-howto-coverage.md"
+    - "Alice Objects-First World Spec": "alice-objects-first-world.md"
     - "Student missions": "student-missions.md"
     - "Instructor missions": "instructor-missions.md"
-    - "Alice lesson smoke": "alice-lesson-smoke.md"
+    - "Alice lesson startup evidence": "alice-lesson-smoke.md"
     - "Student lesson E2E tests": "student-lesson-e2e-tests.md"
     - "Code editor first run E2E test": "code-editor-first-run-e2e.md"
     - "First-Lesson Grading Report": "first-lesson-grading-report.md"
@@ -29,7 +30,7 @@ nav:
   - "Testing":
     - "Validation and quality gates": "validation-quality-gates.md"
     - "Web platform testing": "web-platform-testing.md"
-    - "Deterministic real-Alice smoke test": "deterministic-real-alice-smoke-test.md"
+    - "Deterministic real-Alice startup check": "deterministic-real-alice-smoke-test.md"
     - "Real-Alice grading integration tests": "real-alice-grading-integration-tests.md"
     - "Alice content coverage tests": "alice-content-coverage-tests.md"
     - "Alice Web parity gap scenarios": "alice-web-parity-gap-scenarios.md"
@@ -40,7 +41,7 @@ nav:
   - "Architecture":
     - "Grading module architecture": "grading-module-architecture.md"
     - "Evidence artifact contract": "evidence-artifact-contract.md"
-    - "Alice Objects-First World Reference": "alice-objects-first-world-reference.md"
+    - "Alice Objects-First World Spec Reference": "alice-objects-first-world-reference.md"
     - "Lesson readiness module boundary": "lesson-readiness-module-boundary.md"
     - "First-lesson vertical slice": "first-lesson-vertical-slice.md"
     - "First-Lesson Evidence Readiness": "first-lesson-evidence-readiness.md"

@@ -57,6 +57,8 @@ pub(super) fn write_blocked_manifest(
             None,
             None,
             None,
+            None,
+            None,
         )?;
         record_ui_action_artifact(&mut assertions, &artifact);
         Some(artifact)
@@ -152,13 +154,17 @@ pub(super) fn build_manifest(
         log_error,
         fatal_log_scan,
         assertions,
+        command: None,
+        scenario: None,
+        evidence: None,
+        persistence_assertions: None,
         failure_category,
     }
 }
 
 pub(super) fn write_manifest(run_dir: &Path, manifest: &LaunchSmokeManifest) -> Result<()> {
     let path = run_dir.join("manifest.json");
-    let json = serde_json::to_string_pretty(manifest)?;
-    fs::write(path, json)?;
+    let file = fs::File::create(path)?;
+    serde_json::to_writer_pretty(file, manifest)?;
     Ok(())
 }

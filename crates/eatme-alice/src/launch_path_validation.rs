@@ -8,6 +8,31 @@ pub(crate) fn artifact_info_under(
     field: &str,
     root_label: &str,
 ) -> std::result::Result<ArtifactInfo, String> {
+    let canonical_path =
+        canonical_relative_artifact_under(root_dir, relative_path, field, root_label)?;
+    let mut artifact = artifact_info(&canonical_path).map_err(|error| {
+        format!(
+            "{field} {} is not a readable artifact: {error:#}",
+            canonical_path.display()
+        )
+    })?;
+    let root_name = root_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| format!("{root_label} must have a stable artifact directory name"))?;
+    artifact.path = Path::new(root_name)
+        .join(Path::new(relative_path))
+        .display()
+        .to_string();
+    Ok(artifact)
+}
+
+pub(crate) fn canonical_relative_artifact_under(
+    root_dir: &Path,
+    relative_path: &str,
+    field: &str,
+    root_label: &str,
+) -> std::result::Result<PathBuf, String> {
     let path = Path::new(relative_path);
     if path.is_absolute() || normal_components(path).is_none() {
         return Err(format!(
@@ -16,13 +41,7 @@ pub(crate) fn artifact_info_under(
     }
 
     let full_path = root_dir.join(path);
-    canonical_artifact_under(root_dir, &full_path, field, root_label)?;
-    artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })
+    canonical_artifact_under(root_dir, &full_path, field, root_label)
 }
 
 pub(crate) fn canonical_artifact_under(

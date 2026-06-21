@@ -208,7 +208,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
         description: format!(
-            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop launch behavior remains owned by eatme; {}.{}",
+            "Gadugi-compatible CLI scenario generated from {source_asset}. Alice desktop behavior remains owned by eatme; {}.{}",
             generated_evidence_scope(scenario),
             generated_boundary_note(scenario)
         ),
@@ -250,7 +250,9 @@ fn generate_gadugi_adapter_yaml_for_scenario(
             author: "eatme".into(),
             test_type: match scenario.kind.as_str() {
                 "alice_real_ui_action_contract" => "ui-action-contract",
-                _ => "launch-smoke",
+                "alice_objects_first_workflow" => "objects-first-workflow",
+                "alice_howto_user_journey" => "howto-user-journey",
+                _ => "startup-check",
             }
             .into(),
         },
@@ -262,6 +264,10 @@ fn generate_gadugi_adapter_yaml_for_scenario(
 fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
         return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
+    }
+
+    if scenario.kind == "alice_howto_user_journey" {
+        return "gadugi invokes eatme commands for a scenario-specific Alice user journey and checks the expected evidence";
     }
 
     "gadugi invokes eatme commands and checks manifest-level evidence only"
@@ -388,7 +394,7 @@ fn step_title(id: &str) -> String {
 }
 
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
-    if step_id.contains("launch") {
+    if step_id.contains("launch") || step_id.contains("howto") || step_id.contains("full-path") {
         launch_timeout * 1000
     } else {
         60_000
@@ -434,6 +440,8 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
     step_id.contains("launch")
         || step_id.contains("smoke")
         || command.contains("alice launch-smoke")
+        || command.contains("alice run-howto")
+        || command.contains("alice objects-first-full-path")
 }
 
 fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {

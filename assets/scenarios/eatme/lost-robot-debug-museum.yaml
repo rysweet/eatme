@@ -4,138 +4,92 @@ title: Lost Robot Debug Museum
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use procedures, methods, sequence, and parameter concepts as the code
-      structure behind a robot tour that visits museum exhibits in a specified
-      order. Debugging a broken sequence follows the same run-edit-run evidence
-      loop from this lesson.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use methods, parameters, and control structures as the concepts targeted
-      by a debugging challenge where a robot visits exhibits out of order or
-      skips a stop.
-purpose: >-
-  Help an instructor design a debugging-mystery mission where a museum robot
-  visits exhibits in the wrong order or skips one stop. Students read an
-  expected tour plan, run the Alice world, compare observed behavior to
-  expected behavior, write one hypothesis, pause at one breakpoint or explicit
-  debug checkpoint, make one minimal change, rerun, and record what changed.
-  This scenario covers the reflective-debugger student persona without claiming
-  full user interface automation, automated creative assessment,
-  learner-world grading, complete Alice coverage, or real Alice smoke
-  evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use procedures, methods, sequence, and parameter concepts as the code structure behind a robot tour that visits museum exhibits in a specified order. Debugging a broken sequence follows the same run-edit-run evidence loop from this lesson.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use methods, parameters, and control structures as the concepts targeted by a debugging challenge where a robot visits exhibits out of order or skips a stop.
+purpose: Help an instructor design a debugging-mystery mission where a museum robot visits exhibits in the wrong order or skips one stop. Students read an expected tour plan, run the Alice world, compare observed behavior to expected behavior, write one hypothesis, pause at one breakpoint or explicit debug checkpoint, make one minimal change, rerun, and record what changed. This scenario covers the reflective-debugger student persona without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [debug-coach, exercise-forger]
-  students: [reflective-debugger, collaborative-peer-mentor]
+  instructors:
+  - debug-coach
+  - exercise-forger
+  students:
+  - reflective-debugger
+  - collaborative-peer-mentor
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_flow:
   focus: lost-robot-debug-museum
-  instructor_goal: >-
-    Prepare a debugging-mystery mission brief and student debug journal for an
-    Alice museum-robot scenario: expected tour stops, one observable wrong
-    behavior, a hypothesis prompt before any code edit, a minimal-change
-    instruction, a rerun evidence record, and a peer-question checkpoint.
+  instructor_goal: 'Prepare a debugging-mystery mission brief and student debug journal for an Alice museum-robot scenario: expected tour stops, one observable wrong behavior, a hypothesis prompt before any code edit, a minimal-change instruction, a rerun evidence record, and a peer-question checkpoint.'
   prompt_source: assets/scenarios/eatme/lost-robot-debug-museum.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - debug_mystery_brief
-    - student_debug_journal
-    - peer_question_checkpoint
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a debugging-mystery Alice
-  mission. Produce a debug mystery brief, student debug journal, and peer
-  question checkpoint grounded in the listed resources and this
-  lost-robot-debug-museum scenario. The brief must describe expected tour stops
-  and one observable wrong behavior discoverable from visible world output.
-  The student debug journal must prompt: read the expected plan, run the world,
-  record what went wrong, write one hypothesis, make one minimal change, rerun,
-  and record what changed. The peer question checkpoint must ask a collaborative
-  peer mentor to pose one clarifying question before the debugger shares a
-  conclusion. State explicitly that this is not full user interface automation,
-  not automated creative assessment, not learner-world grading, and not complete
-  Alice coverage.
+  - debug_mystery_brief
+  - student_debug_journal
+  - peer_question_checkpoint
+agentic_test_prompt: 'Act as an instructor acceptance agent preparing a debugging-mystery Alice mission. Produce a debug mystery brief, student debug journal, and peer question checkpoint grounded in the listed resources and this lost-robot-debug-museum scenario. The brief must describe expected tour stops and one observable wrong behavior discoverable from visible world output. The student debug journal must prompt: read the expected plan, run the world, record what went wrong, write one hypothesis, make one minimal change, rerun, and record what changed. The peer question checkpoint must ask a collaborative peer mentor to pose one clarifying question before the debugger shares a conclusion. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.'
 acceptance_criteria:
-  - given: >-
-      an instructor wants to run a debugging session where a museum robot visits
-      exhibits in the wrong order or skips a stop
-    when: >-
-      the debug mystery brief is prepared
-    then: >-
-      the brief states expected tour stops, one observable wrong behavior, and
-      the debugging goal without exposing hidden stack traces or exact code
-  - given: >-
-      a student reads the expected tour plan and runs the Alice world
-    when: >-
-      the student debug journal is used
-    then: >-
-      the journal prompts the student to record one expected-vs-actual mismatch,
-      write a hypothesis before editing, make one minimal change, rerun, and
-      record whether the hypothesis was confirmed
-  - given: >-
-      a peer mentor is reviewing the debugger's work
-    when: >-
-      the peer question checkpoint is reached
-    then: >-
-      the checkpoint prompts the peer to ask one clarifying question about the
-      debugger's hypothesis or revision before a conclusion is shared
+- given: an instructor wants to run a debugging session where a museum robot visits exhibits in the wrong order or skips a stop
+  when: the debug mystery brief is prepared
+  then: the brief states expected tour stops, one observable wrong behavior, and the debugging goal without exposing hidden stack traces or exact code
+- given: a student reads the expected tour plan and runs the Alice world
+  when: the student debug journal is used
+  then: the journal prompts the student to record one expected-vs-actual mismatch, write a hypothesis before editing, make one minimal change, rerun, and record whether the hypothesis was confirmed
+- given: a peer mentor is reviewing the debugger's work
+  when: the peer question checkpoint is reached
+  then: the checkpoint prompts the peer to ask one clarifying question about the debugger's hypothesis or revision before a conclusion is shared
 acceptance_probes:
-  - Debug mystery brief names expected tour stops and one observable wrong behavior without exposing hidden code details.
-  - Student debug journal prompts hypothesis before any edit and rerun evidence after the minimal change.
-  - Peer question checkpoint asks the collaborative-peer-mentor to ask one question before the debugger concludes.
-  - Output connects reflective-debugger and collaborative-peer-mentor student personas to visible classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Debug mystery brief names expected tour stops and one observable wrong behavior without exposing hidden code details.
+- Student debug journal prompts hypothesis before any edit and rerun evidence after the minimal change.
+- Peer question checkpoint asks the collaborative-peer-mentor to ask one question before the debugger concludes.
+- Output connects reflective-debugger and collaborative-peer-mentor student personas to visible classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Debugging from visible evidence
-    evidence:
-      - Expected vs actual tour behavior is readable from world output, not hidden code inspection.
-      - Student change is minimal and targeted at the stated hypothesis.
-  - criterion: Hypothesis before repair
-    evidence:
-      - Debug journal records the hypothesis before any code edit.
-      - Rerun result confirms or updates the hypothesis based on new visible behavior.
-  - criterion: Peer learning
-    evidence:
-      - Peer mentor question addresses the hypothesis or evidence, not syntax or visual style.
-      - Creator responds to the question before sharing a final revision conclusion.
+- criterion: Debugging from visible evidence
+  evidence:
+  - Expected vs actual tour behavior is readable from world output, not hidden code inspection.
+  - Student change is minimal and targeted at the stated hypothesis.
+- criterion: Hypothesis before repair
+  evidence:
+  - Debug journal records the hypothesis before any code edit.
+  - Rerun result confirms or updates the hypothesis based on new visible behavior.
+- criterion: Peer learning
+  evidence:
+  - Peer mentor question addresses the hypothesis or evidence, not syntax or visual style.
+  - Creator responds to the question before sharing a final revision conclusion.
 avoid:
-  - Hidden stack traces, exact code line numbers, or all-at-once repair instructions.
-  - Treating a single visible symptom as proof the whole world is fixed.
-  - Skipping hypothesis writing or letting students edit without stating expected change.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Hidden stack traces, exact code line numbers, or all-at-once repair instructions.
+- Treating a single visible symptom as proof the whole world is fixed.
+- Skipping hypothesis writing or letting students edit without stating expected change.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes lost-robot-debug-museum
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/lost-robot-debug-museum.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes lost-robot-debug-museum
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/lost-robot-debug-museum.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   debug_mystery_brief: agentic://instructor/debug-mystery-brief
   student_debug_journal: agentic://student/debug-journal
   peer_question_checkpoint: agentic://student/peer-question-checkpoint
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.

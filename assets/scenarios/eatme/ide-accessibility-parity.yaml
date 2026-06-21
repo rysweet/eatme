@@ -1,118 +1,95 @@
 schema_version: eatme.scenario/v1
 id: ide-accessibility-parity
-title: IDE Accessibility Parity — Labels, Keyboard, Contrast, and Zoom
+title: "IDE Accessibility Parity \u2014 Labels, Keyboard, Contrast, and Zoom"
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice resources overview
-    url: https://www.alice.org/resources/
-    use: >-
-      Ground accessibility parity checks in the same editor and classroom flows
-      teachers use when learners navigate menus, read labels, and adjust viewing
-      conditions.
-  - name: Alice 3 How Tos and lessons
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use Alice-facing editing, navigation, and presentation tasks as the basis
-      for accessibility checks across screen reader labels, keyboard-only use,
-      high contrast, and 200% zoom or magnification.
-purpose: >-
-  Help an instructor or reviewer prepare an accessibility parity verification
-  pack for the Alice IDE. The pack must define checks for screen reader
-  compatibility so all interactive elements have accessible labels, keyboard
-  navigation so core IDE features remain reachable without a mouse, high
-  contrast mode so the interface remains usable when contrast is elevated, and
-  zoom or magnification so UI elements scale correctly at 200%. The output must
-  remain honest about boundaries: it is not full user interface automation, not
-  creative assessment, not learner-world grading, and not complete Alice
-  coverage.
+- name: Alice resources overview
+  url: https://www.alice.org/resources/
+  use: Ground accessibility parity checks in the same editor and classroom flows teachers use when learners navigate menus, read labels, and adjust viewing conditions.
+- name: Alice 3 How Tos and lessons
+  url: https://www.alice.org/resources/alice-3/
+  use: Use Alice-facing editing, navigation, and presentation tasks as the basis for accessibility checks across screen reader labels, keyboard-only use, high contrast, and 200% zoom or magnification.
+purpose: 'Help an instructor or reviewer prepare an accessibility parity verification pack for the Alice IDE. The pack must define checks for screen reader compatibility so all interactive elements have accessible labels, keyboard navigation so core IDE features remain reachable without a mouse, high contrast mode so the interface remains usable when contrast is elevated, and zoom or magnification so UI elements scale correctly at 200%. The output must remain honest about boundaries: it is not full user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.'
 personas:
-  instructors: [studio-facilitator, assessment-curator]
-  students: [accessibility-advocate, immersive-camera-director, curious-novice]
+  instructors:
+  - studio-facilitator
+  - assessment-curator
+  students:
+  - accessibility-advocate
+  - immersive-camera-director
+  - curious-novice
 agentic_flow:
   focus: ide-accessibility-parity
-  instructor_goal: >-
-    Produce an accessibility checklist, a keyboard coverage worksheet, and a
-    zoom-and-contrast evidence card for IDE accessibility parity review.
+  instructor_goal: Produce an accessibility checklist, a keyboard coverage worksheet, and a zoom-and-contrast evidence card for IDE accessibility parity review.
   prompt_source: assets/scenarios/eatme/ide-accessibility-parity.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - accessibility_checklist
-    - keyboard_coverage_worksheet
-    - zoom_and_contrast_evidence_card
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing an IDE accessibility parity
-  review. Produce an accessibility checklist, a keyboard coverage worksheet,
-  and a zoom-and-contrast evidence card. The checklist must verify screen reader
-  compatibility by asking whether all interactive elements have accessible
-  labels. The worksheet must verify keyboard navigation by checking whether core
-  IDE features are reachable by keyboard only. The evidence card must verify
-  high contrast mode by asking whether the UI remains usable in high contrast,
-  and verify zoom or magnification by checking that UI elements scale correctly
-  at 200%. State explicitly that this is not full user interface automation,
-  not creative assessment, not learner-world grading, and not complete Alice
-  coverage.
+  - accessibility_checklist
+  - keyboard_coverage_worksheet
+  - zoom_and_contrast_evidence_card
+agentic_test_prompt: Act as an instructor acceptance agent preparing an IDE accessibility parity review. Produce an accessibility checklist, a keyboard coverage worksheet, and a zoom-and-contrast evidence card. The checklist must verify screen reader compatibility by asking whether all interactive elements have accessible labels. The worksheet must verify keyboard navigation by checking whether core IDE features are reachable by keyboard only. The evidence card must verify high contrast mode by asking whether the UI remains usable in high contrast, and verify zoom or magnification by checking that UI elements scale correctly at 200%. State explicitly that this is not full user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
 acceptance_criteria:
-  - given: a reviewer is checking screen reader compatibility
-    when: the accessibility checklist is prepared
-    then: it asks whether all interactive elements have accessible labels and records any missing label category
-  - given: a reviewer is checking keyboard-only access
-    when: the keyboard worksheet is prepared
-    then: it asks whether all core IDE features are reachable via keyboard and where focus order breaks down first
-  - given: a reviewer is checking presentation accessibility
-    when: the zoom-and-contrast evidence card is prepared
-    then: it asks whether the UI remains usable in high contrast and whether UI elements scale correctly at 200%
+- given: a reviewer is checking screen reader compatibility
+  when: the accessibility checklist is prepared
+  then: it asks whether all interactive elements have accessible labels and records any missing label category
+- given: a reviewer is checking keyboard-only access
+  when: the keyboard worksheet is prepared
+  then: it asks whether all core IDE features are reachable via keyboard and where focus order breaks down first
+- given: a reviewer is checking presentation accessibility
+  when: the zoom-and-contrast evidence card is prepared
+  then: it asks whether the UI remains usable in high contrast and whether UI elements scale correctly at 200%
 acceptance_probes:
-  - Checklist explicitly says all interactive elements have accessible labels.
-  - Worksheet explicitly says all IDE features reachable via keyboard.
-  - Worksheet asks reviewers to record where focus order or shortcut coverage breaks first.
-  - Evidence card explicitly says UI remains usable in high contrast.
-  - Evidence card explicitly says UI elements scale correctly at 200%.
-  - Output states that the scenario is not full user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Checklist explicitly says all interactive elements have accessible labels.
+- Worksheet explicitly says all IDE features reachable via keyboard.
+- Worksheet asks reviewers to record where focus order or shortcut coverage breaks first.
+- Evidence card explicitly says UI remains usable in high contrast.
+- Evidence card explicitly says UI elements scale correctly at 200%.
+- Output states that the scenario is not full user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Screen-reader label coverage
-    evidence:
-      - Checklist asks whether all interactive elements have accessible labels.
-      - Checklist records missing-label categories rather than hiding them.
-  - criterion: Keyboard parity coverage
-    evidence:
-      - Worksheet asks whether all IDE features are reachable via keyboard.
-      - Worksheet records the first focus-order or shortcut failure.
-  - criterion: Visual accessibility coverage
-    evidence:
-      - Evidence card asks whether the UI remains usable in high contrast.
-      - Evidence card asks whether UI elements scale correctly at 200% zoom or magnification.
+- criterion: Screen-reader label coverage
+  evidence:
+  - Checklist asks whether all interactive elements have accessible labels.
+  - Checklist records missing-label categories rather than hiding them.
+- criterion: Keyboard parity coverage
+  evidence:
+  - Worksheet asks whether all IDE features are reachable via keyboard.
+  - Worksheet records the first focus-order or shortcut failure.
+- criterion: Visual accessibility coverage
+  evidence:
+  - Evidence card asks whether the UI remains usable in high contrast.
+  - Evidence card asks whether UI elements scale correctly at 200% zoom or magnification.
 avoid:
-  - Treating a single passing run as proof of complete accessibility coverage.
-  - Ignoring accessible labels for secondary controls or dialogs.
-  - Ignoring keyboard focus order once shortcuts partially work.
-  - Claiming creative assessment, learner-world grading, or full user interface automation.
+- Treating a single passing run as proof of complete accessibility coverage.
+- Ignoring accessible labels for secondary controls or dialogs.
+- Ignoring keyboard focus order once shortcuts partially work.
+- Claiming creative assessment, learner-world grading, or full user interface automation.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes ide-accessibility-parity
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/ide-accessibility-parity.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes ide-accessibility-parity
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/ide-accessibility-parity.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   accessibility_checklist: agentic://instructor/accessibility-checklist
   keyboard_coverage_worksheet: agentic://instructor/keyboard-coverage-worksheet
   zoom_and_contrast_evidence_card: agentic://instructor/zoom-and-contrast-evidence-card
-unsupported_policy: >-
-  If the agent cannot read this editable YAML or the cited Alice-facing
-  resources, fail visibly and report the missing evidence. Do not replace the
-  scenario with claims of full user interface automation. State not creative
-  assessment, not learner-world grading, and not complete Alice coverage.
+unsupported_policy: If the agent cannot read this editable YAML or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace the scenario with claims of full user interface automation. State not creative assessment, not learner-world grading, and not complete Alice coverage.
+adapter:
+  targets:
+  - lookingglass

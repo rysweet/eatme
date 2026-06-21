@@ -8,10 +8,9 @@ resource_basis:
   url: https://www.alice.org/resources/lessons/using-comments/
 - name: Alice.org Alice 3 lessons
   url: https://www.alice.org/resources/alice-3-lessons/
-purpose: Cover the Using Comments alice.org lesson where students learn to add inline comments to Alice procedures to document
-  their code.
+purpose: Cover the Using Comments alice.org lesson where students learn to add inline comments to Alice procedures to document their code.
 launcher:
-  command: alice launch-smoke
+  command: alice run-howto
   scenario: using-comments-code-clarity
 real_alice:
   gated_by: EATME_REAL_ALICE=1
@@ -38,6 +37,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
   - manifest_assertions
@@ -65,8 +65,7 @@ steps:
   evidence:
   - stdout JSON has all_required_available=true
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke --alice-home ${ALICE_HOME} --run-id ${RUN_ID}
-    --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario using-comments-code-clarity
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario using-comments-code-clarity
   evidence:
   - manifest scenario_id equals using-comments-code-clarity
   - manifest failure_category is null
@@ -76,8 +75,9 @@ steps:
   - log exists and is non-empty
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#using-comments-code-clarity
-  deterministic_gate: Run this smoke scenario before asking agents to assess whether a learner used variables, data types,
-    and visible state changes in a scorekeeper or timer.
+  deterministic_gate: Run this scenario before asking agents to assess whether a learner used variables, data types, and visible state changes in a scorekeeper or timer.
+acceptance_probes:
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -86,5 +86,4 @@ artifacts:
   screenshot: runs/variables-scorekeeper-timekeeper/${RUN_ID}/screenshots/startup.png
   log: runs/variables-scorekeeper-timekeeper/${RUN_ID}/alice.log
   window_list: runs/variables-scorekeeper-timekeeper/${RUN_ID}/window-list.txt
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing,
-  fail loudly. Do not silently skip or substitute a mocked Alice runtime.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or substitute a mocked Alice runtime.

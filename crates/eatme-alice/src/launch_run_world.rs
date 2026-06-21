@@ -1,12 +1,12 @@
-use crate::launch_artifacts::artifact_info;
 use crate::launch_edit_procedure::UiActionEditProcedureProbe;
+use crate::launch_path_validation::artifact_info_under;
 use crate::launch_ui_actions::{
     UiActionMissingAffordance, UiActionNoGoProbe, UiActionPrecondition,
 };
 use eatme_core::{ArtifactInfo, CommandRunner, CommandSpec};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Component, Path};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) const DEFAULT_WORLD_RUN_HOOK: &str = "tools/eatme-run-world";
@@ -53,6 +53,24 @@ pub(crate) fn probe_run_world_hook(
     alice_home: &Path,
     run_dir: &Path,
     edit_procedure_probe: &UiActionEditProcedureProbe,
+    display: &str,
+) -> UiActionRunWorldProbe {
+    probe_run_world_hook_with_selector(
+        runner,
+        alice_home,
+        run_dir,
+        edit_procedure_probe,
+        DEFAULT_RUN_SELECTOR,
+        display,
+    )
+}
+
+pub(crate) fn probe_run_world_hook_with_selector(
+    runner: &impl CommandRunner,
+    alice_home: &Path,
+    run_dir: &Path,
+    edit_procedure_probe: &UiActionEditProcedureProbe,
+    run_selector: &str,
     display: &str,
 ) -> UiActionRunWorldProbe {
     let hook_path = alice_home.join(DEFAULT_WORLD_RUN_HOOK);
@@ -108,7 +126,7 @@ pub(crate) fn probe_run_world_hook(
                 "--project".to_string(),
                 edited_project.display().to_string(),
                 "--run-selector".to_string(),
-                DEFAULT_RUN_SELECTOR.to_string(),
+                run_selector.to_string(),
                 "--evidence-dir".to_string(),
                 evidence_dir.display().to_string(),
                 "--json".to_string(),
@@ -127,7 +145,7 @@ pub(crate) fn probe_run_world_hook(
                     "{} --project {} --run-selector {} --evidence-dir {} --json",
                     hook_path.display(),
                     edited_project.display(),
-                    DEFAULT_RUN_SELECTOR,
+                    run_selector,
                     evidence_dir.display()
                 )),
                 None,
@@ -165,14 +183,20 @@ pub(crate) fn probe_run_world_hook(
         }
     };
 
-    let mut validation_errors = validate_run_hook_result(&result);
-    let run_artifact = hook_artifact(&evidence_dir, &result.run_artifact, "run_artifact")
-        .map_err(|error| validation_errors.push(error))
-        .ok();
-    let runtime_or_log_evidence = hook_artifact(
+    let mut validation_errors = validate_run_hook_result(&result, run_selector);
+    let run_artifact = artifact_info_under(
+        &evidence_dir,
+        &result.run_artifact,
+        "run_artifact",
+        "world-run evidence dir",
+    )
+    .map_err(|error| validation_errors.push(error))
+    .ok();
+    let runtime_or_log_evidence = artifact_info_under(
         &evidence_dir,
         &result.runtime_or_log_evidence,
         "runtime_or_log_evidence",
+        "world-run evidence dir",
     )
     .map_err(|error| validation_errors.push(error))
     .ok();
@@ -198,7 +222,7 @@ pub(crate) fn probe_run_world_hook(
     };
     let detail = if validation_errors.is_empty() {
         format!(
-            "Alice-side world run hook returned non-empty run artifact and runtime/log evidence for {DEFAULT_RUN_SELECTOR}"
+            "Alice-side world run hook returned non-empty run artifact and runtime/log evidence for {run_selector}"
         )
     } else {
         format!(
@@ -212,7 +236,7 @@ pub(crate) fn probe_run_world_hook(
         action_id: "run-world".into(),
         status: status.into(),
         detail,
-        run_selector: DEFAULT_RUN_SELECTOR.into(),
+        run_selector: run_selector.into(),
         candidate_hook_path: hook_path.display().to_string(),
         command: Some(output.command),
         exit_status: output.exit_status,
@@ -320,7 +344,7 @@ fn failed_run_world_probe(
     }
 }
 
-fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
+fn validate_run_hook_result(result: &WorldRunHookResult, expected_selector: &str) -> Vec<String> {
     let mut errors = Vec::new();
     if result.schema_version != "eatme.alice-world-run-result/v1" {
         errors.push(format!(
@@ -331,10 +355,10 @@ fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
     if result.status != "ran" {
         errors.push(format!("status must be ran, got {:?}", result.status));
     }
-    if result.run_selector != DEFAULT_RUN_SELECTOR {
+    if result.run_selector != expected_selector {
         errors.push(format!(
             "run_selector must be {:?}, got {:?}",
-            DEFAULT_RUN_SELECTOR, result.run_selector
+            expected_selector, result.run_selector
         ));
     }
     if result.run_artifact.is_empty() {
@@ -344,31 +368,6 @@ fn validate_run_hook_result(result: &WorldRunHookResult) -> Vec<String> {
         errors.push("runtime_or_log_evidence must not be empty".into());
     }
     errors
-}
-
-fn hook_artifact(
-    evidence_dir: &Path,
-    relative_path: &str,
-    field: &str,
-) -> std::result::Result<ArtifactInfo, String> {
-    let path = Path::new(relative_path);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!(
-            "{field} must be a simple relative path under world-run evidence dir"
-        ));
-    }
-
-    let full_path = evidence_dir.join(path);
-    artifact_info(&full_path).map_err(|error| {
-        format!(
-            "{field} {} is not a readable artifact: {error:#}",
-            full_path.display()
-        )
-    })
 }
 
 #[cfg(test)]

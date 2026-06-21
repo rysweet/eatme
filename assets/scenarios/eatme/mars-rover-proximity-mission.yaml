@@ -4,146 +4,93 @@ title: Mars Rover Proximity Mission
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-    use: >-
-      Use the events and proximity detection concepts from this lesson family
-      as the coding backbone for a Mars rover that senses when it is close to
-      a rock hazard, triggering an avoidance action, so students see how an
-      event-driven response differs from a step-by-step procedure.
-  - name: Alice.org Alice 3 lessons list
-    url: https://www.alice.org/resources/alice-3-lessons
-    use: >-
-      Use the events and collision/proximity topic from the Alice 3 lesson list
-      to frame a mission in which the rover continuously checks its surroundings
-      and fires a proximity event when a hazard enters a defined range, making
-      the reaction code visible and separable from the movement code.
-purpose: >-
-  Help an instructor design a short Alice lesson where students build a Mars
-  rover proximity mission using event-driven proximity detection. Students place
-  a rover and at least one rock hazard in a scene, write a proximity event
-  handler that triggers an avoidance action when the rover enters a set range of
-  the hazard, predict whether the rover will react before or after passing the
-  hazard, and record the visible outcome. This scenario covers the
-  systems-puzzle-solver and playful-tinkerer student personas without claiming
-  full user interface automation, automated creative assessment, learner-world
-  grading, complete Alice coverage, or real Alice smoke evidence.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+  use: Use the events and proximity detection concepts from this lesson family as the coding backbone for a Mars rover that senses when it is close to a rock hazard, triggering an avoidance action, so students see how an event-driven response differs from a step-by-step procedure.
+- name: Alice.org Alice 3 lessons list
+  url: https://www.alice.org/resources/alice-3-lessons
+  use: Use the events and collision/proximity topic from the Alice 3 lesson list to frame a mission in which the rover continuously checks its surroundings and fires a proximity event when a hazard enters a defined range, making the reaction code visible and separable from the movement code.
+purpose: Help an instructor design a short Alice lesson where students build a Mars rover proximity mission using event-driven proximity detection. Students place a rover and at least one rock hazard in a scene, write a proximity event handler that triggers an avoidance action when the rover enters a set range of the hazard, predict whether the rover will react before or after passing the hazard, and record the visible outcome. This scenario covers the systems-puzzle-solver and playful-tinkerer student personas without claiming full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or real Alice startup evidence.
 personas:
-  instructors: [exercise-forger, debug-coach]
-  students: [systems-puzzle-solver, playful-tinkerer]
+  instructors:
+  - exercise-forger
+  - debug-coach
+  students:
+  - systems-puzzle-solver
+  - playful-tinkerer
 agentic_flow:
   focus: mars-rover-proximity-mission
-  instructor_goal: >-
-    Prepare a lesson brief and student activity sheet for an Alice Mars rover
-    proximity mission: a motivating example showing a rover moving past a hazard
-    with no event handler and colliding, then the same scene with a proximity
-    event handler that triggers avoidance, a proximity-range frame the student
-    sets before running, a before-run prediction prompt about when the reaction
-    fires, and an after-run observation log comparing prediction to visible
-    outcome.
+  instructor_goal: 'Prepare a lesson brief and student activity sheet for an Alice Mars rover proximity mission: a motivating example showing a rover moving past a hazard with no event handler and colliding, then the same scene with a proximity event handler that triggers avoidance, a proximity-range frame the student sets before running, a before-run prediction prompt about when the reaction fires, and an after-run observation log comparing prediction to visible outcome.'
   prompt_source: assets/scenarios/eatme/mars-rover-proximity-mission.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - lesson_brief
-    - student_activity_sheet
-    - proximity_range_frame
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent preparing a Mars rover proximity mission
-  Alice lesson. Produce a lesson brief, student activity sheet, and
-  proximity-range frame grounded in the listed resources and this
-  mars-rover-proximity-mission scenario. The lesson brief must show a short
-  motivating example of a rover moving toward a rock hazard with no event
-  handler first, explain what changes when a proximity event handler is added,
-  and introduce a proximity-range frame the student sets before running. The
-  student activity sheet must prompt: place a rover and at least one rock hazard
-  in the scene (without naming specific Alice character files), write a proximity
-  event handler that triggers an avoidance action when the rover is within a
-  chosen range, choose a range value and write a prediction of whether the rover
-  will react before or after reaching the hazard, run the world, and record what
-  visible behavior changed compared to the prediction. The proximity-range frame
-  must name the proximity threshold, the event name, and the avoidance action
-  without requiring specific Alice assets or character models. State explicitly
-  that this is not full user interface automation, not automated creative
-  assessment, not learner-world grading, and not complete Alice coverage.
+  - lesson_brief
+  - student_activity_sheet
+  - proximity_range_frame
+agentic_test_prompt: 'Act as an instructor acceptance agent preparing a Mars rover proximity mission Alice lesson. Produce a lesson brief, student activity sheet, and proximity-range frame grounded in the listed resources and this mars-rover-proximity-mission scenario. The lesson brief must show a short motivating example of a rover moving toward a rock hazard with no event handler first, explain what changes when a proximity event handler is added, and introduce a proximity-range frame the student sets before running. The student activity sheet must prompt: place a rover and at least one rock hazard in the scene (without naming specific Alice character files), write a proximity event handler that triggers an avoidance action when the rover is within a chosen range, choose a range value and write a prediction of whether the rover will react before or after reaching the hazard, run the world, and record what visible behavior changed compared to the prediction. The proximity-range frame must
+  name the proximity threshold, the event name, and the avoidance action without requiring specific Alice assets or character models. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.'
 acceptance_criteria:
-  - given: >-
-      an instructor wants to teach event-driven proximity detection using a
-      Mars rover scenario in Alice
-    when: >-
-      the lesson brief is prepared
-    then: >-
-      the brief shows a rover moving with no handler first, explains what
-      changes when a proximity event is added, and does not require specific
-      Alice assets or character models
-  - given: >-
-      a student is building a Mars rover proximity mission
-    when: >-
-      the student activity sheet is used
-    then: >-
-      the sheet prompts the student to place a rover and at least one hazard,
-      write a proximity event handler with a chosen range, write a prediction
-      before running, run the world, and record the observed visible behavior
-  - given: >-
-      a playful-tinkerer student wants to extend the mission
-    when: >-
-      the activity sheet extension section is reached
-    then: >-
-      the extension suggests changing the proximity range value or adding a
-      second hazard without prescribing exact assets or UI steps
+- given: an instructor wants to teach event-driven proximity detection using a Mars rover scenario in Alice
+  when: the lesson brief is prepared
+  then: the brief shows a rover moving with no handler first, explains what changes when a proximity event is added, and does not require specific Alice assets or character models
+- given: a student is building a Mars rover proximity mission
+  when: the student activity sheet is used
+  then: the sheet prompts the student to place a rover and at least one hazard, write a proximity event handler with a chosen range, write a prediction before running, run the world, and record the observed visible behavior
+- given: a playful-tinkerer student wants to extend the mission
+  when: the activity sheet extension section is reached
+  then: the extension suggests changing the proximity range value or adding a second hazard without prescribing exact assets or UI steps
 acceptance_probes:
-  - Lesson brief shows the rover moving with no proximity handler before introducing the event-driven version.
-  - Proximity-range frame names the proximity threshold and avoidance action without referencing specific Alice assets.
-  - Student activity sheet prompts a written prediction of when the reaction fires before any test run.
-  - Student activity sheet includes an observation log comparing prediction to visible outcome after running.
-  - Output connects systems-puzzle-solver and playful-tinkerer student personas to visible classroom evidence.
-  - Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Lesson brief shows the rover moving with no proximity handler before introducing the event-driven version.
+- Proximity-range frame names the proximity threshold and avoidance action without referencing specific Alice assets.
+- Student activity sheet prompts a written prediction of when the reaction fires before any test run.
+- Student activity sheet includes an observation log comparing prediction to visible outcome after running.
+- Output connects systems-puzzle-solver and playful-tinkerer student personas to visible classroom evidence.
+- Output states the scenario is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
-  - criterion: Event motivation clarity
-    evidence:
-      - Lesson brief shows the no-handler collision case before introducing the proximity event.
-      - Instructor framing explains what the proximity threshold controls, not only how to add an event.
-  - criterion: Prediction before run
-    evidence:
-      - Student activity sheet records a written prediction of whether the rover reacts before or after the hazard is reached.
-      - Observation log captures what visible behavior changed when the handler fired.
-  - criterion: Asset independence
-    evidence:
-      - Proximity-range frame names the threshold and event without referencing specific Alice character files.
-      - Avoidance action does not prescribe exact assets or UI steps.
+- criterion: Event motivation clarity
+  evidence:
+  - Lesson brief shows the no-handler collision case before introducing the proximity event.
+  - Instructor framing explains what the proximity threshold controls, not only how to add an event.
+- criterion: Prediction before run
+  evidence:
+  - Student activity sheet records a written prediction of whether the rover reacts before or after the hazard is reached.
+  - Observation log captures what visible behavior changed when the handler fired.
+- criterion: Asset independence
+  evidence:
+  - Proximity-range frame names the threshold and event without referencing specific Alice character files.
+  - Avoidance action does not prescribe exact assets or UI steps.
 avoid:
-  - Exact asset requirements or fixed UI steps.
-  - Naming specific Alice character or prop files.
-  - Skipping the no-handler motivating example before introducing the event.
-  - Skipping the prediction step or letting students run before writing an expectation.
-  - Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+- Exact asset requirements or fixed UI steps.
+- Naming specific Alice character or prop files.
+- Skipping the no-handler motivating example before introducing the event.
+- Skipping the prediction step or letting students run before writing an expectation.
+- Claims of full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes mars-rover-proximity-mission
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/mars-rover-proximity-mission.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes mars-rover-proximity-mission
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/mars-rover-proximity-mission.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   lesson_brief: agentic://instructor/lesson-brief
   student_activity_sheet: agentic://student/activity-sheet
   proximity_range_frame: agentic://instructor/proximity-range-frame
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the
-  cited Alice-facing resources, fail visibly and report the missing evidence.
-  Do not replace instructor judgment with launch, screenshot, or
-  export-preflight artifacts. Do not claim full user interface automation,
-  automated creative assessment, learner-world grading, or complete Alice
-  coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.
+adapter:
+  targets:
+  - lookingglass

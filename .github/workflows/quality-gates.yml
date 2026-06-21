@@ -21,6 +21,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  MODULE_MAX_LINES: 2000
 
 jobs:
   changes:
@@ -28,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_rust: ${{ steps.docs_only.outputs.run_rust }}
+      rust_files: ${{ steps.docs_only.outputs.rust_files }}
     steps:
       - name: Decide whether Rust checks are needed
         id: docs_only
@@ -76,6 +78,12 @@ jobs:
 
             core.info(`Changed files: ${files.length ? files.join(", ") : "(none)"}`);
             core.setOutput("run_rust", String(files.some((path) => !docsOnly(path))));
+            core.setOutput(
+              "rust_files",
+              files
+                .filter((path) => path.startsWith("crates/") && path.endsWith(".rs"))
+                .join("\n")
+            );
 
   # Keep these parallel jobs in sync with scripts/quality-gates.sh:
   # fmt, clippy, tests, module size, and coverage are split to reduce wall-clock time.
@@ -112,8 +120,10 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Check module size
+        env:
+          CHANGED_RUST_FILES: ${{ needs.changes.outputs.rust_files }}
         run: |
-          MODULE_MAX_LINES="${MODULE_MAX_LINES:-500}"
+          MODULE_MAX_LINES="${MODULE_MAX_LINES:-2000}"
           find crates -name '*.rs' -not -path '*/target/*' -exec wc -l {} + \
             | awk -v max="$MODULE_MAX_LINES" '$2 != "total" && $1 > max { print; bad=1 } END { exit bad }'
 

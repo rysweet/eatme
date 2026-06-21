@@ -4,105 +4,97 @@ title: Modified Class Portability Across Alice Projects
 kind: alice_class_portability_smoke
 owner: eatme
 resource_basis:
-  - name: Alice.org Programming in Alice lesson family
-    url: https://www.alice.org/resources/lessons/programming-in-alice/
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-purpose: >-
-  Prove that a learner-modified Alice class can be exported, shared, imported
-  into a different Alice project, and run with the modified behavior still
-  visible before instructor/student agents trust the portability story.
+- name: Alice.org Programming in Alice lesson family
+  url: https://www.alice.org/resources/lessons/programming-in-alice/
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+purpose: Prove that a learner-modified Alice class can be exported, shared, imported into a different Alice project, and run with the modified behavior still visible before instructor/student agents trust the portability story.
 launcher:
-  command: alice launch-smoke
+  command: alice run-howto
   scenario: modified-class-portability
 real_alice:
   gated_by: EATME_REAL_ALICE=1
 personas:
-  instructors: [classroom-orchestrator, assessment-curator, studio-facilitator]
-  students: [creative-storyteller, collaborative-peer-mentor, reflective-debugger]
+  instructors:
+  - classroom-orchestrator
+  - assessment-curator
+  - studio-facilitator
+  students:
+  - creative-storyteller
+  - collaborative-peer-mentor
+  - reflective-debugger
 capabilities:
   required:
-    - rust-cli
-    - java-21
-    - maven
-    - xvfb
-    - xdpyinfo
-    - wmctrl
-    - screenshot-tool
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - screenshot-tool
   optional:
-    - glxinfo
+  - glxinfo
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
 portability:
   source_project: learner-source-world
   destination_project: peer-import-world
   modified_class: learner-modified-character-class
   share_channel: exported Alice class package or classroom share folder
   evidence_after_import:
-    - export evidence names the modified class and the learner-visible behavior it owns
-    - import evidence shows the class available inside a different Alice project
-    - post-import run evidence shows the modified behavior still occurs without rebuilding it
-    - student reflection compares before-export behavior with after-import behavior
+  - export evidence names the modified class and the learner-visible behavior it owns
+  - import evidence shows the class available inside a different Alice project
+  - post-import run evidence shows the modified behavior still occurs without rebuilding it
+  - student reflection compares before-export behavior with after-import behavior
 smoke_ready:
   evidence:
-    - manifest_assertions
-    - captured_logs
-    - screenshot_or_window_evidence
-    - exported_class_package_evidence
-    - import_into_second_project_evidence
-    - behavior_persistence_after_import
+  - manifest_assertions
+  - captured_logs
+  - screenshot_or_window_evidence
+  - exported_class_package_evidence
+  - import_into_second_project_evidence
+  - behavior_persistence_after_import
 acceptance_criteria:
-  - given: a student modifies a class behavior in a source Alice project
-    when: the class is exported for sharing
-    then: the exported package evidence identifies the modified class and the visible behavior it should preserve
-  - given: a different Alice project starts without that modified class behavior
-    when: the shared class is imported
-    then: the destination project evidence shows the imported class is available without recreating the behavior by hand
-  - given: the destination project runs after import
-    when: the imported class behavior is triggered
-    then: manifest, artifact, or reflection evidence confirms the same learner-visible behavior persists after import
-  - given: gadugi needs to exercise the scenario
-    when: the gadugi adapter runs commands for this scenario
-    then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
+- given: a student modifies a class behavior in a source Alice project
+  when: the class is exported for sharing
+  then: the exported package evidence identifies the modified class and the visible behavior it should preserve
+- given: a different Alice project starts without that modified class behavior
+  when: the shared class is imported
+  then: the destination project evidence shows the imported class is available without recreating the behavior by hand
+- given: the destination project runs after import
+  when: the imported class behavior is triggered
+  then: manifest, artifact, or reflection evidence confirms the same learner-visible behavior persists after import
+- given: gadugi needs to exercise the scenario
+  when: the gadugi adapter runs commands for this scenario
+  then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes modified-class-portability scenario assets
-  - id: launch-portability-smoke
-    command: >-
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
-      --alice-home ${ALICE_HOME}
-      --run-id ${RUN_ID}
-      --runs-dir runs
-      --timeout 900
-      --json
-      --no-memory
-      --offline-package
-      --scenario modified-class-portability
-    evidence:
-      - manifest scenario_id equals modified-class-portability
-      - manifest failure_category is null
-      - manifest assertions all pass
-      - screenshot or window evidence exists and is non-empty
-      - log exists and is non-empty
-  - id: verify-portability-evidence
-    command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/modified-class-portability.yaml --json
-    evidence:
-      - portability.evidence_after_import lists export evidence, import evidence, and post-import behavior evidence
-      - acceptance criteria require behavior persistence after import into another project
-      - instructor/student prompts ask for before-export and after-import comparison
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes modified-class-portability scenario assets
+- id: launch-portability-smoke
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario modified-class-portability
+  evidence:
+  - manifest scenario_id equals modified-class-portability
+  - manifest failure_category is null
+  - manifest assertions all pass
+  - screenshot or window evidence exists and is non-empty
+  - log exists and is non-empty
+- id: verify-portability-evidence
+  command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/modified-class-portability.yaml --json
+  evidence:
+  - portability.evidence_after_import lists export evidence, import evidence, and post-import behavior evidence
+  - acceptance criteria require behavior persistence after import into another project
+  - instructor/student prompts ask for before-export and after-import comparison
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#modified-class-portability
   personality_assets:
-    - portability-studio-card
-    - class-remix-transfer-card
-  deterministic_gate: >-
-    Run this smoke scenario before asking instructor/student agents to judge whether
-    a shared modified class remained behaviorally intact after import into a peer project.
+  - portability-studio-card
+  - class-remix-transfer-card
+  deterministic_gate: Run this scenario before asking instructor/student agents to judge whether a shared modified class remained behaviorally intact after import into a peer project.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -114,7 +106,4 @@ artifacts:
   export_bundle: runs/modified-class-portability/${RUN_ID}/portability/exported-class-package.txt
   import_report: runs/modified-class-portability/${RUN_ID}/portability/import-report.json
   behavior_evidence: runs/modified-class-portability/${RUN_ID}/portability/post-import-behavior.md
-unsupported_policy: >-
-  If host graphics, DISPLAY, Java 21, Maven prerequisites, the explicit
-  EATME_REAL_ALICE=1 gate, or export/import evidence is missing, fail loudly.
-  Do not silently skip portability proof or substitute a mocked Alice runtime.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, the explicit EATME_REAL_ALICE=1 gate, or export/import evidence is missing, fail loudly. Do not silently skip portability proof or substitute a mocked Alice runtime.

@@ -45,6 +45,7 @@ steps:
   action: agentic_test
   params:
     acceptance_probes: |-
+      LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
       Checklist explicitly says all interactive elements have accessible labels.
       Worksheet explicitly says all IDE features reachable via keyboard.
       Worksheet asks reviewers to record where focus order or shortcut coverage breaks first.

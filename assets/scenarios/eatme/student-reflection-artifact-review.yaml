@@ -4,120 +4,88 @@ title: Student Reflection Artifact Review
 kind: instructor_agentic_flow
 owner: eatme
 resource_basis:
-  - name: Alice.org Alice 3 resource categories
-    url: https://www.alice.org/resources/alice-3/
-    use: >-
-      Use lessons, exercises, projects, how-tos, and classroom resources as context
-      for student learning artifacts and reflection evidence.
-  - name: Alice.org Hour of Code lesson
-    url: https://www.alice.org/resources/lessons/hour-of-code/
-    use: >-
-      Use the short-session pattern for a first scene, first animation, visible
-      evidence, and reflection after using Alice.
-purpose: >-
-  Review a student learning artifact after Alice use by pairing artifact behavior
-  with learner explanation. The instructor-facing output includes a reflection
-  evidence card, instructor review note, and student revision prompt. The student
-  explains one Alice action, the visible behavior it caused, what changed after
-  running, and one next revision. This editable scenario is not full user
-  interface automation, not creative assessment, not learner-world grading, not
-  complete Alice coverage, and not a deployed service.
+- name: Alice.org Alice 3 resource categories
+  url: https://www.alice.org/resources/alice-3/
+  use: Use lessons, exercises, projects, how-tos, and classroom resources as context for student learning artifacts and reflection evidence.
+- name: Alice.org Hour of Code lesson
+  url: https://www.alice.org/resources/lessons/hour-of-code/
+  use: Use the short-session pattern for a first scene, first animation, visible evidence, and reflection after using Alice.
+purpose: Review a student learning artifact after Alice use by pairing artifact behavior with learner explanation. The instructor-facing output includes a reflection evidence card, instructor review note, and student revision prompt. The student explains one Alice action, the visible behavior it caused, what changed after running, and one next revision. This editable scenario is not full user interface automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
 personas:
-  instructors: [assessment-curator, studio-facilitator]
-  students: [reflective-debugger, collaborative-peer-mentor]
+  instructors:
+  - assessment-curator
+  - studio-facilitator
+  students:
+  - reflective-debugger
+  - collaborative-peer-mentor
 agentic_flow:
   focus: student-reflection-artifact-review
-  instructor_goal: >-
-    Review a student learning artifact and reflection together so feedback names
-    artifact behavior, learner explanation, process evidence, and one student-owned
-    revision without claiming automated grading or complete Alice coverage.
+  instructor_goal: Review a student learning artifact and reflection together so feedback names artifact behavior, learner explanation, process evidence, and one student-owned revision without claiming automated grading or complete Alice coverage.
   prompt_source: assets/scenarios/eatme/student-reflection-artifact-review.yaml#agentic_test_prompt
   non_coder_editable:
-    - resource_basis
-    - purpose
-    - agentic_test_prompt
-    - acceptance_criteria
-    - acceptance_probes
-    - rubric
-    - avoid
+  - resource_basis
+  - purpose
+  - agentic_test_prompt
+  - acceptance_criteria
+  - acceptance_probes
+  - rubric
+  - avoid
   expected_outputs:
-    - student_reflection_evidence_card
-    - instructor_review_note
-    - student_revision_prompt
-agentic_test_prompt: >-
-  Act as an instructor acceptance agent reviewing one student learning artifact
-  after the student used Alice. Produce a reflection evidence card, instructor
-  review note, and student revision prompt grounded in the listed resources and
-  this student-reflection-artifact-review scenario. Require the student to explain
-  one Alice action, the visible artifact behavior it caused, what changed after
-  running, and one learner-owned next revision. Review artifact behavior and
-  learner explanation; do not use visual polish alone. State explicitly that this
-  is not full user interface automation, not creative assessment, not
-  learner-world grading, not complete Alice coverage, and not a deployed service.
+  - student_reflection_evidence_card
+  - instructor_review_note
+  - student_revision_prompt
+agentic_test_prompt: Act as an instructor acceptance agent reviewing one student learning artifact after the student used Alice. Produce a reflection evidence card, instructor review note, and student revision prompt grounded in the listed resources and this student-reflection-artifact-review scenario. Require the student to explain one Alice action, the visible artifact behavior it caused, what changed after running, and one learner-owned next revision. Review artifact behavior and learner explanation; do not use visual polish alone. State explicitly that this is not full user interface automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
 acceptance_criteria:
-  - given: >-
-      a student submits an Alice artifact plus a short reflection after running it
-    when: >-
-      the instructor review note is prepared
-    then: >-
-      the note names one Alice action, visible artifact behavior, learner
-      explanation, process evidence, and one next revision
-  - given: >-
-      the artifact looks polished but the reflection does not explain cause and effect
-    when: >-
-      the reflection evidence card is applied
-    then: >-
-      feedback asks for observable behavior and learner explanation instead of
-      treating polish as learning evidence
-  - given: >-
-      the student needs feedback they can act on
-    when: >-
-      the student revision prompt is returned
-    then: >-
-      the prompt leaves the next change with the student and avoids hidden
-      implementation details
+- given: a student submits an Alice artifact plus a short reflection after running it
+  when: the instructor review note is prepared
+  then: the note names one Alice action, visible artifact behavior, learner explanation, process evidence, and one next revision
+- given: the artifact looks polished but the reflection does not explain cause and effect
+  when: the reflection evidence card is applied
+  then: feedback asks for observable behavior and learner explanation instead of treating polish as learning evidence
+- given: the student needs feedback they can act on
+  when: the student revision prompt is returned
+  then: the prompt leaves the next change with the student and avoids hidden implementation details
 acceptance_probes:
-  - Reflection evidence card asks for one Alice action, visible artifact behavior, run result, and next revision.
-  - Instructor review note references artifact behavior and learner explanation before suggesting a revision.
-  - Student revision prompt keeps learner ownership and names one small change the student can test.
-  - Output states the scenario is not full user interface automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- Reflection evidence card asks for one Alice action, visible artifact behavior, run result, and next revision.
+- Instructor review note references artifact behavior and learner explanation before suggesting a revision.
+- Student revision prompt keeps learner ownership and names one small change the student can test.
+- Output states the scenario is not full user interface automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
 rubric:
-  - criterion: Reflection evidence
-    evidence:
-      - Student explains one Alice action and the visible artifact behavior it caused.
-      - Reflection compares what changed after running with what the student expected.
-  - criterion: Instructor review clarity
-    evidence:
-      - Review note separates artifact behavior, learner explanation, process evidence, and next revision.
-      - Feedback does not treat visual polish, a screenshot, or a launch manifest as proof of understanding.
-  - criterion: Student-owned revision
-    evidence:
-      - Revision prompt names one small next change the student can make and test.
-      - Instructor judgment supports the learner without taking over the artifact.
+- criterion: Reflection evidence
+  evidence:
+  - Student explains one Alice action and the visible artifact behavior it caused.
+  - Reflection compares what changed after running with what the student expected.
+- criterion: Instructor review clarity
+  evidence:
+  - Review note separates artifact behavior, learner explanation, process evidence, and next revision.
+  - Feedback does not treat visual polish, a screenshot, or a launch manifest as proof of understanding.
+- criterion: Student-owned revision
+  evidence:
+  - Revision prompt names one small next change the student can make and test.
+  - Instructor judgment supports the learner without taking over the artifact.
 avoid:
-  - Exact user interface coordinates, menu paths, private implementation details, or hidden code inspection.
-  - Full user interface automation claims, automated creative scoring, learner-world grading, complete Alice coverage, or deployed-service claims.
-  - Replacing student reflection with instructor judgment.
+- Exact user interface coordinates, menu paths, private implementation details, or hidden code inspection.
+- Full user interface automation claims, automated creative scoring, learner-world grading, complete Alice coverage, or deployed-service claims.
+- Replacing student reflection with instructor judgment.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes student-reflection-artifact-review
-  - id: agentic-instructor-review
-    command: agentic instructor acceptance review using assets/scenarios/eatme/student-reflection-artifact-review.yaml
-    evidence:
-      - agent output addresses every acceptance_probe
-      - agent output returns the expected_outputs listed in this YAML
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes student-reflection-artifact-review
+- id: agentic-instructor-review
+  command: agentic instructor acceptance review using assets/scenarios/eatme/student-reflection-artifact-review.yaml
+  evidence:
+  - agent output addresses every acceptance_probe
+  - agent output returns the expected_outputs listed in this YAML
 timeouts:
   agentic_seconds: 900
 artifacts:
   student_reflection_evidence_card: agentic://student/reflection-evidence-card
   instructor_review_note: agentic://instructor/review-note
   student_revision_prompt: agentic://student/revision-prompt
-unsupported_policy: >-
-  If the agent cannot read this editable YAML, the persona crew asset, or the cited
-  Alice.org resource basis, fail visibly and report the missing evidence. Do not
-  replace student reflection with instructor judgment. Do not claim this scenario
-  is full user interface automation, creative assessment, learner-world grading,
-  complete Alice coverage, or a deployed service.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace student reflection with instructor judgment. Do not claim this scenario is full user interface automation, creative assessment, learner-world grading, complete Alice coverage, or a deployed service.
+adapter:
+  targets:
+  - lookingglass

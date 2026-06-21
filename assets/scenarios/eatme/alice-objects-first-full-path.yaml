@@ -1,0 +1,149 @@
+schema_version: eatme.scenario/v1
+id: alice-objects-first-full-path
+title: Alice Objects-First Full Path
+kind: alice_real_ui_action_contract
+owner: eatme
+resource_basis:
+- name: Alice 3 desktop source
+  url: https://github.com/TheAliceProject/alice3
+- name: RabbitHole local validation checkout
+  url: https://github.com/rysweet/RabbitHole
+- name: Alice TypeScript prototype validation checkout
+  url: https://github.com/rysweet/alice-web-prototype
+purpose: 'Execute the objects-first Alice user path without manual intervention: create or open a project, add a visible object, transform it, edit a movement procedure for that same object, run the world, save the project, reopen the saved artifact, and verify that object and procedure state persisted. This is executable evidence, not documentation-only coverage.'
+launcher:
+  command: alice objects-first-full-path
+  scenario: alice-objects-first-full-path
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+  - concept-cartographer
+  - debug-coach
+  students:
+  - curious-novice
+  - creative-storyteller
+capabilities:
+  required:
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - xwininfo
+  - xdotool
+  - screenshot-tool
+  - alice-object-placement-hook
+  - alice-object-transform-hook
+  - alice-movement-procedure-edit-hook
+  - alice-world-run-hook
+  - alice-save-project-hook
+  - alice-reopen-project-hook
+  optional:
+  - glxinfo
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
+smoke_ready:
+  evidence:
+  - command_invocation
+  - scenario_asset
+  - manifest_assertions
+  - real_alice_execution_evidence
+  - specific_alice_window_detected
+  - activate_alice_window_ui_action
+  - place_object_ui_action
+  - edit_procedure_ui_action
+  - run_world_ui_action
+  - save_project_ui_action
+  - ui_action_artifact_captured
+  - ui_action_contract
+  - objects_first_full_path_contract
+  - object_placement_artifact
+  - object_transform_artifact
+  - movement_procedure_diff
+  - world_run_artifact
+  - project_state_before_reopen
+  - project_state_after_reopen
+  - persistence_assertions
+acceptance_criteria:
+- given: the alice-objects-first-full-path scenario starts
+  when: the command opens the bundled starter project or supplied project
+  then: phase create-or-open-project records the project source
+- given: the project is open
+  when: eatme invokes eatme-place-object
+  then: phase place-object proves a visible object was added
+- given: object placement proof exists
+  when: eatme invokes eatme-transform-object
+  then: phase transform-object records transform evidence for the same object identity
+- given: transformed object proof exists
+  when: eatme invokes eatme-edit-procedure
+  then: phase edit-movement-procedure records a movement operation with positive distance for the placed object
+- given: movement procedure proof exists
+  when: eatme invokes eatme-run-world
+  then: phase run-world records runtime evidence after the movement edit
+- given: world run proof exists
+  when: eatme invokes eatme-save-project
+  then: phase save-project records a non-empty saved project and project-state-before-reopen artifact
+- given: saved project proof exists
+  when: eatme invokes eatme-reopen-project
+  then: phase reopen-project records that the saved artifact, not the starter project, was reopened
+- given: before-save and after-reopen project states exist
+  when: eatme verifies persistence
+  then: phase verify-persistence proves object identity, transform, movement procedure, saved artifact, reopened source, and prior run assertions pass
+steps:
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes alice-objects-first-full-path
+- id: check-dependencies
+  command: cargo run -q -p eatme-cli -- deps check --json
+  evidence:
+  - stdout JSON has all_required_available=true
+- id: run-objects-first-full-path
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package
+  evidence:
+  - manifest scenario_id equals alice-objects-first-full-path
+  - manifest command argv equals eatme alice objects-first-full-path
+  - manifest scenario path equals assets/scenarios/eatme/alice-objects-first-full-path.yaml
+  - manifest evidence includes ui_action_contract
+  - manifest evidence includes objects_first_full_path_contract
+  - manifest evidence includes object_placement
+  - manifest evidence includes object_transform
+  - manifest evidence includes procedure_edit
+  - manifest evidence includes world_run
+  - manifest evidence includes project_state_before_reopen
+  - manifest evidence includes project_reopen
+  - manifest evidence includes project_state_after_reopen
+  - manifest persistence_assertions all pass
+  - manifest assertions.real_alice_execution_evidence is present
+  - manifest assertions include specific_alice_window_detected
+  - manifest assertions include activate_alice_window_ui_action
+  - manifest assertions include place_object_ui_action
+  - manifest assertions include edit_procedure_ui_action
+  - manifest assertions include run_world_ui_action
+  - manifest assertions include save_project_ui_action
+  - manifest assertions include ui_action_artifact_captured
+  - full-path failures remain explicit, never no_go-silent, never ui_action_automation_unimplemented-silent, and never documentation-only
+acceptance_probes:
+- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-objects-first-full-path/${RUN_ID}/manifest.json
+  screenshot: runs/alice-objects-first-full-path/${RUN_ID}/screenshots/startup.png
+  log: runs/alice-objects-first-full-path/${RUN_ID}/alice.log
+  ui_action_contract: runs/alice-objects-first-full-path/${RUN_ID}/ui-action-contract.json
+  objects_first_full_path_contract: runs/alice-objects-first-full-path/${RUN_ID}/objects-first-full-path-contract.json
+  object_placement: runs/alice-objects-first-full-path/${RUN_ID}/object-placement/placement.json
+  object_transform: runs/alice-objects-first-full-path/${RUN_ID}/object-transform/object-transform.json
+  procedure_edit: runs/alice-objects-first-full-path/${RUN_ID}/procedure-edit/procedure-diff.json
+  world_run: runs/alice-objects-first-full-path/${RUN_ID}/world-run/world-run.json
+  project_state_before_reopen: runs/alice-objects-first-full-path/${RUN_ID}/project-save/project-state-before-reopen.json
+  project_state_after_reopen: runs/alice-objects-first-full-path/${RUN_ID}/project-reopen/project-state-after-reopen.json
+unsupported_policy: Missing or incompatible real Alice, RabbitHole, or TypeScript port hooks are failures with explicit evidence and follow-up issues. Do not silently skip object placement, transform, movement procedure editing, world run, save, reopen, or persistence verification. This path is not full UI automation when product hooks are missing, not creative assessment, and not learner-world grading; it must fail loudly rather than hide no_go or ui_action_automation_unimplemented boundaries.

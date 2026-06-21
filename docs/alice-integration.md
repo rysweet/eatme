@@ -127,25 +127,34 @@ The baseline Alice integration proves launch readiness. Scenario-specific Alice
 workflows add their own evidence requirements on top of the same packaging,
 display, process, log, window, and screenshot foundation.
 
+`alice objects-first-full-path` is the executable full-path command. It binds
+`assets/scenarios/eatme/alice-objects-first-full-path.yaml` by default and drives
+RabbitHole Alice through project create/open, visible object placement, object
+transform, movement procedure edit, run-world, save, reopen, and persistence
+assertions. Evidence is written under
+`runs/alice-objects-first-full-path/<run-id>/`, and a launch-only run is rejected.
+For usage and contracts, see
+[Alice Objects-First Full Path](alice-objects-first-full-path.md) and
+[Alice Objects-First Full Path Reference](alice-objects-first-full-path-reference.md).
+
 `alice-objects-first-world` is the full objects-first workflow. It uses
-RabbitHole Alice at `/home/azureuser/src/alice` as the primary target and records
+RabbitHole Alice at `$ALICE_HOME` as the primary target and records
 separate proof for project create/open, visible object placement, object
 transform, movement procedure edit, run-world, save, reopen, and persisted-state
-verification. A launch-only run is rejected for this scenario.
+verification. A launch-only run must be rejected for this scenario.
 
 Readiness reports can also consume Save Project and Select Project
 proof-artifact declarations from RabbitHole evidence. Emitted proof-artifact
 paths are evidence-root-relative summaries, artifact contents are never read or
 emitted, and blocker details are normalized before reporting.
 
-The TypeScript prototype adapter validates comparable supported behavior against
-`/home/azureuser/src/alice-web-prototype`. Unsupported prototype behavior is
-reported as an explicit gap only when the prototype does not claim support. If
-RabbitHole Alice or the prototype claims a workflow phase but cannot produce
-valid evidence, eatme reports sanitized product-issue details for follow-up.
+LookingGlass coverage is conditional on web support for the workflow phase. Do
+not require `$ALICE_WEB_PROTOTYPE_ROOT` for desktop-only phases. If RabbitHole
+Alice or LookingGlass claims a workflow phase but cannot produce valid evidence,
+eatme reports sanitized product-issue details for follow-up.
 
-For usage, evidence layout, and hook APIs, see
-[Alice Objects-First World](alice-objects-first-world.md) and
+For the implementation specification, evidence layout, and phase contracts, see
+[Alice Objects-First World Specification](alice-objects-first-world.md) and
 [Alice Objects-First World Reference](alice-objects-first-world-reference.md).
 
 The [import/export workflow](import-export-workflow.md) extends the save/reopen

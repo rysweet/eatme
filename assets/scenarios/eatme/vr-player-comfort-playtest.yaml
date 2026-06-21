@@ -4,130 +4,111 @@ title: VR Player Comfort Playtest
 kind: alice_lesson_smoke
 owner: eatme
 resource_basis:
-  - name: Alice 3 Design Process Virtual Reality lesson
-    url: https://www.alice.org/resources/lessons/design-process-virtual-reality/
-    use: >-
-      Use VR sickness, locomotion, object interaction, and common VR mechanic
-      considerations as comfort and playtest grounding.
-  - name: Alice 3 Moving The Camera how-to
-    url: https://www.alice.org/resources/how-tos/moving-the-camera/
-    use: Use camera movement and one-shot viewpoints as non-VR fallback evidence.
-purpose: >-
-  Prove the VR/player comfort playtest scenario has a real Alice desktop launch gate
-  and explicit VR availability evidence before agents judge comfort,
-  discoverability, orientation, and fallback access.
+- name: Alice 3 Design Process Virtual Reality lesson
+  url: https://www.alice.org/resources/lessons/design-process-virtual-reality/
+  use: Use VR sickness, locomotion, object interaction, and common VR mechanic considerations as comfort and playtest grounding.
+- name: Alice 3 Moving The Camera how-to
+  url: https://www.alice.org/resources/how-tos/moving-the-camera/
+  use: Use camera movement and one-shot viewpoints as non-VR fallback evidence.
+purpose: Prove the VR/player comfort playtest scenario has a real Alice desktop launch gate and explicit VR availability evidence before agents judge comfort, discoverability, orientation, and fallback access.
 launcher:
-  command: alice launch-smoke
+  command: alice run-howto
   scenario: vr-player-comfort-playtest
 real_alice:
   gated_by: EATME_REAL_ALICE=1
 personas:
   instructors:
-    - studio-facilitator
-    - assessment-curator
+  - studio-facilitator
+  - assessment-curator
   students:
-    - vr-player-tester
-    - accessibility-advocate
-    - systems-puzzle-solver
+  - vr-player-tester
+  - accessibility-advocate
+  - systems-puzzle-solver
 capabilities:
   required:
-    - rust-cli
-    - java-21
-    - maven
-    - xvfb
-    - xdpyinfo
-    - wmctrl
-    - screenshot-tool
+  - rust-cli
+  - java-21
+  - maven
+  - xvfb
+  - xdpyinfo
+  - wmctrl
+  - screenshot-tool
   optional:
-    - glxinfo
-    - alice-player-vr
-    - vr-headset
-    - screen-recording
+  - glxinfo
+  - alice-player-vr
+  - vr-headset
+  - screen-recording
 adapter:
   targets:
-    - eatme-cli
-    - gadugi-cli
+  - eatme-cli
+  - gadugi-cli
 smoke_ready:
   evidence:
-    - manifest_assertions
-    - captured_logs
-    - screenshot_or_window_evidence
-    - scenario_id
-    - vr_player_preflight_record
-    - comfort_playtest_notes
-    - non_vr_fallback_evidence
+  - manifest_assertions
+  - captured_logs
+  - screenshot_or_window_evidence
+  - scenario_id
+  - vr_player_preflight_record
+  - comfort_playtest_notes
+  - non_vr_fallback_evidence
 acceptance_criteria:
-  - given: Alice launch smoke dependencies are available
-    when: the vr-player-comfort-playtest scenario is launched through eatme
-    then: the manifest identifies scenario_id vr-player-comfort-playtest
-  - given: real VR hardware is unavailable
-    when: the playtest is evaluated outside-in
-    then: evidence records real_vr_available=false plus desktop viewpoint, orientation, and fallback playtest notes
-  - given: a player tests an interaction
-    when: feedback is collected
-    then: the creator records comfort signal, confusion point, discoverability cue, and one revision or justified non-change
-  - given: gadugi needs to exercise the scenario
-    when: the generated adapter runs commands for this scenario
-    then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+- given: Alice launch smoke dependencies are available
+  when: the vr-player-comfort-playtest scenario is launched through eatme
+  then: the manifest identifies scenario_id vr-player-comfort-playtest
+- given: real VR hardware is unavailable
+  when: the playtest is evaluated outside-in
+  then: evidence records real_vr_available=false plus desktop viewpoint, orientation, and fallback playtest notes
+- given: a player tests an interaction
+  when: feedback is collected
+  then: the creator records comfort signal, confusion point, discoverability cue, and one revision or justified non-change
+- given: gadugi needs to exercise the scenario
+  when: the generated adapter runs commands for this scenario
+  then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 acceptance_probes:
-  - Playtest records comfort, orientation, discoverability, and fallback access.
-  - Creator evidence links player feedback to a visible cue, rule, movement, or revision.
-  - The scenario never requires every learner to use VR hardware.
+- Playtest records comfort, orientation, discoverability, and fallback access.
+- Creator evidence links player feedback to a visible cue, rule, movement, or revision.
+- The scenario never requires every learner to use VR hardware.
 rubric:
-  - criterion: Player experience evidence
-    evidence:
-      - Tester notes include comfort, orientation, controls or cues, and confusion points.
-      - Feedback is tied to a concrete visible revision or design decision.
-  - criterion: Fallback integrity
-    evidence:
-      - Non-VR observers have a meaningful camera or screen-player path.
-      - Claims distinguish real headset evidence from desktop fallback evidence.
+- criterion: Player experience evidence
+  evidence:
+  - Tester notes include comfort, orientation, controls or cues, and confusion points.
+  - Feedback is tied to a concrete visible revision or design decision.
+- criterion: Fallback integrity
+  evidence:
+  - Non-VR observers have a meaningful camera or screen-player path.
+  - Claims distinguish real headset evidence from desktop fallback evidence.
 steps:
-  - id: validate-assets
-    command: cargo run -q -p eatme-cli -- assets validate --json
-    evidence:
-      - stdout JSON has passed=true
-      - stdout JSON includes vr-player-comfort-playtest in the committed scenario set
-  - id: record-vr-player-preflight
-    command: >-
-      bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then
-      printf "real_vr_available=true\nrequired_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note\n";
-      else printf "real_vr_available=false\nrequired_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet\n"; fi'
-    evidence:
-      - preflight output states whether real VR execution is available
-      - if real_vr_available=false, required evidence names desktop viewpoint, orientation, comfort check, and fallback playtest sheet
-      - if real_vr_available=true, required evidence names headset or player capture, comfort notes, observer log, and revision note
-  - id: launch-smoke
-    command: >-
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
-      --alice-home ${ALICE_HOME}
-      --run-id ${RUN_ID}
-      --runs-dir runs
-      --timeout 900
-      --json
-      --no-memory
-      --offline-package
-      --scenario vr-player-comfort-playtest
-    evidence:
-      - manifest scenario_id equals vr-player-comfort-playtest
-      - manifest failure_category is null
-      - manifest assertions include real_alice_execution_evidence passed=true
-      - manifest assertions all pass
-      - screenshot or window evidence exists and is non-empty
-      - log exists and is non-empty
+- id: validate-assets
+  command: cargo run -q -p eatme-cli -- assets validate --json
+  evidence:
+  - stdout JSON has passed=true
+  - stdout JSON includes vr-player-comfort-playtest in the committed scenario set
+- id: record-vr-player-preflight
+  command: bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "real_vr_available=true\nrequired_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note\n"; else printf "real_vr_available=false\nrequired_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet\n"; fi'
+  evidence:
+  - preflight output states whether real VR execution is available
+  - if real_vr_available=false, required evidence names desktop viewpoint, orientation, comfort check, and fallback playtest sheet
+  - if real_vr_available=true, required evidence names headset or player capture, comfort notes, observer log, and revision note
+- id: launch-smoke
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
+  evidence:
+  - manifest scenario_id equals vr-player-comfort-playtest
+  - manifest failure_category is null
+  - manifest assertions include real_alice_execution_evidence passed=true
+  - manifest assertions all pass
+  - screenshot or window evidence exists and is non-empty
+  - log exists and is non-empty
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#vr-player-comfort-playtest
   personality_assets:
-    - studio-critique-card
-    - debug-conference-card
-    - creative-ownership-card
-  deterministic_gate: >-
-    Run this smoke scenario and record VR availability before asking agents to judge
-    comfort, orientation, player discoverability, or non-VR fallback claims.
+  - studio-critique-card
+  - debug-conference-card
+  - creative-ownership-card
+  deterministic_gate: Run this scenario and record VR availability before asking agents to judge comfort, orientation, player discoverability, or non-VR fallback claims.
   required_observables:
-    - VR availability record
-    - comfort playtest notes
-    - creator revision or justified non-change
+  - VR availability record
+  - comfort playtest notes
+  - creator revision or justified non-change
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -138,8 +119,4 @@ artifacts:
   window_list: runs/vr-player-comfort-playtest/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt
   playtest_notes: runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-notes.md
-unsupported_policy: >-
-  If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit
-  EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice
-  Player VR execution is unavailable, record real_vr_available=false and require
-  desktop fallback playtest evidence instead of silently skipping the scenario.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require desktop fallback playtest evidence instead of silently skipping the scenario.
