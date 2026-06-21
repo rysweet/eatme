@@ -44,7 +44,7 @@ cargo test -p eatme-alice --test project_io_resource_management
 ## Run with real Alice evidence
 
 ```bash
-export ALICE_HOME=/home/azureuser/src/alice2/RabbitHole
+export ALICE_HOME=/path/to/RabbitHole
 export EATME_REAL_ALICE=1
 
 cargo run -q -p eatme-cli -- alice launch-smoke \
