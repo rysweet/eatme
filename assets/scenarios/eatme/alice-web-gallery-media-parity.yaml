@@ -1,0 +1,145 @@
+schema_version: eatme.scenario/v1
+id: alice-web-gallery-media-parity
+title: Alice Web Gallery and Media Parity
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice 3 gallery and starter projects
+    url: https://www.alice.org/resources/alice-3/
+    use: >-
+      Use starter projects, gallery resources, camera movement, audio cues, and
+      imported assets as the compatibility target for the web port.
+  - name: EatMe content coverage tests
+    url: docs/alice-content-coverage-tests.md
+    use: >-
+      Use existing gallery, media, camera, import/export, and resource tests as
+      closure probes.
+purpose: >-
+  Identify and close parity gaps where the TypeScript web port represents Alice
+  gallery assets, media resources, camera/viewpoint state, import/export assets,
+  and starter-project content differently from the Java Alice baseline. This
+  scenario does not claim full UI automation, creative assessment,
+  learner-world grading, or complete Alice replacement readiness.
+launcher:
+  command: alice launch-smoke
+  scenario: alice-web-gallery-media-parity
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - setup-support-specialist
+    - exercise-forger
+  students:
+    - model-texture-importer
+    - accessibility-advocate
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - glxinfo
+    - classroom-asset-library
+    - external-model-source
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - gallery_media_gap_matrix
+    - closure_test_commands
+acceptance_criteria:
+  - given: Java Alice exposes starter-project gallery resources
+    when: the web path parses the same assets
+    then: model resources, joints, camera state, audio references, and text/billboard elements are preserved or listed as explicit gaps
+  - given: imported or fallback assets are used
+    when: parity is claimed
+    then: provenance, texture visibility, scale/orientation, fallback choice, and runnable-world evidence are recorded
+  - given: a gap is closed
+    when: reviewers inspect closure evidence
+    then: the relevant cargo test command and user-visible artifact are both present
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes alice-web-gallery-media-parity in the committed scenario set
+  - id: record-gallery-media-gap-matrix
+    command: >-
+      bash -lc 'run_dir="runs/alice-web-gallery-media-parity/${RUN_ID}";
+      mkdir -p "$run_dir";
+      cat > "$run_dir/gallery-media-parity-gaps.md" <<EOF
+      # Gallery and Media Parity Gaps
+      | gap | Java Alice baseline | Web/eatme probe | closure test |
+      | --- | --- | --- | --- |
+      | starter gallery coverage | starter projects expose scene entities, resources, joints, cameras, audio, and billboards | gallery/content coverage scans real or synthetic archives | cargo test -p eatme-alice --test a3p_gallery_coverage --test a3p_content_coverage |
+      | camera and viewpoint | camera transforms and viewpoints are preserved and user-visible | camera/viewpoint scenarios assert observable evidence | cargo test -p eatme-alice --test camera_and_viewpoint_e2e |
+      | media and speech | audio/text assets are present or explicitly bounded | media/text tests record real output versus bounded simulation | cargo test -p eatme-alice --test text_and_speech_e2e --test import_export_support |
+      | model import/export | imported model has provenance, texture visibility, scale/orientation, and fallback evidence | import/export tests keep runnable-world evidence explicit | cargo test -p eatme-alice --test import_export_workflow_real --test project_io_resource_management |
+      EOF
+      printf "%s\n" "wrote=$run_dir/gallery-media-parity-gaps.md"'
+    evidence:
+      - gap matrix names starter gallery, camera/viewpoint, media/speech, and model import/export probes
+      - matrix ties each gap to cargo test commands and observable artifacts
+  - id: run-gallery-media-closure-probes
+    command: >-
+      bash -lc 'cargo test -p eatme-alice --test a3p_content_coverage &&
+      cargo test -p eatme-alice --test camera_and_viewpoint_e2e &&
+      cargo test -p eatme-alice --test text_and_speech_e2e &&
+      cargo test -p eatme-alice --test import_export_support &&
+      cargo test -p eatme-alice --test project_io_resource_management'
+    evidence:
+      - content coverage tests pass
+      - camera/viewpoint tests pass
+      - text/speech tests pass
+      - import/export support tests pass
+      - project resource management tests pass
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario alice-web-gallery-media-parity
+    evidence:
+      - manifest scenario_id equals alice-web-gallery-media-parity
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#alice-web-gallery-media-parity
+  deterministic_gate: >-
+    Run this scenario before marking gallery, media, camera, or import/export
+    parity gaps closed. Closure requires both artifact-level tests and bounded
+    real Alice launch evidence.
+  required_observables:
+    - gallery-media-parity-gaps.md
+    - passing closure test commands
+    - import/export or fallback evidence
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-web-gallery-media-parity/${RUN_ID}/manifest.json
+  screenshot: runs/alice-web-gallery-media-parity/${RUN_ID}/screenshots/startup.png
+  log: runs/alice-web-gallery-media-parity/${RUN_ID}/alice.log
+  gap_matrix: runs/alice-web-gallery-media-parity/${RUN_ID}/gallery-media-parity-gaps.md
+unsupported_policy: >-
+  If real Alice evidence, resource fixtures, or closure probes are unavailable,
+  fail loudly. Do not claim gallery/media parity from placeholder geometry,
+  screenshots alone, mocked audio, or one hand-picked starter project.
+
