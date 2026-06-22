@@ -139,12 +139,14 @@ cargo test -p eatme-assets --test curriculum_coverage_summary
 Run the targeted web closure tests against LookingGlass:
 
 ```bash
-cd <alice-web-prototype-repo>
+cd ${LOOKINGGLASS_REPO:?}
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
   test/imported-project-assets-security.contract.test.ts \
   test/imported-asset-project-io.test.ts \
-  test/model-texture-camera-joint-export-workflow.contract.test.ts
+  test/model-texture-camera-joint-export-workflow.contract.test.ts \
+  test/project-audio-bounded-evidence.contract.test.ts \
+  test/project-export-share-fallback.contract.test.ts
 ```
 
 Run RabbitHole baseline checks only when changing the Java baseline evidence:
