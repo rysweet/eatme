@@ -253,7 +253,14 @@ cargo test -p eatme-assets --test gallery_media_import_parity_closure
 cargo test -p eatme-assets --test web_platform_scenario_parity
 
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} \
-  cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+  cargo test -p eatme-assets --test gallery_media_import_parity_closure
+
+cd ../alice-web-prototype
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- \
+  test/model-texture-import-checkpoint-closure.contract.test.ts \
+  test/imported-project-assets-security.contract.test.ts \
+  test/imported-asset-project-io.test.ts \
+  test/model-texture-camera-joint-export-workflow.contract.test.ts
 ```
 
 The matrix state enforced by the closure tests is:
