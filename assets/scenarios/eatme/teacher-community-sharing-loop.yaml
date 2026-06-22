@@ -19,6 +19,11 @@ personas:
   students:
   - collaborative-peer-mentor
   - accessibility-advocate
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_flow:
   focus: teacher-community-sharing-loop
   instructor_goal: Package one Alice learning activity for teacher community sharing with a share card, classroom handoff note, attribution, editable scenario and persona links, setup constraints, student evidence, and remix feedback prompts.
@@ -53,6 +58,7 @@ acceptance_probes:
 - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
 - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
 - LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming a deployed community platform.
+- LookingGlass /api/project/export/web-package and /api/project/share preserve teacher-share metadata in the package/share artifacts.
 rubric:
 - criterion: Share card usefulness
   evidence:

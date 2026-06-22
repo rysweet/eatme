@@ -38,6 +38,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 portability:
   source_project: learner-source-world
   destination_project: peer-import-world
@@ -72,6 +73,7 @@ acceptance_criteria:
 acceptance_probes:
 - LookingGlass support is bounded to parsed AliceProject.types class-behavior packages, not full desktop modified-class UI parity.
 - LookingGlass evidence command shows the entity type registry, class behavior package import, and save/read persistence tests passing.
+- LookingGlass /api/projects/current/classes/:typeName/behavior and class import evidence remains bounded to parsed AliceProject.types behavior packages.
 - Imported class behavior package evidence includes package validation, type import, and behavior persistence after import into another project.
 steps:
 - id: validate-assets

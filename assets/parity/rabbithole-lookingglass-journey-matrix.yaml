@@ -18,7 +18,7 @@ rows:
     looking_glass:
       status: partial
       source_status: "Bounded migration guidance only"
-      reason: "LookingGlass now detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
+      reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
       command: cd ../alice-web-prototype && npm test -- test/project-migration.test.ts
       expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
