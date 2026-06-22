@@ -57,6 +57,27 @@ fn matrix_row(scenario: &str) -> Value {
         .unwrap_or_else(|| panic!("missing matrix row for {scenario}"))
 }
 
+fn matrix_rows() -> Vec<Value> {
+    let matrix = read_yaml("assets/parity/rabbithole-lookingglass-journey-matrix.yaml");
+    value_at(&matrix, &["rows"])
+        .and_then(Value::as_sequence)
+        .unwrap_or_else(|| panic!("matrix rows must be a YAML sequence"))
+        .to_vec()
+}
+
+fn lookingglass_test_refs(row: &Value) -> Vec<String> {
+    strings_at(row, &["closure", "required"])
+        .join("\n")
+        .split_whitespace()
+        .filter_map(|token| token.strip_prefix("LookingGlass:test/"))
+        .map(|path| {
+            let trimmed =
+                path.trim_end_matches(|ch: char| matches!(ch, '.' | ',' | ';' | ':' | ')' | ']'));
+            format!("test/{trimmed}")
+        })
+        .collect()
+}
+
 #[test]
 fn model_texture_import_checkpoint_requires_covered_row_and_canonical_lookingglass_evidence() {
     let row = matrix_row("model-texture-import-checkpoint");
@@ -112,6 +133,77 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
                 && !row_text.contains("full audio authoring"),
             "{scenario} row still contains overbroad audio/export wording:\n{row_text}"
         );
+    }
+}
+
+#[test]
+fn precise_lookingglass_closure_refs_are_run_by_the_row_command() {
+    for row in matrix_rows() {
+        let scenario = string_at(&row, &["scenario"]);
+        let refs = lookingglass_test_refs(&row);
+        if refs.is_empty() {
+            continue;
+        }
+
+        let command = string_at(&row, &["looking_glass", "command"]);
+        assert!(
+            command.contains("cd ${LOOKINGGLASS_REPO:?}"),
+            "{scenario} cites precise LookingGlass evidence, so looking_glass.command must cd through the portable LOOKINGGLASS_REPO guard; command was:\n{command}"
+        );
+        assert!(
+            command.contains("npm test --"),
+            "{scenario} cites precise LookingGlass evidence, so looking_glass.command must run the cited npm tests; command was:\n{command}"
+        );
+        for expected_ref in refs {
+            assert!(
+                command.contains(&expected_ref),
+                "{scenario} closure cites LookingGlass:{expected_ref}, but looking_glass.command does not run it; command was:\n{command}"
+            );
+        }
+    }
+}
+
+#[test]
+fn objects_and_first_lesson_rows_keep_their_own_eatme_commands() {
+    let expectations: [(&str, &[&str]); 2] = [
+        (
+            "alice-objects-first-full-path",
+            &[
+                "cargo test -p eatme-alice",
+                "objects_first_full_path_contract",
+                "objects_first_full_path_persistence",
+            ],
+        ),
+        (
+            "first-lessons-real-ui-actions",
+            &[
+                "cargo test -p eatme-alice",
+                "first_lesson_vertical_slice",
+                "first_lesson_hook_chain_progression",
+                "first_lesson_next_action_evidence",
+            ],
+        ),
+    ];
+
+    for (scenario, expected_fragments) in expectations {
+        let row = matrix_row(scenario);
+        let command = string_at(&row, &["looking_glass", "command"]);
+        for expected_fragment in expected_fragments {
+            assert!(
+                command.contains(expected_fragment),
+                "{scenario} looking_glass.command must run its own EatMe journey evidence ({expected_fragment}); command was:\n{command}"
+            );
+        }
+        for misplaced_ref in [
+            "test/project-audio-bounded-evidence.contract.test.ts",
+            "test/project-export-share-fallback.contract.test.ts",
+            "${LOOKINGGLASS_REPO",
+        ] {
+            assert!(
+                !command.contains(misplaced_ref),
+                "{scenario} looking_glass.command must not carry media/export LookingGlass closure commands; command was:\n{command}"
+            );
+        }
     }
 }
 

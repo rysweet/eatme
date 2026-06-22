@@ -124,7 +124,7 @@ rows:
       status: partial
       source_status: "Covered where the web version supports the needed actions"
       reason: "Covered where the web version supports the needed actions"
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-audio-bounded-evidence.contract.test.ts
+      command: cargo test -p eatme-alice --test objects_first_full_path_contract --test objects_first_full_path_persistence -- --test-threads=1
       expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
     closure:
       required:
@@ -143,7 +143,7 @@ rows:
       status: partial
       source_status: "Covered where the web version supports the task"
       reason: "Covered where the web version supports the task"
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      command: cargo test -p eatme-alice --test first_lesson_vertical_slice --test first_lesson_hook_chain_progression --test first_lesson_next_action_evidence -- --test-threads=1
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     closure:
       required:
@@ -630,7 +630,7 @@ rows:
       status: partial
       source_status: "Partial: bounded audio cue metadata and simulated playback bridge evidence only"
       reason: "LookingGlass evidence is bounded to audio manifest/cue metadata persistence and a simulated playback bridge; it does not claim native audio playback and does not claim native Web Share success."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student records storyboard cue timing with bounded audio metadata/playback bridge evidence, not native audio playback."
     closure:
       required:
@@ -650,7 +650,7 @@ rows:
       status: partial
       source_status: "Partial: camera/export/browser-download fallback proven; audio remains bounded metadata/playback bridge evidence"
       reason: "LookingGlass proves camera markers, export package, and browser-download share fallback, while audio remains bounded metadata/playback bridge evidence; it does not claim native audio playback and does not claim native Web Share success."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student combines camera markers, bounded audio metadata/playback bridge evidence, export, and browser-download share fallback evidence."
     closure:
       required:
