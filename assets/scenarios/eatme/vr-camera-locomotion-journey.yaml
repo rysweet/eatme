@@ -100,6 +100,13 @@ steps:
   - manifest assertions all pass
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
+- id: lookingglass-camera-comfort-evidence
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- vr_camera_locomotion_records_bounded_comfort_evidence --test-threads=1
+  evidence:
+  - web_platform_curriculum_e2e includes vr-camera-locomotion-journey
+  - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1
+  - response records desktopCameraAvailable=true and trueHeadsetVrSupported=false
+  - evidence remains bounded to browser camera comfort and does not claim native headset VR
 - id: agentic-journey-evidence
   command: Review the launched Alice session and learner artifact using the persona prompt assets; do not require real VR hardware unless record-vr-preflight reports real_vr_available=true.
   evidence:
@@ -115,7 +122,7 @@ agentic_follow_on:
   - creative-ownership-card
   deterministic_gate: Run this scenario and record VR availability before asking instructor/student agents to judge camera perspective, locomotion comfort, viewpoint orientation, or VR-readiness evidence.
 acceptance_probes:
-- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass validation uses ALICE_WEB_URL and /api/vr/camera-comfort responses when the bounded web camera comfort workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -126,4 +133,5 @@ artifacts:
   window_list: runs/vr-camera-locomotion-journey/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-preflight.txt
   fallback_evidence: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-fallback-evidence.md
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, do not fail the desktop scenario; record real_vr_available=false and require the listed camera-marker, viewpoint, and locomotion-comfort evidence before agentic VR claims are accepted.
+  lookingglass_camera_comfort: api://lookingglass/api/vr/camera-comfort
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, do not fail the desktop scenario; record real_vr_available=false and require the listed camera-marker, viewpoint, and locomotion-comfort evidence before agentic VR claims are accepted. LookingGlass evidence is bounded to browser camera comfort and must keep true headset/native VR unsupported.

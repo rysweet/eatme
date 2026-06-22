@@ -79,6 +79,18 @@ steps:
     - '"startup_window_or_screenshot": {'
     - '"passed": true'
   timeout: 900000
+- name: Lookingglass Camera Comfort Evidence
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- vr_camera_locomotion_records_bounded_comfort_evidence --test-threads=1
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
 - name: Agentic Journey Evidence
   agent: eatme-cli-agent
   action: execute_command
@@ -112,6 +124,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Launch Smoke
+- name: lookingglass-camera-comfort-evidence succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Lookingglass Camera Comfort Evidence
 - name: agentic-journey-evidence succeeds
   type: command_success
   agent: eatme-cli-agent

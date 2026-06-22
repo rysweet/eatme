@@ -119,4 +119,4 @@ artifacts:
   window_list: runs/vr-player-comfort-playtest/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt
   playtest_notes: runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-notes.md
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require desktop fallback playtest evidence instead of silently skipping the scenario.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require desktop fallback playtest evidence instead of silently skipping the scenario. LookingGlass currently provides bounded /api/vr/camera-comfort evidence for browser camera comfort only; it must not be counted as true VR player comfort playtesting.

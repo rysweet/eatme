@@ -82,15 +82,22 @@ fn instructor_review_assets_cover_rubric_grading_and_feedback_boundaries() {
             "instructor review coverage should include {needle:?}: {combined}"
         );
     }
-    assert_eq!(
-        gallery_walk
-            .agentic_flow
-            .as_ref()
-            .unwrap()
-            .expected_outputs
-            .len(),
-        5
-    );
+    let gallery_outputs = &gallery_walk.agentic_flow.as_ref().unwrap().expected_outputs;
+    for expected_output in [
+        "gallery_walk_rubric",
+        "peer_feedback_card",
+        "creator_response_prompt",
+        "revision_checkpoint_note",
+        "instructor_boundary_note",
+        "lookingglass_gallery_rubric_api_evidence",
+    ] {
+        assert!(
+            gallery_outputs
+                .iter()
+                .any(|output| output == expected_output),
+            "gallery walk outputs should include {expected_output}: {gallery_outputs:?}"
+        );
+    }
     assert!(
         outcomes_rubric
             .rubric

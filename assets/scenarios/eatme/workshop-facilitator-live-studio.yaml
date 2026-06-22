@@ -112,4 +112,4 @@ artifacts:
   real_alice_action_evidence_notes: agentic://student/real-alice-action-evidence-notes
   instructor_acceptance_probe_notes: agentic://instructor/acceptance-probe-notes
   showcase_notes: agentic://instructor/showcase-notes
-unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full Alice user interface automation, creative assessment, learner-world grading, or complete Alice coverage.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full Alice user interface automation, creative assessment, learner-world grading, or complete Alice coverage. LookingGlass /api/review/gallery-walk-rubric evidence supports bounded gallery review only and must not be counted as synchronized facilitator live-studio support.

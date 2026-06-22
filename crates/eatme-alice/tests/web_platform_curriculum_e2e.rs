@@ -126,6 +126,9 @@ enum Step {
         expected_status: u16,
         expected_message: String,
     },
+    CameraComfortEvidence,
+    AccessibilityCaptionEvidence,
+    GalleryWalkRubricEvidence,
     AssertMinObjects {
         min: usize,
     },
@@ -258,6 +261,91 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         }
                     }
                     Err(e) => StepResult { name: name.clone(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::CameraComfortEvidence => {
+                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.camera-vr-comfort-evidence/v1")
+                                && value.get("desktopCameraAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
+                            StepResult { name: "camera-comfort-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::AccessibilityCaptionEvidence => {
+                match client.get(&format!("{base}/api/accessibility/rescue-camera-captions")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let caption_ids: Vec<_> = value
+                                .get("captionChecks")
+                                .and_then(Value::as_array)
+                                .map(|checks| {
+                                    checks
+                                        .iter()
+                                        .filter_map(|check| check.get("id").and_then(Value::as_str))
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.accessibility-rescue-camera-captions/v1")
+                                && value.get("cameraCaption").and_then(Value::as_str).unwrap_or_default().contains("Camera")
+                                && value.get("objectCaption").and_then(Value::as_str).unwrap_or_default().contains("captionGuide")
+                                && value.get("keyboardReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("highContrastReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                && caption_ids.contains(&"aria-live-status")
+                                && caption_ids.contains(&"camera-caption")
+                                && caption_ids.contains(&"scene-object-caption");
+                            StepResult { name: "accessibility-caption-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::GalleryWalkRubricEvidence => {
+                match client.get(&format!("{base}/api/review/gallery-walk-rubric")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let rubric_ids: Vec<_> = value
+                                .get("rubric")
+                                .and_then(Value::as_array)
+                                .map(|criteria| {
+                                    criteria
+                                        .iter()
+                                        .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let has_review_prompt = value
+                                .get("galleryItems")
+                                .and_then(Value::as_array)
+                                .map(|items| items.iter().any(|item| {
+                                    item.get("title").and_then(Value::as_str) == Some("reviewCheckpoint")
+                                        && item.get("reviewPrompt").and_then(Value::as_str).unwrap_or_default().contains("reviewCheckpoint")
+                                }))
+                                .unwrap_or(false);
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.gallery-walk-rubric-evidence/v1")
+                                && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
+                                && has_review_prompt
+                                && rubric_ids.contains(&"visible-world")
+                                && rubric_ids.contains(&"camera-framing")
+                                && rubric_ids.contains(&"accessibility-captions");
+                            StepResult { name: "gallery-walk-rubric-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::AssertMinObjects { min } => {
@@ -589,6 +677,41 @@ fn camera_viewpoint() -> (&'static str, Vec<Step>) {
                 ],
             },
             Step::RunWorld,
+        ],
+    )
+}
+
+fn vr_camera_locomotion_journey() -> (&'static str, Vec<Step>) {
+    (
+        "vr-camera-locomotion-journey",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "comfortGuide".into(),
+            },
+            Step::CameraComfortEvidence,
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn accessibility_rescue_camera_captions() -> (&'static str, Vec<Step>) {
+    (
+        "accessibility-rescue-camera-captions",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "captionGuide".into(),
+            },
+            Step::AccessibilityCaptionEvidence,
         ],
     )
 }
@@ -1214,6 +1337,27 @@ fn instructor_grading() -> (&'static str, Vec<Step>) {
     )
 }
 
+fn classroom_gallery_walk_and_rubric() -> (&'static str, Vec<Step>) {
+    (
+        "classroom-gallery-walk-and-rubric",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "reviewHero".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "reviewCheckpoint".into(),
+            },
+            Step::GalleryWalkRubricEvidence,
+        ],
+    )
+}
+
 fn error_recovery() -> (&'static str, Vec<Step>) {
     (
         "error-recovery",
@@ -1264,6 +1408,8 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         say_think(),
         design_process(),
         camera_viewpoint(),
+        vr_camera_locomotion_journey(),
+        accessibility_rescue_camera_captions(),
         audio(),
         vehicle_parenting(),
         joint_manipulation(),
@@ -1272,6 +1418,7 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         nested_control_flow(),
         full_student_journey(),
         instructor_grading(),
+        classroom_gallery_walk_and_rubric(),
         error_recovery(),
     ]
 }
@@ -1426,6 +1573,35 @@ fn camera_uses_camera_methods() {
             _ => false,
         }
     }));
+}
+
+#[test]
+fn vr_camera_locomotion_records_bounded_comfort_evidence() {
+    let (_, steps) = vr_camera_locomotion_journey();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR camera journey should prove web camera comfort evidence"
+    );
+    assert!(
+        !steps
+            .iter()
+            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
+        "VR camera journey must not claim unrelated review tooling"
+    );
+}
+
+#[test]
+fn accessibility_rescue_camera_captions_records_caption_evidence() {
+    let (_, steps) = accessibility_rescue_camera_captions();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
+        "accessibility rescue scenario should prove browser caption evidence"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
 }
 
 #[test]
@@ -1750,6 +1926,8 @@ fn full_curriculum_breadth_covered() {
         "say-think",
         "design-process",
         "camera-viewpoint",
+        "vr-camera-locomotion-journey",
+        "accessibility-rescue-camera-captions",
         "audio",
         "vehicle-parenting",
         "joint-manipulation",
@@ -1758,6 +1936,7 @@ fn full_curriculum_breadth_covered() {
         "nested-control-flow",
         "full-student-journey",
         "instructor-grading",
+        "classroom-gallery-walk-and-rubric",
         "error-recovery",
     ] {
         assert!(names.contains(&required), "missing: {required}");
@@ -1833,6 +2012,25 @@ fn instructor_grading_round_trips_saved_project_structure() {
             .any(|statement| statement.method.as_deref() == Some("learner.walk"))
     );
     assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+}
+
+#[test]
+fn classroom_gallery_walk_records_gallery_rubric_evidence() {
+    let (_, steps) = classroom_gallery_walk_and_rubric();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
+        "gallery walk should prove web review/rubric evidence"
+    );
+    assert_eq!(
+        steps
+            .iter()
+            .filter(|step| matches!(step, Step::AddObject { .. }))
+            .count(),
+        2,
+        "gallery review should have visible project items to review"
+    );
 }
 
 #[test]

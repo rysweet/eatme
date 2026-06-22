@@ -38,6 +38,7 @@ agentic_flow:
   - creator_response_prompt
   - revision_checkpoint_note
   - instructor_boundary_note
+  - lookingglass_gallery_rubric_api_evidence
 agentic_test_prompt: Act as an instructor acceptance agent preparing an Alice classroom gallery walk. Produce a gallery walk rubric, peer feedback card, creator response prompt, revision checkpoint note, and instructor boundary note grounded in the listed resources and this classroom-gallery-walk-and-rubric scenario. Require feedback to name one observed artifact behavior, one programming concept or design choice, one respectful question, one accessibility or audience note when relevant, and one student-owned revision. The rubric must work for stories, games, simulations, media scenes, or starter projects without forcing one project template. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed sharing service.
 acceptance_criteria:
 - given: students bring different Alice stories, games, simulations, or media scenes to a gallery walk
@@ -51,6 +52,7 @@ acceptance_criteria:
   then: the student names what they heard, what visible behavior they will keep or change, and one small revision or reflection to complete next
 acceptance_probes:
 - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, and live-studio unsupported evidence.
 - Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.
 - Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.
 - Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.
@@ -90,6 +92,13 @@ steps:
   evidence:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
+- id: lookingglass-gallery-rubric-evidence
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- classroom_gallery_walk_records_gallery_rubric_evidence --test-threads=1
+  evidence:
+  - web_platform_curriculum_e2e includes classroom-gallery-walk-and-rubric
+  - /api/review/gallery-walk-rubric returns schema_version alice.gallery-walk-rubric-evidence/v1
+  - response records reviewWorkflowSupported=true and rubricRecordingSupported=true
+  - response records liveStudioSupported=false so gallery review is not inflated into live workshop support
 timeouts:
   agentic_seconds: 900
 artifacts:
@@ -98,6 +107,7 @@ artifacts:
   creator_response_prompt: agentic://student/creator-response-prompt
   revision_checkpoint_note: agentic://student/revision-checkpoint-note
   instructor_boundary_note: agentic://instructor/gallery-walk-boundary-note
+  lookingglass_gallery_rubric_api_evidence: api://lookingglass/api/review/gallery-walk-rubric
 unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or gallery-note artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, complete Alice coverage, or a deployed sharing service.
 adapter:
   targets:

@@ -46,6 +46,7 @@ steps:
   params:
     acceptance_probes: |-
       LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+      LookingGlass /api/accessibility/rescue-camera-captions returns aria-live, camera, and scene-object caption checks for the web workflow.
       Accessibility audit card prompts identification of at least one camera framing gap.
       Accessibility audit card prompts identification of at least one caption or label gap.
       Camera rescue guide shows a concrete camera reframe or second-position example before the general framing.
@@ -61,6 +62,7 @@ steps:
     - accessibility_audit_card
     - camera_rescue_guide
     - caption_and_label_template
+    - lookingglass_caption_api_evidence
   timeout: 900000
 assertions:
 - name: Assets Validate

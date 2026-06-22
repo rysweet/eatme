@@ -46,6 +46,7 @@ steps:
   params:
     acceptance_probes: |-
       LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+      LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, and live-studio unsupported evidence.
       Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.
       Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.
       Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.
@@ -61,6 +62,7 @@ steps:
     - creator_response_prompt
     - revision_checkpoint_note
     - instructor_boundary_note
+    - lookingglass_gallery_rubric_api_evidence
   timeout: 900000
 assertions:
 - name: Assets Validate
