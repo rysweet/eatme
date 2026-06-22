@@ -40,6 +40,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
   - manifest_assertions
