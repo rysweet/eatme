@@ -106,6 +106,23 @@ fn generated_web_ids(root: &Path) -> BTreeSet<String> {
         .collect()
 }
 
+fn matrix_lookingglass_not_supported_ids(root: &Path) -> BTreeSet<String> {
+    let yaml = read_yaml(&root.join("assets/parity/rabbithole-lookingglass-journey-matrix.yaml"));
+    value_at(&yaml, &["rows"])
+        .and_then(Value::as_sequence)
+        .into_iter()
+        .flatten()
+        .filter_map(|row| {
+            let status = string_at(row, &["looking_glass", "status"])?;
+            if status == "not_supported" {
+                string_at(row, &["scenario"])
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 const CORE_CURRICULUM_SCENARIOS: &[&str] = &[
     "hour-of-code-studio-kickoff",
     "building-a-scene-first-world",
@@ -147,9 +164,9 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        50,
+        47,
         lookingglass_targeted_ids.len(),
-        "expected 50 LookingGlass-targeted desktop scenarios, found {:?}",
+        "expected 47 LookingGlass-targeted desktop scenarios, found {:?}",
         lookingglass_targeted_ids
     );
     assert!(
@@ -171,6 +188,23 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         missing_core,
         with_web_equivalents,
         without_web_equivalents
+    );
+}
+
+#[test]
+fn lookingglass_targets_do_not_include_unsupported_matrix_rows() {
+    let root = repository_root();
+    let lookingglass_targeted_ids = lookingglass_targeted_desktop_ids(&root);
+    let not_supported_ids = matrix_lookingglass_not_supported_ids(&root);
+    let targeted_but_not_supported = lookingglass_targeted_ids
+        .intersection(&not_supported_ids)
+        .cloned()
+        .collect::<Vec<_>>();
+
+    assert!(
+        targeted_but_not_supported.is_empty(),
+        "adapter.targets must not include lookingglass for unsupported matrix rows: {:?}",
+        targeted_but_not_supported
     );
 }
 

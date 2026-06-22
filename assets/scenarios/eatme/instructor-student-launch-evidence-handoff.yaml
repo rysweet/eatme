@@ -25,7 +25,6 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
-  - lookingglass
 agentic_flow:
   focus: instructor-student-launch-evidence-handoff
   instructor_goal: Prepare a classroom handoff that uses real Alice launch evidence honestly, separates environment readiness from learner behavior, and asks students for one visible action/result/revision note without claiming automated grading or complete Alice coverage.
