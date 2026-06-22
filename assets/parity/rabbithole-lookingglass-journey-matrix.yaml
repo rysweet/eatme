@@ -16,13 +16,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-preflight-ready-to-create --run-id parity-setup-preflight-ready-to-create --runs-dir runs --timeout 1800 --json
       expected_behavior: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Bounded migration guidance only"
+      reason: "LookingGlass now detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
+      command: cd ../alice-web-prototype && npm test -- test/project-migration.test.ts
+      expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when bounded migration guidance is claimed
+        - Automatic Alice 2 conversion remains explicitly unsupported until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: setup-support-lab-readiness
     area: "Setup and first use"
@@ -33,13 +36,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-support-lab-readiness --run-id parity-setup-support-lab-readiness --runs-dir runs --timeout 1800 --json
       expected_behavior: "Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered for parsed AliceProject.types class-behavior packages"
+      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; full desktop UI parity remains out of scope."
+      command: cd ../alice-web-prototype && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when web class portability support is claimed
+        - Supported scope remains bounded to parsed AliceProject.types behavior packages
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-classroom-setup-readiness
     area: "Setup and first use"
@@ -50,13 +56,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-classroom-setup-readiness --run-id parity-instructor-classroom-setup-readiness --runs-dir runs --timeout 1800 --json
       expected_behavior: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered for alice-web package/share metadata"
+      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; this is not a deployed community platform."
+      command: cd ../alice-web-prototype && npm test -- test/project-export.test.ts
+      expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when package/share metadata support is claimed
+        - Community platform deployment remains explicitly out of scope
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-student-launch-evidence-handoff
     area: "Setup and first use"

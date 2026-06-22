@@ -69,6 +69,10 @@ acceptance_criteria:
 - given: gadugi needs to exercise the scenario
   when: the gadugi adapter runs commands for this scenario
   then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
+acceptance_probes:
+- LookingGlass support is bounded to parsed AliceProject.types class-behavior packages, not full desktop modified-class UI parity.
+- LookingGlass evidence command shows the entity type registry, class behavior package import, and save/read persistence tests passing.
+- Imported class behavior package evidence includes package validation, type import, and behavior persistence after import into another project.
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
@@ -89,6 +93,12 @@ steps:
   - portability.evidence_after_import lists export evidence, import evidence, and post-import behavior evidence
   - acceptance criteria require behavior persistence after import into another project
   - instructor/student prompts ask for before-export and after-import comparison
+- id: verify-lookingglass-class-behavior-package
+  command: cd ../alice-web-prototype && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+  evidence:
+  - class behavior package export identifies the modified class type
+  - import evidence shows the class available in a different AliceProject
+  - save/read evidence shows the imported behavior survives project persistence
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#modified-class-portability
   personality_assets:

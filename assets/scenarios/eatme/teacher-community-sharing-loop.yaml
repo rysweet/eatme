@@ -52,6 +52,7 @@ acceptance_probes:
 - Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
 - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
 - Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+- LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming a deployed community platform.
 rubric:
 - criterion: Share card usefulness
   evidence:
@@ -81,6 +82,12 @@ steps:
   evidence:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
+- id: verify-lookingglass-teacher-share-package
+  command: cd ../alice-web-prototype && npm test -- test/project-export.test.ts
+  evidence:
+  - share.json contains alice-web.teacher-share/v1 metadata
+  - validation evidence includes teacher-share-metadata
+  - generated share artifacts keep package filename, size, and sha256 linkage
 timeouts:
   agentic_seconds: 900
 artifacts:
