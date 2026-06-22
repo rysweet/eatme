@@ -63,6 +63,12 @@ Run the whole workspace with the web gate enabled:
 EATME_WEB_PLATFORM=1 cargo test --workspace
 ```
 
+Validate the RabbitHole-vs-LookingGlass journey matrix:
+
+```bash
+cargo test -p eatme-assets --test rabbithole_lookingglass_parity_matrix
+```
+
 Without `EATME_WEB_PLATFORM=1`, the live web tests skip cleanly and the
 offline checks still run.
 

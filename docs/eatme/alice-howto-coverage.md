@@ -32,6 +32,10 @@ Each covered scenario records:
    behavior, saved artifact, reflection artifact, or instructor handoff.
 5. The platform result for RabbitHole and LookingGlass.
 
+The RabbitHole-vs-LookingGlass closure source is
+`assets/parity/rabbithole-lookingglass-journey-matrix.yaml`. This page is the
+human inventory; the matrix is the executable closure contract.
+
 ## Validation targets
 
 | Target | Path | Used for |

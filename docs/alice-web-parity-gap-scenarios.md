@@ -3,6 +3,10 @@
 These scenarios make Alice Java-to-web parity review explicit. They are not a
 replacement-readiness claim. They are gates for finding gaps and proving closure.
 
+The durable journey-level source of truth is
+`assets/parity/rabbithole-lookingglass-journey-matrix.yaml`. This page explains
+how to use it.
+
 ## Scenario set
 
 | Scenario | Gap family | Closure probes |
@@ -16,6 +20,11 @@ closed only when the matrix row has both:
 
 1. a named Java Alice baseline behavior, and
 2. a passing closure test or real Alice evidence artifact.
+
+The committed parity matrix is stricter than these runtime notes. Every
+`docs/eatme/alice-howto-coverage.md` row must have one matrix row, and each row
+must name the RabbitHole command, LookingGlass status, closure command or
+unsupported reason, and user-visible behavior evidence.
 
 ## Run the deterministic parts
 
