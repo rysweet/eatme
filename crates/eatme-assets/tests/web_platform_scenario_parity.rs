@@ -80,13 +80,13 @@ fn desktop_scenarios(root: &Path) -> Vec<(String, Value)> {
         .collect()
 }
 
-fn web_capable_desktop_ids(root: &Path) -> BTreeSet<String> {
+fn lookingglass_targeted_desktop_ids(root: &Path) -> BTreeSet<String> {
     desktop_scenarios(root)
         .into_iter()
         .filter(|(_, yaml)| {
             string_list_at(yaml, &["adapter", "targets"])
                 .iter()
-                .any(|target| target == "gadugi-cli")
+                .any(|target| target == "lookingglass")
         })
         .map(|(id, _)| id)
         .collect()
@@ -131,7 +131,7 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .into_iter()
         .map(|(id, _)| id)
         .collect::<BTreeSet<_>>();
-    let web_capable_ids = web_capable_desktop_ids(&root);
+    let lookingglass_targeted_ids = lookingglass_targeted_desktop_ids(&root);
     let generated_ids = generated_web_ids(&root);
     let with_web_equivalents = desktop_ids
         .intersection(&generated_ids)
@@ -147,10 +147,10 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        37,
-        web_capable_ids.len(),
-        "expected 37 web-capable desktop scenarios, found {:?}",
-        web_capable_ids
+        50,
+        lookingglass_targeted_ids.len(),
+        "expected 50 LookingGlass-targeted desktop scenarios, found {:?}",
+        lookingglass_targeted_ids
     );
     assert!(
         without_web_equivalents.is_empty() && extra_generated.is_empty(),
@@ -177,11 +177,11 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
 #[test]
 fn round_86_targeted_curriculum_topics_are_web_capable() {
     let root = repository_root();
-    let web_capable_ids = web_capable_desktop_ids(&root);
+    let lookingglass_targeted_ids = lookingglass_targeted_desktop_ids(&root);
     let generated_ids = generated_web_ids(&root);
-    let missing_web_capable = ROUND_86_TARGETED_WEB_SCENARIOS
+    let missing_lookingglass_target = ROUND_86_TARGETED_WEB_SCENARIOS
         .iter()
-        .filter(|id| !web_capable_ids.contains(**id))
+        .filter(|id| !lookingglass_targeted_ids.contains(**id))
         .copied()
         .collect::<Vec<_>>();
     let missing_generated = ROUND_86_TARGETED_WEB_SCENARIOS
@@ -191,9 +191,9 @@ fn round_86_targeted_curriculum_topics_are_web_capable() {
         .collect::<Vec<_>>();
 
     assert!(
-        missing_web_capable.is_empty() && missing_generated.is_empty(),
-        "round 86 targeted topics must be both web-capable and generated; missing web_capable={:?}, missing generated={:?}",
-        missing_web_capable,
+        missing_lookingglass_target.is_empty() && missing_generated.is_empty(),
+        "round 86 targeted topics must be both LookingGlass-targeted and generated; missing LookingGlass-targeted={:?}, missing generated={:?}",
+        missing_lookingglass_target,
         missing_generated
     );
 }
@@ -202,7 +202,7 @@ fn round_86_targeted_curriculum_topics_are_web_capable() {
 fn every_web_scenario_has_health_launch_action_and_verification_structure() {
     let root = repository_root();
     let desktop = desktop_scenarios(&root);
-    let web_ids = web_capable_desktop_ids(&root);
+    let web_ids = lookingglass_targeted_desktop_ids(&root);
     let mut failures = Vec::new();
 
     for (id, yaml) in desktop.into_iter().filter(|(id, _)| web_ids.contains(id)) {

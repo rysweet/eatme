@@ -40,6 +40,18 @@ steps:
     - '"passed": true'
     - '"teacher-community-sharing-loop"'
   timeout: 60000
+- name: Verify Lookingglass Teacher Share Package
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
+      cd ${LOOKINGGLASS_REPO:?} && npm test -- test/project-export.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test
@@ -66,6 +78,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: verify-lookingglass-teacher-share-package succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Teacher Share Package
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent

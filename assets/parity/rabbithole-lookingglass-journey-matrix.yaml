@@ -556,11 +556,9 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario workshop-facilitator-live-studio --run-id parity-workshop-facilitator-live-studio --runs-dir runs --timeout 1800 --json
       expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
     looking_glass:
-      status: partial
-      source_status: "Covered where the web facilitation/review tools apply"
-      reason: "Covered where the web facilitation/review tools apply"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -612,11 +610,9 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-player-comfort-playtest --run-id parity-vr-player-comfort-playtest --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
     looking_glass:
-      status: partial
-      source_status: "Covered where the web player can exercise comfort and review flows"
-      reason: "Covered where the web player can exercise comfort and review flows"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -710,7 +706,7 @@ rows:
       status: partial
       source_status: "Bounded migration guidance only"
       reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
       expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
@@ -730,7 +726,7 @@ rows:
       status: partial
       source_status: "Covered for parsed AliceProject.types class-behavior packages"
       reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; full desktop UI parity remains out of scope."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
       expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
@@ -950,7 +946,7 @@ rows:
       status: partial
       source_status: "Covered for alice-web package/share metadata"
       reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; this is not a deployed community platform."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts
       expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:
