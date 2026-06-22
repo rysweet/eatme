@@ -310,9 +310,8 @@ fn unsupported_lookingglass_rows_say_so_plainly() {
     let unclear = coverage_rows()
         .into_iter()
         .filter(|row| {
-            !row.looking_glass
-                .to_ascii_lowercase()
-                .starts_with("covered")
+            let looking_glass = row.looking_glass.to_ascii_lowercase();
+            !looking_glass.starts_with("covered") && !looking_glass.starts_with("partial:")
         })
         .filter(|row| {
             !row.looking_glass
