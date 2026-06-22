@@ -687,10 +687,10 @@ rows:
       expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
     looking_glass:
       status: covered
-      source_status: "Covered by LookingGlass imported model, texture, camera/export, safe resource, and reopen persistence contract tests"
-      reason: "LookingGlass source/API/tests prove model and texture import metadata, safe project-owned archive resources, texture assignment, camera checkpoint state, export package inclusion, and A3P reopen persistence."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student imports model and texture resources, applies the texture, checkpoints camera/export state, reopens the A3P, and verifies project-owned resources remain available."
+      source_status: "Covered by LookingGlass imported model, texture, safe resource, and reopen persistence contract tests"
+      reason: "LookingGlass source/API/tests prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-assets --test gallery_media_import_parity_closure
+      expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence

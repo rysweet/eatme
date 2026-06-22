@@ -249,6 +249,7 @@ cd <eatme-repo>
 cargo run -q -p eatme-cli -- assets validate --json
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 cargo test -p eatme-assets --test remaining_curriculum_gaps
+cargo test -p eatme-assets --test gallery_media_import_parity_closure
 cargo test -p eatme-assets --test web_platform_scenario_parity
 
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} \

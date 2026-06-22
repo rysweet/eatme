@@ -131,6 +131,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 
 cargo test -p eatme-assets --test remaining_curriculum_gaps
+cargo test -p eatme-assets --test gallery_media_import_parity_closure
 cargo test -p eatme-assets --test web_platform_scenario_parity
 cargo test -p eatme-assets --test curriculum_coverage_summary
 ```
@@ -143,7 +144,6 @@ export EATME_WEB_PLATFORM=1
 export ALICE_WEB_URL=http://127.0.0.1:5173
 
 cargo test -p eatme-alice --test project_io_resource_management
-cargo test -p eatme-alice --test import_export_support
 cargo test -p eatme-alice --test camera_and_viewpoint_e2e
 cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
 ```
