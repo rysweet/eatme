@@ -85,8 +85,8 @@ rows:
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     looking_glass:
       status: covered
-      source_status: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     closure:
       required:
@@ -103,7 +103,7 @@ rows:
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     looking_glass:
       status: covered
-      source_status: "Covered where the web version supports the needed actions"
+      source_status: "Covered where the web version supports the task"
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     closure:
@@ -121,7 +121,7 @@ rows:
       expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
     looking_glass:
       status: covered
-      source_status: "Covered"
+      source_status: "Covered where the web version supports the needed actions"
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
     closure:

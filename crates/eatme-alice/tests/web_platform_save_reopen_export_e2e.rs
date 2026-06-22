@@ -44,6 +44,10 @@ enum Step {
     Reopen {
         path: &'static str,
     },
+    AddUnsavedObject {
+        class_name: &'static str,
+        instance_name: &'static str,
+    },
     ExportTypeScript,
     AssertMinObjects {
         min: usize,
@@ -124,6 +128,10 @@ fn alice_objects_first_world() -> Scenario {
             Step::Save {
                 path: OBJECTS_FIRST_WORLD_SAVE_PATH,
             },
+            Step::AddUnsavedObject {
+                class_name: "Prop",
+                instance_name: "unsavedAfterObjectsFirst",
+            },
             Step::Reopen {
                 path: OBJECTS_FIRST_WORLD_SAVE_PATH,
             },
@@ -155,6 +163,10 @@ fn alice_objects_first_full_path() -> Scenario {
             Step::Save {
                 path: OBJECTS_FIRST_FULL_PATH_SAVE_PATH,
             },
+            Step::AddUnsavedObject {
+                class_name: "Prop",
+                instance_name: "unsavedAfterFullPath",
+            },
             Step::Reopen {
                 path: OBJECTS_FIRST_FULL_PATH_SAVE_PATH,
             },
@@ -183,6 +195,10 @@ fn first_lessons_real_ui_actions() -> Scenario {
             Step::Save {
                 path: FIRST_LESSON_ACTIONS_SAVE_PATH,
             },
+            Step::AddUnsavedObject {
+                class_name: "Prop",
+                instance_name: "unsavedAfterFirstLesson",
+            },
             Step::Reopen {
                 path: FIRST_LESSON_ACTIONS_SAVE_PATH,
             },
@@ -207,6 +223,10 @@ fn starter_project_open_save_export_preflight() -> Scenario {
             Step::RunWorld,
             Step::Save {
                 path: STARTER_PREFLIGHT_SAVE_PATH,
+            },
+            Step::AddUnsavedObject {
+                class_name: "Prop",
+                instance_name: "unsavedAfterStarter",
             },
             Step::Reopen {
                 path: STARTER_PREFLIGHT_SAVE_PATH,
@@ -297,6 +317,16 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 post_launch_project(client, base, path, &mut last_count)
             }
             Step::AddObject {
+                class_name,
+                instance_name,
+            } => post_add_object(
+                client,
+                &format!("{base}/api/scene/add-object"),
+                class_name,
+                instance_name,
+                &mut last_count,
+            ),
+            Step::AddUnsavedObject {
                 class_name,
                 instance_name,
             } => post_add_object(
@@ -514,10 +544,14 @@ fn post_reopen(
                     name: format!("reopen({path})"),
                     ok: matches!(body.status.as_str(), "ok" | "reopened" | "launched")
                         && saved_path == Some(path)
+                        && body
+                            .project
+                            .as_deref()
+                            .is_some_and(|project| project.ends_with(path))
                         && body.scene_object_count == expected_count,
                     msg: format!(
-                        "restored_objects={} expected_objects={expected_count}",
-                        body.scene_object_count
+                        "project={:?} restored_objects={} expected_objects={expected_count}",
+                        body.project, body.scene_object_count
                     ),
                 }
             }
@@ -526,7 +560,6 @@ fn post_reopen(
         Err(error) => failed("reopen", error),
     }
 }
-
 fn get_typescript_export(client: &ureq::Agent, base: &str) -> StepResult {
     match get_typescript_export_bytes(client, base) {
         Ok((content_type, bytes)) => StepResult {
@@ -545,7 +578,7 @@ fn get_typescript_export(client: &ureq::Agent, base: &str) -> StepResult {
 fn get_typescript_export_contains(
     client: &ureq::Agent,
     base: &str,
-    snippets: &[&str],
+    snippets: &[String],
 ) -> StepResult {
     if snippets.is_empty() {
         return StepResult {
@@ -568,8 +601,8 @@ fn get_typescript_export_contains(
         Ok(text) => {
             let missing = snippets
                 .iter()
-                .filter(|snippet| !text.contains(**snippet))
-                .copied()
+                .filter(|snippet| !text.contains(snippet.as_str()))
+                .cloned()
                 .collect::<Vec<_>>();
             StepResult {
                 name: "assert-edited-procedure-persisted".into(),
@@ -624,10 +657,46 @@ fn zip_text(bytes: &[u8]) -> Result<String, String> {
     Ok(combined)
 }
 
-fn persisted_snippet_from_edit_spec(edit_spec: &str) -> &str {
-    edit_spec
+fn persisted_snippet_from_edit_spec(edit_spec: &str) -> String {
+    let method_name = edit_spec_identifier(
+        edit_spec
+            .strip_prefix("append-comment:")
+            .unwrap_or(edit_spec),
+    );
+    format!("scene.call(\"this\", \"{}\"", method_name)
+}
+
+fn edit_spec_identifier(value: &str) -> String {
+    value
         .strip_prefix("append-comment:")
-        .unwrap_or(edit_spec)
+        .unwrap_or(value)
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .enumerate()
+        .map(|(index, part)| {
+            if index == 0 {
+                lower_first(part)
+            } else {
+                upper_first(part)
+            }
+        })
+        .collect::<String>()
+}
+
+fn lower_first(value: &str) -> String {
+    let mut chars = value.chars();
+    match chars.next() {
+        Some(first) => first.to_ascii_lowercase().to_string() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
+fn upper_first(value: &str) -> String {
+    let mut chars = value.chars();
+    match chars.next() {
+        Some(first) => first.to_ascii_uppercase().to_string() + chars.as_str(),
+        None => String::new(),
+    }
 }
 
 fn failed(label: impl Into<String>, error: impl std::fmt::Display) -> StepResult {
