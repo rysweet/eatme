@@ -17,7 +17,10 @@ const FIRST_LESSON_ACTIONS_SAVE_PATH: &str =
     "target/test-work/web-platform/first-lessons-real-ui-actions.a3p";
 const STARTER_PREFLIGHT_SAVE_PATH: &str =
     "target/test-work/web-platform/starter-project-open-save-export-preflight.a3p";
-const STARTER_PROJECT_FIXTURE: &str = "crates/eatme-alice/tests/fixtures/real/africaMinimum.a3p";
+const STARTER_PROJECT_FIXTURE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/real/africaMinimum.a3p"
+);
 
 #[derive(Debug, Clone)]
 enum Step {
