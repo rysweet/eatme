@@ -136,6 +136,40 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
 }
 
 #[test]
+fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
+    let inventory = read_text("docs/eatme/alice-howto-coverage.md");
+    let expectations = [
+        (
+            "media-audio-cue-storyboard",
+            "Partial: bounded audio cue metadata and simulated playback bridge evidence only",
+        ),
+        (
+            "audio-camera-and-export-sharecase",
+            "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence",
+        ),
+        (
+            "model-texture-import-checkpoint",
+            "Covered by LookingGlass imported model, texture, safe resource, export, and reopen persistence contract tests",
+        ),
+    ];
+
+    for (scenario, expected_boundary) in expectations {
+        let row = inventory
+            .lines()
+            .find(|line| line.contains(&format!("`{scenario}`")))
+            .unwrap_or_else(|| panic!("coverage inventory missing {scenario}"));
+        assert!(
+            row.contains(expected_boundary),
+            "{scenario} coverage inventory must carry the current LookingGlass boundary; row was:\n{row}"
+        );
+    }
+    assert!(
+        !inventory.contains("finished artifact package"),
+        "coverage inventory must not overclaim finished artifact package support"
+    );
+}
+
+#[test]
 fn precise_lookingglass_closure_refs_are_run_by_the_row_command() {
     for row in matrix_rows() {
         let scenario = string_at(&row, &["scenario"]);
