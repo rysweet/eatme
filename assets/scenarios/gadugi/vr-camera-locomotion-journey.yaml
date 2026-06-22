@@ -91,14 +91,14 @@ steps:
     exit_code: 0
     stdout_contains: []
   timeout: 60000
-- name: Agentic Journey Evidence
+- name: Record Agentic Review Guidance
   agent: eatme-cli-agent
   action: execute_command
   params:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
-      bash -lc 'run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_prompt=Review the launched Alice session and learner artifact using the persona prompt assets." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "expected_evidence=learner viewpoint choice, camera marker/move/coordinate choice, comfort constraint, and desktop evidence when real_vr_available=false." > "$run_dir/agentic-journey-evidence.txt"; printf "%s\n" "wrote=$run_dir/agentic-journey-evidence.txt"'
+      bash -lc 'run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_guidance=Use the persona prompt assets to inspect the Alice session and learner artifact." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "claim_boundary=This file is review guidance only. It does not validate learner viewpoint, camera marker, locomotion comfort, or desktop fallback evidence." > "$run_dir/agentic-review-guidance.txt"; printf "%s\n" "wrote=$run_dir/agentic-review-guidance.txt"'
   expect:
     exit_code: 0
     stdout_contains: []
@@ -129,11 +129,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Lookingglass Camera Comfort Evidence
-- name: agentic-journey-evidence succeeds
+- name: record-agentic-review-guidance succeeds
   type: command_success
   agent: eatme-cli-agent
   params:
-    step: Agentic Journey Evidence
+    step: Record Agentic Review Guidance
 metadata:
   source_eatme_asset: assets/scenarios/eatme/vr-camera-locomotion-journey.yaml
   generated_by: eatme-assets gadugi adapter generator

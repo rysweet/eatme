@@ -85,9 +85,15 @@ fn vr_camera_curriculum_contract_records_real_vr_gate_and_desktop_fallback() {
     );
     assert!(
         yaml.contains("camera marker")
-            && yaml.contains("locomotion plan")
-            && yaml.contains("comfort"),
-        "vr camera contract should require viewpoint, locomotion, and comfort evidence"
+            && yaml.contains("locomotion-comfort")
+            && yaml.contains("follow-on guidance only"),
+        "vr camera contract should keep viewpoint, locomotion, and comfort evidence as follow-on guidance"
+    );
+    assert!(
+        yaml.contains("guidance only")
+            && yaml.contains("does not validate learner viewpoint")
+            && !yaml.contains("expected_evidence="),
+        "vr camera guidance must not masquerade as validated learner evidence"
     );
 }
 

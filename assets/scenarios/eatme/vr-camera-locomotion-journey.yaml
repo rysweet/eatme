@@ -107,13 +107,11 @@ steps:
   - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1
   - response records desktopCameraAvailable=true and trueHeadsetVrSupported=false
   - evidence remains bounded to browser camera comfort and does not claim native headset VR
-- id: agentic-journey-evidence
-  command: bash -lc 'run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_prompt=Review the launched Alice session and learner artifact using the persona prompt assets." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "expected_evidence=learner viewpoint choice, camera marker/move/coordinate choice, comfort constraint, and desktop evidence when real_vr_available=false." > "$run_dir/agentic-journey-evidence.txt"; printf "%s\n" "wrote=$run_dir/agentic-journey-evidence.txt"'
+- id: record-agentic-review-guidance
+  command: bash -lc 'run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_guidance=Use the persona prompt assets to inspect the Alice session and learner artifact." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "claim_boundary=This file is review guidance only. It does not validate learner viewpoint, camera marker, locomotion comfort, or desktop fallback evidence." > "$run_dir/agentic-review-guidance.txt"; printf "%s\n" "wrote=$run_dir/agentic-review-guidance.txt"'
   evidence:
-  - learner chooses first-person or over-the-shoulder viewpoint and explains why
-  - camera marker, camera move, or camera coordinate choice is visible in the design notes or world artifact
-  - locomotion plan includes a comfort constraint such as short moves, stable horizon, teleport/marker jump, or pause/recenter cue
-  - if real VR is unavailable, the evidence bundle contains desktop screenshot/window evidence and the explicit real_vr_available=false preflight record
+  - guidance file exists and explicitly states it is review guidance only
+  - guidance file does not claim learner viewpoint, camera marker, locomotion comfort, or desktop fallback evidence was validated
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#vr-camera-locomotion-journey
   personality_assets:
@@ -133,6 +131,6 @@ artifacts:
   window_list: runs/vr-camera-locomotion-journey/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-preflight.txt
   fallback_evidence: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-fallback-evidence.md
-  agentic_journey_evidence: runs/vr-camera-locomotion-journey/${RUN_ID}/agentic-journey-evidence.txt
+  agentic_review_guidance: runs/vr-camera-locomotion-journey/${RUN_ID}/agentic-review-guidance.txt
   lookingglass_camera_comfort: api://lookingglass/api/vr/camera-comfort
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, do not fail the desktop scenario; record real_vr_available=false and require the listed camera-marker, viewpoint, and locomotion-comfort evidence before agentic VR claims are accepted. LookingGlass evidence is bounded to browser camera comfort and must keep true headset/native VR unsupported.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, do not fail the desktop scenario; record real_vr_available=false and treat persona review guidance as follow-on guidance only until a reviewer supplies actual camera-marker, viewpoint, locomotion-comfort, and desktop fallback evidence. LookingGlass evidence is bounded to browser camera comfort and must keep true headset/native VR unsupported.
