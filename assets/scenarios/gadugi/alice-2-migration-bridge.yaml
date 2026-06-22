@@ -49,6 +49,18 @@ steps:
     exit_code: 0
     stdout_contains: []
   timeout: 60000
+- name: Verify Lookingglass Bounded Alice2 Guidance
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
+      cd ../alice-web-prototype && npm test -- test/project-migration.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
   action: execute_command
@@ -77,6 +89,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Record Migration Bridge
+- name: verify-lookingglass-bounded-alice2-guidance succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Bounded Alice2 Guidance
 - name: launch-smoke succeeds
   type: command_success
   agent: eatme-cli-agent

@@ -68,6 +68,18 @@ steps:
     - '"passed": true'
     - '"id": "modified-class-portability"'
   timeout: 60000
+- name: Verify Lookingglass Class Behavior Package
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
+      cd ../alice-web-prototype && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
 assertions:
 - name: validate-assets succeeds
   type: command_success
@@ -84,6 +96,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Verify Portability Evidence
+- name: verify-lookingglass-class-behavior-package succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Class Behavior Package
 metadata:
   source_eatme_asset: assets/scenarios/eatme/modified-class-portability.yaml
   generated_by: eatme-assets gadugi adapter generator

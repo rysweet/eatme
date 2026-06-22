@@ -50,6 +50,7 @@ steps:
       Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
       Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
       Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+      LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming a deployed community platform.
     asset: assets/scenarios/eatme/teacher-community-sharing-loop.yaml
     prompt: Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, and remix feedback prompt grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, and two feedback questions for future remix. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
   expect:
