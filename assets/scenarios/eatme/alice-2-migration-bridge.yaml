@@ -85,7 +85,7 @@ steps:
   - migration output names Alice 2 intent, Alice 3 workflow, vocabulary delta, and visible student evidence
   - required evidence includes keep/adapt/retire decisions and a current artifact or reflection
 - id: verify-lookingglass-bounded-alice2-guidance
-  command: cd ${LOOKINGGLASS_HOME:?} && npm test -- test/project-migration.test.ts
+  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
   evidence:
   - Alice 2 project versions are detected as guidance-only
   - automatic Alice 2 conversion remains explicitly unsupported

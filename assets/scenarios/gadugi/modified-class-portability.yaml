@@ -11,6 +11,7 @@ environment:
   requires:
   - ALICE_HOME
   - EATME_REAL_ALICE
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
@@ -75,7 +76,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
-      cd ${LOOKINGGLASS_HOME:?} && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
   expect:
     exit_code: 0
     stdout_contains: []

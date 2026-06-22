@@ -8,7 +8,8 @@ config:
   retries: 0
   parallel: false
 environment:
-  requires: []
+  requires:
+  - ALICE_HOME
   optional:
   - EATME_REPO
 agents:

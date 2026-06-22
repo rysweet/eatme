@@ -460,6 +460,13 @@ fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
     {
         required.push("EATME_REAL_ALICE".into());
     }
+    if scenario
+        .steps
+        .iter()
+        .any(|step| step.command.contains("LOOKINGGLASS_HOME"))
+    {
+        required.push("LOOKINGGLASS_HOME".into());
+    }
     required
 }
 
