@@ -9,7 +9,6 @@ config:
   parallel: false
 environment:
   requires:
-  - ALICE_HOME
   - LOOKINGGLASS_HOME
   optional:
   - EATME_REPO

@@ -22,7 +22,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
   - scenario: setup-support-lab-readiness
     area: "Setup and first use"
@@ -39,7 +39,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-classroom-setup-readiness
     area: "Setup and first use"
@@ -129,7 +129,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass unsupported status remains explicit until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: first-lessons-real-ui-actions
     area: "First lessons"
@@ -148,7 +148,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass unsupported status remains explicit until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: code-editor-first-run
     area: "Code editor"

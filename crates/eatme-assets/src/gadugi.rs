@@ -451,21 +451,21 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
 }
 
 fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
-    let mut required = vec!["ALICE_HOME".into()];
-    if scenario
-        .real_alice
-        .as_ref()
-        .map(|real_alice| real_alice.gated_by == "EATME_REAL_ALICE=1")
-        .unwrap_or(false)
-    {
-        required.push("EATME_REAL_ALICE".into());
-    }
-    if scenario
+    let mut required = Vec::new();
+    let commands = scenario
         .steps
         .iter()
-        .any(|step| step.command.contains("LOOKINGGLASS_HOME"))
-    {
-        required.push("LOOKINGGLASS_HOME".into());
+        .map(|step| step.command.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    for (name, marker) in [
+        ("ALICE_HOME", "ALICE_HOME"),
+        ("EATME_REAL_ALICE", "EATME_REAL_ALICE"),
+        ("LOOKINGGLASS_HOME", "LOOKINGGLASS_HOME"),
+    ] {
+        if commands.contains(marker) {
+            required.push(name.into());
+        }
     }
     required
 }
