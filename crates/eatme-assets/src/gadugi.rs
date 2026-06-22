@@ -176,7 +176,13 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let run_id = format!("gadugi-{}", scenario.id);
 
     if scenario.kind == "instructor_agentic_flow" {
-        return generate_instructor_agentic_adapter(scenario, source_asset, timeout_ms);
+        return generate_instructor_agentic_adapter(
+            scenario,
+            source_asset,
+            timeout_ms,
+            launch_timeout,
+            expected_scenario_asset_count,
+        );
     }
 
     let steps = scenario
