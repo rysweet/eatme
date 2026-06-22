@@ -101,7 +101,7 @@ steps:
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
 - id: lookingglass-camera-comfort-evidence
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- vr_camera_locomotion_records_bounded_comfort_evidence --test-threads=1
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
   evidence:
   - web_platform_curriculum_e2e includes vr-camera-locomotion-journey
   - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1

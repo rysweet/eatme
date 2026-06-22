@@ -357,6 +357,21 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
     results
 }
 
+fn assert_live_scenario(name: &str, steps: Vec<Step>) {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let client = http_client();
+    let base = web_base_url();
+    let failures = execute(&base, &client, &steps)
+        .into_iter()
+        .filter(|result| !result.ok)
+        .map(|result| format!("{name}/{}: {}", result.name, result.msg))
+        .collect::<Vec<_>>();
+    assert!(failures.is_empty(), "failures:\n{}", failures.join("\n"));
+}
+
 // ── Scenario builders ───────────────────────────────────────────────
 
 fn hello_world() -> (&'static str, Vec<Step>) {
@@ -1593,6 +1608,12 @@ fn vr_camera_locomotion_records_bounded_comfort_evidence() {
 }
 
 #[test]
+fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
+    let (name, steps) = vr_camera_locomotion_journey();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
 fn accessibility_rescue_camera_captions_records_caption_evidence() {
     let (_, steps) = accessibility_rescue_camera_captions();
     assert!(
@@ -1602,6 +1623,12 @@ fn accessibility_rescue_camera_captions_records_caption_evidence() {
         "accessibility rescue scenario should prove browser caption evidence"
     );
     assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
+}
+
+#[test]
+fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
+    let (name, steps) = accessibility_rescue_camera_captions();
+    assert_live_scenario(name, steps);
 }
 
 #[test]

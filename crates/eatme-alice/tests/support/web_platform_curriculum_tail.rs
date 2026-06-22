@@ -183,6 +183,12 @@ fn classroom_gallery_walk_records_gallery_rubric_evidence() {
 }
 
 #[test]
+fn live_classroom_gallery_walk_exercises_rubric_api() {
+    let (name, steps) = classroom_gallery_walk_and_rubric();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
 fn error_recovery_expects_failures_and_then_recovers() {
     let (_, steps) = error_recovery();
     let error_steps: Vec<_> = steps
