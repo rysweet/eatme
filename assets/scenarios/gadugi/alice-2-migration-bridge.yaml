@@ -56,7 +56,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
-      cd ../alice-web-prototype && npm test -- test/project-migration.test.ts
+      cd ${LOOKINGGLASS_HOME:?} && npm test -- test/project-migration.test.ts
   expect:
     exit_code: 0
     stdout_contains: []

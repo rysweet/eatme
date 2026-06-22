@@ -706,7 +706,7 @@ rows:
       status: partial
       source_status: "Bounded migration guidance only"
       reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
+      command: cd ${LOOKINGGLASS_HOME:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
       expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
@@ -726,7 +726,7 @@ rows:
       status: partial
       source_status: "Covered for parsed AliceProject.types class-behavior packages"
       reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; full desktop UI parity remains out of scope."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+      command: cd ${LOOKINGGLASS_HOME:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
       expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
@@ -751,7 +751,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass unsupported status remains explicit until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: ide-accessibility-parity
     area: "Accessibility"
@@ -769,7 +769,7 @@ rows:
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass unsupported status remains explicit until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: ide-performance-parity
     area: "Performance"
@@ -946,7 +946,7 @@ rows:
       status: partial
       source_status: "Covered for alice-web package/share metadata"
       reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; this is not a deployed community platform."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts
+      command: cd ${LOOKINGGLASS_HOME:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts test/server.test.ts
       expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:

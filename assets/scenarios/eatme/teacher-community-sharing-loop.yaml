@@ -89,7 +89,7 @@ steps:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
 - id: verify-lookingglass-teacher-share-package
-  command: cd ${LOOKINGGLASS_REPO:?} && npm test -- test/project-export.test.ts
+  command: cd ${LOOKINGGLASS_HOME:?} && npm test -- test/project-export.test.ts test/server.test.ts
   evidence:
   - share.json contains alice-web.teacher-share/v1 metadata
   - validation evidence includes teacher-share-metadata

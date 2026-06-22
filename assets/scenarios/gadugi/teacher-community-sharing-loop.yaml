@@ -47,7 +47,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
-      cd ${LOOKINGGLASS_REPO:?} && npm test -- test/project-export.test.ts
+      cd ${LOOKINGGLASS_HOME:?} && npm test -- test/project-export.test.ts test/server.test.ts
   expect:
     exit_code: 0
     stdout_contains: []

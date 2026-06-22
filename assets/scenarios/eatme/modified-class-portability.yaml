@@ -96,7 +96,7 @@ steps:
   - acceptance criteria require behavior persistence after import into another project
   - instructor/student prompts ask for before-export and after-import comparison
 - id: verify-lookingglass-class-behavior-package
-  command: cd ../alice-web-prototype && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+  command: cd ${LOOKINGGLASS_HOME:?} && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
   evidence:
   - class behavior package export identifies the modified class type
   - import evidence shows the class available in a different AliceProject
