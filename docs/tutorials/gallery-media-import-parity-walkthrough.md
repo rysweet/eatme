@@ -255,7 +255,7 @@ cargo test -p eatme-assets --test web_platform_scenario_parity
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} \
   cargo test -p eatme-assets --test gallery_media_import_parity_closure
 
-cd ../alice-web-prototype
+cd ${LOOKINGGLASS_REPO:?}
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
   test/imported-project-assets-security.contract.test.ts \

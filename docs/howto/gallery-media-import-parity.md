@@ -174,12 +174,12 @@ references above are enforced:
 ```yaml
 looking_glass:
   status: covered
-  source_status: "Covered by LookingGlass imported model, texture, camera/export, safe resource, and reopen persistence contract tests"
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-  expected_behavior: "Student imports model and texture resources, applies the texture, checkpoints camera/export state, reopens the A3P, and verifies project-owned resources remain available."
+  source_status: "Covered by LookingGlass imported model, texture, safe resource, and reopen persistence contract tests"
+  command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+  expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
 closure:
   required:
-    - LookingGlass:test/model-texture-import-checkpoint-closure.contract.test.ts proves import, assignment, camera checkpoint, export, and reopen persistence
+    - LookingGlass:test/model-texture-import-checkpoint-closure.contract.test.ts proves import, assignment, export, and reopen persistence
     - LookingGlass:test/imported-project-assets-security.contract.test.ts proves unsafe resource names are rejected and safe metadata is project-scoped
     - LookingGlass:test/model-texture-camera-joint-export-workflow.contract.test.ts proves the public workflow API, resource export package, and share fallback behavior
     - LookingGlass:test/imported-asset-project-io.test.ts proves imported resource metadata and bytes round-trip through project IO

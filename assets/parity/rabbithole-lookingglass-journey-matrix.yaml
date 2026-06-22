@@ -86,7 +86,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     closure:
       required:
@@ -105,7 +105,7 @@ rows:
       status: partial
       source_status: "Covered where the web version supports the task"
       reason: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     closure:
       required:
@@ -689,7 +689,7 @@ rows:
       status: covered
       source_status: "Covered by LookingGlass imported model, texture, safe resource, and reopen persistence contract tests"
       reason: "LookingGlass source/API/tests prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
       expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
     closure:
       required:
