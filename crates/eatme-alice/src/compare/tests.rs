@@ -355,6 +355,54 @@ fn scorecard_summarizes_functionality_and_timing_evidence() {
 }
 
 #[test]
+fn rabbithole_and_lookingglass_matching_user_journey_signature_has_no_diff() {
+    let behavior = [
+        "open_project",
+        "add_object",
+        "edit_procedure",
+        "run_world",
+        "save_project",
+        "reopen_project",
+    ];
+    let targets = behavior_signature_targets(&behavior, &behavior);
+
+    let diff = compare_status_and_assertions(&targets);
+    let scorecard = build_scorecard(true, &targets, &diff);
+
+    assert!(
+        diff.assertion_diffs.is_empty(),
+        "matching RabbitHole/LookingGlass behavior signatures should not create diffs: {:?}",
+        diff.assertion_diffs
+    );
+    assert_eq!(scorecard.functionality_result, "matched");
+}
+
+#[test]
+fn lookingglass_missing_save_reopen_reports_functionality_difference() {
+    let rabbithole = [
+        "open_project",
+        "add_object",
+        "edit_procedure",
+        "run_world",
+        "save_project",
+        "reopen_project",
+    ];
+    let lookingglass = ["open_project", "add_object", "edit_procedure", "run_world"];
+    let targets = behavior_signature_targets(&rabbithole, &lookingglass);
+
+    let diff = compare_status_and_assertions(&targets);
+    let scorecard = build_scorecard(true, &targets, &diff);
+    let differing_assertions = diff
+        .assertion_diffs
+        .iter()
+        .map(|assertion| assertion.assertion.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(scorecard.functionality_result, "different");
+    assert_eq!(differing_assertions, ["reopen_project", "save_project"]);
+}
+
+#[test]
 fn passing_display_responsive_details_do_not_create_functionality_difference() {
     let mut targets = BTreeMap::new();
     let mut baseline = target_run_with_assertion("baseline", "passed", None, true);
@@ -626,6 +674,35 @@ fn large_assertion_targets(
         ("baseline".into(), baseline),
         ("modernized".into(), modernized),
     ])
+}
+
+fn behavior_signature_targets(
+    baseline_behaviors: &[&str],
+    modernized_behaviors: &[&str],
+) -> BTreeMap<String, ComparisonTargetRun> {
+    BTreeMap::from([
+        (
+            "baseline".into(),
+            target_run_with_behavior_signature("baseline", baseline_behaviors),
+        ),
+        (
+            "modernized".into(),
+            target_run_with_behavior_signature("modernized", modernized_behaviors),
+        ),
+    ])
+}
+
+fn target_run_with_behavior_signature(role: &str, behaviors: &[&str]) -> ComparisonTargetRun {
+    let mut target = target_run_with_assertion(role, "passed", None, true);
+    let assertions = &mut target.launch_manifest.as_mut().unwrap().assertions;
+    assertions.clear();
+    for behavior in behaviors {
+        assertions.insert(
+            (*behavior).into(),
+            AssertionResult::pass("behavior matched"),
+        );
+    }
+    target
 }
 
 fn target_run_with_feature_score(role: &str, features: &[&str]) -> ComparisonTargetRun {

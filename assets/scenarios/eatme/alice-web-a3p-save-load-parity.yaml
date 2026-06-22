@@ -1,0 +1,143 @@
+schema_version: eatme.scenario/v1
+id: alice-web-a3p-save-load-parity
+title: Alice Web A3P Save/Load Parity
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice 3 project format and starter projects
+    url: https://www.alice.org/get-alice/alice-3/
+    use: >-
+      Use real Alice starter projects and saved .a3p archives as the compatibility
+      target for the TypeScript web port.
+  - name: EatMe Alice content coverage tests
+    url: docs/alice-content-coverage-tests.md
+    use: >-
+      Use existing parser, content, and round-trip tests as closure probes for
+      project-format parity gaps.
+purpose: >-
+  Identify and close parity gaps where the TypeScript web port can open, edit,
+  save, and reopen .a3p projects differently from the Java Alice baseline. This
+  scenario focuses on project identity, XML extraction, resource preservation,
+  statement round-tripping, and saved-project evidence. It does not claim full UI
+  automation, creative assessment, learner-world grading, or complete Alice
+  replacement readiness.
+launcher:
+  command: alice launch-smoke
+  scenario: alice-web-a3p-save-load-parity
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - classroom-orchestrator
+    - assessment-curator
+  students:
+    - reflective-debugger
+    - creative-storyteller
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - alice-web-prototype
+    - real-a3p-fixtures
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - parity_gap_matrix
+    - closure_test_commands
+    - save_load_roundtrip_evidence
+acceptance_criteria:
+  - given: Java Alice can open a representative .a3p starter project
+    when: the same archive is parsed by the web port or EatMe parser probes
+    then: project name, XML entries, resource declarations, and scene entities are preserved or listed as explicit gaps
+  - given: a project is edited and saved by the web path
+    when: the saved archive is reopened or reparsed
+    then: added statements, resources, and project identity survive without placeholder artifacts
+  - given: a parity gap is found
+    when: reviewers inspect the parity gap matrix
+    then: the row names the Java baseline behavior, web behavior, required evidence, and cargo or web test that must pass to close it
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes alice-web-a3p-save-load-parity in the committed scenario set
+  - id: record-a3p-parity-gap-matrix
+    command: >-
+      bash -lc 'run_dir="runs/alice-web-a3p-save-load-parity/${RUN_ID}";
+      mkdir -p "$run_dir";
+      cat > "$run_dir/a3p-save-load-parity-gaps.md" <<EOF
+      # A3P Save/Load Parity Gaps
+      | gap | Java Alice baseline | Web/eatme probe | closure test |
+      | --- | --- | --- | --- |
+      | project identity | starter filename and project metadata remain user-visible | parsed generic Program names must not hide requested filename | cargo test -p eatme-alice --test real_a3p_pipeline_integration |
+      | resources | model/texture/audio resources survive save and reopen | resource declarations and archive paths are preserved | cargo test -p eatme-alice --test a3p_content_coverage |
+      | statements | procedure bodies preserve method calls, loops, conditionals, and events | parser/writer round-trip keeps supported statement kinds explicit | cargo test -p eatme-alice --test a3p_roundtrip_coverage |
+      | archive safety | unsafe archive paths are rejected or ignored loudly | path traversal and oversized archive limits are enforced | cargo test -p eatme-alice --test malformed_input_resilience |
+      EOF
+      printf "%s\n" "wrote=$run_dir/a3p-save-load-parity-gaps.md"'
+    evidence:
+      - gap matrix names Java baseline behavior, web/eatme probe, and closure test for each row
+      - matrix covers project identity, resources, statements, and archive safety
+  - id: run-a3p-closure-probes
+    command: >-
+      bash -lc 'cargo test -p eatme-alice --test a3p_content_coverage &&
+      cargo test -p eatme-alice --test a3p_roundtrip_coverage &&
+      cargo test -p eatme-alice --test real_a3p_pipeline_integration &&
+      cargo test -p eatme-alice --test malformed_input_resilience'
+    evidence:
+      - A3P content coverage tests pass
+      - A3P round-trip tests pass
+      - real A3P pipeline integration tests pass
+      - malformed input resilience tests pass
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario alice-web-a3p-save-load-parity
+    evidence:
+      - manifest scenario_id equals alice-web-a3p-save-load-parity
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#alice-web-a3p-save-load-parity
+  deterministic_gate: >-
+    Run this scenario before claiming a web-port save/load parity gap is closed.
+    Closure requires both deterministic cargo probes and real Alice launch evidence.
+  required_observables:
+    - a3p-save-load-parity-gaps.md
+    - passing closure test commands
+    - real Alice launch manifest
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-web-a3p-save-load-parity/${RUN_ID}/manifest.json
+  screenshot: runs/alice-web-a3p-save-load-parity/${RUN_ID}/screenshots/startup.png
+  log: runs/alice-web-a3p-save-load-parity/${RUN_ID}/alice.log
+  gap_matrix: runs/alice-web-a3p-save-load-parity/${RUN_ID}/a3p-save-load-parity-gaps.md
+unsupported_policy: >-
+  If the real Alice gate, fixture corpus, or closure probes are unavailable,
+  fail loudly. Do not claim save/load parity from parser-only evidence, mocked
+  Alice evidence, placeholder archives, or screenshots alone.
+

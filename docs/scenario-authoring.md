@@ -13,6 +13,8 @@ generated Gadugi adapters.
 4. State unsupported behavior explicitly instead of allowing silent skips.
 5. Validate assets before committing.
 6. Regenerate or check Gadugi adapters after scenario changes.
+7. When a scenario is added to the HowTo coverage inventory, add or update the
+   matching row in `assets/parity/rabbithole-lookingglass-journey-matrix.yaml`.
 
 ## Canonical locations
 

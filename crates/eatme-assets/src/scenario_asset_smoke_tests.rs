@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 fn smoke_validates_every_committed_scenario_yaml() {
     let scenario_paths = all_scenario_paths();
     assert_eq!(
-        109,
+        115,
         scenario_paths.len(),
         "expected committed scenario count to stay stable"
     );

@@ -328,3 +328,96 @@ fn unsupported_lookingglass_rows_say_so_plainly() {
         unclear.join("\n")
     );
 }
+
+#[test]
+fn alice_web_parity_gap_scenarios_define_behavior_baseline_probe_and_closure_tests() {
+    let expected: &[(&str, &[&str], &[&str])] = &[
+        (
+            "alice-web-a3p-save-load-parity",
+            &[
+                "project identity",
+                "resources",
+                "statements",
+                "archive safety",
+            ],
+            &[
+                "a3p_content_coverage",
+                "a3p_roundtrip_coverage",
+                "real_a3p_pipeline_integration",
+                "malformed_input_resilience",
+            ],
+        ),
+        (
+            "alice-web-story-api-runtime-parity",
+            &[
+                "procedures",
+                "loops",
+                "events",
+                "collision",
+                "text",
+                "speech",
+            ],
+            &[
+                "parameters_e2e",
+                "functions_e2e",
+                "loops_and_conditionals_e2e",
+                "events_collision_support",
+                "text_and_speech_e2e",
+            ],
+        ),
+        (
+            "alice-web-gallery-media-parity",
+            &["starter gallery", "camera", "media", "import/export"],
+            &[
+                "a3p_content_coverage",
+                "camera_and_viewpoint_e2e",
+                "text_and_speech_e2e",
+                "import_export_support",
+                "project_io_resource_management",
+            ],
+        ),
+    ];
+
+    for (scenario_id, gap_terms, closure_tests) in expected {
+        let yaml = read_yaml(&format!("assets/scenarios/eatme/{scenario_id}.yaml"));
+        let text = joined_yaml_text(&yaml);
+        let closure_step = value_at(&yaml, &["steps"])
+            .and_then(Value::as_sequence)
+            .and_then(|steps| {
+                steps.iter().find(|step| {
+                    string_at(step, &["id"]).starts_with("run-")
+                        && string_at(step, &["id"]).contains("closure-probes")
+                })
+            })
+            .unwrap_or_else(|| panic!("{scenario_id} must define a closure probe step"));
+
+        for required in ["java alice baseline", "web/eatme probe", "closure test"] {
+            assert!(
+                text.contains(required),
+                "{scenario_id} must include {required:?} in its parity gap matrix"
+            );
+        }
+        for &term in *gap_terms {
+            assert!(
+                text.contains(term),
+                "{scenario_id} must map parity gap family {term:?}"
+            );
+        }
+        for &test_name in *closure_tests {
+            assert!(
+                text.contains(test_name),
+                "{scenario_id} must document closure test {test_name}"
+            );
+            assert!(
+                string_at(closure_step, &["command"]).contains(test_name),
+                "{scenario_id} closure probe step must run {test_name}"
+            );
+        }
+        assert!(
+            strings_at(&yaml, &["adapter", "targets"])
+                .iter()
+                .any(|target| target == "gadugi-cli"),
+            "{scenario_id} must generate a Gadugi adapter for scenario execution"
+        );
+    }
+}

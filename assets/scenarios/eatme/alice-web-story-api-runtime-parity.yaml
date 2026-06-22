@@ -1,0 +1,145 @@
+schema_version: eatme.scenario/v1
+id: alice-web-story-api-runtime-parity
+title: Alice Web Story API Runtime Parity
+kind: alice_lesson_smoke
+owner: eatme
+resource_basis:
+  - name: Alice.org Programming in Alice lessons
+    url: https://www.alice.org/resources/lessons/programming-in-alice/
+    use: >-
+      Use procedures, parameters, control flow, events, and visible behavior as
+      the learner-facing baseline.
+  - name: EatMe runtime and lesson tests
+    url: docs/student-lesson-e2e-tests.md
+    use: >-
+      Use existing outside-in lesson and grading tests as closure probes for web
+      Story API/runtime gaps.
+purpose: >-
+  Identify and close parity gaps where the TypeScript web port runs Story API
+  programs differently from Java Alice. This scenario focuses on procedure
+  invocation, parameters, functions, loops, conditionals, event delivery,
+  collision/proximity behavior, and text/speech evidence. It does not claim full
+  UI automation, creative assessment, learner-world grading, or complete Alice
+  replacement readiness.
+launcher:
+  command: alice launch-smoke
+  scenario: alice-web-story-api-runtime-parity
+real_alice:
+  gated_by: EATME_REAL_ALICE=1
+personas:
+  instructors:
+    - concept-cartographer
+    - debug-coach
+  students:
+    - systems-puzzle-solver
+    - reflective-debugger
+capabilities:
+  required:
+    - rust-cli
+    - java-21
+    - maven
+    - xvfb
+    - xdpyinfo
+    - wmctrl
+    - screenshot-tool
+  optional:
+    - alice-web-prototype
+    - event-fixture-corpus
+adapter:
+  targets:
+    - eatme-cli
+    - gadugi-cli
+smoke_ready:
+  evidence:
+    - manifest_assertions
+    - captured_logs
+    - screenshot_or_window_evidence
+    - scenario_id
+    - runtime_gap_matrix
+    - closure_test_commands
+acceptance_criteria:
+  - given: Java Alice runs a learner Story API program
+    when: the same behavior is exercised by web-port or EatMe runtime probes
+    then: procedure calls, parameter values, return values, loops, and condition branches match or are listed as explicit gaps
+  - given: a learner uses events, collision, or proximity
+    when: the parity scenario runs closure probes
+    then: listener registration, trigger evidence, and response behavior are verified instead of merely checking for no crash
+  - given: text or speech behavior is simulated by the web port
+    when: parity is claimed
+    then: the artifact states whether speech was actually produced or explicitly simulated
+steps:
+  - id: validate-assets
+    command: cargo run -q -p eatme-cli -- assets validate --json
+    evidence:
+      - stdout JSON has passed=true
+      - stdout JSON includes alice-web-story-api-runtime-parity in the committed scenario set
+  - id: record-runtime-parity-gap-matrix
+    command: >-
+      bash -lc 'run_dir="runs/alice-web-story-api-runtime-parity/${RUN_ID}";
+      mkdir -p "$run_dir";
+      cat > "$run_dir/story-api-runtime-parity-gaps.md" <<EOF
+      # Story API Runtime Parity Gaps
+      | gap | Java Alice baseline | Web/eatme probe | closure test |
+      | --- | --- | --- | --- |
+      | procedures and parameters | argument binding drives visible method behavior | parameter and function grading distinguish correct and incorrect usage | cargo test -p eatme-alice --test parameters_e2e --test functions_e2e |
+      | loops and conditionals | repeated and conditional actions affect the world predictably | nested control flow and comparison scenarios pass | cargo test -p eatme-alice --test loops_and_conditionals_e2e --test nested_control_flow_e2e |
+      | events/collision/proximity | listeners fire from real interaction and state changes | listener, collision, and proximity tests verify callbacks and outcomes | cargo test -p eatme-alice --test events_collision_support --test events_and_collision_e2e |
+      | text and speech | visible speech/text behavior is real or explicitly bounded | text/speech tests identify real output versus simulation | cargo test -p eatme-alice --test text_and_speech_e2e |
+      EOF
+      printf "%s\n" "wrote=$run_dir/story-api-runtime-parity-gaps.md"'
+    evidence:
+      - gap matrix names procedures, control flow, events/collision/proximity, and text/speech closure probes
+      - matrix distinguishes real behavior from simulated or bounded evidence
+  - id: run-runtime-closure-probes
+    command: >-
+      bash -lc 'cargo test -p eatme-alice --test parameters_e2e &&
+      cargo test -p eatme-alice --test functions_e2e &&
+      cargo test -p eatme-alice --test loops_and_conditionals_e2e &&
+      cargo test -p eatme-alice --test nested_control_flow_e2e &&
+      cargo test -p eatme-alice --test events_collision_support &&
+      cargo test -p eatme-alice --test events_and_collision_e2e &&
+      cargo test -p eatme-alice --test text_and_speech_e2e'
+    evidence:
+      - parameter and function tests pass
+      - control-flow tests pass
+      - event/collision/proximity tests pass
+      - text/speech tests pass with real-or-bounded behavior explicit
+  - id: launch-smoke
+    command: >-
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
+      --alice-home ${ALICE_HOME}
+      --run-id ${RUN_ID}
+      --runs-dir runs
+      --timeout 900
+      --json
+      --no-memory
+      --offline-package
+      --scenario alice-web-story-api-runtime-parity
+    evidence:
+      - manifest scenario_id equals alice-web-story-api-runtime-parity
+      - manifest failure_category is null
+      - manifest assertions include real_alice_execution_evidence passed=true
+      - screenshot or window evidence exists and is non-empty
+      - log exists and is non-empty
+agentic_follow_on:
+  prompt_source: assets/personas/alice-user-crew.yaml#alice-web-story-api-runtime-parity
+  deterministic_gate: >-
+    Run this scenario before marking Story API runtime parity gaps closed.
+    Closure requires behavior probes, not no-crash tests or source inspection alone.
+  required_observables:
+    - story-api-runtime-parity-gaps.md
+    - passing closure test commands
+    - event/collision/text evidence boundaries
+timeouts:
+  scenario_seconds: 1800
+  launch_seconds: 900
+artifacts:
+  manifest: runs/alice-web-story-api-runtime-parity/${RUN_ID}/manifest.json
+  screenshot: runs/alice-web-story-api-runtime-parity/${RUN_ID}/screenshots/startup.png
+  log: runs/alice-web-story-api-runtime-parity/${RUN_ID}/alice.log
+  gap_matrix: runs/alice-web-story-api-runtime-parity/${RUN_ID}/story-api-runtime-parity-gaps.md
+unsupported_policy: >-
+  If the real Alice gate, runtime closure probes, or behavior evidence are
+  unavailable, fail loudly. Do not close runtime parity gaps from no-crash tests,
+  mocked listener evidence, or screenshots alone.
+

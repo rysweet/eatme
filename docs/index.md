@@ -64,6 +64,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Alice Objects-First World](./alice-objects-first-world.md)
 - [Alice.org HowTo coverage](./eatme/alice-howto-coverage.md)
 - [Web platform testing](./web-platform-testing.md)
+- [Alice Web parity gap scenarios](./alice-web-parity-gap-scenarios.md)
 
 ## Documentation map
 
@@ -96,6 +97,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Deterministic real-Alice startup check](./deterministic-real-alice-smoke-test.md)
 - [Real-Alice grading integration tests](./real-alice-grading-integration-tests.md)
 - [Alice content coverage tests](./alice-content-coverage-tests.md)
+- [Alice Web parity gap scenarios](./alice-web-parity-gap-scenarios.md)
 - [Outside-in Alice test modules](./outside-in-alice-test-modules.md)
 - [Post-focus screenshot evidence](./post-focus-screenshot-evidence.md)
 - [Run window polling](./run-window-polling.md)

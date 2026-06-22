@@ -1,0 +1,991 @@
+schema_version: eatme.parity-journey-matrix/v1
+id: rabbithole-lookingglass-journey-matrix
+source_inventory: docs/eatme/alice-howto-coverage.md
+purpose: >-
+  Durable RabbitHole-vs-LookingGlass user journey parity matrix. A row is
+  closed only when the RabbitHole behavior and LookingGlass behavior are both
+  named and the listed closure command passes, or unsupported web behavior is
+  explicitly declared with a reason.
+rows:
+  - scenario: setup-preflight-ready-to-create
+    area: "Setup and first use"
+    journey: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-preflight-ready-to-create --run-id parity-setup-preflight-ready-to-create --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: setup-support-lab-readiness
+    area: "Setup and first use"
+    journey: "Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-support-lab-readiness --run-id parity-setup-support-lab-readiness --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-classroom-setup-readiness
+    area: "Setup and first use"
+    journey: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-classroom-setup-readiness --run-id parity-instructor-classroom-setup-readiness --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-student-launch-evidence-handoff
+    area: "Setup and first use"
+    journey: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-student-launch-evidence-handoff --run-id parity-instructor-student-launch-evidence-handoff --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: building-a-scene-first-world
+    area: "First scene"
+    journey: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario building-a-scene-first-world --run-id parity-building-a-scene-first-world --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: alice-objects-first-world
+    area: "First scene"
+    journey: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-world --run-id parity-alice-objects-first-world --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the task"
+      reason: "Covered where the web version supports the task"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: alice-objects-first-full-path
+    area: "First scene"
+    journey: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-full-path --run-id parity-alice-objects-first-full-path --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the needed actions"
+      reason: "Covered where the web version supports the needed actions"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: first-lessons-real-ui-actions
+    area: "First lessons"
+    journey: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario first-lessons-real-ui-actions --run-id parity-first-lessons-real-ui-actions --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the task"
+      reason: "Covered where the web version supports the task"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: code-editor-first-run
+    area: "Code editor"
+    journey: "Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario code-editor-first-run --run-id parity-code-editor-first-run --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: reusable-methods-and-parameters
+    area: "Procedures"
+    journey: "Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario reusable-methods-and-parameters --run-id parity-reusable-methods-and-parameters --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: alien-linguist-parameter-dialogue
+    area: "Procedures"
+    journey: "Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alien-linguist-parameter-dialogue --run-id parity-alien-linguist-parameter-dialogue --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: creature-choreography-loop-lab
+    area: "Procedures"
+    journey: "Student composes repeated creature movement with procedures and verifies the choreography after running."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario creature-choreography-loop-lab --run-id parity-creature-choreography-loop-lab --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student composes repeated creature movement with procedures and verifies the choreography after running."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student composes repeated creature movement with procedures and verifies the choreography after running."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: functions-as-questions-about-the-world
+    area: "Functions"
+    journey: "Student adds a function-style question, uses the answer in behavior, and checks the observed branch or value."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario functions-as-questions-about-the-world --run-id parity-functions-as-questions-about-the-world --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student adds a function-style question, uses the answer in behavior, and checks the observed branch or value."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student adds a function-style question, uses the answer in behavior, and checks the observed branch or value."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: variables-scorekeeper-timekeeper
+    area: "Variables"
+    journey: "Student creates score and timer variables, updates them during a run, and checks the displayed or recorded state."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario variables-scorekeeper-timekeeper --run-id parity-variables-scorekeeper-timekeeper --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates score and timer variables, updates them during a run, and checks the displayed or recorded state."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates score and timer variables, updates them during a run, and checks the displayed or recorded state."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: data-types-alice-catalog
+    area: "Data types"
+    journey: "Student uses Alice data categories in a project and verifies that typed values drive behavior correctly."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario data-types-alice-catalog --run-id parity-data-types-alice-catalog --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student uses Alice data categories in a project and verifies that typed values drive behavior correctly."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student uses Alice data categories in a project and verifies that typed values drive behavior correctly."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: arithmetic-expressions-math-playground
+    area: "Math expressions"
+    journey: "Student builds arithmetic expressions, runs the world, and checks movement, timing, or score results."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario arithmetic-expressions-math-playground --run-id parity-arithmetic-expressions-math-playground --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds arithmetic expressions, runs the world, and checks movement, timing, or score results."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds arithmetic expressions, runs the world, and checks movement, timing, or score results."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: relational-expressions-comparison-lab
+    area: "Comparisons"
+    journey: "Student builds comparison expressions and verifies different branches for true and false cases."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario relational-expressions-comparison-lab --run-id parity-relational-expressions-comparison-lab --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds comparison expressions and verifies different branches for true and false cases."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds comparison expressions and verifies different branches for true and false cases."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: loops-and-conditionals-mini-challenge
+    area: "Control flow"
+    journey: "Student combines repetition and a conditional rule, runs the world, and checks both repeated and branched behavior."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario loops-and-conditionals-mini-challenge --run-id parity-loops-and-conditionals-mini-challenge --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student combines repetition and a conditional rule, runs the world, and checks both repeated and branched behavior."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student combines repetition and a conditional rule, runs the world, and checks both repeated and branched behavior."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: weather-wizard-conditional-theater
+    area: "Control flow"
+    journey: "Student creates a weather-driven scene branch and verifies the selected animation path."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario weather-wizard-conditional-theater --run-id parity-weather-wizard-conditional-theater --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates a weather-driven scene branch and verifies the selected animation path."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates a weather-driven scene branch and verifies the selected animation path."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: ecosystem-balance-loop-simulation
+    area: "Control flow"
+    journey: "Student models repeated ecosystem changes, runs the simulation, and checks state changes over time."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario ecosystem-balance-loop-simulation --run-id parity-ecosystem-balance-loop-simulation --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student models repeated ecosystem changes, runs the simulation, and checks state changes over time."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student models repeated ecosystem changes, runs the simulation, and checks state changes over time."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: events-collision-proximity-game
+    area: "Events"
+    journey: "Student registers interaction, collision, and proximity events, fires them, and verifies the correct handler runs."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario events-collision-proximity-game --run-id parity-events-collision-proximity-game --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student registers interaction, collision, and proximity events, fires them, and verifies the correct handler runs."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student registers interaction, collision, and proximity events, fires them, and verifies the correct handler runs."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: mars-rover-proximity-mission
+    area: "Events"
+    journey: "Student builds a proximity mission, moves actors into range, and checks the triggered result."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario mars-rover-proximity-mission --run-id parity-mars-rover-proximity-mission --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds a proximity mission, moves actors into range, and checks the triggered result."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds a proximity mission, moves actors into range, and checks the triggered result."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: arrays-collection-choreography
+    area: "Collections"
+    journey: "Student creates a collection-driven choreography, iterates through objects, and checks that each object participates."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario arrays-collection-choreography --run-id parity-arrays-collection-choreography --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student creates a collection-driven choreography, iterates through objects, and checks that each object participates."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student creates a collection-driven choreography, iterates through objects, and checks that each object participates."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: time-travel-recipe-sequencing
+    area: "Concurrency"
+    journey: "Student compares ordered and simultaneous actions and verifies timing-sensitive behavior."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario time-travel-recipe-sequencing --run-id parity-time-travel-recipe-sequencing --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student compares ordered and simultaneous actions and verifies timing-sensitive behavior."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student compares ordered and simultaneous actions and verifies timing-sensitive behavior."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: using-comments-code-clarity
+    area: "Comments"
+    journey: "Student adds meaningful comments to a procedure and verifies that the project behavior remains intact."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario using-comments-code-clarity --run-id parity-using-comments-code-clarity --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student adds meaningful comments to a procedure and verifies that the project behavior remains intact."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student adds meaningful comments to a procedure and verifies that the project behavior remains intact."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: lost-robot-debug-museum
+    area: "Debugging"
+    journey: "Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario lost-robot-debug-museum --run-id parity-lost-robot-debug-museum --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: game-score-timer-win-lose-loop
+    area: "Games"
+    journey: "Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario game-score-timer-win-lose-loop --run-id parity-game-score-timer-win-lose-loop --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: mythic-choice-event-tree
+    area: "Narrative"
+    journey: "Student builds a branching story with event choices and checks that each choice reaches the expected scene result."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario mythic-choice-event-tree --run-id parity-mythic-choice-event-tree --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds a branching story with event choices and checks that each choice reaches the expected scene result."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds a branching story with event choices and checks that each choice reaches the expected scene result."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: design-process-story-or-game
+    area: "Design process"
+    journey: "Student plans, builds, playtests, revises, and records a story or game artifact."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario design-process-story-or-game --run-id parity-design-process-story-or-game --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the task"
+      reason: "Covered where the web version supports the task"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: hour-of-code-studio-kickoff
+    area: "Hour of Code"
+    journey: "Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario hour-of-code-studio-kickoff --run-id parity-hour-of-code-studio-kickoff --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: workshop-facilitator-live-studio
+    area: "Hour of Code"
+    journey: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario workshop-facilitator-live-studio --run-id parity-workshop-facilitator-live-studio --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: vr-camera-perspective-tour
+    area: "Camera"
+    journey: "Student changes camera perspective, runs the world, and checks the expected viewpoint result."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-camera-perspective-tour --run-id parity-vr-camera-perspective-tour --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student changes camera perspective, runs the world, and checks the expected viewpoint result."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student changes camera perspective, runs the world, and checks the expected viewpoint result."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: vr-camera-locomotion-journey
+    area: "VR"
+    journey: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-camera-locomotion-journey --run-id parity-vr-camera-locomotion-journey --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the task"
+      reason: "Covered where the web version supports the task"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: vr-player-comfort-playtest
+    area: "VR"
+    journey: "Student playtests VR comfort rules, records observations, and revises the project."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-player-comfort-playtest --run-id parity-vr-player-comfort-playtest --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: media-audio-cue-storyboard
+    area: "Audio and media"
+    journey: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario media-audio-cue-storyboard --run-id parity-media-audio-cue-storyboard --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version supports the task"
+      reason: "Covered where the web version supports the task"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: audio-camera-and-export-sharecase
+    area: "Audio and media"
+    journey: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario audio-camera-and-export-sharecase --run-id parity-audio-camera-and-export-sharecase --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
+    looking_glass:
+      status: partial
+      source_status: "Covered where export flow supports it"
+      reason: "Covered where export flow supports it"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: starter-project-open-save-export-preflight
+    area: "Import/export"
+    journey: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario starter-project-open-save-export-preflight --run-id parity-starter-project-open-save-export-preflight --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version can open, save, and export projects"
+      reason: "Covered where the web version can open, save, and export projects"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: model-texture-import-checkpoint
+    area: "Import/export"
+    journey: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario model-texture-import-checkpoint --run-id parity-model-texture-import-checkpoint --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web version can use the imported asset"
+      reason: "Covered where the web version can use the imported asset"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: alice-2-migration-bridge
+    area: "Alice 2 migration"
+    journey: "Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-2-migration-bridge --run-id parity-alice-2-migration-bridge --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: modified-class-portability
+    area: "Classes"
+    journey: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario modified-class-portability --run-id parity-modified-class-portability --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: accessibility-rescue-camera-captions
+    area: "Accessibility"
+    journey: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario accessibility-rescue-camera-captions --run-id parity-accessibility-rescue-camera-captions --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
+    looking_glass:
+      status: partial
+      source_status: "Covered where browser accessibility applies"
+      reason: "Covered where browser accessibility applies"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: ide-accessibility-parity
+    area: "Accessibility"
+    journey: "Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario ide-accessibility-parity --run-id parity-ide-accessibility-parity --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: ide-performance-parity
+    area: "Performance"
+    journey: "Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario ide-performance-parity --run-id parity-ide-performance-parity --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-alice-concept-map
+    area: "Instructor planning"
+    journey: "Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-alice-concept-map --run-id parity-instructor-alice-concept-map --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-exercise-builder
+    area: "Instructor planning"
+    journey: "Instructor builds an exercise, adds expected student evidence, and verifies the rubric fits the task."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-exercise-builder --run-id parity-instructor-exercise-builder --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor builds an exercise, adds expected student evidence, and verifies the rubric fits the task."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Instructor builds an exercise, adds expected student evidence, and verifies the rubric fits the task."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-lesson-materials-remix
+    area: "Instructor planning"
+    journey: "Instructor remixes lesson materials, produces a student handout, and checks that the activity still maps to Alice actions."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-lesson-materials-remix --run-id parity-instructor-lesson-materials-remix --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor remixes lesson materials, produces a student handout, and checks that the activity still maps to Alice actions."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Instructor remixes lesson materials, produces a student handout, and checks that the activity still maps to Alice actions."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: curriculum-sequence-remix-pack
+    area: "Instructor planning"
+    journey: "Instructor reorganizes a curriculum sequence and checks prerequisite and assessment coverage."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario curriculum-sequence-remix-pack --run-id parity-curriculum-sequence-remix-pack --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor reorganizes a curriculum sequence and checks prerequisite and assessment coverage."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Instructor reorganizes a curriculum sequence and checks prerequisite and assessment coverage."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: instructor-student-outcomes-rubric
+    area: "Instructor review"
+    journey: "Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-student-outcomes-rubric --run-id parity-instructor-student-outcomes-rubric --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: student-reflection-artifact-review
+    area: "Student review"
+    journey: "Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario student-reflection-artifact-review --run-id parity-student-reflection-artifact-review --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: student-artifact-package-share-evidence
+    area: "Sharing"
+    journey: "Student packages project, screenshot, notes, and share evidence for review."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario student-artifact-package-share-evidence --run-id parity-student-artifact-package-share-evidence --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student packages project, screenshot, notes, and share evidence for review."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student packages project, screenshot, notes, and share evidence for review."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: classroom-gallery-walk-and-rubric
+    area: "Sharing"
+    journey: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario classroom-gallery-walk-and-rubric --run-id parity-classroom-gallery-walk-and-rubric --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
+    looking_glass:
+      status: partial
+      source_status: "Covered where the web review tools support it"
+      reason: "Covered where the web review tools support it"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: teacher-community-sharing-loop
+    area: "Sharing"
+    journey: "Teacher packages a reusable classroom resource and checks community-sharing metadata."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario teacher-community-sharing-loop --run-id parity-teacher-community-sharing-loop --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Teacher packages a reusable classroom resource and checks community-sharing metadata."
+    looking_glass:
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass unsupported status remains explicit until implementation exists
+        - behavior evidence names user-visible result, not implementation details
+  - scenario: neighborhood-data-story
+    area: "Data storytelling"
+    journey: "Student turns local data into an Alice story and verifies that values drive scene behavior."
+    rabbit_hole:
+      status: covered
+      source_status: "Covered"
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario neighborhood-data-story --run-id parity-neighborhood-data-story --runs-dir runs --timeout 1800 --json
+      expected_behavior: "Student turns local data into an Alice story and verifies that values drive scene behavior."
+    looking_glass:
+      status: covered
+      source_status: "Covered"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student turns local data into an Alice story and verifies that values drive scene behavior."
+    closure:
+      required:
+        - RabbitHole command passes with real Alice evidence
+        - LookingGlass command passes when web support is claimed
+        - behavior evidence names user-visible result, not implementation details
+closure_families:
+  - scenario: alice-web-a3p-save-load-parity
+    role: grouped parity closure probe
+    closure_tests:
+      - cargo test -p eatme-alice --test a3p_content_coverage
+      - cargo test -p eatme-alice --test a3p_roundtrip_coverage
+      - cargo test -p eatme-alice --test real_a3p_pipeline_integration
+      - cargo test -p eatme-alice --test malformed_input_resilience
+  - scenario: alice-web-story-api-runtime-parity
+    role: grouped parity closure probe
+    closure_tests:
+      - cargo test -p eatme-alice --test parameters_e2e
+      - cargo test -p eatme-alice --test functions_e2e
+      - cargo test -p eatme-alice --test loops_and_conditionals_e2e
+      - cargo test -p eatme-alice --test nested_control_flow_e2e
+      - cargo test -p eatme-alice --test events_collision_support
+      - cargo test -p eatme-alice --test events_and_collision_e2e
+      - cargo test -p eatme-alice --test text_and_speech_e2e
+  - scenario: alice-web-gallery-media-parity
+    role: grouped parity closure probe
+    closure_tests:
+      - cargo test -p eatme-alice --test a3p_content_coverage
+      - cargo test -p eatme-alice --test camera_and_viewpoint_e2e
+      - cargo test -p eatme-alice --test text_and_speech_e2e
+      - cargo test -p eatme-alice --test import_export_support
+      - cargo test -p eatme-alice --test project_io_resource_management
