@@ -67,16 +67,13 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-student-launch-evidence-handoff --run-id parity-instructor-student-launch-evidence-handoff --runs-dir runs --timeout 1800 --json
       expected_behavior: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
     looking_glass:
-      status: partial
-      source_status: "Bounded migration guidance only"
-      reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
-      expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
+      status: not_supported
+      source_status: "Not supported"
+      reason: "Not supported"
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when bounded migration guidance is claimed
-        - Automatic Alice 2 conversion remains explicitly unsupported until implementation exists
+        - LookingGlass unsupported status remains explicit until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: building-a-scene-first-world
     area: "First scene"
@@ -560,15 +557,14 @@ rows:
       expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
     looking_glass:
       status: partial
-      source_status: "Covered for parsed AliceProject.types class-behavior packages"
-      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; full desktop UI parity remains out of scope."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
-      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
+      source_status: "Covered where the web facilitation/review tools apply"
+      reason: "Covered where the web facilitation/review tools apply"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web class portability support is claimed
-        - Supported scope remains bounded to parsed AliceProject.types behavior packages
+        - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
   - scenario: vr-camera-perspective-tour
     area: "Camera"
@@ -617,15 +613,14 @@ rows:
       expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
     looking_glass:
       status: partial
-      source_status: "Covered for alice-web package/share metadata"
-      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; this is not a deployed community platform."
-      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts
-      expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
+      source_status: "Covered where the web player can exercise comfort and review flows"
+      reason: "Covered where the web player can exercise comfort and review flows"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when package/share metadata support is claimed
-        - Community platform deployment remains explicitly out of scope
+        - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
   - scenario: media-audio-cue-storyboard
     area: "Audio and media"
@@ -712,13 +707,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-2-migration-bridge --run-id parity-alice-2-migration-bridge --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Bounded migration guidance only"
+      reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; automatic Alice 2 conversion remains explicitly unsupported."
+      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-migration.test.ts
+      expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when bounded migration guidance is claimed
+        - Automatic Alice 2 conversion remains explicitly unsupported until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: modified-class-portability
     area: "Classes"
@@ -729,13 +727,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario modified-class-portability --run-id parity-modified-class-portability --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered for parsed AliceProject.types class-behavior packages"
+      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; full desktop UI parity remains out of scope."
+      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts
+      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when web class portability support is claimed
+        - Supported scope remains bounded to parsed AliceProject.types behavior packages
         - behavior evidence names user-visible result, not implementation details
   - scenario: accessibility-rescue-camera-captions
     area: "Accessibility"
@@ -946,13 +947,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario teacher-community-sharing-loop --run-id parity-teacher-community-sharing-loop --runs-dir runs --timeout 1800 --json
       expected_behavior: "Teacher packages a reusable classroom resource and checks community-sharing metadata."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered for alice-web package/share metadata"
+      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; this is not a deployed community platform."
+      command: cd ../alice-web-prototype && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/project-export.test.ts
+      expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when package/share metadata support is claimed
+        - Community platform deployment remains explicitly out of scope
         - behavior evidence names user-visible result, not implementation details
   - scenario: neighborhood-data-story
     area: "Data storytelling"
