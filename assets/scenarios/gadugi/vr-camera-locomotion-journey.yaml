@@ -98,7 +98,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
-      Review the launched Alice session and learner artifact using the persona prompt assets; do not require real VR hardware unless record-vr-preflight reports real_vr_available=true.
+      bash -lc 'run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_prompt=Review the launched Alice session and learner artifact using the persona prompt assets." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "expected_evidence=learner viewpoint choice, camera marker/move/coordinate choice, comfort constraint, and desktop evidence when real_vr_available=false." > "$run_dir/agentic-journey-evidence.txt"; printf "%s\n" "wrote=$run_dir/agentic-journey-evidence.txt"'
   expect:
     exit_code: 0
     stdout_contains: []
