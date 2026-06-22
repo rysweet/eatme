@@ -6,6 +6,7 @@
 
 use serde::Deserialize;
 use std::env;
+use std::io::Cursor;
 use std::io::Read;
 use std::time::Duration;
 
@@ -16,11 +17,15 @@ const FIRST_LESSON_ACTIONS_SAVE_PATH: &str =
     "target/test-work/web-platform/first-lessons-real-ui-actions.a3p";
 const STARTER_PREFLIGHT_SAVE_PATH: &str =
     "target/test-work/web-platform/starter-project-open-save-export-preflight.a3p";
+const STARTER_PROJECT_FIXTURE: &str = "crates/eatme-alice/tests/fixtures/real/africaMinimum.a3p";
 
 #[derive(Debug, Clone)]
 enum Step {
     Health,
     Launch,
+    LaunchProject {
+        path: &'static str,
+    },
     AddObject {
         class_name: &'static str,
         instance_name: &'static str,
@@ -40,6 +45,7 @@ enum Step {
     AssertMinObjects {
         min: usize,
     },
+    AssertEditedProcedurePersisted,
 }
 
 #[derive(Debug)]
@@ -63,6 +69,7 @@ struct StatusResponse {
 #[derive(Debug, Deserialize)]
 struct LaunchResponse {
     status: String,
+    project: Option<String>,
     #[serde(rename = "sceneObjectCount")]
     scene_object_count: usize,
 }
@@ -117,6 +124,7 @@ fn alice_objects_first_world() -> Scenario {
             Step::Reopen {
                 path: OBJECTS_FIRST_WORLD_SAVE_PATH,
             },
+            Step::AssertEditedProcedurePersisted,
             Step::AssertMinObjects { min: 3 },
         ],
     }
@@ -147,6 +155,7 @@ fn alice_objects_first_full_path() -> Scenario {
             Step::Reopen {
                 path: OBJECTS_FIRST_FULL_PATH_SAVE_PATH,
             },
+            Step::AssertEditedProcedurePersisted,
             Step::ExportTypeScript,
             Step::AssertMinObjects { min: 4 },
         ],
@@ -174,6 +183,7 @@ fn first_lessons_real_ui_actions() -> Scenario {
             Step::Reopen {
                 path: FIRST_LESSON_ACTIONS_SAVE_PATH,
             },
+            Step::AssertEditedProcedurePersisted,
             Step::AssertMinObjects { min: 3 },
         ],
     }
@@ -184,7 +194,9 @@ fn starter_project_open_save_export_preflight() -> Scenario {
         id: "starter-project-open-save-export-preflight",
         steps: vec![
             Step::Health,
-            Step::Launch,
+            Step::LaunchProject {
+                path: STARTER_PROJECT_FIXTURE,
+            },
             Step::AddObject {
                 class_name: "Prop",
                 instance_name: "starterMarker",
@@ -237,7 +249,7 @@ fn export_rows_export_only_after_reopen() {
 #[test]
 fn first_lesson_row_keeps_object_edit_run_save_reopen_evidence() {
     let scenario = first_lessons_real_ui_actions();
-    for required in ["add-object", "edit", "run", "save", "reopen"] {
+    for required in ["add-object", "edit", "run", "save", "reopen", "verify-edit"] {
         assert!(
             has_step(&scenario, required),
             "{} missing {required}",
@@ -272,11 +284,15 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
     let mut last_count = 0;
     let mut saved_count = None;
     let mut saved_path = None;
+    let mut edited_snippets = Vec::new();
 
     for step in steps {
         let result = match step {
             Step::Health => get_status(client, &format!("{base}/api/health")),
             Step::Launch => post_launch(client, &format!("{base}/api/launch"), &mut last_count),
+            Step::LaunchProject { path } => {
+                post_launch_project(client, base, path, &mut last_count)
+            }
             Step::AddObject {
                 class_name,
                 instance_name,
@@ -290,7 +306,13 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::EditProcedure {
                 method_name,
                 edit_spec,
-            } => post_edit(client, base, method_name, edit_spec),
+            } => {
+                let result = post_edit(client, base, method_name, edit_spec);
+                if result.ok {
+                    edited_snippets.push(persisted_snippet_from_edit_spec(edit_spec));
+                }
+                result
+            }
             Step::RunWorld => post_run_world(client, base, &mut last_count),
             Step::Save { path } => {
                 let result = post_save(client, base, path);
@@ -314,6 +336,9 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 ok: last_count >= *min,
                 msg: format!("actual={last_count}"),
             },
+            Step::AssertEditedProcedurePersisted => {
+                get_typescript_export_contains(client, base, &edited_snippets)
+            }
         };
         results.push(result);
     }
@@ -349,6 +374,39 @@ fn post_launch(client: &ureq::Agent, url: &str, last_count: &mut usize) -> StepR
             Err(error) => failed("launch", error),
         },
         Err(error) => failed("launch", error),
+    }
+}
+
+fn post_launch_project(
+    client: &ureq::Agent,
+    base: &str,
+    path: &str,
+    last_count: &mut usize,
+) -> StepResult {
+    match client
+        .post(&format!("{base}/api/launch"))
+        .send_json(ureq::json!({ "project": path }))
+    {
+        Ok(resp) => match resp.into_json::<LaunchResponse>() {
+            Ok(body) => {
+                *last_count = body.scene_object_count;
+                let opened_requested_project = body
+                    .project
+                    .as_deref()
+                    .is_some_and(|project| project.ends_with(path));
+                StepResult {
+                    name: format!("launch-project({path})"),
+                    ok: matches!(body.status.as_str(), "ok" | "launched")
+                        && opened_requested_project,
+                    msg: format!(
+                        "project={:?} objects={}",
+                        body.project, body.scene_object_count
+                    ),
+                }
+            }
+            Err(error) => failed("launch-project", error),
+        },
+        Err(error) => failed("launch-project", error),
     }
 }
 
@@ -467,6 +525,67 @@ fn post_reopen(
 }
 
 fn get_typescript_export(client: &ureq::Agent, base: &str) -> StepResult {
+    match get_typescript_export_bytes(client, base) {
+        Ok((content_type, bytes)) => StepResult {
+            name: "export-typescript".into(),
+            ok: content_type.contains("application/zip") && !bytes.is_empty(),
+            msg: format!("content_type={content_type} bytes={}", bytes.len()),
+        },
+        Err(error) => StepResult {
+            name: "export-typescript".into(),
+            ok: false,
+            msg: error,
+        },
+    }
+}
+
+fn get_typescript_export_contains(
+    client: &ureq::Agent,
+    base: &str,
+    snippets: &[&str],
+) -> StepResult {
+    if snippets.is_empty() {
+        return StepResult {
+            name: "assert-edited-procedure-persisted".into(),
+            ok: false,
+            msg: "no edited procedure snippets were recorded before reopen".into(),
+        };
+    }
+    let (_, bytes) = match get_typescript_export_bytes(client, base) {
+        Ok(export) => export,
+        Err(error) => {
+            return StepResult {
+                name: "assert-edited-procedure-persisted".into(),
+                ok: false,
+                msg: error,
+            };
+        }
+    };
+    match zip_text(&bytes) {
+        Ok(text) => {
+            let missing = snippets
+                .iter()
+                .filter(|snippet| !text.contains(**snippet))
+                .copied()
+                .collect::<Vec<_>>();
+            StepResult {
+                name: "assert-edited-procedure-persisted".into(),
+                ok: missing.is_empty(),
+                msg: format!("missing={missing:?}"),
+            }
+        }
+        Err(error) => StepResult {
+            name: "assert-edited-procedure-persisted".into(),
+            ok: false,
+            msg: error,
+        },
+    }
+}
+
+fn get_typescript_export_bytes(
+    client: &ureq::Agent,
+    base: &str,
+) -> Result<(String, Vec<u8>), String> {
     match client
         .get(&format!("{base}/api/projects/current/export/typescript"))
         .call()
@@ -474,17 +593,38 @@ fn get_typescript_export(client: &ureq::Agent, base: &str) -> StepResult {
         Ok(resp) => {
             let content_type = resp.header("content-type").unwrap_or("").to_string();
             let mut bytes = Vec::new();
-            match resp.into_reader().read_to_end(&mut bytes) {
-                Ok(_) => StepResult {
-                    name: "export-typescript".into(),
-                    ok: content_type.contains("application/zip") && !bytes.is_empty(),
-                    msg: format!("content_type={content_type} bytes={}", bytes.len()),
-                },
-                Err(error) => failed("export-typescript", error),
-            }
+            resp.into_reader()
+                .read_to_end(&mut bytes)
+                .map_err(|error| error.to_string())?;
+            Ok((content_type, bytes))
         }
-        Err(error) => failed("export-typescript", error),
+        Err(error) => Err(error.to_string()),
     }
+}
+
+fn zip_text(bytes: &[u8]) -> Result<String, String> {
+    let mut archive =
+        zip::ZipArchive::new(Cursor::new(bytes)).map_err(|error| error.to_string())?;
+    let mut combined = String::new();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).map_err(|error| error.to_string())?;
+        if !entry.name().ends_with(".ts") && !entry.name().ends_with(".js") {
+            continue;
+        }
+        let mut text = String::new();
+        entry
+            .read_to_string(&mut text)
+            .map_err(|error| error.to_string())?;
+        combined.push_str(&text);
+        combined.push('\n');
+    }
+    Ok(combined)
+}
+
+fn persisted_snippet_from_edit_spec(edit_spec: &str) -> &str {
+    edit_spec
+        .strip_prefix("append-comment:")
+        .unwrap_or(edit_spec)
 }
 
 fn failed(label: impl Into<String>, error: impl std::fmt::Display) -> StepResult {
@@ -526,6 +666,7 @@ fn step_matches(step: &Step, label: &str) -> bool {
             | (Step::Save { .. }, "save")
             | (Step::Reopen { .. }, "reopen")
             | (Step::ExportTypeScript, "export")
+            | (Step::AssertEditedProcedurePersisted, "verify-edit")
             | (Step::AssertMinObjects { .. }, "verify")
     )
 }

@@ -139,7 +139,7 @@ rows:
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
       status: covered
-      source_status: "Covered"
+      source_status: "Covered where the web version supports the task"
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     closure:
@@ -663,8 +663,8 @@ rows:
       expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     looking_glass:
       status: covered
-      source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      source_status: "Covered where the web version can open, save, and export projects"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     closure:
       required:
