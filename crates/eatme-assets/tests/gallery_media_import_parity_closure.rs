@@ -71,8 +71,7 @@ fn lookingglass_test_refs(row: &Value) -> Vec<String> {
         .split_whitespace()
         .filter_map(|token| token.strip_prefix("LookingGlass:test/"))
         .map(|path| {
-            let trimmed =
-                path.trim_end_matches(|ch: char| matches!(ch, '.' | ',' | ';' | ':' | ')' | ']'));
+            let trimmed = path.trim_end_matches(['.', ',', ';', ':', ')', ']']);
             format!("test/{trimmed}")
         })
         .collect()
