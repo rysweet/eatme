@@ -17,9 +17,10 @@ const REQUIRED_SOURCE_BOUNDARIES: &[&str] = &[
     "opened starter project",
     "small editable starter-world change",
     "attempt to run or observe",
-    "save/reopen/export/readiness gaps",
+    "LookingGlass REST evidence",
+    "remaining classroom-readiness gaps",
     "not proof of visible rendering correctness",
-    "without claiming full Save completion or full UI automation",
+    "not full UI automation",
     "without claiming first-lesson completion",
     "not grading",
     "not creative assessment",
@@ -31,14 +32,13 @@ const REQUIRED_ADAPTER_BOUNDARIES: &[&str] = &[
     "opened starter project",
     "manifest/log/window/screenshot evidence",
     "bounded starter-world and readiness-gap artifacts",
-    "without claiming save/reopen/export coverage",
+    "separate LookingGlass save/reopen/export evidence",
     "not full UI automation",
     "not creative assessment",
     "not learner-world grading",
     "not complete Alice coverage",
     "not visible rendering correctness proof",
     "not first-lesson completion",
-    "not full Save completion",
 ];
 
 const INTERNAL_OR_OVERBROAD_LANGUAGE: &[&str] = &[
