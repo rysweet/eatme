@@ -40,6 +40,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
   - manifest_assertions
@@ -86,6 +87,13 @@ steps:
   evidence:
   - readiness output names install, Java, graphics, storage, account, and fallback fields
   - required evidence includes blocker category, owner, retest signal, and learner-safe fallback
+- id: lookingglass-setup-readiness
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+  evidence:
+  - LookingGlass /api/health and /api/config respond for the web runtime
+  - LookingGlass /api/setup/preflight names setup-support-lab-readiness and desktop-only boundaries
+  - LookingGlass /api/project/new creates a starter web project
+  - LookingGlass /api/setup/evidence-handoff returns blocker, owner, fallback role, and retest-signal handoff fields
 - id: launch-smoke
   command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
   evidence:

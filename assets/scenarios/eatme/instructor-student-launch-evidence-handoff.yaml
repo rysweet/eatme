@@ -37,6 +37,11 @@ agentic_flow:
   - real_alice_evidence_handoff_card
   - instructor_readiness_note
   - student_action_prompt
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_test_prompt: Act as an instructor acceptance agent preparing a classroom handoff after eatme has collected real Alice launch evidence. Produce a real Alice evidence handoff card, instructor readiness note, and student action prompt grounded in the listed resources and this scenario. Name which evidence comes from the manifest, log, window list, screenshot, and ui-action-contract.json. Separate environment readiness from student project behavior. Ask students to record one Alice action, the visible result after running, and one next revision. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.
 acceptance_criteria:
 - given: an instructor has manifest, log, window-list, screenshot, and action-contract evidence from a real Alice launch check
@@ -76,6 +81,13 @@ steps:
   evidence:
   - stdout JSON has passed=true
   - stdout JSON includes instructor-student-launch-evidence-handoff
+- id: lookingglass-setup-readiness
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+  evidence:
+  - LookingGlass /api/health and /api/config respond for the web runtime
+  - LookingGlass /api/setup/preflight names instructor-student-launch-evidence-handoff and desktop-only boundaries
+  - LookingGlass /api/launch proves web launch readiness without claiming Java desktop launch evidence
+  - LookingGlass /api/setup/evidence-handoff returns student next actions and evidence-review notes
 - id: agentic-instructor-review
   command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml
   evidence:

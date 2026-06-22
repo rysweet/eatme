@@ -40,10 +40,59 @@ struct HealthResponse {
 }
 
 #[derive(Debug, Deserialize)]
+struct ConfigResponse {
+    runtime: String,
+    platform: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetupPreflightResponse {
+    status: String,
+    platform: String,
+    scenario: String,
+    #[serde(rename = "unsupportedCapabilities")]
+    unsupported_capabilities: Vec<String>,
+    #[serde(rename = "classroomReadiness")]
+    classroom_readiness: ClassroomReadiness,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClassroomReadiness {
+    #[serde(rename = "readyToCreateProject")]
+    ready_to_create_project: bool,
+    #[serde(rename = "readyForLabHandoff")]
+    ready_for_lab_handoff: bool,
+    #[serde(rename = "readyForEvidenceHandoff")]
+    ready_for_evidence_handoff: bool,
+}
+
+#[derive(Debug, Deserialize)]
 struct LaunchResponse {
     status: String,
     #[serde(rename = "sceneObjectCount")]
     scene_object_count: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct TemplatesResponse {
+    templates: Vec<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct NewProjectResponse {
+    status: String,
+    #[serde(rename = "projectName")]
+    project_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct EvidenceHandoffResponse {
+    status: String,
+    platform: String,
+    scenario: String,
+    #[serde(rename = "evidenceArtifact")]
+    evidence_artifact: String,
+    handoff: Value,
 }
 
 #[derive(Debug, Deserialize)]
@@ -92,8 +141,16 @@ struct StatementSpec {
 #[derive(Debug, Clone)]
 enum Step {
     Health,
+    Config,
+    SetupPreflight {
+        scenario: String,
+    },
     Launch {
         template: String,
+    },
+    ProjectTemplates,
+    ProjectNew {
+        project_name: String,
     },
     AddObject {
         class_name: String,
@@ -114,6 +171,9 @@ enum Step {
     DesignCheckpoint {
         phase: String,
         artifact: String,
+    },
+    EvidenceHandoff {
+        scenario: String,
     },
     RegisterEvent {
         event_type: String,
@@ -157,6 +217,52 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
                 }
             }
+            Step::Config => {
+                match client.get(&format!("{base}/api/config")).call() {
+                    Ok(resp) => match resp.into_json::<ConfigResponse>() {
+                        Ok(config) => StepResult {
+                            name: "config".into(),
+                            ok: config.runtime == "alice-web" && config.platform == "lookingglass",
+                            msg: format!("runtime={} platform={}", config.runtime, config.platform),
+                        },
+                        Err(e) => StepResult { name: "config".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "config".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::SetupPreflight { scenario } => {
+                match client
+                    .get(&format!("{base}/api/setup/preflight"))
+                    .query("scenario", scenario)
+                    .call()
+                {
+                    Ok(resp) => match resp.into_json::<SetupPreflightResponse>() {
+                        Ok(preflight) => {
+                            let ready = preflight.classroom_readiness.ready_to_create_project
+                                && preflight.classroom_readiness.ready_for_lab_handoff
+                                && preflight.classroom_readiness.ready_for_evidence_handoff;
+                            let names_desktop_boundary = preflight
+                                .unsupported_capabilities
+                                .iter()
+                                .any(|capability| capability.contains("Java desktop Alice launch"));
+                            StepResult {
+                                name: format!("setup-preflight({scenario})"),
+                                ok: preflight.status == "ready"
+                                    && preflight.platform == "lookingglass"
+                                    && preflight.scenario == *scenario
+                                    && ready
+                                    && names_desktop_boundary,
+                                msg: format!(
+                                    "status={} platform={} scenario={}",
+                                    preflight.status, preflight.platform, preflight.scenario
+                                ),
+                            }
+                        }
+                        Err(e) => StepResult { name: format!("setup-preflight({scenario})"), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: format!("setup-preflight({scenario})"), ok: false, msg: e.to_string() },
+                }
+            }
             Step::Launch { template } => {
                 match client.post(&format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
                     Ok(resp) => match resp.into_json::<LaunchResponse>() {
@@ -164,6 +270,32 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::ProjectTemplates => {
+                match client.get(&format!("{base}/api/project/templates")).call() {
+                    Ok(resp) => match resp.into_json::<TemplatesResponse>() {
+                        Ok(r) => StepResult {
+                            name: "project-templates".into(),
+                            ok: !r.templates.is_empty(),
+                            msg: format!("templates={}", r.templates.len()),
+                        },
+                        Err(e) => StepResult { name: "project-templates".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "project-templates".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::ProjectNew { project_name } => {
+                match client.post(&format!("{base}/api/project/new")).send_json(ureq::json!({ "projectName": project_name })) {
+                    Ok(resp) => match resp.into_json::<NewProjectResponse>() {
+                        Ok(r) => StepResult {
+                            name: format!("project-new({project_name})"),
+                            ok: r.status == "created" && r.project_name == *project_name,
+                            msg: format!("status={} project={}", r.status, r.project_name),
+                        },
+                        Err(e) => StepResult { name: format!("project-new({project_name})"), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: format!("project-new({project_name})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::AddObject { class_name, instance_name } => {
@@ -225,6 +357,40 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 ok: !phase.is_empty() && !artifact.is_empty(),
                 msg: artifact.clone(),
             },
+            Step::EvidenceHandoff { scenario } => {
+                match client
+                    .post(&format!("{base}/api/setup/evidence-handoff"))
+                    .send_json(ureq::json!({ "scenario": scenario }))
+                {
+                    Ok(resp) => match resp.into_json::<EvidenceHandoffResponse>() {
+                        Ok(r) => {
+                            let next_actions = r
+                                .handoff
+                                .get("studentNextActions")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items.iter().any(|item| {
+                                        item.as_str()
+                                            .map(|text| text.contains("visible result"))
+                                            .unwrap_or(false)
+                                    })
+                                })
+                                .unwrap_or(false);
+                            StepResult {
+                                name: format!("evidence-handoff({scenario})"),
+                                ok: r.status == "handoff-created"
+                                    && r.platform == "lookingglass"
+                                    && r.scenario == *scenario
+                                    && !r.evidence_artifact.is_empty()
+                                    && next_actions,
+                                msg: format!("status={} artifact={}", r.status, r.evidence_artifact),
+                            }
+                        }
+                        Err(e) => StepResult { name: format!("evidence-handoff({scenario})"), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: format!("evidence-handoff({scenario})"), ok: false, msg: e.to_string() },
+                }
+            }
             Step::RegisterEvent { event_type, handler_name } => {
                 let mut payload = serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
                 if event_type == "keyPress" || event_type == "keyPressed" {
@@ -636,6 +802,66 @@ const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-rel
 const FULL_STUDENT_JOURNEY_SAVE_PATH: &str =
     "target/test-work/web-platform/full-student-journey.a3p";
 const INSTRUCTOR_GRADING_SAVE_PATH: &str = "target/test-work/web-platform/instructor-grading.a3p";
+
+fn setup_readiness_steps(scenario: &'static str, project_name: &'static str) -> Vec<Step> {
+    vec![
+        Step::Health,
+        Step::Config,
+        Step::SetupPreflight {
+            scenario: scenario.into(),
+        },
+        Step::ProjectTemplates,
+        Step::ProjectNew {
+            project_name: project_name.into(),
+        },
+        Step::Launch {
+            template: "blank".into(),
+        },
+        Step::EvidenceHandoff {
+            scenario: scenario.into(),
+        },
+    ]
+}
+
+fn setup_preflight_ready_to_create() -> (&'static str, Vec<Step>) {
+    (
+        "setup-preflight-ready-to-create",
+        setup_readiness_steps(
+            "setup-preflight-ready-to-create",
+            "Setup Preflight Ready to Create",
+        ),
+    )
+}
+
+fn setup_support_lab_readiness() -> (&'static str, Vec<Step>) {
+    (
+        "setup-support-lab-readiness",
+        setup_readiness_steps(
+            "setup-support-lab-readiness",
+            "Setup Support Lab Readiness",
+        ),
+    )
+}
+
+fn instructor_classroom_setup_readiness() -> (&'static str, Vec<Step>) {
+    (
+        "instructor-classroom-setup-readiness",
+        setup_readiness_steps(
+            "instructor-classroom-setup-readiness",
+            "Instructor Classroom Setup Readiness",
+        ),
+    )
+}
+
+fn instructor_student_launch_evidence_handoff() -> (&'static str, Vec<Step>) {
+    (
+        "instructor-student-launch-evidence-handoff",
+        setup_readiness_steps(
+            "instructor-student-launch-evidence-handoff",
+            "Student Launch Evidence Handoff",
+        ),
+    )
+}
 
 fn parameters() -> (&'static str, Vec<Step>) {
     (
@@ -1248,6 +1474,10 @@ fn error_recovery() -> (&'static str, Vec<Step>) {
 
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
+        setup_preflight_ready_to_create(),
+        setup_support_lab_readiness(),
+        instructor_classroom_setup_readiness(),
+        instructor_student_launch_evidence_handoff(),
         hello_world(),
         procedures(),
         parameters(),
@@ -1734,6 +1964,10 @@ fn nested_control_flow_layers_together_branching_and_loops() {
 fn full_curriculum_breadth_covered() {
     let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
     for required in [
+        "setup-preflight-ready-to-create",
+        "setup-support-lab-readiness",
+        "instructor-classroom-setup-readiness",
+        "instructor-student-launch-evidence-handoff",
         "hello-world",
         "procedures",
         "parameters",
@@ -1761,6 +1995,37 @@ fn full_curriculum_breadth_covered() {
         "error-recovery",
     ] {
         assert!(names.contains(&required), "missing: {required}");
+    }
+}
+
+#[test]
+fn setup_readiness_scenarios_exercise_preflight_config_create_and_handoff() {
+    for (name, steps) in [
+        setup_preflight_ready_to_create(),
+        setup_support_lab_readiness(),
+        instructor_classroom_setup_readiness(),
+        instructor_student_launch_evidence_handoff(),
+    ] {
+        assert!(
+            steps.iter().any(|step| matches!(step, Step::Config)),
+            "{name} must inspect LookingGlass config"
+        );
+        assert!(
+            steps
+                .iter()
+                .any(|step| matches!(step, Step::SetupPreflight { scenario } if scenario == name)),
+            "{name} must run the named setup preflight"
+        );
+        assert!(
+            steps.iter().any(|step| matches!(step, Step::ProjectNew { .. })),
+            "{name} must prove a web create-project path"
+        );
+        assert!(
+            steps
+                .iter()
+                .any(|step| matches!(step, Step::EvidenceHandoff { scenario } if scenario == name)),
+            "{name} must create setup/readiness handoff evidence"
+        );
     }
 }
 

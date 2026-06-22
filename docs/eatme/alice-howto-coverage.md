@@ -124,10 +124,10 @@ Alice.org HowTo coverage.
 
 | HowTo area | Scenario | User journey covered | RabbitHole | LookingGlass |
 | --- | --- | --- | --- | --- |
-| Setup and first use | `setup-preflight-ready-to-create` | Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path. | Covered | Not supported |
-| Setup and first use | `setup-support-lab-readiness` | Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance. | Covered | Not supported |
-| Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Covered | Not supported |
-| Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Covered | Not supported |
+| Setup and first use | `setup-preflight-ready-to-create` | Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path. | Covered | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `setup-support-lab-readiness` | Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance. | Covered | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Covered | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Covered | Covered where the web setup/readiness APIs apply |
 | First scene | `building-a-scene-first-world` | Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project. | Covered | Covered |
 | First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Covered where the web version supports the task |
 | First scene | `alice-objects-first-full-path` | Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions. | Covered | Covered where the web version supports the needed actions |
