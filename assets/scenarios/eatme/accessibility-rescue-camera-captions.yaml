@@ -97,7 +97,7 @@ steps:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
 - id: lookingglass-caption-evidence
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
   evidence:
   - web_platform_curriculum_e2e includes accessibility-rescue-camera-captions
   - /api/accessibility/rescue-camera-captions returns schema_version alice.accessibility-rescue-camera-captions/v1

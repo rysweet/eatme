@@ -93,7 +93,7 @@ steps:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
 - id: lookingglass-gallery-rubric-evidence
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
   evidence:
   - web_platform_curriculum_e2e includes classroom-gallery-walk-and-rubric
   - /api/review/gallery-walk-rubric returns schema_version alice.gallery-walk-rubric-evidence/v1

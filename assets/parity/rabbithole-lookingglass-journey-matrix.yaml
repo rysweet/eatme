@@ -593,8 +593,8 @@ rows:
     looking_glass:
       status: partial
       source_status: "Covered for browser camera comfort evidence; true headset/native VR remains unsupported"
-      reason: "LookingGlass proves desktop camera movement, keyboard camera availability, reduced-motion comfort checks, and explicit true-VR unsupported evidence through /api/vr/camera-comfort; headset VR locomotion remains out of scope."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      reason: "LookingGlass proves desktop camera availability and explicit true-VR unsupported evidence through /api/vr/camera-comfort; headset VR locomotion remains out of scope."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
       expected_behavior: "Student builds a browser camera movement journey and checks bounded web comfort evidence while true headset/native VR remains explicitly unsupported."
     closure:
       required:
@@ -740,7 +740,7 @@ rows:
       status: covered
       source_status: "Covered for browser accessibility caption evidence"
       reason: "LookingGlass exposes /api/accessibility/rescue-camera-captions with aria-live, visible camera, and scene-object caption checks plus keyboard/high-contrast review evidence."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       expected_behavior: "Student uses browser camera/caption guidance and verifies the web project remains understandable and keyboard-reviewable."
     closure:
       required:
@@ -921,7 +921,7 @@ rows:
       status: covered
       source_status: "Covered for web gallery review and rubric recording evidence"
       reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and explicit live-studio unsupported evidence."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
       expected_behavior: "Class reviews web project items in a gallery walk and uses rubric evidence to record feedback while live studio remains unsupported."
     closure:
       required:
