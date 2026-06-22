@@ -110,6 +110,8 @@ supported:
 ```bash
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+  cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
 ```
 
 The run passes only when the scenario assertions match the expected Alice user
