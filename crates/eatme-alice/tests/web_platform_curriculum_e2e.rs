@@ -836,10 +836,7 @@ fn setup_preflight_ready_to_create() -> (&'static str, Vec<Step>) {
 fn setup_support_lab_readiness() -> (&'static str, Vec<Step>) {
     (
         "setup-support-lab-readiness",
-        setup_readiness_steps(
-            "setup-support-lab-readiness",
-            "Setup Support Lab Readiness",
-        ),
+        setup_readiness_steps("setup-support-lab-readiness", "Setup Support Lab Readiness"),
     )
 }
 
@@ -2017,7 +2014,9 @@ fn setup_readiness_scenarios_exercise_preflight_config_create_and_handoff() {
             "{name} must run the named setup preflight"
         );
         assert!(
-            steps.iter().any(|step| matches!(step, Step::ProjectNew { .. })),
+            steps
+                .iter()
+                .any(|step| matches!(step, Step::ProjectNew { .. })),
             "{name} must prove a web create-project path"
         );
         assert!(
