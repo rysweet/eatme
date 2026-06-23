@@ -41,12 +41,27 @@ steps:
     - '"passed": true'
     - '"id": "classroom-gallery-walk-and-rubric"'
   timeout: 60000
+- name: Lookingglass Gallery Rubric Evidence
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-classroom-gallery-walk-and-rubric}"
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - web_platform_curriculum_e2e
+    - 'test result: ok'
+  timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test
   params:
     acceptance_probes: |-
       LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+      LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, and live-studio unsupported evidence.
       Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.
       Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.
       Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.
@@ -62,6 +77,7 @@ steps:
     - creator_response_prompt
     - revision_checkpoint_note
     - instructor_boundary_note
+    - lookingglass_gallery_rubric_api_evidence
   timeout: 900000
 assertions:
 - name: Assets Validate
@@ -69,6 +85,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: lookingglass-gallery-rubric-evidence succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Lookingglass Gallery Rubric Evidence
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent
