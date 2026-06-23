@@ -44,7 +44,6 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-web-gallery-media-parity}"
-      set -e
       bash -lc 'run_dir="runs/alice-web-gallery-media-parity/${RUN_ID}";
       mkdir -p "$run_dir";
       cat > "$run_dir/gallery-media-parity-gaps.md" <<EOF
@@ -57,13 +56,6 @@ steps:
       | model import/export | imported model has provenance, texture visibility, scale/orientation, and fallback evidence | import/export tests keep runnable-world evidence explicit | cargo test -p eatme-alice --test import_export_workflow_real --test project_io_resource_management |
       EOF
       printf "%s\n" "wrote=$run_dir/gallery-media-parity-gaps.md"'
-      printf "%s\n" "cargo-test-ok=a3p_gallery_coverage"
-      printf "%s\n" "cargo-test-ok=a3p_content_coverage"
-      printf "%s\n" "cargo-test-ok=camera_and_viewpoint_e2e"
-      printf "%s\n" "cargo-test-ok=text_and_speech_e2e"
-      printf "%s\n" "cargo-test-ok=import_export_support"
-      printf "%s\n" "cargo-test-ok=import_export_workflow_real"
-      printf "%s\n" "cargo-test-ok=project_io_resource_management"
   expect:
     exit_code: 0
     stdout_contains:

@@ -389,6 +389,11 @@ fn generated_record_steps_assert_only_stdout_markers() {
             stdout.contains(artifact),
             "{source} {step_name} must assert emitted artifact {artifact:?}; stdout assertions were {stdout:?}"
         );
+        let command = generated_step_command(&generated, step_name);
+        assert!(
+            !command.contains("cargo-test-ok="),
+            "{source} {step_name} must not emit fake cargo-test-ok markers from heredoc prose; command was {command}"
+        );
         for unprinted in [
             "cargo-test-ok=",
             "cargo test",

@@ -408,7 +408,31 @@ fn command_with_stdout_markers(command: &str) -> String {
 fn is_executable_test_command(command: &str) -> bool {
     let trimmed = command.trim_start();
     let first_line = trimmed.lines().next().unwrap_or(trimmed);
-    command_contains_executed_test(first_line) || command_contains_executed_test(trimmed)
+    command_contains_executed_test(first_line)
+        || command_executable_regions(command)
+            .iter()
+            .any(|region| command_contains_executed_test(region))
+}
+
+fn command_executable_regions(command: &str) -> Vec<String> {
+    let mut regions = Vec::new();
+    let mut in_heredoc = false;
+    for line in command.lines() {
+        let trimmed = line.trim();
+        if in_heredoc {
+            if trimmed == "EOF" {
+                in_heredoc = false;
+            }
+            continue;
+        }
+        if trimmed.contains("<<EOF") {
+            in_heredoc = true;
+            regions.push(trimmed.split("<<EOF").next().unwrap_or("").to_owned());
+            continue;
+        }
+        regions.push(trimmed.to_owned());
+    }
+    regions
 }
 
 fn command_contains_executed_test(command: &str) -> bool {
