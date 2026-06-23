@@ -44,10 +44,11 @@ quality scoring — no running Alice instance needed.
 application under a virtual display, walk through lesson workflows, and capture
 evidence that each step completed correctly.
 
-**Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the same
-curriculum scenarios against LookingGlass's REST API, covering 26
-curriculum workflows including scene building, procedures, events, loops,
-functions, variables, arrays, camera, audio, vehicles, joints, and more.
+**Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the
+LookingGlass-targeted curriculum scenarios against LookingGlass's REST API,
+including scene building, procedures, events, loops, functions, variables,
+arrays, camera, audio, vehicles, joints, and more. The exact web-capable
+scenario count is enforced by the parity matrix tests.
 
 ## Quick start
 
