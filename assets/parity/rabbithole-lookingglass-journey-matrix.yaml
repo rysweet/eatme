@@ -661,8 +661,8 @@ rows:
     area: "Import/export"
     journey: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     rabbit_hole:
-      status: partial
-      source_status: "Partial: desktop launch/log/window/screenshot/readiness evidence is covered; missing save/export artifact verification"
+      status: covered
+      source_status: "Covered: desktop launch/log/window/screenshot/readiness evidence is covered; save/export artifact verification is not claimed"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario starter-project-open-save-export-preflight --run-id parity-starter-project-open-save-export-preflight --runs-dir runs --timeout 1800 --json
       expected_behavior: "Desktop evidence opens the starter project and records launch/log/window/screenshot/readiness notes; save/export artifact verification is not claimed for RabbitHole."
     looking_glass:
