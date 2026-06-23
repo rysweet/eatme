@@ -275,6 +275,10 @@ commands was a branch ref as resolved at execution time, not an immutable
 SHA-pinned install reference. The same-head claim depends on the recorded
 execution context, not on the install URL alone.
 
+The table below is a historical snapshot. Counts in it were true for that run
+only; the current inventory is 57 canonical EatMe scenarios, 58 Gadugi
+scenarios, and 115 scenario YAML files in total.
+
 ```bash
 uvx --from git+https://github.com/rysweet/eatme.git@wave6-evidence-artifact-contract-1778302300 amplihack <command>
 ```
@@ -576,4 +580,3 @@ exact-head verification against the new PR head.
 | Stale generated adapter | Regenerate adapters from canonical sources. |
 | Asset validation failure | Fix the invalid scenario or persona asset. |
 | Unrelated changes | Remove the unrelated change from the readiness work. |
-

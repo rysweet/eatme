@@ -1,5 +1,9 @@
 # PASS 1: docs still teach the old scenario-asset count
 
+This file is a historical snapshot of an older audit. Its counts were true for that audit only.
+The current inventory is 57 canonical EatMe scenarios, 58 Gadugi scenarios, and
+115 scenario YAML files in total.
+
 - **Checklist:** stale documentation (docs spot-check)
 - **Verdict:** FAIL
 

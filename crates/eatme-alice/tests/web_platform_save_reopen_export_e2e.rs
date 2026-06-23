@@ -220,6 +220,10 @@ fn starter_project_open_save_export_preflight() -> Scenario {
                 class_name: "Prop",
                 instance_name: "starterMarker",
             },
+            Step::EditProcedure {
+                method_name: "myFirstMethod",
+                edit_spec: "append-comment:starterMarker.say(\"Starter export evidence\")",
+            },
             Step::RunWorld,
             Step::Save {
                 path: STARTER_PREFLIGHT_SAVE_PATH,
@@ -231,6 +235,7 @@ fn starter_project_open_save_export_preflight() -> Scenario {
             Step::Reopen {
                 path: STARTER_PREFLIGHT_SAVE_PATH,
             },
+            Step::AssertEditedProcedurePersisted,
             Step::ExportTypeScript,
             Step::AssertMinObjects { min: 3 },
         ],
@@ -267,6 +272,14 @@ fn export_rows_export_only_after_reopen() {
     ] {
         assert_order(&scenario, "reopen", "export");
     }
+}
+
+#[test]
+fn starter_preflight_edits_before_save_and_checks_edit_before_export() {
+    let scenario = starter_project_open_save_export_preflight();
+    assert_order(&scenario, "edit", "save");
+    assert_order(&scenario, "reopen", "verify-edit");
+    assert_order(&scenario, "verify-edit", "export");
 }
 
 #[test]

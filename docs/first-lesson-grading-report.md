@@ -66,7 +66,7 @@ The `--json` flag produces structured JSON:
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -120,7 +120,7 @@ Without `--json`, the command prints a plain-text summary:
 
 ```text
 First-lesson grading: building-a-scene-first-world
-  validate-assets: ready — All 105 scenario assets passed validation
+  validate-assets: ready — All 115 scenario assets passed validation
   check-dependencies: blocked — Missing required tools: Xvfb, wmctrl
   launch-smoke: blocked — Blocked by: check-dependencies
   place-object: blocked — Blocked by: launch-smoke
@@ -337,7 +337,7 @@ cargo run -q -p eatme-cli -- assets grading-report --json
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -398,7 +398,7 @@ cargo run -q -p eatme-cli -- assets grading-report --json
       "name": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "name": "check-dependencies",
@@ -540,7 +540,7 @@ cargo run -q -p eatme-cli -- assets grading-report
 
 ```text
 First-lesson grading: building-a-scene-first-world
-  validate-assets: ready — All 105 scenario assets passed validation
+  validate-assets: ready — All 115 scenario assets passed validation
   check-dependencies: ready — All required dependencies available
   launch-smoke: ready — All preconditions met
   place-object: not-yet-tested — Requires runtime execution

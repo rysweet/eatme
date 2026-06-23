@@ -307,24 +307,33 @@ fn lookingglass_supported_rows_have_web_targets_and_validation_steps() {
 
 #[test]
 fn unsupported_lookingglass_rows_say_so_plainly() {
-    let unclear = coverage_rows()
-        .into_iter()
-        .filter(|row| {
-            !row.looking_glass
-                .to_ascii_lowercase()
-                .starts_with("covered")
-        })
-        .filter(|row| {
-            !row.looking_glass
-                .to_ascii_lowercase()
-                .contains("not supported")
-        })
-        .map(|row| format!("{} => {}", row.scenario, row.looking_glass))
-        .collect::<Vec<_>>();
+    let mut unclear = Vec::new();
+
+    for row in coverage_rows() {
+        let looking_glass = row.looking_glass.to_ascii_lowercase();
+        if looking_glass.starts_with("covered") {
+            continue;
+        }
+        if looking_glass.starts_with("partial:") {
+            if !looking_glass.contains("missing") || !looking_glass.contains("evidence") {
+                unclear.push(format!(
+                    "{} => Partial rows must name missing evidence plainly: {}",
+                    row.scenario, row.looking_glass
+                ));
+            }
+            continue;
+        }
+        if !looking_glass.contains("not supported") {
+            unclear.push(format!(
+                "{} => Unsupported rows must say not supported: {}",
+                row.scenario, row.looking_glass
+            ));
+        }
+    }
 
     assert!(
         unclear.is_empty(),
-        "LookingGlass unsupported rows must say not supported:\n{}",
+        "LookingGlass non-covered rows must explain what is missing:\n{}",
         unclear.join("\n")
     );
 }

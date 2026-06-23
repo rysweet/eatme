@@ -84,10 +84,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario building-a-scene-first-world --run-id parity-building-a-scene-first-world --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     looking_glass:
-      status: covered
-      source_status: "Covered"
+      status: partial
+      source_status: "Partial: web launch, add object, and save only; missing adjust, transform, and run evidence"
+      reason: "LookingGlass curriculum evidence covers launch, adding an object, and save for this row; adjust, transform, and run evidence are missing for this row."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
+      expected_behavior: "Student starts a browser project, adds a visible object, and saves; transform and run behavior are not claimed by this row."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -120,10 +121,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-full-path --run-id parity-alice-objects-first-full-path --runs-dir runs --timeout 1800 --json
       expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
     looking_glass:
-      status: covered
-      source_status: "Covered where the web version supports the needed actions"
+      status: partial
+      source_status: "Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform evidence"
+      reason: "LookingGlass save/reopen/export evidence covers object placement, procedure edit, run, save, reopen, and export; transform evidence is missing for this row."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
+      expected_behavior: "Automation performs object placement, procedure edit, run, save, reopen, export, and persistence assertions without claiming transform coverage."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
