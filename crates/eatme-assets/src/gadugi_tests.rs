@@ -407,6 +407,64 @@ fn generated_record_steps_assert_only_stdout_markers() {
 }
 
 #[test]
+fn generated_chained_cargo_test_steps_emit_and_assert_every_target_marker() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let expectations: [(&str, &str, &[&str]); 3] = [
+        (
+            "assets/scenarios/eatme/alice-web-a3p-save-load-parity.yaml",
+            "Run A3p Closure Probes",
+            &[
+                "a3p_content_coverage",
+                "a3p_roundtrip_coverage",
+                "real_a3p_pipeline_integration",
+                "malformed_input_resilience",
+            ],
+        ),
+        (
+            "assets/scenarios/eatme/alice-web-gallery-media-parity.yaml",
+            "Run Gallery Media Closure Probes",
+            &[
+                "a3p_content_coverage",
+                "camera_and_viewpoint_e2e",
+                "text_and_speech_e2e",
+                "import_export_support",
+                "project_io_resource_management",
+            ],
+        ),
+        (
+            "assets/scenarios/eatme/alice-web-story-api-runtime-parity.yaml",
+            "Run Runtime Closure Probes",
+            &[
+                "parameters_e2e",
+                "functions_e2e",
+                "loops_and_conditionals_e2e",
+                "nested_control_flow_e2e",
+                "events_collision_support",
+                "events_and_collision_e2e",
+                "text_and_speech_e2e",
+            ],
+        ),
+    ];
+
+    for (source, step_name, required_targets) in expectations {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let stdout = generated_step_stdout(&generated, step_name);
+        let command = generated_step_command(&generated, step_name);
+        for required in required_targets {
+            let marker = format!("cargo-test-ok={required}");
+            assert!(
+                stdout.contains(&marker),
+                "{source} {step_name} must assert cargo test marker {marker:?}; stdout assertions were {stdout:?}"
+            );
+            assert!(
+                command.contains(&marker),
+                "{source} {step_name} command must emit cargo test marker {marker:?}; command was {command}"
+            );
+        }
+    }
+}
+
+#[test]
 fn generator_rejects_evidence_steps_without_derivable_stdout_assertions() {
     let root = scratch_root("generator-rejects-empty-evidence-stdout");
     let source_path = root.join("assets/scenarios/eatme/opaque-evidence.yaml");
@@ -510,6 +568,19 @@ fn generated_step_stdout(generated: &str, step_name: &str) -> String {
         .filter_map(|value| value.as_str())
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn generated_step_command(generated: &str, step_name: &str) -> String {
+    let adapter = generated_adapter_value(generated);
+    adapter["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|step| step["name"] == step_name)
+        .unwrap_or_else(|| panic!("{step_name} step is generated"))["params"]["command"]
+        .as_str()
+        .unwrap()
+        .to_owned()
 }
 
 fn scratch_root(name: &str) -> std::path::PathBuf {

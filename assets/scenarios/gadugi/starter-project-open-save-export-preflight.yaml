@@ -94,7 +94,6 @@ steps:
     exit_code: 0
     stdout_contains:
     - wrote=
-    - starter-world-change-note.txt
     - run-observe-readiness-gaps.txt
     - starter-project-readiness-report.txt
   timeout: 60000

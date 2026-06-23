@@ -44,7 +44,25 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-web-gallery-media-parity}"
-      bash -lc 'run_dir="runs/alice-web-gallery-media-parity/${RUN_ID}"; mkdir -p "$run_dir"; cat > "$run_dir/gallery-media-parity-gaps.md" <<EOF # Gallery and Media Parity Gaps | gap | Java Alice baseline | Web/eatme probe | closure test | | --- | --- | --- | --- | | starter gallery coverage | starter projects expose scene entities, resources, joints, cameras, audio, and billboards | gallery/content coverage scans real or synthetic archives | cargo test -p eatme-alice --test a3p_gallery_coverage --test a3p_content_coverage | | camera and viewpoint | camera transforms and viewpoints are preserved and user-visible | camera/viewpoint scenarios assert observable evidence | cargo test -p eatme-alice --test camera_and_viewpoint_e2e | | media and speech | audio/text assets are present or explicitly bounded | media/text tests record real output versus bounded simulation | cargo test -p eatme-alice --test text_and_speech_e2e --test import_export_support | | model import/export | imported model has provenance, texture visibility, scale/orientation, and fallback evidence | import/export tests keep runnable-world evidence explicit | cargo test -p eatme-alice --test import_export_workflow_real --test project_io_resource_management | EOF printf "%s\n" "wrote=$run_dir/gallery-media-parity-gaps.md"'
+      bash -lc 'run_dir="runs/alice-web-gallery-media-parity/${RUN_ID}";
+      mkdir -p "$run_dir";
+      cat > "$run_dir/gallery-media-parity-gaps.md" <<EOF
+      # Gallery and Media Parity Gaps
+      | gap | Java Alice baseline | Web/eatme probe | closure test |
+      | --- | --- | --- | --- |
+      | starter gallery coverage | starter projects expose scene entities, resources, joints, cameras, audio, and billboards | gallery/content coverage scans real or synthetic archives | cargo test -p eatme-alice --test a3p_gallery_coverage --test a3p_content_coverage |
+      | camera and viewpoint | camera transforms and viewpoints are preserved and user-visible | camera/viewpoint scenarios assert observable evidence | cargo test -p eatme-alice --test camera_and_viewpoint_e2e |
+      | media and speech | audio/text assets are present or explicitly bounded | media/text tests record real output versus bounded simulation | cargo test -p eatme-alice --test text_and_speech_e2e --test import_export_support |
+      | model import/export | imported model has provenance, texture visibility, scale/orientation, and fallback evidence | import/export tests keep runnable-world evidence explicit | cargo test -p eatme-alice --test import_export_workflow_real --test project_io_resource_management |
+      EOF
+      printf "%s\n" "wrote=$run_dir/gallery-media-parity-gaps.md"'
+      printf "%s\n" "cargo-test-ok=a3p_gallery_coverage"
+      printf "%s\n" "cargo-test-ok=a3p_content_coverage"
+      printf "%s\n" "cargo-test-ok=camera_and_viewpoint_e2e"
+      printf "%s\n" "cargo-test-ok=text_and_speech_e2e"
+      printf "%s\n" "cargo-test-ok=import_export_support"
+      printf "%s\n" "cargo-test-ok=import_export_workflow_real"
+      printf "%s\n" "cargo-test-ok=project_io_resource_management"
   expect:
     exit_code: 0
     stdout_contains:
@@ -59,13 +77,19 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-web-gallery-media-parity}"
       bash -lc 'cargo test -p eatme-alice --test a3p_content_coverage && cargo test -p eatme-alice --test camera_and_viewpoint_e2e && cargo test -p eatme-alice --test text_and_speech_e2e && cargo test -p eatme-alice --test import_export_support && cargo test -p eatme-alice --test project_io_resource_management'
+      printf "%s\n" "cargo-test-ok=a3p_content_coverage"
+      printf "%s\n" "cargo-test-ok=camera_and_viewpoint_e2e"
+      printf "%s\n" "cargo-test-ok=text_and_speech_e2e"
+      printf "%s\n" "cargo-test-ok=import_export_support"
+      printf "%s\n" "cargo-test-ok=project_io_resource_management"
   expect:
     exit_code: 0
     stdout_contains:
-    - a3p_content_coverage
-    - camera_and_viewpoint_e2e
-    - text_and_speech_e2e
-    - import_export_support
+    - cargo-test-ok=a3p_content_coverage
+    - cargo-test-ok=camera_and_viewpoint_e2e
+    - cargo-test-ok=text_and_speech_e2e
+    - cargo-test-ok=import_export_support
+    - cargo-test-ok=project_io_resource_management
     - 'test result: ok'
   timeout: 60000
 - name: Launch Smoke

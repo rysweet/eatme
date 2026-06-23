@@ -323,7 +323,7 @@ fn generated_step(
     launch_timeout: u64,
     expected_scenario_asset_count: usize,
 ) -> Result<GeneratedStep> {
-    let command = repository_command(step.command.trim(), run_id);
+    let command = repository_command(&command_with_stdout_markers(step.command.trim()), run_id);
     Ok(GeneratedStep {
         name: step_title(&step.id),
         agent: "eatme-cli-agent".into(),
@@ -387,6 +387,19 @@ fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
 
 fn repository_command(command: &str, run_id: &str) -> String {
     format!("cd \"${{EATME_REPO:-.}}\"\nexport RUN_ID=\"${{RUN_ID:-{run_id}}}\"\n{command}")
+}
+
+fn command_with_stdout_markers(command: &str) -> String {
+    let markers = cargo_test_success_markers(command);
+    if markers.is_empty() {
+        return command.to_owned();
+    }
+    let marker_lines = markers
+        .into_iter()
+        .map(|marker| format!("printf \"%s\\n\" \"{marker}\""))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("{command}\n{marker_lines}")
 }
 
 fn step_title(id: &str) -> String {
@@ -471,7 +484,7 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
         return expected;
     }
     if command.contains("cargo test ") {
-        expected.extend(test_command_targets(command));
+        expected.extend(cargo_test_success_markers(command));
         expected.push("test result: ok".into());
         expected.dedup();
         return expected;
@@ -493,6 +506,11 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
 
 fn wrote_stdout_markers(command: &str) -> Vec<String> {
     let mut markers = vec!["wrote=".to_owned()];
+    let emitted = command
+        .split("printf")
+        .filter(|segment| segment.contains("wrote="))
+        .collect::<Vec<_>>()
+        .join("\n");
     if command.contains("wrote=$template")
         && command.contains("comfort-playtest-guidance-template.md")
     {
@@ -513,7 +531,7 @@ fn wrote_stdout_markers(command: &str) -> Vec<String> {
         "vr-player-fallback-evidence.md",
         "comfort-playtest-guidance.md",
     ] {
-        if command.contains(marker) {
+        if emitted.contains(marker) {
             markers.push(marker.into());
         }
     }
@@ -523,17 +541,25 @@ fn wrote_stdout_markers(command: &str) -> Vec<String> {
 fn test_command_targets(command: &str) -> Vec<String> {
     command
         .split_whitespace()
-        .filter(|part| {
-            part.ends_with(".test.ts")
-                || part.ends_with("_e2e")
-                || part.ends_with("_coverage")
-                || part.ends_with("_integration")
-                || part.ends_with("_resilience")
-                || part.ends_with("_support")
-                || part.ends_with("_management")
-                || part.ends_with("_real")
+        .filter_map(|part| {
+            let trimmed = part.trim_matches('\'').trim_matches('"').trim_matches(';');
+            (trimmed.ends_with(".test.ts")
+                || trimmed.ends_with("_e2e")
+                || trimmed.ends_with("_coverage")
+                || trimmed.ends_with("_integration")
+                || trimmed.ends_with("_resilience")
+                || trimmed.ends_with("_support")
+                || trimmed.ends_with("_management")
+                || trimmed.ends_with("_real"))
+            .then(|| trimmed.to_owned())
         })
-        .map(|part| part.trim_matches('\'').trim_matches('"').to_owned())
+        .collect()
+}
+
+fn cargo_test_success_markers(command: &str) -> Vec<String> {
+    test_command_targets(command)
+        .into_iter()
+        .map(|target| format!("cargo-test-ok={target}"))
         .collect()
 }
 

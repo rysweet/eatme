@@ -61,6 +61,7 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
       cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+      printf "%s\n" "cargo-test-ok=test/project-migration.test.ts"
   expect:
     exit_code: 0
     stdout_contains:

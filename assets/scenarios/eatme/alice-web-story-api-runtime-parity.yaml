@@ -74,7 +74,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes alice-web-story-api-runtime-parity in the committed scenario set
   - id: record-runtime-parity-gap-matrix
-    command: >-
+    command: |-
       bash -lc 'run_dir="runs/alice-web-story-api-runtime-parity/${RUN_ID}";
       mkdir -p "$run_dir";
       cat > "$run_dir/story-api-runtime-parity-gaps.md" <<EOF
