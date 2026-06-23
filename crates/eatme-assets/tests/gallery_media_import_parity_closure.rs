@@ -190,8 +190,8 @@ fn precise_lookingglass_closure_refs_are_run_by_the_row_command() {
 
         let command = string_at(&row, &["looking_glass", "command"]);
         assert!(
-            command.contains("cd ${LOOKINGGLASS_REPO:?}"),
-            "{scenario} cites precise LookingGlass evidence, so looking_glass.command must cd through the portable LOOKINGGLASS_REPO guard; command was:\n{command}"
+            command.contains(r#"cd "${LOOKINGGLASS_HOME:?}""#),
+            "{scenario} cites precise LookingGlass evidence, so looking_glass.command must cd through the portable LOOKINGGLASS_HOME guard; command was:\n{command}"
         );
         assert!(
             command.contains("npm test --"),

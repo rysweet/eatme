@@ -12,13 +12,13 @@ rows:
     journey: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
     rabbit_hole:
       status: partial
-      source_status: "Partial: real Alice launch readiness is an input; missing instructor agentic acceptance output evidence"
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic acceptance output evidence"
       command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
       expected_behavior: "Instructor setup-readiness asset validates; real Alice launch readiness remains an input and agentic acceptance output is not claimed by this command."
     looking_glass:
-      status: partial
-      source_status: "Partial: web setup/readiness API evidence is covered; missing Java desktop launch, installer automation, OpenGL diagnosis, and full Alice UI evidence"
-      reason: "LookingGlass covers web health, config, setup preflight, create-project readiness, and evidence handoff; missing evidence includes Java desktop launch, installer automation, OpenGL diagnosis, and full Alice UI automation."
+      status: covered
+      source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
+      reason: "LookingGlass covers web health, config, setup preflight, create-project readiness, and evidence handoff; desktop setup checks are not claimed."
       command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor checks LookingGlass web server health/config, confirms the web create-project path is ready, receives explicit desktop-only boundaries, and creates a setup-readiness evidence handoff."
     closure:
@@ -35,9 +35,9 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-support-lab-readiness --run-id parity-setup-support-lab-readiness --runs-dir runs --timeout 1800 --json
       expected_behavior: "Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance."
     looking_glass:
-      status: partial
-      source_status: "Partial: web lab-readiness and support handoff evidence is covered; missing Java desktop launch, native screenshot, installer automation, and OpenGL diagnosis evidence"
-      reason: "LookingGlass covers web lab-readiness signals and support handoff fields; missing evidence includes Java desktop launch, native screenshots, installer automation, and OpenGL diagnosis."
+      status: covered
+      source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
+      reason: "LookingGlass covers web lab-readiness signals and support handoff fields; desktop setup checks are not claimed."
       command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Support helper verifies LookingGlass health/config, runs web setup preflight, creates a starter project, and receives blocker-owner-retest handoff guidance with desktop-only boundaries named."
     closure:
@@ -50,13 +50,13 @@ rows:
     journey: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
     rabbit_hole:
       status: partial
-      source_status: "Partial: real Alice classroom readiness is an input; missing instructor agentic checklist/fallback/student-note output evidence"
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic checklist/fallback/student-note output evidence"
       command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
       expected_behavior: "Instructor classroom setup asset validates; real Alice readiness remains an input and agentic checklist/fallback/student-note output is not claimed by this command."
     looking_glass:
-      status: partial
-      source_status: "Partial: web classroom readiness, project creation, and handoff evidence is covered; missing Java desktop launch, installer automation, OpenGL diagnosis, and learner-world grading evidence"
-      reason: "LookingGlass covers web classroom readiness, project creation, and evidence handoff; missing evidence includes Java desktop launch, installer automation, OpenGL diagnosis, and learner-world grading."
+      status: covered
+      source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
+      reason: "LookingGlass covers web classroom readiness, project creation, and evidence handoff; desktop setup checks are not claimed."
       command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor verifies LookingGlass health/config, setup preflight, template availability, web project creation, and a classroom readiness handoff while desktop-only boundaries remain explicit."
     closure:
@@ -69,13 +69,13 @@ rows:
     journey: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
     rabbit_hole:
       status: partial
-      source_status: "Partial: real Alice launch readiness is an input; missing instructor agentic student handoff output evidence"
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic student handoff output evidence"
       command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
       expected_behavior: "Instructor student-handoff asset validates; real Alice launch readiness remains an input and agentic student handoff output is not claimed by this command."
     looking_glass:
-      status: partial
-      source_status: "Partial: web launch readiness and student handoff evidence is covered; missing Java desktop launch, native screenshot, full Alice UI automation, and learner-world grading evidence"
-      reason: "LookingGlass covers web launch readiness and student evidence handoff; missing evidence includes Java desktop launch, native screenshots, full Alice UI automation, and learner-world grading."
+      status: covered
+      source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
+      reason: "LookingGlass covers web launch readiness and student evidence handoff; desktop setup checks are not claimed."
       command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor verifies LookingGlass health/config, runs web setup preflight and launch readiness, and creates a student-facing evidence handoff with expected next actions and explicit desktop-only boundaries."
     closure:
@@ -150,7 +150,7 @@ rows:
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
       status: partial
-      source_status: "Partial: covered web object, code-edit, run, save, and reopen proof; missing desktop UI action completion evidence"
+      source_status: "Partial: web object, code-edit, run, save, and reopen proof is covered; missing desktop UI action completion evidence"
       reason: "LookingGlass web REST evidence covers object, code-edit, run, save, and reopen proof; desktop UI action completion evidence is missing."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Web REST evidence records object, code-edit, run, save, and reopen proof; desktop first-lesson UI action completion is not claimed."
@@ -637,9 +637,9 @@ rows:
       expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
     looking_glass:
       status: partial
-      source_status: "Partial: bounded audio cue metadata and simulated playback bridge evidence are covered; missing native audio playback and native Web Share evidence"
-      reason: "LookingGlass evidence is bounded to audio manifest/cue metadata persistence and a simulated playback bridge; missing evidence includes native audio playback and native Web Share success, which this row does not claim."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
+      source_status: "Partial: bounded audio cue metadata and simulated playback bridge evidence only; covered metadata/playback bridge evidence; missing native audio playback and full authoring evidence"
+      reason: "LookingGlass evidence is bounded to audio manifest/cue metadata persistence and a simulated playback bridge; missing evidence includes native audio playback and full authoring evidence."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student records storyboard cue timing with bounded audio metadata/playback bridge evidence, not native audio playback."
     closure:
       required:
@@ -649,22 +649,22 @@ rows:
         - behavior evidence names user-visible result, not implementation details
   - scenario: audio-camera-and-export-sharecase
     area: "Audio and media"
-    journey: "Student combines camera, bounded audio cue metadata, export, and browser-download sharing fallback evidence for a sharecase package."
+    journey: "Student combines camera, bounded audio cue metadata, export, and browser-download sharing evidence for a sharecase package."
     rabbit_hole:
       status: covered
       source_status: "Covered"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario audio-camera-and-export-sharecase --run-id parity-audio-camera-and-export-sharecase --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Student combines camera, audio, export, and sharing evidence for a sharecase package with fallback delivery."
+      expected_behavior: "Student combines camera, audio, export, and sharing evidence for a sharecase package with browser-download delivery."
     looking_glass:
       status: partial
-      source_status: "Partial: camera/export/browser-download fallback and bounded audio metadata/playback bridge evidence are covered; missing native audio playback and native Web Share evidence"
-      reason: "LookingGlass proves camera markers, export package, and browser-download share fallback, while audio remains bounded metadata/playback bridge evidence; missing evidence includes native audio playback and native Web Share success, which this row does not claim."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
-      expected_behavior: "Student combines camera markers, bounded audio metadata/playback bridge evidence, export, and browser-download share fallback evidence."
+      source_status: "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence; covered camera/export/download path; missing native audio playback and native Web Share evidence"
+      reason: "LookingGlass proves camera markers, export package, and browser-download share path, while audio remains bounded metadata/playback bridge evidence; missing evidence includes native audio playback and native Web Share success."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      expected_behavior: "Student combines camera markers, bounded audio metadata/playback bridge evidence, export, and browser-download share evidence."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass:test/project-export-share-fallback.contract.test.ts proves browser-download share fallback and does not claim native Web Share success
+        - LookingGlass:test/project-export-share-fallback.contract.test.ts proves browser-download share path and does not claim native Web Share success
         - LookingGlass:test/project-audio-bounded-evidence.contract.test.ts records bounded metadata and playback bridge evidence and does not claim native audio playback
         - behavior evidence names user-visible result, not implementation details
   - scenario: starter-project-open-save-export-preflight
@@ -673,7 +673,7 @@ rows:
     rabbit_hole:
       status: covered
       source_status: "Covered: desktop launch/log/window/screenshot/readiness evidence is covered; save/export artifact verification is not claimed"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario starter-project-open-save-export-preflight --run-id parity-starter-project-open-save-export-preflight --runs-dir runs --timeout 1800 --json
+      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --scenario starter-project-open-save-export-preflight --run-id parity-starter-project-open-save-export-preflight --runs-dir runs --timeout 1800 --json
       expected_behavior: "Desktop evidence opens the starter project and records launch/log/window/screenshot/readiness notes; save/export artifact verification is not claimed for RabbitHole."
     looking_glass:
       status: covered
@@ -695,9 +695,9 @@ rows:
       expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
     looking_glass:
       status: covered
-      source_status: "Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests."
+      source_status: "Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests"
       reason: "LookingGlass source/API/tests on main prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
       expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
     closure:
       required:
@@ -716,13 +716,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-2-migration-bridge --run-id parity-alice-2-migration-bridge --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Partial: guidance-only migration evidence is covered; missing automatic Alice 2 conversion evidence"
+      reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; missing evidence includes automatic Alice 2 conversion."
+      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+      expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when bounded migration guidance is claimed
+        - Automatic Alice 2 conversion remains explicitly unsupported until implementation exists
         - behavior evidence names user-visible result, not implementation details
   - scenario: modified-class-portability
     area: "Classes"
@@ -733,13 +736,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario modified-class-portability --run-id parity-modified-class-portability --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Partial: parsed class-behavior package evidence is covered; missing full desktop UI class portability evidence"
+      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; missing evidence includes full desktop UI class portability."
+      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when web class portability support is claimed
+        - Supported scope remains bounded to parsed AliceProject.types behavior packages
         - behavior evidence names user-visible result, not implementation details
   - scenario: accessibility-rescue-camera-captions
     area: "Accessibility"
@@ -950,13 +956,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario teacher-community-sharing-loop --run-id parity-teacher-community-sharing-loop --runs-dir runs --timeout 1800 --json
       expected_behavior: "Teacher packages a reusable classroom resource and checks community-sharing metadata."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Partial: package/share metadata evidence is covered; missing deployed community platform evidence"
+      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; missing evidence includes a deployed community platform."
+      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+      expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when package/share metadata support is claimed
+        - Community platform deployment remains explicitly out of scope
         - behavior evidence names user-visible result, not implementation details
   - scenario: neighborhood-data-story
     area: "Data storytelling"
@@ -977,6 +986,68 @@ rows:
         - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
 closure_families:
+  - scenario: web-platform-curriculum-e2e
+    role: grouped web platform closure suite with explicit row bindings
+    closure_tests:
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+    scenario_bindings:
+      - setup-preflight-ready-to-create
+      - setup-support-lab-readiness
+      - instructor-classroom-setup-readiness
+      - instructor-student-launch-evidence-handoff
+      - building-a-scene-first-world
+      - code-editor-first-run
+      - reusable-methods-and-parameters
+      - alien-linguist-parameter-dialogue
+      - creature-choreography-loop-lab
+      - functions-as-questions-about-the-world
+      - variables-scorekeeper-timekeeper
+      - data-types-alice-catalog
+      - arithmetic-expressions-math-playground
+      - relational-expressions-comparison-lab
+      - loops-and-conditionals-mini-challenge
+      - weather-wizard-conditional-theater
+      - ecosystem-balance-loop-simulation
+      - events-collision-proximity-game
+      - mars-rover-proximity-mission
+      - arrays-collection-choreography
+      - time-travel-recipe-sequencing
+      - using-comments-code-clarity
+      - lost-robot-debug-museum
+      - game-score-timer-win-lose-loop
+      - mythic-choice-event-tree
+      - design-process-story-or-game
+      - hour-of-code-studio-kickoff
+      - vr-camera-perspective-tour
+      - vr-camera-locomotion-journey
+      - accessibility-rescue-camera-captions
+      - ide-accessibility-parity
+      - ide-performance-parity
+      - instructor-alice-concept-map
+      - instructor-exercise-builder
+      - instructor-lesson-materials-remix
+      - curriculum-sequence-remix-pack
+      - instructor-student-outcomes-rubric
+      - student-reflection-artifact-review
+      - student-artifact-package-share-evidence
+      - classroom-gallery-walk-and-rubric
+      - neighborhood-data-story
+  - scenario: alice-web-save-reopen-export-parity
+    role: row-specific LookingGlass save reopen export closure
+    closure_tests:
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+    scenario_bindings:
+      - alice-objects-first-world
+      - alice-objects-first-full-path
+      - first-lessons-real-ui-actions
+      - starter-project-open-save-export-preflight
   - scenario: alice-web-a3p-save-load-parity
     role: grouped parity closure probe
     closure_tests:
@@ -984,6 +1055,8 @@ closure_families:
       - cargo test -p eatme-alice --test a3p_roundtrip_coverage
       - cargo test -p eatme-alice --test real_a3p_pipeline_integration
       - cargo test -p eatme-alice --test malformed_input_resilience
+    scenario_bindings:
+      - alice-web-a3p-save-load-parity
   - scenario: alice-web-story-api-runtime-parity
     role: grouped parity closure probe
     closure_tests:
@@ -994,6 +1067,8 @@ closure_families:
       - cargo test -p eatme-alice --test events_collision_support
       - cargo test -p eatme-alice --test events_and_collision_e2e
       - cargo test -p eatme-alice --test text_and_speech_e2e
+    scenario_bindings:
+      - alice-web-story-api-runtime-parity
   - scenario: alice-web-gallery-media-parity
     role: grouped parity closure probe
     closure_tests:
@@ -1002,3 +1077,40 @@ closure_families:
       - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+    scenario_bindings:
+      - alice-web-gallery-media-parity
+      - media-audio-cue-storyboard
+      - audio-camera-and-export-sharecase
+      - model-texture-import-checkpoint
+  - scenario: alice-2-migration-bridge
+    role: row-specific LookingGlass migration guidance closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+    scenario_bindings:
+      - alice-2-migration-bridge
+    evidence_assertions:
+      - guidance-only
+      - automatic Alice 2 conversion remains explicitly unsupported
+  - scenario: modified-class-portability
+    role: row-specific LookingGlass class behavior package closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+    scenario_bindings:
+      - modified-class-portability
+    evidence_assertions:
+      - class-behavior-package.persistence
+      - behavior package import
+      - behavior persistence after import
+  - scenario: teacher-community-sharing-loop
+    role: row-specific LookingGlass teacher share metadata closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+    scenario_bindings:
+      - teacher-community-sharing-loop
+    evidence_assertions:
+      - alice-web.teacher-share/v1
+      - teacher-share-metadata
+      - sha256

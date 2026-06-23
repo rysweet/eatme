@@ -35,12 +35,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-accessibility-rescue-camera-captions}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/accessibility-rescue-camera-captions.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"accessibility-rescue-camera-captions"'
+    - '"id": "accessibility-rescue-camera-captions"'
   timeout: 60000
 - name: Lookingglass Caption Evidence
   agent: eatme-cli-agent
@@ -49,10 +49,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-accessibility-rescue-camera-captions}"
+      set -e
       EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_curriculum_e2e"
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - cargo-test-ok=web_platform_curriculum_e2e
+    - 'test result: ok'
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent

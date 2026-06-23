@@ -14,6 +14,8 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - EATME_REAL_VR
+  - VR_HEADSET_AVAILABLE
   - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
@@ -61,7 +63,10 @@ steps:
       bash -lc 'set -e; run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "%s\n" "real_vr_available=true" "required_evidence=alice-player-or-headset-capture,comfort-notes,observer-log" > "$run_dir/vr-preflight.txt"; printf "%s\n" "real_vr_available=true" "fallback_required=false" > "$run_dir/vr-fallback-evidence.md"; else printf "%s\n" "real_vr_available=false" "required_evidence=camera-marker-plan,viewpoint-choice,locomotion-comfort-check,desktop-launch-manifest" > "$run_dir/vr-preflight.txt"; printf "%s\n" "real_vr_available=false" "desktop_fallback_required=true" "required_evidence=camera-marker-plan,viewpoint-choice,locomotion-comfort-check,desktop-launch-manifest" > "$run_dir/vr-fallback-evidence.md"; fi; test -s "$run_dir/vr-preflight.txt"; test -s "$run_dir/vr-fallback-evidence.md"; grep -q "real_vr_available=" "$run_dir/vr-preflight.txt"; printf "%s\n" "wrote=$run_dir/vr-preflight.txt" "wrote=$run_dir/vr-fallback-evidence.md"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - wrote=
+    - vr-preflight.txt
+    - vr-fallback-evidence.md
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -70,7 +75,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
   expect:
     exit_code: 0
     stdout_contains:
@@ -87,10 +92,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
-      EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      set -e
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_curriculum_e2e"
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - cargo-test-ok=web_platform_curriculum_e2e
+    - 'test result: ok'
   timeout: 60000
 - name: Record Agentic Review Guidance
   agent: eatme-cli-agent
@@ -102,7 +111,9 @@ steps:
       bash -lc 'set -e; run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_guidance=Use the persona prompt assets to inspect the Alice session and learner artifact." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "claim_boundary=This file is review guidance only. It does not validate learner viewpoint, camera marker, locomotion comfort, or desktop fallback evidence." > "$run_dir/agentic-review-guidance.txt"; test -s "$run_dir/agentic-review-guidance.txt"; grep -q "review guidance only" "$run_dir/agentic-review-guidance.txt"; printf "%s\n" "wrote=$run_dir/agentic-review-guidance.txt"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - wrote=
+    - agentic-review-guidance.txt
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

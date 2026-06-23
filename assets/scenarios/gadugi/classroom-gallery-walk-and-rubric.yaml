@@ -35,12 +35,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-classroom-gallery-walk-and-rubric}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"classroom-gallery-walk-and-rubric"'
+    - '"id": "classroom-gallery-walk-and-rubric"'
   timeout: 60000
 - name: Lookingglass Gallery Rubric Evidence
   agent: eatme-cli-agent
@@ -49,10 +49,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-classroom-gallery-walk-and-rubric}"
+      set -e
       EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_curriculum_e2e"
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - cargo-test-ok=web_platform_curriculum_e2e
+    - 'test result: ok'
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent

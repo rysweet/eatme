@@ -11,6 +11,7 @@ environment:
   requires:
   - ALICE_HOME
   - EATME_REAL_ALICE
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
@@ -47,7 +48,23 @@ steps:
       bash -lc 'printf "migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence\nrequired_evidence=keep-adapt-retire,current-artifact,student-reflection\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence
+    - required_evidence=keep-adapt-retire,current-artifact,student-reflection
+    - required_evidence=
+  timeout: 60000
+- name: Verify Lookingglass Bounded Alice2 Guidance
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - test/project-migration.test.ts
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -56,7 +73,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
   expect:
     exit_code: 0
     stdout_contains:
@@ -77,6 +94,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Record Migration Bridge
+- name: verify-lookingglass-bounded-alice2-guidance succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Bounded Alice2 Guidance
 - name: launch-smoke succeeds
   type: command_success
   agent: eatme-cli-agent

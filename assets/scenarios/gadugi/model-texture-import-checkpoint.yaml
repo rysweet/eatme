@@ -47,7 +47,9 @@ steps:
       bash -lc 'printf "import_fields=source,license,scale,orientation,texture-visibility,issue,fallback\nrequired_evidence=visual-check,runnable-world,concept-link,reflection\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - import_fields=source,license,scale,orientation,texture-visibility,issue,fallback
+    - required_evidence=
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -56,7 +58,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-model-texture-import-checkpoint}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario model-texture-import-checkpoint
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario model-texture-import-checkpoint
   expect:
     exit_code: 0
     stdout_contains:

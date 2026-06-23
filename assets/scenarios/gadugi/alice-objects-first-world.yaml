@@ -57,10 +57,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-objects-first-world}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - '"scenario_id": "alice-objects-first-world"'
+    - '"failure_category": null'
+    - '"real_alice_execution_evidence": {'
+    - '"passed": true'
   timeout: 60000
 - name: Add Visible Object
   agent: eatme-cli-agent
@@ -72,7 +76,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/object-placement/placement.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/object-placement/placement.json
+    - passed=true
   timeout: 60000
 - name: Position And Transform Object
   agent: eatme-cli-agent
@@ -84,7 +90,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/object-transform/object-transform.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/object-transform/object-transform.json
+    - passed=true
   timeout: 60000
 - name: Edit Movement Procedure
   agent: eatme-cli-agent
@@ -96,7 +104,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/procedure-edit/procedure-movement.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/procedure-edit/procedure-movement.json
+    - passed=true
   timeout: 60000
 - name: Run World
   agent: eatme-cli-agent
@@ -108,7 +118,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/world-run/world-run.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/world-run/world-run.json
+    - passed=true
   timeout: 60000
 - name: Save Project
   agent: eatme-cli-agent
@@ -120,7 +132,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/project-save/project-save.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/project-save/project-save.json
+    - passed=true
   timeout: 60000
 - name: Reopen Project
   agent: eatme-cli-agent
@@ -132,7 +146,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/project-reopen/project-reopen.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/project-reopen/project-reopen.json
+    - passed=true
   timeout: 60000
 - name: Verify Persisted State
   agent: eatme-cli-agent
@@ -144,7 +160,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/project-reopen/persisted-state.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/project-reopen/persisted-state.json
+    - passed=true
   timeout: 60000
 - name: Record Evidence
   agent: eatme-cli-agent
@@ -156,7 +174,9 @@ steps:
       inspect runs/alice-objects-first-world/${RUN_ID}/objects-first-evidence.json
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - runs/alice-objects-first-world/${RUN_ID}/objects-first-evidence.json
+    - passed=true
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

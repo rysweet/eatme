@@ -97,7 +97,7 @@ steps:
   - comfort playtest guidance template file exists and is non-empty
   - template states it is guidance only and asks for observed comfort, orientation, player cue, fallback path, and revision decision
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
   evidence:
   - manifest scenario_id equals vr-player-comfort-playtest
   - manifest failure_category is null

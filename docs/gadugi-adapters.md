@@ -81,7 +81,7 @@ For a lesson smoke scenario, the adapter workflow is:
 
 For an instructor agentic flow, the adapter workflow is:
 
-1. Validate assets.
+1. Validate the source scenario asset by path.
 2. Present the canonical agentic prompt.
 3. Collect instructor-facing outputs.
 4. Evaluate acceptance probes and rubric fields.

@@ -101,7 +101,7 @@ steps:
   evidence:
   - stdout JSON has all_required_available=true
 - id: create-or-open-project
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-objects-first-world --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package
   evidence:
   - manifest artifact assertion create_or_open_project_ui_action passed=true
   - manifest scenario_id equals alice-objects-first-world

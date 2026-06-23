@@ -63,7 +63,9 @@ steps:
       bash -lc 'printf "readiness_fields=install,java,graphics,storage,account,fallback\nrequired_evidence=blocker-category,owner,retest-signal,learner-safe-fallback\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - readiness_fields=install,java,graphics,storage,account,fallback
+    - required_evidence=
   timeout: 60000
 - name: Lookingglass Setup Readiness
   agent: eatme-cli-agent
@@ -72,10 +74,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-setup-support-lab-readiness}"
+      set -e
       EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_setup_readiness_e2e"
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - cargo-test-ok=web_platform_setup_readiness_e2e
+    - 'test result: ok'
   timeout: 300000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -84,7 +90,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-setup-support-lab-readiness}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
   expect:
     exit_code: 0
     stdout_contains:

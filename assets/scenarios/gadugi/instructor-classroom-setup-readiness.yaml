@@ -37,12 +37,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-classroom-setup-readiness}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"instructor-classroom-setup-readiness"'
+    - '"id": "instructor-classroom-setup-readiness"'
   timeout: 60000
 - name: Lookingglass Setup Readiness
   agent: eatme-cli-agent
@@ -51,10 +51,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-classroom-setup-readiness}"
+      set -e
       EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_setup_readiness_e2e"
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - cargo-test-ok=web_platform_setup_readiness_e2e
+    - 'test result: ok'
   timeout: 300000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
