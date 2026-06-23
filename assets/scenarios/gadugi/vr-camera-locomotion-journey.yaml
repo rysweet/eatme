@@ -63,11 +63,9 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - real_vr_available=
-    - required_evidence=
     - wrote=
-    - real_vr_available=false
-    - real_vr_available=true
+    - vr-preflight.txt
+    - vr-fallback-evidence.md
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -111,8 +109,8 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - real_vr_available=
     - wrote=
+    - agentic-review-guidance.txt
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

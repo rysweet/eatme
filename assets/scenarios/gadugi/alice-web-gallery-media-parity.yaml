@@ -48,14 +48,8 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - a3p_gallery_coverage
-    - a3p_content_coverage
-    - camera_and_viewpoint_e2e
-    - text_and_speech_e2e
-    - import_export_support
-    - import_export_workflow_real
-    - project_io_resource_management
-    - 'test result: ok'
+    - wrote=
+    - gallery-media-parity-gaps.md
   timeout: 60000
 - name: Run Gallery Media Closure Probes
   agent: eatme-cli-agent

@@ -328,6 +328,85 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
 }
 
 #[test]
+fn generated_record_steps_assert_only_stdout_markers() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let expectations = [
+        (
+            "assets/scenarios/eatme/alice-web-a3p-save-load-parity.yaml",
+            "Record A3p Parity Gap Matrix",
+            "a3p-save-load-parity-gaps.md",
+        ),
+        (
+            "assets/scenarios/eatme/alice-web-gallery-media-parity.yaml",
+            "Record Gallery Media Gap Matrix",
+            "gallery-media-parity-gaps.md",
+        ),
+        (
+            "assets/scenarios/eatme/alice-web-story-api-runtime-parity.yaml",
+            "Record Runtime Parity Gap Matrix",
+            "story-api-runtime-parity-gaps.md",
+        ),
+        (
+            "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
+            "Record Starter World Change",
+            "starter-world-change-note.txt",
+        ),
+        (
+            "assets/scenarios/eatme/starter-project-open-save-export-preflight.yaml",
+            "Record Run Observe Readiness Gaps",
+            "starter-project-readiness-report.txt",
+        ),
+        (
+            "assets/scenarios/eatme/vr-camera-locomotion-journey.yaml",
+            "Record Vr Preflight",
+            "vr-preflight.txt",
+        ),
+        (
+            "assets/scenarios/eatme/vr-camera-locomotion-journey.yaml",
+            "Record Agentic Review Guidance",
+            "agentic-review-guidance.txt",
+        ),
+        (
+            "assets/scenarios/eatme/vr-player-comfort-playtest.yaml",
+            "Record Vr Player Preflight",
+            "vr-player-preflight.txt",
+        ),
+        (
+            "assets/scenarios/eatme/vr-player-comfort-playtest.yaml",
+            "Record Comfort Playtest Guidance Template",
+            "comfort-playtest-guidance-template.md",
+        ),
+    ];
+
+    for (source, step_name, artifact) in expectations {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let stdout = generated_step_stdout(&generated, step_name);
+        assert!(
+            stdout.contains("wrote="),
+            "{source} {step_name} must assert the emitted wrote= marker; stdout assertions were {stdout:?}"
+        );
+        assert!(
+            stdout.contains(artifact),
+            "{source} {step_name} must assert emitted artifact {artifact:?}; stdout assertions were {stdout:?}"
+        );
+        for unprinted in [
+            "cargo test",
+            "test result: ok",
+            "starter_world_change=",
+            "run_or_observe_attempt=",
+            "save_reopen_export_readiness_gaps=",
+            "real_vr_available=",
+            "required_evidence=",
+        ] {
+            assert!(
+                !stdout.contains(unprinted),
+                "{source} {step_name} must not assert unprinted marker {unprinted:?}; stdout assertions were {stdout:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn generator_rejects_evidence_steps_without_derivable_stdout_assertions() {
     let root = scratch_root("generator-rejects-empty-evidence-stdout");
     let source_path = root.join("assets/scenarios/eatme/opaque-evidence.yaml");

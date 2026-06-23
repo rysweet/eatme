@@ -48,11 +48,8 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - real_a3p_pipeline_integration
-    - a3p_content_coverage
-    - a3p_roundtrip_coverage
-    - malformed_input_resilience
-    - 'test result: ok'
+    - wrote=
+    - a3p-save-load-parity-gaps.md
   timeout: 60000
 - name: Run A3p Closure Probes
   agent: eatme-cli-agent

@@ -61,7 +61,6 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - starter_world_change=
     - wrote=
     - starter-world-change-note.txt
   timeout: 60000
@@ -94,9 +93,6 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - starter_world_change=
-    - run_or_observe_attempt=
-    - save_reopen_export_readiness_gaps=
     - wrote=
     - starter-world-change-note.txt
     - run-observe-readiness-gaps.txt

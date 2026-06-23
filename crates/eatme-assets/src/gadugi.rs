@@ -460,6 +460,11 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
     let command = step.command.as_str();
     let mut expected = Vec::new();
 
+    if command.contains("wrote=") {
+        expected.extend(wrote_stdout_markers(command));
+        expected.dedup();
+        return expected;
+    }
     if command.contains("npm test --") {
         expected.extend(test_command_targets(command));
         expected.dedup();
@@ -484,6 +489,35 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
         return expected;
     }
     expected
+}
+
+fn wrote_stdout_markers(command: &str) -> Vec<String> {
+    let mut markers = vec!["wrote=".to_owned()];
+    if command.contains("wrote=$template")
+        && command.contains("comfort-playtest-guidance-template.md")
+    {
+        markers.push("comfort-playtest-guidance-template.md".into());
+        return markers;
+    }
+    for marker in [
+        "a3p-save-load-parity-gaps.md",
+        "gallery-media-parity-gaps.md",
+        "story-api-runtime-parity-gaps.md",
+        "starter-world-change-note.txt",
+        "run-observe-readiness-gaps.txt",
+        "starter-project-readiness-report.txt",
+        "vr-preflight.txt",
+        "vr-fallback-evidence.md",
+        "agentic-review-guidance.txt",
+        "vr-player-preflight.txt",
+        "vr-player-fallback-evidence.md",
+        "comfort-playtest-guidance.md",
+    ] {
+        if command.contains(marker) {
+            markers.push(marker.into());
+        }
+    }
+    markers
 }
 
 fn test_command_targets(command: &str) -> Vec<String> {

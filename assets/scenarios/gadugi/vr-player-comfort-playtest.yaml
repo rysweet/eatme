@@ -50,11 +50,8 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - real_vr_available=
-    - required_evidence=
     - wrote=
-    - real_vr_available=false
-    - real_vr_available=true
+    - vr-player-preflight.txt
   timeout: 60000
 - name: Record Comfort Playtest Guidance Template
   agent: eatme-cli-agent
@@ -68,6 +65,7 @@ steps:
     exit_code: 0
     stdout_contains:
     - wrote=
+    - comfort-playtest-guidance-template.md
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

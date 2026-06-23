@@ -48,14 +48,8 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
-    - parameters_e2e
-    - functions_e2e
-    - loops_and_conditionals_e2e
-    - nested_control_flow_e2e
-    - events_collision_support
-    - events_and_collision_e2e
-    - text_and_speech_e2e
-    - 'test result: ok'
+    - wrote=
+    - story-api-runtime-parity-gaps.md
   timeout: 60000
 - name: Run Runtime Closure Probes
   agent: eatme-cli-agent
