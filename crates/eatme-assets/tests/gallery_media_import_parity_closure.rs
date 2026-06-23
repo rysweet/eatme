@@ -231,6 +231,7 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
             "/path/to/alice-web-prototype",
             "alice-web-prototype repo",
             "ALICE_WEB_PROTOTYPE_HOME",
+            "ALICE_WEB_PROTOTYPE_ROOT",
         ] {
             assert!(
                 !text.contains(stale_placeholder),
