@@ -56,10 +56,6 @@ steps:
       | archive safety | unsafe archive paths are rejected or ignored loudly | path traversal and oversized archive limits are enforced | cargo test -p eatme-alice --test malformed_input_resilience |
       EOF
       printf "%s\n" "wrote=$run_dir/a3p-save-load-parity-gaps.md"'
-      printf "%s\n" "cargo-test-ok=real_a3p_pipeline_integration"
-      printf "%s\n" "cargo-test-ok=a3p_content_coverage"
-      printf "%s\n" "cargo-test-ok=a3p_roundtrip_coverage"
-      printf "%s\n" "cargo-test-ok=malformed_input_resilience"
   expect:
     exit_code: 0
     stdout_contains:
@@ -73,6 +69,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-web-a3p-save-load-parity}"
+      set -e
       bash -lc 'cargo test -p eatme-alice --test a3p_content_coverage && cargo test -p eatme-alice --test a3p_roundtrip_coverage && cargo test -p eatme-alice --test real_a3p_pipeline_integration && cargo test -p eatme-alice --test malformed_input_resilience'
       printf "%s\n" "cargo-test-ok=a3p_content_coverage"
       printf "%s\n" "cargo-test-ok=a3p_roundtrip_coverage"

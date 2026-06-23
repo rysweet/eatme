@@ -48,6 +48,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
+      set -e
       cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
       printf "%s\n" "cargo-test-ok=test/project-export.test.ts"
       printf "%s\n" "cargo-test-ok=test/server.test.ts"

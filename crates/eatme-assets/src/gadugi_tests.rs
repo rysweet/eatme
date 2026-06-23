@@ -390,6 +390,7 @@ fn generated_record_steps_assert_only_stdout_markers() {
             "{source} {step_name} must assert emitted artifact {artifact:?}; stdout assertions were {stdout:?}"
         );
         for unprinted in [
+            "cargo-test-ok=",
             "cargo test",
             "test result: ok",
             "starter_world_change=",
@@ -450,6 +451,10 @@ fn generated_chained_cargo_test_steps_emit_and_assert_every_target_marker() {
         let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
         let stdout = generated_step_stdout(&generated, step_name);
         let command = generated_step_command(&generated, step_name);
+        assert!(
+            command.contains("set -e"),
+            "{source} {step_name} must enable fail-fast before emitting success markers; command was {command}"
+        );
         for required in required_targets {
             let marker = format!("cargo-test-ok={required}");
             assert!(

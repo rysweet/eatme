@@ -56,13 +56,6 @@ steps:
       | text and speech | visible speech/text behavior is real or explicitly bounded | text/speech tests identify real output versus simulation | cargo test -p eatme-alice --test text_and_speech_e2e |
       EOF
       printf "%s\n" "wrote=$run_dir/story-api-runtime-parity-gaps.md"'
-      printf "%s\n" "cargo-test-ok=parameters_e2e"
-      printf "%s\n" "cargo-test-ok=functions_e2e"
-      printf "%s\n" "cargo-test-ok=loops_and_conditionals_e2e"
-      printf "%s\n" "cargo-test-ok=nested_control_flow_e2e"
-      printf "%s\n" "cargo-test-ok=events_collision_support"
-      printf "%s\n" "cargo-test-ok=events_and_collision_e2e"
-      printf "%s\n" "cargo-test-ok=text_and_speech_e2e"
   expect:
     exit_code: 0
     stdout_contains:
@@ -76,6 +69,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-web-story-api-runtime-parity}"
+      set -e
       bash -lc 'cargo test -p eatme-alice --test parameters_e2e && cargo test -p eatme-alice --test functions_e2e && cargo test -p eatme-alice --test loops_and_conditionals_e2e && cargo test -p eatme-alice --test nested_control_flow_e2e && cargo test -p eatme-alice --test events_collision_support && cargo test -p eatme-alice --test events_and_collision_e2e && cargo test -p eatme-alice --test text_and_speech_e2e'
       printf "%s\n" "cargo-test-ok=parameters_e2e"
       printf "%s\n" "cargo-test-ok=functions_e2e"

@@ -390,6 +390,9 @@ fn repository_command(command: &str, run_id: &str) -> String {
 }
 
 fn command_with_stdout_markers(command: &str) -> String {
+    if !is_executable_test_command(command) {
+        return command.to_owned();
+    }
     let markers = cargo_test_success_markers(command);
     if markers.is_empty() {
         return command.to_owned();
@@ -399,7 +402,16 @@ fn command_with_stdout_markers(command: &str) -> String {
         .map(|marker| format!("printf \"%s\\n\" \"{marker}\""))
         .collect::<Vec<_>>()
         .join("\n");
-    format!("{command}\n{marker_lines}")
+    format!("set -e\n{command}\n{marker_lines}")
+}
+
+fn is_executable_test_command(command: &str) -> bool {
+    let trimmed = command.trim_start();
+    trimmed.starts_with("cargo test ")
+        || trimmed.starts_with("npm test ")
+        || trimmed.starts_with("cd ")
+            && (trimmed.contains("&& cargo test ") || trimmed.contains("&& npm test "))
+        || trimmed.starts_with("bash -lc 'cargo test ")
 }
 
 fn step_title(id: &str) -> String {
