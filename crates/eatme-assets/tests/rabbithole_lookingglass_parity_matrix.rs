@@ -292,7 +292,7 @@ fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tes
             tests.iter().all(|test| {
                 test.starts_with("cargo test -p eatme-alice --test ")
                     || test.starts_with("EATME_WEB_PLATFORM=1 ")
-                    || test.starts_with("cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ")
+                    || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 "#)
                     || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && npm test --"#)
             }),
             "{family_scenario}: closure tests must be runnable cargo/npm commands: {tests:?}"

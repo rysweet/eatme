@@ -638,7 +638,7 @@ rows:
       status: partial
       source_status: "Partial: bounded audio cue metadata and simulated playback bridge evidence only"
       reason: "LookingGlass evidence is bounded to audio manifest/cue metadata persistence and a simulated playback bridge; it does not claim native audio playback and does not claim native Web Share success."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student records storyboard cue timing with bounded audio metadata/playback bridge evidence, not native audio playback."
     closure:
       required:
@@ -658,7 +658,7 @@ rows:
       status: partial
       source_status: "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence"
       reason: "LookingGlass proves camera markers, export package, and browser-download share fallback, while audio remains bounded metadata/playback bridge evidence; it does not claim native audio playback and does not claim native Web Share success."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
       expected_behavior: "Student combines camera markers, bounded audio metadata/playback bridge evidence, export, and browser-download share fallback evidence."
     closure:
       required:
@@ -697,7 +697,7 @@ rows:
       status: covered
       source_status: "Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests"
       reason: "LookingGlass source/API/tests on main prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence."
-      command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
       expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
     closure:
       required:
@@ -1075,9 +1075,9 @@ closure_families:
       - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
-      - cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
-      - cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
-      - cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
     scenario_bindings:
       - alice-web-gallery-media-parity
       - media-audio-cue-storyboard
