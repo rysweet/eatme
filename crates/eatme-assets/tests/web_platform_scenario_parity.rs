@@ -192,10 +192,10 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        47,
-        lookingglass_evidenced_ids.len(),
-        "expected 47 LookingGlass-evidenced desktop scenarios, found {:?}",
-        lookingglass_evidenced_ids
+        51,
+        web_capable_ids.len(),
+        "expected 51 web-capable desktop scenarios, found {:?}",
+        web_capable_ids
     );
     assert!(
         without_generated_adapters.is_empty() && extra_generated.is_empty(),

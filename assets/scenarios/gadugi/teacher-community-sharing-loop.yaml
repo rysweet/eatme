@@ -8,8 +8,7 @@ config:
   retries: 0
   parallel: false
 environment:
-  requires:
-  - LOOKINGGLASS_HOME
+  requires: []
   optional:
   - RUN_ID
   - EATME_REPO

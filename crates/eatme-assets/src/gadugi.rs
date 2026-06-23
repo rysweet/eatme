@@ -419,6 +419,8 @@ fn step_title(id: &str) -> String {
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
     if step_id.contains("launch") || step_id.contains("howto") || step_id.contains("full-path") {
         launch_timeout * 1000
+    } else if step_id.contains("setup-readiness") {
+        300_000
     } else {
         60_000
     }
@@ -650,6 +652,7 @@ fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
             required.push(name.into());
         }
     }
+
     required
 }
 
@@ -669,9 +672,17 @@ fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
             optional.push(name.into());
         }
     }
+    for variable in [
+        "ALICE_WEB_URL",
+        "ALICE_LOCAL_API_TOKEN",
+        "EATME_SETUP_READINESS_SCENARIO",
+    ] {
+        if commands.contains(variable) && !optional.iter().any(|entry| entry == variable) {
+            optional.push(variable.into());
+        }
+    }
     optional
 }
-
 #[cfg(test)]
 #[path = "gadugi_tests.rs"]
 mod gadugi_tests;

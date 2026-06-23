@@ -8,8 +8,9 @@ the TypeScript web port.
 
 ## What it tests
 
-The test suite covers **54 scenario definitions** spanning every concept taught
-on Alice.org plus setup and readiness checks:
+The test suite covers scenario definitions spanning every concept taught on
+Alice.org plus setup and readiness checks. The current count is enforced by the
+asset validation command and documented in `docs/generated-asset-consistency.md`.
 
 | Curriculum Area | Example Scenarios |
 |---|---|
@@ -44,10 +45,11 @@ quality scoring — no running Alice instance needed.
 application under a virtual display, walk through lesson workflows, and capture
 evidence that each step completed correctly.
 
-**Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the same
-curriculum scenarios against LookingGlass's REST API, covering 26
-curriculum workflows including scene building, procedures, events, loops,
-functions, variables, arrays, camera, audio, vehicles, joints, and more.
+**Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the
+LookingGlass-targeted curriculum scenarios against LookingGlass's REST API,
+including scene building, procedures, events, loops, functions, variables,
+arrays, camera, audio, vehicles, joints, and more. The exact web-capable
+scenario count is enforced by the parity matrix tests.
 
 ## Quick start
 
@@ -110,7 +112,7 @@ Set `ALICE_WEB_URL` to override the default `http://localhost:3099`.
 ## Repository layout
 
 ```text
-assets/scenarios/eatme/     54 scenario definitions (YAML)
+assets/scenarios/eatme/     Canonical scenario definitions (YAML)
 assets/scenarios/gadugi/    Generated adapter scenarios (do not hand-edit)
 crates/eatme-core/          Core types: AST, collaboration, commands
 crates/eatme-alice/         Alice integration: discovery, launch, web adapter

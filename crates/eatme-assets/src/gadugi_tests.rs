@@ -530,6 +530,35 @@ steps:
     let _ = fs::remove_dir_all(&root);
 }
 
+#[test]
+fn generated_setup_readiness_adapters_declare_web_optional_environment() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/setup-support-lab-readiness.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let unrelated_source = "assets/scenarios/eatme/accessibility-rescue-camera-captions.yaml";
+    let unrelated_generated =
+        generate_gadugi_adapter_yaml(&root, &root.join(unrelated_source)).unwrap();
+
+    assert!(generated.contains("- ALICE_WEB_URL"), "{generated}");
+    assert!(generated.contains("- ALICE_LOCAL_API_TOKEN"), "{generated}");
+    assert!(
+        generated.contains("- EATME_SETUP_READINESS_SCENARIO"),
+        "{generated}"
+    );
+    assert!(
+        generated.contains("timeout: 300000"),
+        "LookingGlass setup readiness step needs a realistic timeout:\n{generated}"
+    );
+    assert!(
+        !unrelated_generated.contains("- ALICE_LOCAL_API_TOKEN"),
+        "unrelated instructor adapters must not declare setup token env:\n{unrelated_generated}"
+    );
+    assert!(
+        !unrelated_generated.contains("- EATME_SETUP_READINESS_SCENARIO"),
+        "unrelated instructor adapters must not declare setup selector env:\n{unrelated_generated}"
+    );
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 

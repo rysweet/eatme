@@ -135,7 +135,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             parallel: false,
         },
         environment: GeneratedEnvironment {
-            requires: required_environment(scenario),
+            requires: Vec::new(),
             optional: optional_environment(scenario),
         },
         agents: vec![

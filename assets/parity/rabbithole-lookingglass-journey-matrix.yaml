@@ -11,18 +11,20 @@ rows:
     area: "Setup and first use"
     journey: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --scenario setup-preflight-ready-to-create --run-id parity-setup-preflight-ready-to-create --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
+      status: partial
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic acceptance output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
+      expected_behavior: "Instructor setup-readiness asset validates; real Alice launch readiness remains an input and agentic acceptance output is not claimed by this command."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered where the web setup/readiness APIs apply"
+      reason: "LookingGlass covers web health, config, setup preflight, create-project readiness, and evidence handoff, but does not claim Java desktop launch, installer automation, OpenGL diagnosis, or full Alice UI automation."
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      expected_behavior: "Instructor checks LookingGlass web server health/config, confirms the web create-project path is ready, receives explicit desktop-only boundaries, and creates a setup-readiness evidence handoff."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - RabbitHole editable scenario asset validates; missing agentic acceptance output remains explicitly partial
+        - LookingGlass command passes for the setup-preflight-ready-to-create web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: setup-support-lab-readiness
     area: "Setup and first use"
@@ -33,47 +35,53 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --scenario setup-support-lab-readiness --run-id parity-setup-support-lab-readiness --runs-dir runs --timeout 1800 --json
       expected_behavior: "Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered where the web setup/readiness APIs apply"
+      reason: "LookingGlass covers web lab-readiness signals and support handoff fields, but does not claim Java desktop launch, native screenshots, installer automation, or OpenGL diagnosis."
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      expected_behavior: "Support helper verifies LookingGlass health/config, runs web setup preflight, creates a starter project, and receives blocker-owner-retest handoff guidance with desktop-only boundaries named."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - RabbitHole real Alice setup-support command passes with setup-support and lab-readiness evidence
+        - LookingGlass command passes for the setup-support-lab-readiness web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-classroom-setup-readiness
     area: "Setup and first use"
     journey: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --scenario instructor-classroom-setup-readiness --run-id parity-instructor-classroom-setup-readiness --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
+      status: partial
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic checklist/fallback/student-note output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
+      expected_behavior: "Instructor classroom setup asset validates; real Alice readiness remains an input and agentic checklist/fallback/student-note output is not claimed by this command."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered where the web setup/readiness APIs apply"
+      reason: "LookingGlass covers web classroom readiness, project creation, and evidence handoff, but does not claim Java desktop launch, installer automation, OpenGL diagnosis, or learner-world grading."
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      expected_behavior: "Instructor verifies LookingGlass health/config, setup preflight, template availability, web project creation, and a classroom readiness handoff while desktop-only boundaries remain explicit."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - RabbitHole editable scenario asset validates; missing agentic checklist/fallback/student-note output remains explicitly partial
+        - LookingGlass command passes for the instructor-classroom-setup-readiness web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-student-launch-evidence-handoff
     area: "Setup and first use"
     journey: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --scenario instructor-student-launch-evidence-handoff --run-id parity-instructor-student-launch-evidence-handoff --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
+      status: partial
+      source_status: "Partial: editable scenario asset validates; missing instructor agentic student handoff output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
+      expected_behavior: "Instructor student-handoff asset validates; real Alice launch readiness remains an input and agentic student handoff output is not claimed by this command."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "Not supported"
+      status: partial
+      source_status: "Covered where the web setup/readiness APIs apply"
+      reason: "LookingGlass covers web launch readiness and student evidence handoff, but does not claim Java desktop launch evidence, native screenshots, full Alice UI automation, or learner-world grading."
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      expected_behavior: "Instructor verifies LookingGlass health/config, runs web setup preflight and launch readiness, and creates a student-facing evidence handoff with expected next actions and explicit desktop-only boundaries."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - RabbitHole editable scenario asset validates; missing agentic student handoff output remains explicitly partial
+        - LookingGlass command passes for the instructor-student-launch-evidence-handoff web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: building-a-scene-first-world
     area: "First scene"
@@ -980,6 +988,10 @@ closure_families:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
     scenario_bindings:
       - building-a-scene-first-world
       - alice-objects-first-world
@@ -1025,6 +1037,10 @@ closure_families:
       - student-artifact-package-share-evidence
       - classroom-gallery-walk-and-rubric
       - neighborhood-data-story
+      - setup-preflight-ready-to-create
+      - setup-support-lab-readiness
+      - instructor-classroom-setup-readiness
+      - instructor-student-launch-evidence-handoff
   - scenario: alice-web-a3p-save-load-parity
     role: grouped parity closure probe
     closure_tests:

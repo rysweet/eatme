@@ -12,6 +12,7 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system

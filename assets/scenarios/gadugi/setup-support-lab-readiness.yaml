@@ -14,6 +14,9 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
+  - ALICE_LOCAL_API_TOKEN
+  - EATME_SETUP_READINESS_SCENARIO
 agents:
 - name: eatme-cli-agent
   type: system
@@ -64,6 +67,21 @@ steps:
     - readiness_fields=install,java,graphics,storage,account,fallback
     - required_evidence=
   timeout: 60000
+- name: Lookingglass Setup Readiness
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-setup-support-lab-readiness}"
+      EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_setup_readiness_e2e"
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - cargo-test-ok=web_platform_setup_readiness_e2e
+    - 'test result: ok'
+  timeout: 300000
 - name: Launch Smoke
   agent: eatme-cli-agent
   action: execute_command
@@ -97,6 +115,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Record Readiness Handoff
+- name: lookingglass-setup-readiness succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Lookingglass Setup Readiness
 - name: launch-smoke succeeds
   type: command_success
   agent: eatme-cli-agent

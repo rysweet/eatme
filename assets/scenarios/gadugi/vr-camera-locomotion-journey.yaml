@@ -16,6 +16,7 @@ environment:
   - EATME_REPO
   - EATME_REAL_VR
   - VR_HEADSET_AVAILABLE
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system
