@@ -45,8 +45,8 @@ application under a virtual display, walk through lesson workflows, and capture
 evidence that each step completed correctly.
 
 **Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the same
-curriculum scenarios against LookingGlass's REST API, covering 29
-curriculum workflows including scene building, procedures, events, loops,
+curriculum scenarios against LookingGlass's REST API, covering 28
+curriculum workflows plus separate save/reopen/export parity checks for scene building, procedures, events, loops,
 functions, variables, arrays, camera, audio, vehicles, joints, and more.
 
 ## Quick start

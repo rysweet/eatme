@@ -12,7 +12,7 @@ Gadugi scenarios, and 115 scenario YAML files in total.
 | `pass1-cli-usage-three-step-drift.md` | **CONFIRMED** | Quick-reference docs still describe a three-step report while code returns six steps. |
 | `pass1-dead-core-root-reexports.md` | **NEEDS_ATTENTION** | The root re-exports are unused by first-party consumers, but crate tests explicitly preserve them as supported API. |
 | `pass1-invented-a3p-grading-flow.md` | **NEEDS_ATTENTION** | The `.a3p` parser/grading path exists in test/integration code, but not in the shipped CLI contract described by the atlas. |
-| `pass1-stale-scenario-asset-counts.md` | **CONFIRMED** | Historical snapshot only; current docs use 57 canonical, 58 Gadugi, and 115 total. |
+| `pass1-stale-scenario-asset-counts.md` | **RESOLVED** | Historical snapshot only; current docs and adapters use 57 canonical, 58 Gadugi, and 115 total. |
 | `pass1-web-load-is-synthetic.md` | **CONFIRMED** | Web-platform `Load` is still local bookkeeping, not a REST call. |
 
 ## Cross-checks
@@ -47,8 +47,8 @@ Gadugi scenarios, and 115 scenario YAML files in total.
 
 ### `pass1-stale-scenario-asset-counts.md`
 
-**Pass 1 verdict:** FAIL — docs still teach the old scenario-asset count  
-**Pass 2 verdict:** **CONFIRMED**
+**Pass 1 verdict:** FAIL — docs still taught the old scenario-asset count  
+**Pass 2 verdict:** **RESOLVED**
 
 **Rationale:** This is a historical snapshot of an older audit. Its counts were true for that audit only. The current inventory is 57 canonical EatMe scenarios, 58 Gadugi scenarios, and 115 scenario YAML files in total.
 

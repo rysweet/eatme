@@ -141,10 +141,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario first-lessons-real-ui-actions --run-id parity-first-lessons-real-ui-actions --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
-      status: covered
-      source_status: "Covered: web object, code-edit, run, and save proof is covered; desktop UI action completion is not claimed"
+      status: partial
+      source_status: "Partial: covered web object, code-edit, run, save, and reopen proof; missing desktop UI action completion evidence"
+      reason: "LookingGlass web REST evidence covers object, code-edit, run, save, and reopen proof; desktop UI action completion evidence is missing."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
+      expected_behavior: "Web REST evidence records object, code-edit, run, save, and reopen proof; desktop first-lesson UI action completion is not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -660,10 +661,10 @@ rows:
     area: "Import/export"
     journey: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
+      status: partial
+      source_status: "Partial: desktop launch/log/window/screenshot/readiness evidence is covered; missing save/export artifact verification"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario starter-project-open-save-export-preflight --run-id parity-starter-project-open-save-export-preflight --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
+      expected_behavior: "Desktop evidence opens the starter project and records launch/log/window/screenshot/readiness notes; save/export artifact verification is not claimed for RabbitHole."
     looking_glass:
       status: covered
       source_status: "Covered: web open, save, reopen, and export project evidence is covered; desktop starter-gallery selection is not claimed"
