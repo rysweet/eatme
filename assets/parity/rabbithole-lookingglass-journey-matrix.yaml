@@ -11,10 +11,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario setup-preflight-ready-to-create --run-id parity-setup-preflight-ready-to-create --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
+      status: partial
+      source_status: "Partial: real Alice launch readiness is an input; missing instructor agentic acceptance output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
+      expected_behavior: "Instructor setup-readiness asset validates; real Alice launch readiness remains an input and agentic acceptance output is not claimed by this command."
     looking_glass:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
@@ -49,10 +49,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-classroom-setup-readiness --run-id parity-instructor-classroom-setup-readiness --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
+      status: partial
+      source_status: "Partial: real Alice classroom readiness is an input; missing instructor agentic checklist/fallback/student-note output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
+      expected_behavior: "Instructor classroom setup asset validates; real Alice readiness remains an input and agentic checklist/fallback/student-note output is not claimed by this command."
     looking_glass:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
@@ -68,10 +68,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
     rabbit_hole:
-      status: covered
-      source_status: "Covered"
-      command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario instructor-student-launch-evidence-handoff --run-id parity-instructor-student-launch-evidence-handoff --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
+      status: partial
+      source_status: "Partial: real Alice launch readiness is an input; missing instructor agentic student handoff output evidence"
+      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
+      expected_behavior: "Instructor student-handoff asset validates; real Alice launch readiness remains an input and agentic student handoff output is not claimed by this command."
     looking_glass:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
