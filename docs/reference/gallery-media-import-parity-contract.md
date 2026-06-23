@@ -293,7 +293,7 @@ EatMe closure tests enforce the documentation boundary through:
 
 | Surface | Requirement |
 | --- | --- |
-| `assets/parity/rabbithole-lookingglass-journey-matrix.yaml` | `model-texture-import-checkpoint` is `covered` only while canonical evidence references are asserted; audio rows stay `partial` unless native audio/full authoring evidence exists. |
+| `assets/parity/rabbithole-lookingglass-journey-matrix.yaml` | `model-texture-import-checkpoint` stays `partial` until LookingGlass PR #251 evidence lands on LookingGlass `main`; audio rows stay `partial` unless native audio/full authoring evidence exists. |
 | `assets/scenarios/eatme/*.yaml` | Source scenarios name exact evidence, non-claims, and fallback behavior before generated mirrors are updated. |
 | `assets/scenarios/gadugi/*.yaml` | Generated mirrors remain in sync with source scenarios when checked in. |
 | `crates/eatme-assets/tests/*` | Matrix/scenario wording rejects broad audio, native share, and unsupported media claims. |
@@ -313,8 +313,9 @@ them:
 
 ### Canonical evidence references
 
-EatMe closure asserts these exact LookingGlass references for the covered
-`model-texture-import-checkpoint` row:
+EatMe closure asserts these exact LookingGlass references for the partial
+`model-texture-import-checkpoint` row. These references are not enough to promote
+the row to `covered` until they are present on LookingGlass `main`:
 
 | Evidence reference | Required for |
 | --- | --- |

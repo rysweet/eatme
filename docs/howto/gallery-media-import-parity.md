@@ -25,7 +25,7 @@ The workstream covers only these parity rows:
 
 | Matrix row | Target LookingGlass status | Evidence boundary |
 | --- | --- | --- |
-| `model-texture-import-checkpoint` | `covered` | Imported model and texture resources are sanitized, stored as project resources, assigned to scene objects, included in `.a3p` and web-package exports, and still present after reopen/checkpoint validation. |
+| `model-texture-import-checkpoint` | `partial` | LookingGlass PR #251 contains imported model and texture resource evidence, but default-branch evidence is pending. Promote only after those tests land on LookingGlass `main` and EatMe closure evidence is updated from default-branch evidence. |
 | `media-audio-cue-storyboard` | `partial` | Audio support is bounded to resource metadata, manifest persistence, storyboard cue timing, and playback-bridge trigger evidence. It does not claim native browser playback, device media permissions, or complete audio authoring. |
 | `audio-camera-and-export-sharecase` | `partial` | Camera/viewpoint state, export package generation, validation, and download/share-artifact fallback are covered. The row remains partial while audio is metadata/playback-bridge bounded and native Web Share availability is browser-dependent. |
 
@@ -170,15 +170,16 @@ cargo run -q -p eatme-cli -- alice run-howto \
 Edit `assets/parity/rabbithole-lookingglass-journey-matrix.yaml` only after both
 LookingGlass evidence and EatMe closure tests exist.
 
-`model-texture-import-checkpoint` uses this covered wording because the evidence
-references above are enforced:
+`model-texture-import-checkpoint` stays partial until LookingGlass PR #251 lands
+on LookingGlass `main` and EatMe closure evidence is updated from default-branch
+evidence:
 
 ```yaml
 looking_glass:
-  status: covered
-  source_status: "Covered by LookingGlass imported model, texture, safe resource, and reopen persistence contract tests"
-  command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
-  expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
+  status: partial
+  source_status: "Partial: LookingGlass PR #251 contains imported model, texture, safe resource, export, and reopen persistence contract tests; default branch evidence is pending."
+  command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
+  expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available when LookingGlass PR #251 evidence has landed."
 closure:
   required:
     - LookingGlass:test/model-texture-import-checkpoint-closure.contract.test.ts proves import, assignment, export, and reopen persistence

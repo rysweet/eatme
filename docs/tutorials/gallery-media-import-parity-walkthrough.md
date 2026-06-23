@@ -1,6 +1,6 @@
 # Gallery/media/import parity walkthrough
 
-This tutorial walks through the covered model/texture closure path and the
+This tutorial walks through the partial model/texture closure path and the
 bounded audio/camera/export evidence path enforced by the named LookingGlass and
 EatMe tests.
 
@@ -143,9 +143,10 @@ The proof is complete when tests show:
   bytes;
 - package validation reports safe ZIP paths and required package files.
 
-That is enough to keep `model-texture-import-checkpoint` as the LookingGlass
-`covered` row while EatMe closure tests enforce the exact canonical evidence
-references from the API contract.
+That is enough to keep `model-texture-import-checkpoint` as a LookingGlass
+`partial` row while LookingGlass PR #251 remains off `main`. Promote it only
+after the cited tests land on LookingGlass `main` and EatMe closure evidence is
+updated from default-branch evidence.
 
 ## 4. Record bounded audio storyboard evidence
 
@@ -269,7 +270,7 @@ The matrix state enforced by the closure tests is:
 
 | Row | LookingGlass status |
 | --- | --- |
-| `model-texture-import-checkpoint` | `covered` |
+| `model-texture-import-checkpoint` | `partial` |
 | `media-audio-cue-storyboard` | `partial` |
 | `audio-camera-and-export-sharecase` | `partial` |
 
