@@ -65,6 +65,27 @@ fn matrix_rows() -> Vec<Value> {
         .to_vec()
 }
 
+fn collect_markdown_docs(dir: &Path, docs: &mut Vec<PathBuf>) {
+    for entry in fs::read_dir(dir).unwrap_or_else(|error| panic!("failed to read {}: {error}", dir.display())) {
+        let entry = entry.unwrap_or_else(|error| panic!("failed to read entry in {}: {error}", dir.display()));
+        let path = entry.path();
+        if path.is_dir() {
+            collect_markdown_docs(&path, docs);
+        } else if path.extension().and_then(|extension| extension.to_str()) == Some("md") {
+            docs.push(path);
+        }
+    }
+}
+
+fn durable_markdown_docs() -> Vec<String> {
+    let root = repository_root();
+    let mut docs = vec![root.join("README.md")];
+    collect_markdown_docs(&root.join("docs"), &mut docs);
+    docs.into_iter()
+        .map(|path| path.strip_prefix(&root).expect("doc is under repo root").to_string_lossy().replace('\\', "/"))
+        .collect()
+}
+
 fn lookingglass_test_refs(row: &Value) -> Vec<String> {
     strings_at(row, &["closure", "required"])
         .join("\n")
@@ -191,14 +212,8 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
 
 #[test]
 fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
-    for doc_path in [
-        "README.md",
-        "docs/web-platform-testing.md",
-        "docs/eatme/alice-howto-coverage.md",
-        "docs/howto/gallery-media-import-parity.md",
-        "docs/tutorials/gallery-media-import-parity-walkthrough.md",
-    ] {
-        let text = read_text(doc_path);
+    for doc_path in durable_markdown_docs() {
+        let text = read_text(&doc_path);
         assert!(
             !text.contains("LOOKINGGLASS_REPO"),
             "{doc_path} must use LOOKINGGLASS_HOME for direct LookingGlass commands"
@@ -207,6 +222,7 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
             "<lookingglass-repo>",
             "/path/to/alice-web-prototype",
             "alice-web-prototype repo",
+            "ALICE_WEB_PROTOTYPE_HOME",
         ] {
             assert!(
                 !text.contains(stale_placeholder),
@@ -219,6 +235,16 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
                 && !text.contains("ALICE_WEB_URL=\"$ALICE_WEB_URL\""),
             "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
         );
+    }
+
+    for doc_path in [
+        "README.md",
+        "docs/web-platform-testing.md",
+        "docs/eatme/alice-howto-coverage.md",
+        "docs/howto/gallery-media-import-parity.md",
+        "docs/tutorials/gallery-media-import-parity-walkthrough.md",
+    ] {
+        let text = read_text(doc_path);
         assert!(
             text.contains("LOOKINGGLASS_HOME"),
             "{doc_path} must document LOOKINGGLASS_HOME for LookingGlass checkout selection"

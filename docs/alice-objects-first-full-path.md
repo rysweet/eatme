@@ -43,7 +43,7 @@ Run from the eatme repository root:
 ```bash
 export NODE_OPTIONS=--max-old-space-size=32768
 export ALICE_HOME=/path/to/RabbitHole
-export ALICE_WEB_PROTOTYPE_HOME=/path/to/alice-web-prototype
+export LOOKINGGLASS_HOME=/absolute/path/to/LookingGlass
 
 EATME_REAL_ALICE=1 eatme alice objects-first-full-path \
   --alice-home "${ALICE_HOME}" \
@@ -89,7 +89,7 @@ assets/scenarios/gadugi/alice-objects-first-full-path.yaml
 | Canonical scenario asset | `assets/scenarios/eatme/alice-objects-first-full-path.yaml` |
 | Generated Gadugi adapter | `assets/scenarios/gadugi/alice-objects-first-full-path.yaml` |
 | Primary Alice target | `$ALICE_HOME` |
-| TypeScript prototype target | `$ALICE_WEB_PROTOTYPE_HOME` |
+| LookingGlass target | `$LOOKINGGLASS_HOME` |
 | Required real-Alice gate | `EATME_REAL_ALICE=1` |
 | Node-backed adapter/check memory setting | `NODE_OPTIONS=--max-old-space-size=32768` |
 | Evidence root | `runs/alice-objects-first-full-path/<run-id>/` |
@@ -307,7 +307,7 @@ The command validates applicable behavior against:
 | Target | Path | Purpose |
 | --- | --- | --- |
 | RabbitHole Alice | `$ALICE_HOME` | Primary executable desktop target. |
-| TypeScript port | `$ALICE_WEB_PROTOTYPE_HOME` | Comparable web-port behavior where supported. |
+| LookingGlass | `$LOOKINGGLASS_HOME` | Comparable web-port behavior where supported. |
 
 RabbitHole validation is required for the full path. TypeScript validation records
 `present`, `unsupported`, `blocked`, or `invalid` for comparable hooks and state

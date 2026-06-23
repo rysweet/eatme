@@ -719,7 +719,7 @@ rows:
       status: partial
       source_status: "Partial: guidance-only migration evidence is covered; missing automatic Alice 2 conversion evidence"
       reason: "LookingGlass detects Alice 2 versions as guidance-only and leaves XML unchanged; missing evidence includes automatic Alice 2 conversion."
-      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-migration.test.ts
       expected_behavior: "Alice 2 project versions produce explicit guidance-only migration evidence without pretending automatic conversion."
     closure:
       required:
@@ -739,7 +739,7 @@ rows:
       status: partial
       source_status: "Partial: parsed class-behavior package evidence is covered; missing full desktop UI class portability evidence"
       reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; missing evidence includes full desktop UI class portability."
-      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
       expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
     closure:
       required:
@@ -959,7 +959,7 @@ rows:
       status: partial
       source_status: "Partial: package/share metadata evidence is covered; missing deployed community platform evidence"
       reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; missing evidence includes a deployed community platform."
-      command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export.test.ts test/server.test.ts
       expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
     closure:
       required:
@@ -1088,7 +1088,7 @@ closure_families:
   - scenario: alice-2-migration-bridge
     role: row-specific LookingGlass migration guidance closure
     closure_tests:
-      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-migration.test.ts
     scenario_bindings:
       - alice-2-migration-bridge
     evidence_assertions:
@@ -1097,7 +1097,7 @@ closure_families:
   - scenario: modified-class-portability
     role: row-specific LookingGlass class behavior package closure
     closure_tests:
-      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
     scenario_bindings:
       - modified-class-portability
     evidence_assertions:
@@ -1107,7 +1107,7 @@ closure_families:
   - scenario: teacher-community-sharing-loop
     role: row-specific LookingGlass teacher share metadata closure
     closure_tests:
-      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export.test.ts test/server.test.ts
     scenario_bindings:
       - teacher-community-sharing-loop
     evidence_assertions:
