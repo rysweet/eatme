@@ -4,7 +4,7 @@ This tutorial walks through the partial model/texture closure path and the
 bounded audio/camera/export evidence path enforced by the named LookingGlass and
 EatMe tests.
 
-Last updated: 2026-06-22.
+Last updated: 2026-06-23.
 
 ## What you will do
 
@@ -29,7 +29,8 @@ Use a running LookingGlass server for browser/API checks:
 
 ```bash
 cd <lookingglass-repo>
-npm run dev
+npm run build:server
+node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence --api-token gadugi-local-api-token
 ```
 
 In another terminal, point EatMe at that server:
@@ -37,7 +38,8 @@ In another terminal, point EatMe at that server:
 ```bash
 cd <eatme-repo>
 export EATME_WEB_PLATFORM=1
-export ALICE_WEB_URL=http://127.0.0.1:5173
+export ALICE_WEB_URL=http://127.0.0.1:3099
+export ALICE_LOCAL_API_TOKEN=gadugi-local-api-token
 ```
 
 ## 1. Import model and texture resources

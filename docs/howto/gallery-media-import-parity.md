@@ -3,7 +3,7 @@
 Use this guide to build and prove the bounded LookingGlass behavior behind the
 EatMe gallery/media/import parity rows.
 
-Last updated: 2026-06-22.
+Last updated: 2026-06-23.
 
 ## Contents
 
@@ -45,6 +45,7 @@ Use these environment variables when running EatMe web closure checks:
 | Variable | Required value | Used by |
 | --- | --- | --- |
 | `NODE_OPTIONS` | `--max-old-space-size=32768` | LookingGlass builds, Vitest, Playwright, and Gadugi checks. |
+| `LOOKINGGLASS_REPO` | Path to the LookingGlass checkout under test | LookingGlass evidence commands. |
 | `EATME_WEB_PLATFORM` | `1` | EatMe web-platform closure tests. |
 | `ALICE_WEB_URL` | Base URL for a running LookingGlass server | EatMe tests that call browser/API behavior. |
 | `EATME_REAL_ALICE` | `1` | RabbitHole baseline checks only. Not required for LookingGlass closure. |

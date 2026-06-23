@@ -3,7 +3,7 @@
 This reference defines the target LookingGlass public/API behavior and EatMe
 closure contract for the gallery/media/import parity workstream.
 
-Last updated: 2026-06-22.
+Last updated: 2026-06-23.
 
 ## Contents
 

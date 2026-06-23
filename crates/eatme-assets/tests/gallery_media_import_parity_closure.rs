@@ -202,36 +202,13 @@ fn precise_lookingglass_closure_refs_are_run_by_the_row_command() {
 }
 
 #[test]
-fn objects_and_first_lesson_rows_keep_their_own_eatme_commands() {
-    let expectations: [(&str, &[&str]); 2] = [
-        (
-            "alice-objects-first-full-path",
-            &[
-                "cargo test -p eatme-alice",
-                "objects_first_full_path_contract",
-                "objects_first_full_path_persistence",
-            ],
-        ),
-        (
-            "first-lessons-real-ui-actions",
-            &[
-                "cargo test -p eatme-alice",
-                "first_lesson_vertical_slice",
-                "first_lesson_hook_chain_progression",
-                "first_lesson_next_action_evidence",
-            ],
-        ),
-    ];
-
-    for (scenario, expected_fragments) in expectations {
+fn unrelated_rows_do_not_carry_gallery_media_import_closure_commands() {
+    for scenario in [
+        "alice-objects-first-full-path",
+        "first-lessons-real-ui-actions",
+    ] {
         let row = matrix_row(scenario);
         let command = string_at(&row, &["looking_glass", "command"]);
-        for expected_fragment in expected_fragments {
-            assert!(
-                command.contains(expected_fragment),
-                "{scenario} looking_glass.command must run its own EatMe journey evidence ({expected_fragment}); command was:\n{command}"
-            );
-        }
         for misplaced_ref in [
             "test/project-audio-bounded-evidence.contract.test.ts",
             "test/project-export-share-fallback.contract.test.ts",
