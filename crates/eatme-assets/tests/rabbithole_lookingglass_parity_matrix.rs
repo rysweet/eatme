@@ -145,6 +145,20 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                     "{scenario}: LookingGlass closure command must be runnable"
                 ));
             }
+            let blank_braced_assignment = format!("{}{}", "ALICE_WEB_URL=${ALICE_", "WEB_URL}");
+            let blank_quoted_assignment = format!("{}{}", "ALICE_WEB_URL=\"$ALICE_", "WEB_URL\"");
+            let defaulted_assignment = format!(
+                "{}{}",
+                "ALICE_WEB_URL=${ALICE_WEB_URL:-", "http://localhost:3099}"
+            );
+            if lookingglass_command.contains(&blank_braced_assignment)
+                || lookingglass_command.contains(&blank_quoted_assignment)
+                || !lookingglass_command.contains(&defaulted_assignment)
+            {
+                failures.push(format!(
+                    "{scenario}: LookingGlass closure command must default blank ALICE_WEB_URL to http://localhost:3099"
+                ));
+            }
         } else if lookingglass_status == "not_supported" {
             if string_at(&row, &["looking_glass", "reason"]).is_empty() {
                 failures.push(format!(

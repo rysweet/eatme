@@ -20,7 +20,14 @@ fn web_platform_enabled() -> bool {
 }
 
 fn web_base_url() -> String {
-    env::var("ALICE_WEB_URL").unwrap_or_else(|_| "http://localhost:3099".into())
+    normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
+}
+
+fn normalize_web_base_url(raw_url: Option<String>) -> String {
+    raw_url
+        .map(|url| url.trim().to_string())
+        .filter(|url| !url.is_empty())
+        .unwrap_or_else(|| "http://localhost:3099".into())
 }
 
 fn http_client() -> ureq::Agent {
@@ -1604,6 +1611,19 @@ fn vr_camera_locomotion_records_bounded_comfort_evidence() {
             .iter()
             .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
         "VR camera journey must not claim unrelated review tooling"
+    );
+}
+
+#[test]
+fn blank_alice_web_url_uses_default_base_url() {
+    assert_eq!(normalize_web_base_url(None), "http://localhost:3099");
+    assert_eq!(
+        normalize_web_base_url(Some("   \n\t  ".into())),
+        "http://localhost:3099"
+    );
+    assert_eq!(
+        normalize_web_base_url(Some(" http://127.0.0.1:4000/ ".into())),
+        "http://127.0.0.1:4000/"
     );
 }
 

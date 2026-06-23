@@ -108,7 +108,7 @@ Run the same scenario against LookingGlass when the inventory marks it as
 supported:
 
 ```bash
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
 ```
 
@@ -156,8 +156,8 @@ Alice.org HowTo coverage.
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
 | Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
-| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Covered for browser camera comfort evidence; true headset/native VR remains unsupported |
-| VR | `vr-player-comfort-playtest` | Student playtests VR comfort rules, records observations, and revises the project. | Covered | Not supported |
+| VR | `vr-camera-locomotion-journey` | Student records VR camera comfort planning and checks bounded movement-comfort evidence. | Covered | Covered for bounded browser camera comfort API evidence; true headset/native VR remains unsupported |
+| VR | `vr-player-comfort-playtest` | Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims. | Covered | Not supported |
 | Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Covered where the web version supports the task |
 | Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Covered where export flow supports it |
 | Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where the web version can open, save, and export projects |

@@ -98,6 +98,28 @@ fn vr_camera_curriculum_contract_records_real_vr_gate_and_desktop_fallback() {
 }
 
 #[test]
+fn vr_camera_lookingglass_wording_is_bounded_to_api_evidence() {
+    let root = repository_root();
+    let matrix =
+        fs::read_to_string(root.join("assets/parity/rabbithole-lookingglass-journey-matrix.yaml"))
+            .expect("matrix should exist");
+    let coverage = fs::read_to_string(root.join("docs/eatme/alice-howto-coverage.md"))
+        .expect("coverage doc should exist");
+    let combined = format!("{matrix}\n{coverage}");
+    let overstated_browser_claim = format!("{}{}", "browser camera movement ", "journey");
+    let overstated_vr_claim = format!("{}{}", "VR-style camera movement ", "journey");
+
+    assert!(
+        combined.contains("bounded browser camera comfort API evidence"),
+        "LookingGlass VR camera wording should be bounded to API evidence"
+    );
+    assert!(
+        !combined.contains(&overstated_browser_claim) && !combined.contains(&overstated_vr_claim),
+        "LookingGlass/browser wording must not imply real camera movement steps were exercised"
+    );
+}
+
+#[test]
 fn vr_player_comfort_playtest_declared_files_are_written_and_checked() {
     let (path, yaml) = read_scenario("vr-player-comfort-playtest");
     let validation = validate_scenario_asset(&path).expect("scenario should validate");
@@ -105,27 +127,39 @@ fn vr_player_comfort_playtest_declared_files_are_written_and_checked() {
     assert!(validation.passed, "{:?}", validation.errors);
     assert!(
         yaml.contains("vr_player_preflight_record")
-            && yaml.contains("comfort_playtest_notes")
+            && yaml.contains("comfort_playtest_guidance_template")
             && yaml.contains("runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt")
-            && yaml.contains("runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-notes.md"),
-        "vr player comfort contract should keep the declared preflight and notes files explicit"
+            && yaml.contains(
+                "runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-guidance-template.md"
+            ),
+        "vr player comfort contract should keep the declared preflight and guidance template files explicit"
     );
     assert!(
         yaml.contains("> \"$run_dir/vr-player-preflight.txt\"")
             && yaml.contains("test -s \"$run_dir/vr-player-preflight.txt\"")
             && yaml.contains("grep -Eq \"real_vr_available=(true|false)\"")
-            && yaml.contains("notes=\"$run_dir/comfort-playtest-notes.md\"")
-            && yaml.contains("> \"$notes\"")
-            && yaml.contains("test -s \"$notes\""),
-        "vr player comfort commands should write and check the declared files"
+            && yaml.contains("template=\"$run_dir/comfort-playtest-guidance-template.md\"")
+            && yaml.contains("> \"$template\"")
+            && yaml.contains("test -s \"$template\""),
+        "vr player comfort commands should write and check the declared preflight and template files"
     );
     assert!(
-        yaml.contains("Comfort check")
+        yaml.contains("guidance only")
+            && yaml.contains("Comfort check")
             && yaml.contains("Orientation note")
             && yaml.contains("Player cue")
             && yaml.contains("Fallback path")
             && yaml.contains("Revision decision"),
-        "vr player comfort notes should keep the player feedback prompts explicit"
+        "vr player comfort guidance template should keep the player feedback prompts explicit without claiming observed evidence"
+    );
+    let legacy_snake = format!("{}{}{}", "comfort_", "playtest_", "notes");
+    let legacy_file = format!("{}{}{}", "comfort-", "playtest-", "notes.md");
+    let legacy_evidence_claim = format!("{}{}", "notes ask for ", "comfort");
+    assert!(
+        !yaml.contains(&legacy_snake)
+            && !yaml.contains(&legacy_file)
+            && !yaml.contains(&legacy_evidence_claim),
+        "vr player comfort guidance/template must not masquerade as validated playtest notes"
     );
 }
 

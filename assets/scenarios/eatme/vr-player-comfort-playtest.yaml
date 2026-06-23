@@ -49,7 +49,7 @@ smoke_ready:
   - screenshot_or_window_evidence
   - scenario_id
   - vr_player_preflight_record
-  - comfort_playtest_notes
+  - comfort_playtest_guidance_template
   - non_vr_fallback_evidence
 acceptance_criteria:
 - given: Alice launch smoke dependencies are available
@@ -57,22 +57,22 @@ acceptance_criteria:
   then: the manifest identifies scenario_id vr-player-comfort-playtest
 - given: real VR hardware is unavailable
   when: the playtest is evaluated outside-in
-  then: evidence records real_vr_available=false plus desktop viewpoint, orientation, and fallback playtest notes
-- given: a player tests an interaction
-  when: feedback is collected
-  then: the creator records comfort signal, confusion point, discoverability cue, and one revision or justified non-change
+  then: evidence records real_vr_available=false plus desktop viewpoint, orientation, and fallback playtest guidance requirements
+- given: a facilitator prepares a player interaction test
+  when: guidance is generated before observation
+  then: the guidance template asks for comfort signal, confusion point, discoverability cue, and one revision or justified non-change without claiming those observations already happened
 - given: gadugi needs to exercise the scenario
   when: the generated adapter runs commands for this scenario
   then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 acceptance_probes:
-- Playtest records comfort, orientation, discoverability, and fallback access.
-- Creator evidence links player feedback to a visible cue, rule, movement, or revision.
+- Guidance template prompts for comfort, orientation, discoverability, and fallback access.
+- Follow-on creator evidence must link observed player feedback to a visible cue, rule, movement, or revision before any playtest claim is validated.
 - The scenario never requires every learner to use VR hardware.
 rubric:
-- criterion: Player experience evidence
+- criterion: Player experience guidance
   evidence:
-  - Tester notes include comfort, orientation, controls or cues, and confusion points.
-  - Feedback is tied to a concrete visible revision or design decision.
+  - Template asks testers to record comfort, orientation, controls or cues, and confusion points.
+  - Template requires observed feedback before tying a concrete visible revision or design decision to playtest evidence.
 - criterion: Fallback integrity
   evidence:
   - Non-VR observers have a meaningful camera or screen-player path.
@@ -90,12 +90,12 @@ steps:
   - preflight file states whether real VR execution is available
   - if real_vr_available=false, required evidence names desktop viewpoint, orientation, comfort check, and fallback playtest sheet
   - if real_vr_available=true, required evidence names headset or player capture, comfort notes, observer log, and revision note
-- id: record-comfort-playtest-notes
+- id: record-comfort-playtest-guidance-template
   command: >-
-    bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; notes="$run_dir/comfort-playtest-notes.md"; mkdir -p "$run_dir"; printf "%s\n" "# Comfort playtest notes" "" "- VR available: see vr-player-preflight.txt." "- Comfort check: record comfort, stop points, and motion concerns." "- Orientation note: record whether the player knows where to look and go." "- Player cue: record what helped or confused the player." "- Fallback path: record desktop camera or screen viewer notes when no headset is available." "- Revision decision: record the change made or why no change is needed." > "$notes"; test -s "$notes"; grep -q "Comfort check" "$notes"; grep -q "Revision decision" "$notes"; printf "%s\n" "wrote=$notes"'
+    bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; template="$run_dir/comfort-playtest-guidance-template.md"; mkdir -p "$run_dir"; printf "%s\n" "# Comfort playtest guidance template" "" "This is guidance only; it does not validate that a playtest observation has occurred." "" "- VR available: see vr-player-preflight.txt." "- Comfort check: record observed comfort, stop points, and motion concerns." "- Orientation note: record observed whether the player knows where to look and go." "- Player cue: record observed what helped or confused the player." "- Fallback path: record observed desktop camera or screen viewer notes when no headset is available." "- Revision decision: record the change made from observed feedback or why no change is needed." > "$template"; test -s "$template"; grep -q "guidance only" "$template"; grep -q "Revision decision" "$template"; printf "%s\n" "wrote=$template"'
   evidence:
-  - comfort playtest notes file exists and is non-empty
-  - notes ask for comfort, orientation, player cue, fallback path, and revision decision
+  - comfort playtest guidance template file exists and is non-empty
+  - template states it is guidance only and asks for observed comfort, orientation, player cue, fallback path, and revision decision
 - id: launch-smoke
   command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
   evidence:
@@ -111,10 +111,10 @@ agentic_follow_on:
   - studio-critique-card
   - debug-conference-card
   - creative-ownership-card
-  deterministic_gate: Run this scenario and record VR availability before asking agents to judge comfort, orientation, player discoverability, or non-VR fallback claims.
+  deterministic_gate: Run this scenario and record VR availability before using the guidance template to collect observed comfort, orientation, player discoverability, or non-VR fallback evidence.
   required_observables:
   - VR availability record
-  - comfort playtest notes
+  - comfort playtest guidance template
   - creator revision or justified non-change
 timeouts:
   scenario_seconds: 1800
@@ -125,5 +125,5 @@ artifacts:
   log: runs/vr-player-comfort-playtest/${RUN_ID}/alice.log
   window_list: runs/vr-player-comfort-playtest/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt
-  playtest_notes: runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-notes.md
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require desktop fallback playtest evidence instead of silently skipping the scenario. LookingGlass currently provides bounded /api/vr/camera-comfort evidence for browser camera comfort only; it must not be counted as true VR player comfort playtesting.
+  comfort_playtest_guidance_template: runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-guidance-template.md
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require observed desktop fallback playtest evidence before making playtest claims. The generated comfort file is guidance/template material only until a reviewer records non-placeholder observations. LookingGlass currently provides bounded /api/vr/camera-comfort evidence for browser camera comfort only; it must not be counted as true VR player comfort playtesting.
