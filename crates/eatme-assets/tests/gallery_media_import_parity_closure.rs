@@ -169,6 +169,11 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
         );
     }
     assert!(
+        read_text("docs/tutorials/gallery-media-import-parity-walkthrough.md")
+            .contains("covered model/texture import closure path"),
+        "gallery/media walkthrough must describe model/texture import as covered once LookingGlass main evidence exists"
+    );
+    assert!(
         !inventory.contains("finished artifact package"),
         "coverage inventory must not overclaim finished artifact package support"
     );

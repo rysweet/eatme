@@ -1,6 +1,6 @@
 # Gallery/media/import parity walkthrough
 
-This tutorial walks through the partial model/texture closure path and the
+This tutorial walks through the covered model/texture import closure path and the
 bounded audio/camera/export evidence path enforced by the named LookingGlass and
 EatMe tests.
 
