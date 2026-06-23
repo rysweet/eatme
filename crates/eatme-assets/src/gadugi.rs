@@ -197,7 +197,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let assertions = scenario
         .steps
         .iter()
@@ -209,7 +209,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
 
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
@@ -318,9 +318,9 @@ fn generated_step(
     run_id: &str,
     launch_timeout: u64,
     expected_scenario_asset_count: usize,
-) -> GeneratedStep {
+) -> Result<GeneratedStep> {
     let command = repository_command(step.command.trim(), run_id);
-    GeneratedStep {
+    Ok(GeneratedStep {
         name: step_title(&step.id),
         agent: "eatme-cli-agent".into(),
         action: "execute_command".into(),
@@ -331,11 +331,11 @@ fn generated_step(
                 scenario,
                 step,
                 expected_scenario_asset_count,
-            )),
+            )?),
             output_contains: None,
         },
         timeout: step_timeout_ms(&step.id, launch_timeout),
-    }
+    })
 }
 
 fn command_success_assertion(step_id: &str, agent: &str) -> GeneratedAssertion {
@@ -352,12 +352,12 @@ fn generated_assertion(
     step: &EatmeScenarioStep,
     agent: &str,
     expected_scenario_asset_count: usize,
-) -> GeneratedAssertion {
+) -> Result<GeneratedAssertion> {
     if expected_exit_code(scenario, step) == 0 {
-        return command_success_assertion(&step.id, agent);
+        return Ok(command_success_assertion(&step.id, agent));
     }
 
-    GeneratedAssertion {
+    Ok(GeneratedAssertion {
         name: format!("{} expected failure is explicit", step.id),
         assertion_type: "output_contains_all".into(),
         agent: agent.into(),
@@ -365,10 +365,10 @@ fn generated_assertion(
             ("step".into(), step_title(&step.id)),
             (
                 "required_strings".into(),
-                expected_stdout(scenario, step, expected_scenario_asset_count).join("\n"),
+                expected_stdout(scenario, step, expected_scenario_asset_count)?.join("\n"),
             ),
         ]),
-    }
+    })
 }
 
 fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
@@ -418,28 +418,147 @@ fn expected_stdout(
     scenario: &EatmeScenarioAsset,
     step: &EatmeScenarioStep,
     expected_scenario_asset_count: usize,
-) -> Vec<String> {
+) -> Result<Vec<String>> {
     let step_id = step.id.as_str();
     let command = step.command.as_str();
     if command.contains("assets validate") {
         if command.contains("--path") {
-            return vec![
+            return Ok(vec![
                 "\"passed\": true".into(),
                 format!("\"id\": \"{}\"", scenario.id),
-            ];
+            ]);
         }
-        return preflight_validate_assets_patterns(expected_scenario_asset_count);
+        return Ok(preflight_validate_assets_patterns(
+            expected_scenario_asset_count,
+        ));
     }
     if step_id.contains("dependencies") {
-        return preflight_check_dependencies_patterns();
+        return Ok(preflight_check_dependencies_patterns());
     }
     if step_id.contains("discover") {
-        return vec!["\"alice_ide_jar_exists\": true".into()];
+        return Ok(vec!["\"alice_ide_jar_exists\": true".into()]);
     }
     if is_launch_step(step_id, command) {
-        return launch_expected_stdout(scenario, step);
+        return Ok(launch_expected_stdout(scenario, step));
     }
-    Vec::new()
+    let expected = evidence_backed_expected_stdout(step);
+    if !expected.is_empty() || step.evidence.is_empty() {
+        return Ok(expected);
+    }
+    bail!(
+        "{} step {} has evidence but generated Gadugi stdout assertions would be empty; add a supported command pattern or explicit evidence-bearing output",
+        scenario.id,
+        step.id
+    )
+}
+
+fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
+    let command = step.command.as_str();
+    let mut expected = Vec::new();
+
+    if command.contains("npm test --") {
+        expected.extend(test_command_targets(command));
+        expected.extend(durable_evidence_terms(&step.evidence));
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("cargo test ") {
+        expected.extend(test_command_targets(command));
+        expected.push("test result: ok".into());
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("printf ") {
+        expected.extend(printf_evidence_markers(command));
+        expected.extend(durable_evidence_terms(&step.evidence));
+        expected.dedup();
+        return expected;
+    }
+    if command.trim_start().starts_with("inspect ") {
+        expected.push(command.trim_start_matches("inspect ").trim().into());
+        expected.extend(durable_evidence_terms(&step.evidence));
+        expected.dedup();
+        return expected;
+    }
+    expected
+}
+
+fn test_command_targets(command: &str) -> Vec<String> {
+    command
+        .split_whitespace()
+        .filter(|part| {
+            part.ends_with(".test.ts")
+                || part.ends_with("_e2e")
+                || part.ends_with("_coverage")
+                || part.ends_with("_integration")
+                || part.ends_with("_resilience")
+                || part.ends_with("_support")
+                || part.ends_with("_management")
+                || part.ends_with("_real")
+        })
+        .map(|part| part.trim_matches('\'').trim_matches('"').to_owned())
+        .collect()
+}
+
+fn printf_evidence_markers(command: &str) -> Vec<String> {
+    let mut markers = Vec::new();
+    for marker in [
+        "migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence",
+        "required_evidence=keep-adapt-retire,current-artifact,student-reflection",
+        "import_fields=source,license,scale,orientation,texture-visibility,issue,fallback",
+        "readiness_fields=install,java,graphics,storage,account,fallback",
+        "starter_world_change=",
+        "run_or_observe_attempt=",
+        "save_reopen_export_readiness_gaps=",
+        "real_vr_available=",
+        "required_evidence=",
+        "wrote=",
+        "a3p-save-load-parity-gaps.md",
+        "gallery-media-parity-gaps.md",
+        "story-api-runtime-parity-gaps.md",
+        "starter-world-change-note.txt",
+        "run-observe-readiness-gaps.txt",
+        "starter-project-readiness-report.txt",
+        "agentic_review_mode=",
+        "perspective_choice=",
+        "comfort_constraint=",
+        "fallback_evidence=",
+    ] {
+        if command.contains(marker) {
+            markers.push(marker.into());
+        }
+    }
+    markers
+}
+
+fn durable_evidence_terms(evidence: &[String]) -> Vec<String> {
+    let text = evidence.join("\n");
+    let lower = text.to_lowercase();
+    let mut terms = Vec::new();
+    for (needle, term) in [
+        ("guidance-only", "guidance-only"),
+        (
+            "automatic alice 2 conversion",
+            "automatic Alice 2 conversion",
+        ),
+        ("converted alice 3 project", "converted Alice 3 project"),
+        ("class behavior package", "class behavior package"),
+        ("modified class type", "modified class type"),
+        ("different aliceproject", "different AliceProject"),
+        ("project persistence", "project persistence"),
+        ("behavior persistence", "behavior persistence"),
+        ("alice-web.teacher-share/v1", "alice-web.teacher-share/v1"),
+        ("teacher-share-metadata", "teacher-share-metadata"),
+        ("sha256", "sha256"),
+        ("passed=true", "passed=true"),
+        ("real_vr_available=false", "real_vr_available=false"),
+        ("real_vr_available=true", "real_vr_available=true"),
+    ] {
+        if lower.contains(needle) {
+            terms.push(term.into());
+        }
+    }
+    terms
 }
 
 fn is_launch_step(step_id: &str, command: &str) -> bool {
@@ -447,6 +566,7 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
         || step_id.contains("smoke")
         || command.contains("alice launch-smoke")
         || command.contains("alice run-howto")
+        || command.contains("alice run-objects-first-world")
         || command.contains("alice objects-first-full-path")
 }
 

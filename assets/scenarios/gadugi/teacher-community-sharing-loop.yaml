@@ -52,7 +52,12 @@ steps:
       cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - test/project-export.test.ts
+    - test/server.test.ts
+    - alice-web.teacher-share/v1
+    - teacher-share-metadata
+    - sha256
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent

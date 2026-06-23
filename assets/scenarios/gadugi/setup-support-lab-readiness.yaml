@@ -60,7 +60,9 @@ steps:
       bash -lc 'printf "readiness_fields=install,java,graphics,storage,account,fallback\nrequired_evidence=blocker-category,owner,retest-signal,learner-safe-fallback\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - readiness_fields=install,java,graphics,storage,account,fallback
+    - required_evidence=
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

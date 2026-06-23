@@ -48,7 +48,10 @@ steps:
       bash -lc 'printf "migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence\nrequired_evidence=keep-adapt-retire,current-artifact,student-reflection\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence
+    - required_evidence=keep-adapt-retire,current-artifact,student-reflection
+    - required_evidence=
   timeout: 60000
 - name: Verify Lookingglass Bounded Alice2 Guidance
   agent: eatme-cli-agent
@@ -60,7 +63,11 @@ steps:
       cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - test/project-migration.test.ts
+    - guidance-only
+    - automatic Alice 2 conversion
+    - converted Alice 3 project
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

@@ -239,7 +239,7 @@ fn parity_matrix_source_statuses_match_the_howto_inventory() {
 }
 
 #[test]
-fn parity_matrix_closure_families_reference_the_three_gap_scenarios_and_tests() {
+fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tests() {
     let matrix = read_yaml("assets/parity/rabbithole-lookingglass-journey-matrix.yaml");
     let families = value_at(&matrix, &["closure_families"])
         .and_then(Value::as_sequence)
@@ -253,24 +253,100 @@ fn parity_matrix_closure_families_reference_the_three_gap_scenarios_and_tests() 
     assert_eq!(
         scenarios,
         BTreeSet::from([
+            "web-platform-curriculum-e2e".to_string(),
             "alice-web-a3p-save-load-parity".to_string(),
             "alice-web-gallery-media-parity".to_string(),
             "alice-web-story-api-runtime-parity".to_string(),
+            "alice-2-migration-bridge".to_string(),
+            "modified-class-portability".to_string(),
+            "teacher-community-sharing-loop".to_string(),
         ])
     );
 
+    let mut bindings = BTreeMap::<String, Vec<String>>::new();
     for family in families {
-        let scenario = string_at(&family, &["scenario"]);
+        let family_scenario = string_at(&family, &["scenario"]);
         let tests = strings_at(&family, &["closure_tests"]);
+        let scenario_bindings = strings_at(&family, &["scenario_bindings"]);
         assert!(
-            tests
-                .iter()
-                .all(|test| test.starts_with("cargo test -p eatme-alice --test ")),
-            "{scenario}: closure tests must be runnable cargo test commands: {tests:?}"
+            !scenario_bindings.is_empty(),
+            "{family_scenario}: closure family must name the scenarios it closes"
         );
         assert!(
-            tests.len() >= 4,
-            "{scenario}: expected broad closure coverage"
+            tests.iter().all(|test| {
+                test.starts_with("cargo test -p eatme-alice --test ")
+                    || test.starts_with("EATME_WEB_PLATFORM=1 ")
+                    || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && npm test -- "#)
+            }),
+            "{family_scenario}: closure tests must be runnable cargo/npm commands: {tests:?}"
+        );
+        if string_at(&family, &["role"]) == "grouped parity closure probe" {
+            assert!(
+                tests.len() >= 4,
+                "{family_scenario}: expected broad closure coverage"
+            );
+        }
+        for scenario in scenario_bindings {
+            bindings
+                .entry(scenario)
+                .or_default()
+                .push(family_scenario.clone());
+        }
+    }
+
+    let mut failures = Vec::new();
+    let family_by_id = value_at(&matrix, &["closure_families"])
+        .and_then(Value::as_sequence)
+        .into_iter()
+        .flatten()
+        .map(|family| (string_at(family, &["scenario"]), family))
+        .collect::<BTreeMap<_, _>>();
+
+    for row in matrix_rows(&matrix) {
+        let scenario = string_at(&row, &["scenario"]);
+        let status = string_at(&row, &["looking_glass", "status"]);
+        if status != "covered" && status != "partial" {
+            continue;
+        }
+        let command = string_at(&row, &["looking_glass", "command"]);
+        let Some(bound_families) = bindings.get(&scenario) else {
+            failures.push(format!(
+                "{scenario}: supported LookingGlass row is missing closure_families.scenario_bindings"
+            ));
+            continue;
+        };
+        let command_is_bound = bound_families.iter().any(|family_id| {
+            let Some(family) = family_by_id.get(family_id) else {
+                return false;
+            };
+            strings_at(family, &["closure_tests"])
+                .iter()
+                .any(|test| test == &command)
+        });
+        if !command_is_bound {
+            failures.push(format!(
+                "{scenario}: closure family {bound_families:?} does not bind the row command {command:?}"
+            ));
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "supported LookingGlass rows must have row-specific closure-family bindings:\n{}",
+        failures.join("\n")
+    );
+
+    for direct_family in [
+        "alice-2-migration-bridge",
+        "modified-class-portability",
+        "teacher-community-sharing-loop",
+    ] {
+        let family = family_by_id
+            .get(direct_family)
+            .unwrap_or_else(|| panic!("{direct_family}: missing closure family"));
+        assert!(
+            strings_at(family, &["evidence_assertions"]).len() >= 2,
+            "{direct_family}: direct LookingGlass closure must name durable evidence assertions"
         );
     }
 }

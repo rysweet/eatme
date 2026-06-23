@@ -47,7 +47,12 @@ steps:
       bash -lc 'run_dir="runs/alice-web-a3p-save-load-parity/${RUN_ID}"; mkdir -p "$run_dir"; cat > "$run_dir/a3p-save-load-parity-gaps.md" <<EOF # A3P Save/Load Parity Gaps | gap | Java Alice baseline | Web/eatme probe | closure test | | --- | --- | --- | --- | | project identity | starter filename and project metadata remain user-visible | parsed generic Program names must not hide requested filename | cargo test -p eatme-alice --test real_a3p_pipeline_integration | | resources | model/texture/audio resources survive save and reopen | resource declarations and archive paths are preserved | cargo test -p eatme-alice --test a3p_content_coverage | | statements | procedure bodies preserve method calls, loops, conditionals, and events | parser/writer round-trip keeps supported statement kinds explicit | cargo test -p eatme-alice --test a3p_roundtrip_coverage | | archive safety | unsafe archive paths are rejected or ignored loudly | path traversal and oversized archive limits are enforced | cargo test -p eatme-alice --test malformed_input_resilience | EOF printf "%s\n" "wrote=$run_dir/a3p-save-load-parity-gaps.md"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - real_a3p_pipeline_integration
+    - a3p_content_coverage
+    - a3p_roundtrip_coverage
+    - malformed_input_resilience
+    - 'test result: ok'
   timeout: 60000
 - name: Run A3p Closure Probes
   agent: eatme-cli-agent
@@ -59,7 +64,11 @@ steps:
       bash -lc 'cargo test -p eatme-alice --test a3p_content_coverage && cargo test -p eatme-alice --test a3p_roundtrip_coverage && cargo test -p eatme-alice --test real_a3p_pipeline_integration && cargo test -p eatme-alice --test malformed_input_resilience'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - a3p_content_coverage
+    - a3p_roundtrip_coverage
+    - real_a3p_pipeline_integration
+    - 'test result: ok'
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

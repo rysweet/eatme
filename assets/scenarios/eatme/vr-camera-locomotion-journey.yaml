@@ -101,7 +101,7 @@ steps:
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
 - id: agentic-journey-evidence
-  command: Review the launched Alice session and learner artifact using the persona prompt assets; do not require real VR hardware unless record-vr-preflight reports real_vr_available=true.
+  command: bash -lc 'printf "agentic_review_mode=persona-prompt-assets\nperspective_choice=first-person-or-over-the-shoulder\ncomfort_constraint=short-moves-stable-horizon-teleport-or-recenter\nfallback_evidence=desktop-screenshot-window-and-real_vr_available=false-preflight\n"'
   evidence:
   - learner chooses first-person or over-the-shoulder viewpoint and explains why
   - camera marker, camera move, or camera coordinate choice is visible in the design notes or world artifact

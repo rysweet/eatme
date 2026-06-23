@@ -49,7 +49,11 @@ steps:
       bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "real_vr_available=true\nrequired_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note\n"; else printf "real_vr_available=false\nrequired_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet\n"; fi'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - real_vr_available=
+    - required_evidence=
+    - real_vr_available=false
+    - real_vr_available=true
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

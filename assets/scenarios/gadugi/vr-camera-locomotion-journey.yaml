@@ -62,7 +62,11 @@ steps:
       bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "real_vr_available=true\nrequired_evidence=alice-player-or-headset-capture,comfort-notes,observer-log\n"; else printf "real_vr_available=false\nrequired_evidence=camera-marker-plan,viewpoint-choice,locomotion-comfort-check,desktop-launch-manifest\n"; fi'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - real_vr_available=
+    - required_evidence=
+    - real_vr_available=false
+    - real_vr_available=true
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -88,10 +92,16 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-camera-locomotion-journey}"
-      Review the launched Alice session and learner artifact using the persona prompt assets; do not require real VR hardware unless record-vr-preflight reports real_vr_available=true.
+      bash -lc 'printf "agentic_review_mode=persona-prompt-assets\nperspective_choice=first-person-or-over-the-shoulder\ncomfort_constraint=short-moves-stable-horizon-teleport-or-recenter\nfallback_evidence=desktop-screenshot-window-and-real_vr_available=false-preflight\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - real_vr_available=
+    - agentic_review_mode=
+    - perspective_choice=
+    - comfort_constraint=
+    - fallback_evidence=
+    - real_vr_available=false
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

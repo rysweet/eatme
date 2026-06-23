@@ -47,7 +47,9 @@ steps:
       bash -lc 'printf "import_fields=source,license,scale,orientation,texture-visibility,issue,fallback\nrequired_evidence=visual-check,runnable-world,concept-link,reflection\n"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - import_fields=source,license,scale,orientation,texture-visibility,issue,fallback
+    - required_evidence=
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

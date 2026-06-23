@@ -60,7 +60,10 @@ steps:
       bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "starter_world_change=In the next user-like Alice pass, add or rename one visible object in the bundled starter world and record what changed." "why=This keeps the starter-world build/change checkpoint editable and reviewable without grading the student project." "claim_boundary=This note is not creative assessment, not learner-world grading, and not proof of a completed save." > "$run_dir/starter-world-change-note.txt"; printf "%s\n" "wrote=$run_dir/starter-world-change-note.txt"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - starter_world_change=
+    - wrote=
+    - starter-world-change-note.txt
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent
@@ -90,7 +93,14 @@ steps:
       bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "launch=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence for the opened starter project." "starter_world_change=Review starter-world-change-note.txt for the small editable starter-world change to make in a later user-like Alice pass." "run_or_observe_attempt=Treat the available log and screenshot/window evidence as an attempted run or observation only." "save_reopen_export_readiness_gaps=Save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/starter-project-readiness-report.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt" "wrote=$run_dir/starter-project-readiness-report.txt"'
   expect:
     exit_code: 0
-    stdout_contains: []
+    stdout_contains:
+    - starter_world_change=
+    - run_or_observe_attempt=
+    - save_reopen_export_readiness_gaps=
+    - wrote=
+    - starter-world-change-note.txt
+    - run-observe-readiness-gaps.txt
+    - starter-project-readiness-report.txt
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

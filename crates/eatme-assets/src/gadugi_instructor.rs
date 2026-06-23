@@ -43,7 +43,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let command_assertions = scenario
         .steps
         .iter()
@@ -62,7 +62,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let mut steps = Vec::new();
     steps.push(GeneratedStep {
         name: validate_step.into(),

@@ -973,6 +973,55 @@ rows:
         - LookingGlass command passes when web support is claimed
         - behavior evidence names user-visible result, not implementation details
 closure_families:
+  - scenario: web-platform-curriculum-e2e
+    role: grouped web platform closure suite with explicit row bindings
+    closure_tests:
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+    scenario_bindings:
+      - building-a-scene-first-world
+      - alice-objects-first-world
+      - alice-objects-first-full-path
+      - first-lessons-real-ui-actions
+      - code-editor-first-run
+      - reusable-methods-and-parameters
+      - alien-linguist-parameter-dialogue
+      - creature-choreography-loop-lab
+      - functions-as-questions-about-the-world
+      - variables-scorekeeper-timekeeper
+      - data-types-alice-catalog
+      - arithmetic-expressions-math-playground
+      - relational-expressions-comparison-lab
+      - loops-and-conditionals-mini-challenge
+      - weather-wizard-conditional-theater
+      - ecosystem-balance-loop-simulation
+      - events-collision-proximity-game
+      - mars-rover-proximity-mission
+      - arrays-collection-choreography
+      - time-travel-recipe-sequencing
+      - using-comments-code-clarity
+      - lost-robot-debug-museum
+      - game-score-timer-win-lose-loop
+      - mythic-choice-event-tree
+      - design-process-story-or-game
+      - hour-of-code-studio-kickoff
+      - vr-camera-perspective-tour
+      - vr-camera-locomotion-journey
+      - media-audio-cue-storyboard
+      - audio-camera-and-export-sharecase
+      - starter-project-open-save-export-preflight
+      - model-texture-import-checkpoint
+      - accessibility-rescue-camera-captions
+      - ide-accessibility-parity
+      - ide-performance-parity
+      - instructor-alice-concept-map
+      - instructor-exercise-builder
+      - instructor-lesson-materials-remix
+      - curriculum-sequence-remix-pack
+      - instructor-student-outcomes-rubric
+      - student-reflection-artifact-review
+      - student-artifact-package-share-evidence
+      - classroom-gallery-walk-and-rubric
+      - neighborhood-data-story
   - scenario: alice-web-a3p-save-load-parity
     role: grouped parity closure probe
     closure_tests:
@@ -980,6 +1029,8 @@ closure_families:
       - cargo test -p eatme-alice --test a3p_roundtrip_coverage
       - cargo test -p eatme-alice --test real_a3p_pipeline_integration
       - cargo test -p eatme-alice --test malformed_input_resilience
+    scenario_bindings:
+      - alice-web-a3p-save-load-parity
   - scenario: alice-web-story-api-runtime-parity
     role: grouped parity closure probe
     closure_tests:
@@ -990,6 +1041,8 @@ closure_families:
       - cargo test -p eatme-alice --test events_collision_support
       - cargo test -p eatme-alice --test events_and_collision_e2e
       - cargo test -p eatme-alice --test text_and_speech_e2e
+    scenario_bindings:
+      - alice-web-story-api-runtime-parity
   - scenario: alice-web-gallery-media-parity
     role: grouped parity closure probe
     closure_tests:
@@ -998,3 +1051,34 @@ closure_families:
       - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
+    scenario_bindings:
+      - alice-web-gallery-media-parity
+  - scenario: alice-2-migration-bridge
+    role: row-specific LookingGlass migration guidance closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+    scenario_bindings:
+      - alice-2-migration-bridge
+    evidence_assertions:
+      - guidance-only
+      - automatic Alice 2 conversion remains explicitly unsupported
+  - scenario: modified-class-portability
+    role: row-specific LookingGlass class behavior package closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+    scenario_bindings:
+      - modified-class-portability
+    evidence_assertions:
+      - class-behavior-package.persistence
+      - behavior package import
+      - behavior persistence after import
+  - scenario: teacher-community-sharing-loop
+    role: row-specific LookingGlass teacher share metadata closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+    scenario_bindings:
+      - teacher-community-sharing-loop
+    evidence_assertions:
+      - alice-web.teacher-share/v1
+      - teacher-share-metadata
+      - sha256

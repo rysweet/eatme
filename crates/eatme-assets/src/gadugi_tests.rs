@@ -280,6 +280,87 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
     }
 }
 
+#[test]
+fn generated_lookingglass_verification_steps_assert_source_evidence_terms() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let expectations = [
+        (
+            "assets/scenarios/eatme/alice-2-migration-bridge.yaml",
+            "Verify Lookingglass Bounded Alice2 Guidance",
+            vec![
+                "test/project-migration.test.ts",
+                "guidance-only",
+                "automatic Alice 2 conversion",
+            ],
+        ),
+        (
+            "assets/scenarios/eatme/modified-class-portability.yaml",
+            "Verify Lookingglass Class Behavior Package",
+            vec![
+                "class-behavior-package.persistence.test.ts",
+                "class behavior package",
+                "different AliceProject",
+                "project persistence",
+            ],
+        ),
+        (
+            "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",
+            "Verify Lookingglass Teacher Share Package",
+            vec![
+                "test/project-export.test.ts",
+                "alice-web.teacher-share/v1",
+                "teacher-share-metadata",
+                "sha256",
+            ],
+        ),
+    ];
+
+    for (source, step_name, required_patterns) in expectations {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let stdout = generated_step_stdout(&generated, step_name);
+        for required in required_patterns {
+            assert!(
+                stdout.contains(required),
+                "{source} {step_name} must assert {required:?}; stdout assertions were {stdout:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn generator_rejects_evidence_steps_without_derivable_stdout_assertions() {
+    let root = scratch_root("generator-rejects-empty-evidence-stdout");
+    let source_path = root.join("assets/scenarios/eatme/opaque-evidence.yaml");
+    fs::create_dir_all(source_path.parent().unwrap()).unwrap();
+    fs::write(
+        &source_path,
+        r#"
+schema_version: eatme.scenario/v1
+id: opaque-evidence
+title: Opaque Evidence
+kind: alice_lesson_smoke
+owner: eatme
+purpose: Proves the Gadugi generator refuses empty stdout assertions for opaque evidence commands.
+steps:
+  - id: opaque-command
+    command: custom-tool --do-work
+    evidence:
+      - custom tool produced the required durable proof
+"#,
+    )
+    .unwrap();
+
+    let error = generate_gadugi_adapter_yaml(&root, &source_path).unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("stdout assertions would be empty"),
+        "{error}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 
@@ -302,6 +383,22 @@ fn generated_adapter_value(generated: &str) -> Value {
         .collect::<Vec<_>>()
         .join("\n");
     serde_yaml::from_str(&yaml_without_header).unwrap()
+}
+
+fn generated_step_stdout(generated: &str, step_name: &str) -> String {
+    let adapter = generated_adapter_value(generated);
+    adapter["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|step| step["name"] == step_name)
+        .unwrap_or_else(|| panic!("{step_name} step is generated"))["expect"]["stdout_contains"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn scratch_root(name: &str) -> std::path::PathBuf {
