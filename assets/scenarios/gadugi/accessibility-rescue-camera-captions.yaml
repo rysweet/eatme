@@ -41,12 +41,25 @@ steps:
     - '"passed": true'
     - '"accessibility-rescue-camera-captions"'
   timeout: 60000
+- name: Lookingglass Caption Evidence
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-accessibility-rescue-camera-captions}"
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test
   params:
     acceptance_probes: |-
       LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+      LookingGlass /api/accessibility/rescue-camera-captions returns aria-live, camera, and scene-object caption checks for the web workflow.
       Accessibility audit card prompts identification of at least one camera framing gap.
       Accessibility audit card prompts identification of at least one caption or label gap.
       Camera rescue guide shows a concrete camera reframe or second-position example before the general framing.
@@ -62,6 +75,7 @@ steps:
     - accessibility_audit_card
     - camera_rescue_guide
     - caption_and_label_template
+    - lookingglass_caption_api_evidence
   timeout: 900000
 assertions:
 - name: Assets Validate
@@ -69,6 +83,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: lookingglass-caption-evidence succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Lookingglass Caption Evidence
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent
