@@ -390,7 +390,7 @@ fn repository_command(command: &str, run_id: &str) -> String {
 }
 
 fn command_with_stdout_markers(command: &str) -> String {
-    if !is_executable_test_command(command) {
+    if !is_executable_cargo_test_command(command) {
         return command.to_owned();
     }
     let markers = cargo_test_success_markers(command);
@@ -405,13 +405,13 @@ fn command_with_stdout_markers(command: &str) -> String {
     format!("set -e\n{command}\n{marker_lines}")
 }
 
-fn is_executable_test_command(command: &str) -> bool {
+fn is_executable_cargo_test_command(command: &str) -> bool {
     let trimmed = command.trim_start();
     let first_line = trimmed.lines().next().unwrap_or(trimmed);
-    command_contains_executed_test(first_line)
+    command_contains_executed_cargo_test(first_line)
         || command_executable_regions(command)
             .iter()
-            .any(|region| command_contains_executed_test(region))
+            .any(|region| command_contains_executed_cargo_test(region))
 }
 
 fn command_executable_regions(command: &str) -> Vec<String> {
@@ -435,14 +435,11 @@ fn command_executable_regions(command: &str) -> Vec<String> {
     regions
 }
 
-fn command_contains_executed_test(command: &str) -> bool {
+fn command_contains_executed_cargo_test(command: &str) -> bool {
     let trimmed = command.trim_start();
     trimmed.starts_with("cargo test ")
-        || trimmed.starts_with("npm test ")
         || trimmed.contains(" cargo test ")
-        || trimmed.contains(" npm test ")
-        || trimmed.starts_with("cd ")
-            && (trimmed.contains("&& cargo test ") || trimmed.contains("&& npm test "))
+        || trimmed.starts_with("cd ") && trimmed.contains("&& cargo test ")
         || trimmed.starts_with("bash -lc 'cargo test ")
 }
 

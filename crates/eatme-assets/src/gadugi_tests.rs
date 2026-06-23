@@ -304,6 +304,11 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
     for (source, step_name, required_patterns) in expectations {
         let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
         let stdout = generated_step_stdout(&generated, step_name);
+        let command = generated_step_command(&generated, step_name);
+        assert!(
+            !command.contains("cargo-test-ok="),
+            "{source} {step_name} npm command must not emit cargo-test-ok markers; command was {command}"
+        );
         for required in required_patterns {
             assert!(
                 stdout.contains(required),
