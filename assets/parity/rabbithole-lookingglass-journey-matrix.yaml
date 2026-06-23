@@ -104,8 +104,8 @@ rows:
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     looking_glass:
       status: partial
-      source_status: "Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform and adjust evidence"
-      reason: "LookingGlass save/reopen/export evidence covers adding an object, editing movement behavior, running, saving, reopening, and exporting; transform and adjust evidence are missing for this row."
+      source_status: "Partial: object placement, procedure edit, run, save, and reopen are covered; missing export, transform, and adjust evidence"
+      reason: "LookingGlass save/reopen evidence covers adding an object, editing movement behavior, running, saving, and reopening; export, transform, and adjust evidence are missing for this row."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student creates or opens an objects-first world, places an object, edits movement, runs, saves, reopens, and verifies persistence; transform and adjust behavior are not claimed by this row."
     closure:
