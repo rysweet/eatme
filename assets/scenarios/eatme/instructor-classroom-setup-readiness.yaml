@@ -34,6 +34,11 @@ agentic_flow:
   - setup_checklist
   - fallback_plan
   - student_setup_note
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_test_prompt: Act as an instructor acceptance agent preparing classroom setup. Produce a readiness checklist, student-facing setup note, and fallback plan. Include device/graphics constraints from Alice resources, offline/resource alternatives, what evidence confirms readiness, and what to do when launch fails. Keep the plan non-coder editable.
 acceptance_criteria:
 - given: an instructor is preparing a lab
@@ -69,6 +74,13 @@ steps:
   evidence:
   - stdout JSON has passed=true
   - stdout JSON includes instructor-classroom-setup-readiness
+- id: lookingglass-setup-readiness
+  command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+  evidence:
+  - LookingGlass /api/health and /api/config respond for the web runtime
+  - LookingGlass /api/setup/preflight names instructor-classroom-setup-readiness and desktop-only boundaries
+  - LookingGlass /api/project/templates and /api/project/new prove classroom create-project readiness
+  - LookingGlass /api/setup/evidence-handoff writes a classroom readiness handoff
 - id: agentic-instructor-review
   command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml
   evidence:

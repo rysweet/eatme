@@ -134,7 +134,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         },
         environment: GeneratedEnvironment {
             requires: Vec::new(),
-            optional: vec!["EATME_REPO".into()],
+            optional: optional_environment(scenario),
         },
         agents: vec![
             GeneratedAgent {

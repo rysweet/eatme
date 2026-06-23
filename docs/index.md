@@ -65,6 +65,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Alice.org HowTo coverage](./eatme/alice-howto-coverage.md)
 - [Web platform testing](./web-platform-testing.md)
 - [Alice Web parity gap scenarios](./alice-web-parity-gap-scenarios.md)
+- [Gallery/media/import parity](./howto/gallery-media-import-parity.md)
 
 ## Documentation map
 
@@ -98,6 +99,8 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Real-Alice grading integration tests](./real-alice-grading-integration-tests.md)
 - [Alice content coverage tests](./alice-content-coverage-tests.md)
 - [Alice Web parity gap scenarios](./alice-web-parity-gap-scenarios.md)
+- [Gallery/media/import parity usage guide](./howto/gallery-media-import-parity.md)
+- [Gallery/media/import parity walkthrough](./tutorials/gallery-media-import-parity-walkthrough.md)
 - [Outside-in Alice test modules](./outside-in-alice-test-modules.md)
 - [Post-focus screenshot evidence](./post-focus-screenshot-evidence.md)
 - [Run window polling](./run-window-polling.md)
@@ -121,6 +124,7 @@ cargo run -q -p eatme-cli -- assets validate --json
 - [Gadugi adapters](./gadugi-adapters.md)
 - [Persona assets](./persona-assets.md)
 - [Live studio workshop evidence contract](./live-studio-workshop-evidence.md)
+- [Gallery/media/import parity API contract](./reference/gallery-media-import-parity-contract.md)
 
 ### Integrations and publishing
 

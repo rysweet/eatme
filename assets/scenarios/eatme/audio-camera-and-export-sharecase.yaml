@@ -62,6 +62,8 @@ acceptance_criteria:
   then: the question focuses on concept or communication rather than only aesthetics, and the output explains why that distinction matters
 acceptance_probes:
 - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass export/share evidence is limited to LookingGlass:test/project-export-share-fallback.contract.test.ts and does not claim native Web Share success.
+- LookingGlass audio evidence remains bounded metadata/playback-bridge evidence and does not claim native audio playback.
 - Camera-and-audio polish guide prompts the student to choose one camera marker or audio cue and write one sentence explaining why they chose it.
 - Camera-and-audio polish guide includes a caption or text-label step that makes the cue meaningful for viewers who cannot rely solely on sound or visual detail.
 - Student sharecase card names the artifact or screenshot reference and describes the one cue the student added.

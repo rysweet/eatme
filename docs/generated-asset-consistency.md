@@ -57,7 +57,8 @@ The current committed inventory has 115 scenario YAML files:
 | Scenario asset type | Count |
 | --- | --- |
 | Canonical eatme scenarios | 57 |
-| Gadugi scenarios | 58 |
+| Generated Gadugi adapters | 57 |
+| Hand-authored Gadugi regression scenarios | 1 |
 
 CLI-backed generated adapters use that discovered count in their validation
 expectations:

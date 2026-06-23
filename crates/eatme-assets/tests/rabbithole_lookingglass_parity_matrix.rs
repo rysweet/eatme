@@ -115,15 +115,31 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
             .join("assets/scenarios/eatme")
             .join(format!("{scenario}.yaml"));
         let scenario_yaml = read_yaml(&format!("assets/scenarios/eatme/{scenario}.yaml"));
+        let scenario_kind = string_at(&scenario_yaml, &["kind"]);
         let lookingglass_status = string_at(&row, &["looking_glass", "status"]);
         let lookingglass_command = string_at(&row, &["looking_glass", "command"]);
+        let rabbit_hole_status = string_at(&row, &["rabbit_hole", "status"]);
         let rabbit_hole_command = string_at(&row, &["rabbit_hole", "command"]);
         let closure = strings_at(&row, &["closure", "required"]).join("\n");
 
         if !scenario_path.is_file() {
             failures.push(format!("{scenario}: missing scenario asset"));
         }
-        if !rabbit_hole_command.contains("EATME_REAL_ALICE=1")
+        let setup_readiness_instructor = matches!(
+            scenario.as_str(),
+            "setup-preflight-ready-to-create"
+                | "instructor-classroom-setup-readiness"
+                | "instructor-student-launch-evidence-handoff"
+        );
+        if setup_readiness_instructor && scenario_kind == "instructor_agentic_flow" {
+            if rabbit_hole_status != "partial"
+                || !rabbit_hole_command.contains("assets validate --path")
+            {
+                failures.push(format!(
+                    "{scenario}: instructor RabbitHole closure must be partial and validate the editable scenario asset"
+                ));
+            }
+        } else if !rabbit_hole_command.contains("EATME_REAL_ALICE=1")
             || !rabbit_hole_command.contains("--alice-home")
             || !rabbit_hole_command.contains("--scenario")
         {

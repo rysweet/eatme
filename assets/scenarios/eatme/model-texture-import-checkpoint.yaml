@@ -65,6 +65,10 @@ acceptance_criteria:
   then: gadugi invokes eatme CLI and inspects manifest-level evidence only
 acceptance_probes:
 - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass:test/model-texture-import-checkpoint-closure.contract.test.ts proves imported model bytes, texture bytes, assignment metadata, camera checkpoint state, export, and reopen persistence.
+- LookingGlass:test/imported-project-assets-security.contract.test.ts proves imported model and texture resource identifiers reject traversal, encoded separators, absolute paths, unsupported extensions, and unsafe project scope.
+- LookingGlass:test/model-texture-camera-joint-export-workflow.contract.test.ts proves the public workflow API exports resources and share fallback artifacts without native Web Share overclaims.
+- LookingGlass:test/imported-asset-project-io.test.ts proves imported asset descriptors, resource bytes, and surface bindings round-trip through project IO.
 - Import checklist includes provenance, visual verification, issue/fallback, and concept link.
 - Learner can proceed even when a third-party asset fails.
 - The checkpoint avoids requiring one specific external asset or spending the lesson asset hunting.
