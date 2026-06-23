@@ -65,6 +65,62 @@ fn matrix_rows() -> Vec<Value> {
         .to_vec()
 }
 
+fn collect_markdown_docs(dir: &Path, docs: &mut Vec<PathBuf>) {
+    for entry in fs::read_dir(dir)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", dir.display()))
+    {
+        let entry = entry
+            .unwrap_or_else(|error| panic!("failed to read entry in {}: {error}", dir.display()));
+        let path = entry.path();
+        if path.is_dir() {
+            collect_markdown_docs(&path, docs);
+        } else if path.extension().and_then(|extension| extension.to_str()) == Some("md") {
+            docs.push(path);
+        }
+    }
+}
+
+fn durable_markdown_docs() -> Vec<String> {
+    let root = repository_root();
+    let mut docs = vec![root.join("README.md")];
+    collect_markdown_docs(&root.join("docs"), &mut docs);
+    docs.into_iter()
+        .map(|path| {
+            path.strip_prefix(&root)
+                .expect("doc is under repo root")
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
+        .collect()
+}
+
+fn logical_shell_commands(text: &str) -> Vec<String> {
+    let mut commands = Vec::new();
+    let mut current = String::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            if !current.is_empty() {
+                commands.push(current.trim().to_string());
+                current.clear();
+            }
+            continue;
+        }
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(trimmed.trim_end_matches('\\').trim_end());
+        if !trimmed.ends_with('\\') {
+            commands.push(current.trim().to_string());
+            current.clear();
+        }
+    }
+    if !current.is_empty() {
+        commands.push(current.trim().to_string());
+    }
+    commands
+}
+
 fn lookingglass_test_refs(row: &Value) -> Vec<String> {
     strings_at(row, &["closure", "required"])
         .join("\n")
@@ -127,10 +183,20 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
             "{scenario} must describe LookingGlass audio evidence as bounded metadata/playback-bridge support:\n{row_text}"
         );
         assert!(
-            row_text.contains("does not claim native audio playback")
-                && row_text.contains("does not claim native Web Share success"),
-            "{scenario} must explicitly avoid native audio and native Web Share overclaims:\n{row_text}"
+            row_text.contains("does not claim native audio playback"),
+            "{scenario} must explicitly avoid native audio overclaims:\n{row_text}"
         );
+        if scenario == "media-audio-cue-storyboard" {
+            assert!(
+                !row_text.contains("native Web Share"),
+                "{scenario} is audio-only and must not mention native Web Share evidence:\n{row_text}"
+            );
+        } else {
+            assert!(
+                row_text.contains("does not claim native Web Share success"),
+                "{scenario} must explicitly avoid native Web Share overclaims:\n{row_text}"
+            );
+        }
         assert!(
             !row_text.contains("finished artifact package")
                 && !row_text.contains("real/native audio playback")
@@ -146,11 +212,11 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
     let expectations = [
         (
             "media-audio-cue-storyboard",
-            "Partial: bounded audio cue metadata and simulated playback bridge evidence only",
+            "Partial: bounded audio cue metadata and simulated playback bridge evidence only; covered metadata/playback bridge evidence; missing native audio playback and full authoring evidence",
         ),
         (
             "audio-camera-and-export-sharecase",
-            "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence",
+            "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence; covered camera/export/download path; missing native audio playback and native Web Share evidence",
         ),
         (
             "model-texture-import-checkpoint",
@@ -177,6 +243,66 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
         !inventory.contains("finished artifact package"),
         "coverage inventory must not overclaim finished artifact package support"
     );
+}
+
+#[test]
+fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
+    for doc_path in durable_markdown_docs() {
+        let text = read_text(&doc_path);
+        assert!(
+            !text.contains("LOOKINGGLASS_REPO"),
+            "{doc_path} must use LOOKINGGLASS_HOME for direct LookingGlass commands"
+        );
+        for stale_placeholder in [
+            "<lookingglass-repo>",
+            "/path/to/alice-web-prototype",
+            "alice-web-prototype repo",
+            "ALICE_WEB_PROTOTYPE_HOME",
+            "ALICE_WEB_PROTOTYPE_ROOT",
+        ] {
+            assert!(
+                !text.contains(stale_placeholder),
+                "{doc_path} must not publish stale LookingGlass checkout placeholder {stale_placeholder:?}"
+            );
+        }
+        assert!(
+            !text.contains("ALICE_WEB_URL=${ALICE_WEB_URL}")
+                && !text.contains("ALICE_WEB_URL=$ALICE_WEB_URL")
+                && !text.contains("ALICE_WEB_URL=\"$ALICE_WEB_URL\""),
+            "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
+        );
+        for command in logical_shell_commands(&text) {
+            let direct_web_command = command.contains("npm test --")
+                || command.contains("npm run test --")
+                || command.contains("npm run test:e2e --");
+            if direct_web_command {
+                assert!(
+                    command.contains("EATME_WEB_PLATFORM=1")
+                        && command
+                            .contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+                    "{doc_path} direct LookingGlass web evidence command must set web platform and default ALICE_WEB_URL: {command}"
+                );
+            }
+        }
+    }
+
+    for doc_path in [
+        "README.md",
+        "docs/web-platform-testing.md",
+        "docs/eatme/alice-howto-coverage.md",
+        "docs/howto/gallery-media-import-parity.md",
+        "docs/tutorials/gallery-media-import-parity-walkthrough.md",
+    ] {
+        let text = read_text(doc_path);
+        assert!(
+            text.contains("LOOKINGGLASS_HOME"),
+            "{doc_path} must document LOOKINGGLASS_HOME for LookingGlass checkout selection"
+        );
+        assert!(
+            text.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+            "{doc_path} must publish the current direct LookingGlass command convention"
+        );
+    }
 }
 
 #[test]

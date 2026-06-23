@@ -269,7 +269,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
 
 fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
-        return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, and checks eatme launch-smoke evidence without claiming save/reopen/export coverage";
+        return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, checks eatme launch evidence, and points reviewers to separate LookingGlass save/reopen/export evidence";
     }
 
     if scenario.id == "vr-camera-locomotion-journey" {
@@ -285,7 +285,7 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
 
 fn generated_boundary_note(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
-        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, not first-lesson completion, and not full Save completion.";
+        return " This automation scenario keeps honest limits: opened starter project with manifest/log/window/screenshot evidence and bounded starter-world and readiness-gap artifacts only; separate LookingGlass save/reopen/export evidence is required for web parity; not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, not visible rendering correctness proof, and not first-lesson completion.";
     }
 
     let text =

@@ -22,9 +22,10 @@ It has two layers:
 
 ## Start LookingGlass
 
-In the `alice-web-prototype` repository:
+In the LookingGlass repository:
 
 ```bash
+cd "${LOOKINGGLASS_HOME:?}"
 npm install
 npm run build:server
 node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
@@ -32,6 +33,14 @@ node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
 
 Eatme uses `http://localhost:3099` by default, so that command works without
 extra environment variables.
+
+For the dedicated save/reopen/export parity check, start LookingGlass with the
+starter project path so the starter-project row proves an actual `.a3p` open:
+
+```bash
+node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence \
+  --project ../eatme/crates/eatme-alice/tests/fixtures/real/africaMinimum.a3p
+```
 
 Check the server before you run live tests:
 
@@ -52,15 +61,23 @@ export ALICE_WEB_URL=http://127.0.0.1:3000
 Run the dedicated curriculum file:
 
 ```bash
-EATME_WEB_PLATFORM=1 cargo test -p eatme-alice \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice \
   --test web_platform_curriculum_e2e \
+  -- --test-threads=1
+```
+
+Run the dedicated save/reopen/export parity file:
+
+```bash
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice \
+  --test web_platform_save_reopen_export_e2e \
   -- --test-threads=1
 ```
 
 Run the whole workspace with the web gate enabled:
 
 ```bash
-EATME_WEB_PLATFORM=1 cargo test --workspace
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test --workspace
 ```
 
 Validate the RabbitHole-vs-LookingGlass journey matrix:
@@ -91,7 +108,7 @@ The live lane covers these curriculum areas:
 | Parameters | Edit parameterized behavior |
 | Inheritance and OOP | Use custom type patterns |
 | Comments and code clarity | Check learner-friendly procedure edits |
-| Project IO | Save, then verify synthetic in-memory reload state; there is no REST load endpoint yet |
+| Project IO | Save and reopen with `/api/project/save` plus `/api/project/reopen`; older curriculum checks still use synthetic in-memory reload state |
 | Game and narrative | Follow score, win, and story flows |
 | Say and think | Exercise speech and thought bubbles |
 | Design process | Track plan, build, playtest, and revision checkpoints |

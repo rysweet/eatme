@@ -157,6 +157,8 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
         }
         if lookingglass_status == "covered" || lookingglass_status == "partial" {
             let targets = strings_at(&scenario_yaml, &["adapter", "targets"]);
+            let source_status = string_at(&row, &["looking_glass", "source_status"]);
+            let reason = string_at(&row, &["looking_glass", "reason"]);
             if !targets.iter().any(|target| target == "lookingglass") {
                 failures.push(format!(
                     "{scenario}: claimed LookingGlass support without lookingglass adapter target"
@@ -169,15 +171,19 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                 && lookingglass_command.contains("npm test --");
             if !is_eatme_web_command && !is_direct_lookingglass_command {
                 failures.push(format!(
-                    "{scenario}: LookingGlass closure command must be runnable"
+                    "{scenario}: LookingGlass closure command must be a web cargo command or direct LOOKINGGLASS_HOME npm command"
                 ));
             }
+            let blank_braced_assignment = format!("{}{}", "ALICE_WEB_URL=${ALICE_", "WEB_URL}");
+            let blank_quoted_assignment = format!("{}{}", "ALICE_WEB_URL=\"$ALICE_", "WEB_URL\"");
+            let defaulted_assignment = "ALICE_WEB_URL=\"${ALICE_WEB_URL:-http://localhost:3099}\"";
             if lookingglass_command.contains("ALICE_WEB_URL")
-                && !lookingglass_command
-                    .contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#)
+                && (lookingglass_command.contains(&blank_braced_assignment)
+                    || lookingglass_command.contains(&blank_quoted_assignment)
+                    || !lookingglass_command.contains(defaulted_assignment))
             {
                 failures.push(format!(
-                    "{scenario}: LookingGlass web command must default ALICE_WEB_URL when it is unset"
+                    "{scenario}: LookingGlass closure command must default blank ALICE_WEB_URL to http://localhost:3099"
                 ));
             }
             if closure.contains(
@@ -186,6 +192,24 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                 failures.push(format!(
                     "{scenario}: supported LookingGlass row must not use unsupported closure wording"
                 ));
+            }
+            if lookingglass_status == "partial" {
+                let source_lower = source_status.to_ascii_lowercase();
+                let reason_lower = reason.to_ascii_lowercase();
+                if !source_lower.starts_with("partial:")
+                    || !source_lower.contains("covered")
+                    || !source_lower.contains("missing")
+                    || !source_lower.contains("evidence")
+                {
+                    failures.push(format!(
+                        "{scenario}: partial LookingGlass source_status must name covered and missing evidence"
+                    ));
+                }
+                if !reason_lower.contains("missing") || !reason_lower.contains("evidence") {
+                    failures.push(format!(
+                        "{scenario}: partial LookingGlass reason must name missing evidence"
+                    ));
+                }
             }
         } else if lookingglass_status == "not_supported" {
             if string_at(&row, &["looking_glass", "reason"]).is_empty() {
@@ -270,6 +294,7 @@ fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tes
         scenarios,
         BTreeSet::from([
             "web-platform-curriculum-e2e".to_string(),
+            "alice-web-save-reopen-export-parity".to_string(),
             "alice-web-a3p-save-load-parity".to_string(),
             "alice-web-gallery-media-parity".to_string(),
             "alice-web-story-api-runtime-parity".to_string(),

@@ -23,7 +23,10 @@ fn ts_enabled() -> bool {
 }
 
 fn base_url() -> String {
-    env::var("ALICE_WEB_URL").unwrap_or_else(|_| "http://localhost:3099".into())
+    env::var("ALICE_WEB_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "http://localhost:3099".into())
 }
 
 #[derive(Debug, Deserialize)]

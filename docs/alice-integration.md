@@ -149,7 +149,7 @@ paths are evidence-root-relative summaries, artifact contents are never read or
 emitted, and blocker details are normalized before reporting.
 
 LookingGlass coverage is conditional on web support for the workflow phase. Do
-not require `$ALICE_WEB_PROTOTYPE_ROOT` for desktop-only phases. If RabbitHole
+not require `$LOOKINGGLASS_HOME` for desktop-only phases. If RabbitHole
 Alice or LookingGlass claims a workflow phase but cannot produce valid evidence,
 eatme reports sanitized product-issue details for follow-up.
 

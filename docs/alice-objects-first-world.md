@@ -114,8 +114,8 @@ run, save, reopen, and persisted-state checks.
 | Real Alice gate | `EATME_REAL_ALICE=1` |
 | Evidence root | `runs/alice-objects-first-world/<run-id>/` |
 
-The TypeScript web prototype target is optional and future-facing. Do not require
-`ALICE_WEB_PROTOTYPE_HOME` for this workflow until a prototype adapter is
+The LookingGlass target is optional and future-facing for this workflow. Do not require
+`LOOKINGGLASS_HOME` until a LookingGlass adapter is
 implemented and documented as conditional coverage.
 
 ## Implementation validation checklist
@@ -272,13 +272,13 @@ project. The reopened project must still show:
 - the movement in the procedure;
 - the saved project artifact used for the reopen step.
 
-## TypeScript prototype coverage
+## LookingGlass coverage
 
-Prototype coverage is future and conditional. Do not document
-`ALICE_WEB_PROTOTYPE_HOME` or a `ts_prototype_adapter` test as required workflow
+LookingGlass coverage is future and conditional. Do not document
+`LOOKINGGLASS_HOME` or a LookingGlass adapter test as required workflow
 steps until the adapter exists.
 
-When prototype support is added, the adapter should report each comparable phase
+When LookingGlass support is added, the adapter should report each comparable phase
 as one of:
 
 | State | Meaning |

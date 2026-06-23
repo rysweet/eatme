@@ -47,9 +47,10 @@ evidence that each step completed correctly.
 
 **Web platform tests** (opt-in via `EATME_WEB_PLATFORM=1`) run the
 LookingGlass-targeted curriculum scenarios against LookingGlass's REST API,
-including scene building, procedures, events, loops, functions, variables,
-arrays, camera, audio, vehicles, joints, and more. The exact web-capable
-scenario count is enforced by the parity matrix tests.
+covering 28 curriculum workflows plus separate save/reopen/export parity checks
+for scene building, procedures, events, loops, functions, variables, arrays,
+camera, audio, vehicles, joints, and more. The exact web-capable scenario count
+is enforced by the parity matrix tests.
 
 ## Quick start
 
@@ -98,13 +99,13 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto \
 To run curriculum tests against LookingGlass:
 
 ```bash
-# Start LookingGlass (in the alice-web-prototype repo)
-cd /path/to/alice-web-prototype
+# Start LookingGlass
+cd "${LOOKINGGLASS_HOME:?}"
 npm run build:server
 node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
 
 # Run web platform tests
-EATME_WEB_PLATFORM=1 cargo test --workspace
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test --workspace
 ```
 
 Set `ALICE_WEB_URL` to override the default `http://localhost:3099`.

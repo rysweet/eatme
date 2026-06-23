@@ -307,10 +307,10 @@ Important public types:
 | `WorkflowPhaseEvidence` | One phase status with required artifact references and failure category. |
 | `PersistedStateEvidence` | Parsed object, transform, and procedure movement state from the reopened project. |
 
-## TypeScript prototype adapter
+## LookingGlass adapter
 
-Prototype coverage is future and conditional. Do not require
-`ALICE_WEB_PROTOTYPE_HOME` or document a `ts_prototype_adapter` test as part of
+LookingGlass coverage is future and conditional. Do not require
+`LOOKINGGLASS_HOME` or document a LookingGlass adapter test as part of
 the runnable workflow until that adapter exists.
 
 When implemented, adapter outputs must use these states:

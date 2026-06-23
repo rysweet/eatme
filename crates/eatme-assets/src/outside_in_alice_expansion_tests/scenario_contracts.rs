@@ -168,7 +168,8 @@ fn starter_project_preflight_contract_records_edit_run_observe_and_readiness_gap
             "launch real Alice",
             "small editable starter-world change",
             "attempt to run or observe",
-            "save/reopen/export/readiness gaps",
+            "LookingGlass REST evidence",
+            "remaining classroom-readiness gaps",
             "editable_starter_world_change_note",
             "run_or_observe_attempt_note",
             "save_reopen_export_readiness_gap_note",
@@ -177,7 +178,7 @@ fn starter_project_preflight_contract_records_edit_run_observe_and_readiness_gap
             "not visible rendering correctness proof",
             "not first-lesson completion",
             "not grading",
-            "not full Save completion",
+            "not full UI automation",
         ],
     );
     assert_not_contains_any(

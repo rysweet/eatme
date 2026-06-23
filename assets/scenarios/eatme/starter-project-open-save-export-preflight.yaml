@@ -8,7 +8,7 @@ resource_basis:
   url: https://www.alice.org/get-alice/alice-3/
 - name: Alice desktop outside-in open/save/export QA
   url: ${ALICE_DESKTOP_SCENARIOS:-../alice3-modernization/qa/outside-in/alice-desktop/scenarios}
-purpose: 'Provide one plain automation scenario for instructors and students to use as a starter-project preflight: launch real Alice, open the bundled starter project, name one small editable starter-world change, attempt to run or observe the opened world, and record the save/reopen/export/readiness gaps before anyone treats the starter project as classroom-ready. The scenario evidence is limited to the opened starter project, the editable starter-world change note, eatme launch-smoke JSON report, log, window or screenshot evidence, and readiness-gap notes that reviewers can cite without treating it as full save/reopen/export coverage.'
+purpose: 'Provide one plain automation scenario for instructors and students to use as a starter-project preflight: launch real Alice, open the bundled starter project, name one small editable starter-world change, attempt to run or observe the opened world, and record the remaining classroom-readiness gaps. LookingGlass validation covers the web save, reopen, and export path with REST API evidence; desktop Alice evidence remains bounded to launch, logs, screenshot/window evidence, editable starter-world notes, and readiness notes.'
 launcher:
   command: alice run-howto
   scenario: starter-project-open-save-export-preflight
@@ -58,15 +58,15 @@ acceptance_criteria:
 - given: the harness starts Alice with the bundled africa.a3p starter project
   when: Alice reaches a smoke-ready desktop session under Xvfb
   then: screenshot or window evidence and logs are captured for the opened project state as an attempted run or observation, not proof of visible rendering correctness
-- given: save, reopen, export, and classroom readiness still need fuller user-like checks
+- given: classroom readiness still needs fuller user-like checks beyond one starter preflight
   when: the readiness gap note is recorded
-  then: it names the unproven save/reopen/export/readiness areas without claiming full Save completion or full UI automation
+  then: it names the remaining readiness areas without discounting the separate LookingGlass save/reopen/export API evidence
 - given: an instructor or student needs one plain readiness handoff
   when: this automation scenario writes the starter-project readiness report
   then: the report summarizes launch evidence, the editable starter-world change note, the attempted run or observation, and the remaining save/reopen/export/readiness gaps without claiming first-lesson completion
-- given: open/save/export QA still needs user-like journey evidence
+- given: open/save/export QA has separate LookingGlass REST evidence and desktop Alice still needs user-like journey evidence
   when: instructor/student agents plan the next save, reopen, or export pass
-  then: they must cite this preflight manifest and the Alice desktop QA scenarios instead of treating it as completed save/reopen/export coverage
+  then: they must cite the LookingGlass web parity command for web evidence and this preflight manifest plus Alice desktop QA scenarios for desktop evidence
 - given: reviewers need bounded starter-project evidence
   when: they inspect this scenario's artifacts
   then: they must treat the result as bounded real Alice starter-project evidence for an opened starter project with manifest/log/window/screenshot evidence and inspectable readiness notes, not full UI automation, not creative assessment, not learner-world grading, and not complete Alice coverage
@@ -97,12 +97,12 @@ steps:
   - screenshot or window evidence is treated as an attempted observation only
   - log exists and is non-empty
 - id: record-run-observe-readiness-gaps
-  command: bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "save_reopen_export_gaps=Record that save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "launch=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence for the opened starter project." "starter_world_change=Review starter-world-change-note.txt for the small editable starter-world change to make in a later user-like Alice pass." "run_or_observe_attempt=Treat
-    the available log and screenshot/window evidence as an attempted run or observation only." "save_reopen_export_readiness_gaps=Save, reopen, export, and classroom readiness still need user-like evidence before those journeys are trusted." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, and not full Save completion." > "$run_dir/starter-project-readiness-report.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt" "wrote=$run_dir/starter-project-readiness-report.txt"'
+  command: bash -lc 'run_dir="runs/starter-project-open-save-export-preflight/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "run_or_observe_attempt=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence to show that the opened starter world was run or observed as far as this automation scenario can prove." "lookingglass_save_reopen_export=Use the web_platform_save_reopen_export_e2e LookingGlass command for REST-backed save, reopen, and export evidence." "readiness_gaps=Record that classroom readiness still needs user-like evidence before the starter journey is trusted end to end." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, and not creative assessment." > "$run_dir/run-observe-readiness-gaps.txt"; printf "%s\n" "launch=Use the eatme launch-smoke JSON report, log, and screenshot/window evidence for the opened starter project." "starter_world_change=Review starter-world-change-note.txt for the small editable starter-world change to make in a later user-like Alice pass." "run_or_observe_attempt=Treat
+    the available log and screenshot/window evidence as an attempted run or observation only." "lookingglass_save_reopen_export=Use the web_platform_save_reopen_export_e2e LookingGlass command for REST-backed save, reopen, and export evidence." "readiness_gaps=Classroom readiness still needs user-like evidence before the starter journey is trusted end to end." "claim_boundary=not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, and not creative assessment." > "$run_dir/starter-project-readiness-report.txt"; printf "%s\n" "wrote=$run_dir/run-observe-readiness-gaps.txt" "wrote=$run_dir/starter-project-readiness-report.txt"'
   evidence:
   - run/observe gap note ties the attempted run or observation to the eatme launch-smoke JSON report, log, and screenshot/window evidence
-  - starter-project readiness report summarizes launch evidence, the editable starter-world change, attempted run or observation, and save/reopen/export/readiness gaps
-  - save/reopen/export/readiness gaps remain explicit and unclaimed
+  - starter-project readiness report summarizes launch evidence, the editable starter-world change, attempted run or observation, and the separate LookingGlass save/reopen/export evidence command
+  - remaining classroom-readiness gaps stay explicit and unclaimed
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#open-save-export
   deterministic_gate: Run this automation scenario before asking instructor/student agents to judge whether a learner can save, reopen, export, or rely on the opened starter project for classroom readiness.
@@ -119,4 +119,4 @@ artifacts:
   starter_world_change_note: runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-world-change-note.txt
   run_observe_readiness_gaps: runs/starter-project-open-save-export-preflight/${RUN_ID}/run-observe-readiness-gaps.txt
   starter_project_readiness_report: runs/starter-project-open-save-export-preflight/${RUN_ID}/starter-project-readiness-report.txt
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or substitute mocked open/save/export evidence. This automation scenario records bounded real Alice starter-project evidence for the opened starter project with an editable starter-world change note, a bounded run or observation attempt, manifest/log/window/screenshot evidence, a plain starter-project readiness report, readiness gap notes, and inspectable readiness artifacts only; it is not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, not learner-world grading, not full Save completion, and not complete Alice coverage.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. Do not silently skip or substitute mocked desktop evidence. This automation scenario records bounded real Alice starter-project evidence for the opened starter project with an editable starter-world change note, a bounded run or observation attempt, manifest/log/window/screenshot evidence, a plain starter-project readiness report, readiness gap notes, and inspectable readiness artifacts only; LookingGlass save/reopen/export evidence is covered by the web_platform_save_reopen_export_e2e command. The desktop evidence is not full UI automation, not visible rendering correctness proof, not first-lesson completion, not grading, not creative assessment, not learner-world grading, and not complete Alice coverage.

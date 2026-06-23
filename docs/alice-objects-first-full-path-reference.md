@@ -35,7 +35,7 @@ For step-by-step usage, see
 | Primary command | `eatme alice objects-first-full-path` |
 | Primary runner | `eatme_alice::run_launch_smoke` with `LaunchSmokeScenario::new("alice-objects-first-full-path")` |
 | Primary Alice target | `$ALICE_HOME` |
-| Comparable prototype target | `$ALICE_WEB_PROTOTYPE_HOME` |
+| Comparable LookingGlass target | `$LOOKINGGLASS_HOME` |
 
 The canonical eatme scenario owns the ordered phase list, expected hook names,
 required evidence, acceptance criteria, artifact names, and unsupported behavior
@@ -101,7 +101,7 @@ binds the canonical scenario automatically.
 | `EATME_REAL_ALICE=1` | Yes | Enables real Alice execution for this non-baseline scenario. |
 | `ALICE_HOME=/path/to/RabbitHole` | Yes unless `--alice-home` is set | RabbitHole Alice checkout. |
 | `NODE_OPTIONS=--max-old-space-size=32768` | For Node-backed checks/adapters | Required for generated Gadugi adapters, Node-backed asset checks, or surrounding Node-based agent tooling; not required by the Rust command itself. |
-| `ALICE_WEB_PROTOTYPE_HOME=/path/to/alice-web-prototype` | For TypeScript validation | TypeScript prototype checkout. |
+| `LOOKINGGLASS_HOME=/absolute/path/to/LookingGlass` | For TypeScript validation | LookingGlass checkout. |
 | `GH_TOKEN` or existing `gh` auth | For issue filing | Used only to file sanitized product-gap issues when product support is claimed but invalid. |
 
 The command records the effective configuration in `manifest.json` after
