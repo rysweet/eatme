@@ -361,6 +361,38 @@ steps:
     let _ = fs::remove_dir_all(&root);
 }
 
+#[test]
+fn generator_rejects_opaque_steps_without_evidence_or_derivable_stdout_assertions() {
+    let root = scratch_root("generator-rejects-empty-stdout-no-evidence");
+    let source_path = root.join("assets/scenarios/eatme/opaque-no-evidence.yaml");
+    fs::create_dir_all(source_path.parent().unwrap()).unwrap();
+    fs::write(
+        &source_path,
+        r#"
+schema_version: eatme.scenario/v1
+id: opaque-no-evidence
+title: Opaque No Evidence
+kind: alice_lesson_smoke
+owner: eatme
+purpose: Proves the Gadugi generator refuses empty stdout assertions for opaque commands.
+steps:
+  - id: opaque-command
+    command: custom-tool --do-work
+"#,
+    )
+    .unwrap();
+
+    let error = generate_gadugi_adapter_yaml(&root, &source_path).unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("stdout assertions would be empty"),
+        "{error}"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
 fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     let absolute_root = root.display().to_string();
 

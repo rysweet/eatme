@@ -442,11 +442,11 @@ fn expected_stdout(
         return Ok(launch_expected_stdout(scenario, step));
     }
     let expected = evidence_backed_expected_stdout(step);
-    if !expected.is_empty() || step.evidence.is_empty() {
+    if !expected.is_empty() {
         return Ok(expected);
     }
     bail!(
-        "{} step {} has evidence but generated Gadugi stdout assertions would be empty; add a supported command pattern or explicit evidence-bearing output",
+        "{} step {} generated Gadugi stdout assertions would be empty; add a supported command pattern or explicit evidence-bearing output",
         scenario.id,
         step.id
     )
