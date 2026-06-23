@@ -407,8 +407,16 @@ fn command_with_stdout_markers(command: &str) -> String {
 
 fn is_executable_test_command(command: &str) -> bool {
     let trimmed = command.trim_start();
+    let first_line = trimmed.lines().next().unwrap_or(trimmed);
+    command_contains_executed_test(first_line) || command_contains_executed_test(trimmed)
+}
+
+fn command_contains_executed_test(command: &str) -> bool {
+    let trimmed = command.trim_start();
     trimmed.starts_with("cargo test ")
         || trimmed.starts_with("npm test ")
+        || trimmed.contains(" cargo test ")
+        || trimmed.contains(" npm test ")
         || trimmed.starts_with("cd ")
             && (trimmed.contains("&& cargo test ") || trimmed.contains("&& npm test "))
         || trimmed.starts_with("bash -lc 'cargo test ")

@@ -470,6 +470,28 @@ fn generated_chained_cargo_test_steps_emit_and_assert_every_target_marker() {
 }
 
 #[test]
+fn generated_env_prefixed_cargo_test_steps_emit_success_markers_after_tests() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let generated = generate_gadugi_adapter_yaml(
+        &root,
+        &root.join("assets/scenarios/eatme/setup-preflight-ready-to-create.yaml"),
+    )
+    .unwrap();
+    let stdout = generated_step_stdout(&generated, "Lookingglass Setup Readiness");
+    let command = generated_step_command(&generated, "Lookingglass Setup Readiness");
+
+    assert!(command.contains("set -e"), "{command}");
+    assert!(
+        command.contains("cargo-test-ok=web_platform_setup_readiness_e2e"),
+        "{command}"
+    );
+    assert!(
+        stdout.contains("cargo-test-ok=web_platform_setup_readiness_e2e"),
+        "{stdout}"
+    );
+}
+
+#[test]
 fn generator_rejects_evidence_steps_without_derivable_stdout_assertions() {
     let root = scratch_root("generator-rejects-empty-evidence-stdout");
     let source_path = root.join("assets/scenarios/eatme/opaque-evidence.yaml");
