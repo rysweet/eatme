@@ -686,11 +686,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario model-texture-import-checkpoint --run-id parity-model-texture-import-checkpoint --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
     looking_glass:
-      status: partial
-      source_status: "Partial: LookingGlass PR #251 contains imported model, texture, safe resource, export, and reopen persistence contract tests; default branch evidence is pending."
-      reason: "LookingGlass source/API/tests in PR #251 prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence. Keep this row partial until those tests land on LookingGlass main."
+      status: covered
+      source_status: "Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests."
+      reason: "LookingGlass source/API/tests on main prove model and texture import metadata, safe project-owned archive resources, material binding metadata, export package inclusion, and A3P reopen persistence."
       command: cd ${LOOKINGGLASS_REPO:?} && EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
-      expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available when LookingGlass PR #251 evidence has landed."
+      expected_behavior: "Student imports model and texture resources, applies the texture, reopens the A3P, and verifies project-owned resources remain available."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence

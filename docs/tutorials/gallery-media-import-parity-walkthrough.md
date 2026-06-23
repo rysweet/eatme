@@ -146,9 +146,7 @@ The proof is complete when tests show:
 - package validation reports safe ZIP paths and required package files.
 
 That is enough to keep `model-texture-import-checkpoint` as a LookingGlass
-`partial` row while LookingGlass PR #251 remains off `main`. Promote it only
-after the cited tests land on LookingGlass `main` and EatMe closure evidence is
-updated from default-branch evidence.
+`covered` row because the cited tests are present on LookingGlass `main`.
 
 ## 4. Record bounded audio storyboard evidence
 
@@ -272,7 +270,7 @@ The matrix state enforced by the closure tests is:
 
 | Row | LookingGlass status |
 | --- | --- |
-| `model-texture-import-checkpoint` | `partial` |
+| `model-texture-import-checkpoint` | `covered` |
 | `media-audio-cue-storyboard` | `partial` |
 | `audio-camera-and-export-sharecase` | `partial` |
 

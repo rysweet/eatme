@@ -78,7 +78,7 @@ fn lookingglass_test_refs(row: &Value) -> Vec<String> {
 }
 
 #[test]
-fn model_texture_import_checkpoint_stays_partial_until_lookingglass_evidence_lands_on_main() {
+fn model_texture_import_checkpoint_is_covered_by_lookingglass_main_evidence() {
     let row = matrix_row("model-texture-import-checkpoint");
     let closure = strings_at(&row, &["closure", "required"]).join("\n");
     let expected_refs = [
@@ -90,13 +90,13 @@ fn model_texture_import_checkpoint_stays_partial_until_lookingglass_evidence_lan
 
     assert_eq!(
         string_at(&row, &["looking_glass", "status"]),
-        "partial",
-        "model/texture import can only close after the cited LookingGlass tests land on main"
+        "covered",
+        "model/texture import is covered by cited LookingGlass main tests"
     );
     assert!(
         string_at(&row, &["looking_glass", "source_status"])
-            .contains("default branch evidence is pending"),
-        "partial model/texture row must say the default branch evidence is pending"
+            .contains("LookingGlass main contains imported model"),
+        "covered model/texture row must cite LookingGlass main evidence"
     );
     for expected_ref in expected_refs {
         assert!(
@@ -154,7 +154,7 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
         ),
         (
             "model-texture-import-checkpoint",
-            "Partial: LookingGlass PR #251 contains imported model, texture, safe resource, export, and reopen persistence contract tests; default branch evidence is pending",
+            "Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests",
         ),
     ];
 
