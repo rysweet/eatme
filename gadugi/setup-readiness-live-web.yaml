@@ -1,0 +1,69 @@
+name: EatMe Setup Readiness Live Web Command Flow
+description: Runs the editable asset validation and the live LookingGlass setup-readiness comparison without agentic-only runner actions.
+version: 1.0.0
+config:
+  timeout: 600000
+  retries: 0
+  parallel: false
+environment:
+  requires:
+  - ALICE_WEB_URL
+  - ALICE_LOCAL_API_TOKEN
+  optional:
+  - EATME_REPO
+agents:
+- name: eatme-cli-agent
+  type: system
+  config:
+    shell: bash
+    cwd: .
+    timeout: 600000
+    capture_output: true
+steps:
+- name: Validate editable setup assets
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      cargo run -q -p eatme-cli -- assets validate --json
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - '"passed": true'
+    - '"scenario_asset_count": 115'
+  timeout: 60000
+- name: Run live setup readiness comparison
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL}" ALICE_LOCAL_API_TOKEN="${ALICE_LOCAL_API_TOKEN}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - "test live_setup_readiness_scenarios ... ok"
+    - "test setup_readiness_scenarios_exercise_preflight_config_create_and_handoff ... ok"
+  timeout: 300000
+assertions:
+- name: setup assets validate
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Validate editable setup assets
+- name: live setup readiness comparison passes
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Run live setup readiness comparison
+metadata:
+  tags:
+  - alice
+  - eatme
+  - gadugi
+  - outside-in
+  - setup-readiness
+  priority: high
+  author: eatme
+  test_type: live-web-command-flow
