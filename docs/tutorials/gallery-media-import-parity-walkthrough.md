@@ -28,7 +28,7 @@ export NODE_OPTIONS=--max-old-space-size=32768
 Use a running LookingGlass server for browser/API checks:
 
 ```bash
-cd <lookingglass-repo>
+cd "${LOOKINGGLASS_HOME:?}"
 npm run build:server
 node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence --api-token gadugi-local-api-token
 ```
@@ -123,7 +123,7 @@ unsupported, missing permission, too large, or visually unsuitable.
 Run the LookingGlass tests that cover the import path:
 
 ```bash
-cd <lookingglass-repo>
+cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
 
 npm run test -- \

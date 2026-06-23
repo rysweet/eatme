@@ -56,7 +56,7 @@ Use these environment variables when running EatMe web closure checks:
 Run the targeted source/API tests from the LookingGlass repository:
 
 ```bash
-cd <lookingglass-repo>
+cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
 
 npm run build
@@ -80,7 +80,7 @@ Run the browser evidence checks when the UI/share fallback behavior is part of
 the claim:
 
 ```bash
-cd <lookingglass-repo>
+cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
 npm run test:e2e -- e2e/alice-evidence-workflow.spec.ts
 npm run test:e2e -- e2e/import-model-texture-workflow.spec.ts

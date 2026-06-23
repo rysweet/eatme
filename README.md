@@ -99,13 +99,13 @@ EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto \
 To run curriculum tests against LookingGlass:
 
 ```bash
-# Start LookingGlass (in the alice-web-prototype repo)
-cd /path/to/alice-web-prototype
+# Start LookingGlass
+cd "${LOOKINGGLASS_HOME:?}"
 npm run build:server
 node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
 
 # Run web platform tests
-EATME_WEB_PLATFORM=1 cargo test --workspace
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test --workspace
 ```
 
 Set `ALICE_WEB_URL` to override the default `http://localhost:3099`.

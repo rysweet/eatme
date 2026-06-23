@@ -54,7 +54,7 @@ Use these environment variables for local validation:
 
 ```bash
 export ALICE_HOME=/path/to/alice
-export LOOKINGGLASS_HOME=/path/to/alice-web-prototype
+export LOOKINGGLASS_HOME=/absolute/path/to/LookingGlass
 export ALICE_WEB_URL=http://127.0.0.1:3099
 export NODE_OPTIONS=--max-old-space-size=32768
 ```
@@ -110,7 +110,7 @@ supported:
 ```bash
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
 ```
 

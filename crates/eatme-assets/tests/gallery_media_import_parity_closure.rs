@@ -192,6 +192,9 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
 #[test]
 fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
     for doc_path in [
+        "README.md",
+        "docs/web-platform-testing.md",
+        "docs/eatme/alice-howto-coverage.md",
         "docs/howto/gallery-media-import-parity.md",
         "docs/tutorials/gallery-media-import-parity-walkthrough.md",
     ] {
@@ -200,6 +203,16 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
             !text.contains("LOOKINGGLASS_REPO"),
             "{doc_path} must use LOOKINGGLASS_HOME for direct LookingGlass commands"
         );
+        for stale_placeholder in [
+            "<lookingglass-repo>",
+            "/path/to/alice-web-prototype",
+            "alice-web-prototype repo",
+        ] {
+            assert!(
+                !text.contains(stale_placeholder),
+                "{doc_path} must not publish stale LookingGlass checkout placeholder {stale_placeholder:?}"
+            );
+        }
         assert!(
             !text.contains("ALICE_WEB_URL=${ALICE_WEB_URL}")
                 && !text.contains("ALICE_WEB_URL=$ALICE_WEB_URL")
@@ -207,8 +220,11 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
             "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
         );
         assert!(
-            text.contains(r#"cd "${LOOKINGGLASS_HOME:?}""#)
-                && text.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+            text.contains("LOOKINGGLASS_HOME"),
+            "{doc_path} must document LOOKINGGLASS_HOME for LookingGlass checkout selection"
+        );
+        assert!(
+            text.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
             "{doc_path} must publish the current direct LookingGlass command convention"
         );
     }

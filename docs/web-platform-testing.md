@@ -22,9 +22,10 @@ It has two layers:
 
 ## Start LookingGlass
 
-In the `alice-web-prototype` repository:
+In the LookingGlass repository:
 
 ```bash
+cd "${LOOKINGGLASS_HOME:?}"
 npm install
 npm run build:server
 node dist-server/cli.js serve --port 3099 --evidence-dir ./evidence
@@ -60,7 +61,7 @@ export ALICE_WEB_URL=http://127.0.0.1:3000
 Run the dedicated curriculum file:
 
 ```bash
-EATME_WEB_PLATFORM=1 cargo test -p eatme-alice \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice \
   --test web_platform_curriculum_e2e \
   -- --test-threads=1
 ```
@@ -68,7 +69,7 @@ EATME_WEB_PLATFORM=1 cargo test -p eatme-alice \
 Run the dedicated save/reopen/export parity file:
 
 ```bash
-EATME_WEB_PLATFORM=1 cargo test -p eatme-alice \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice \
   --test web_platform_save_reopen_export_e2e \
   -- --test-threads=1
 ```
@@ -76,7 +77,7 @@ EATME_WEB_PLATFORM=1 cargo test -p eatme-alice \
 Run the whole workspace with the web gate enabled:
 
 ```bash
-EATME_WEB_PLATFORM=1 cargo test --workspace
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test --workspace
 ```
 
 Validate the RabbitHole-vs-LookingGlass journey matrix:
