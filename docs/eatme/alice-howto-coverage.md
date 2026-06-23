@@ -161,7 +161,7 @@ Alice.org HowTo coverage.
 | Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Partial: bounded audio cue metadata and simulated playback bridge evidence only |
 | Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, bounded audio cue metadata, export, and browser-download sharing evidence for a sharecase package. | Covered | Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence |
 | Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where the web version can open, save, and export projects |
-| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered by LookingGlass imported model, texture, safe resource, export, and reopen persistence contract tests |
+| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Partial: LookingGlass PR #251 contains imported model, texture, safe resource, export, and reopen persistence contract tests; default branch evidence is pending |
 | Alice 2 migration | `alice-2-migration-bridge` | Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result. | Covered | Not supported |
 | Classes | `modified-class-portability` | Student saves a modified class, imports it into another project, and checks that behavior travels with it. | Covered | Not supported |
 | Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Covered where browser accessibility applies |
@@ -185,8 +185,9 @@ Alice.org HowTo coverage.
 3. Describe the user steps in plain language. Each step must include an expected
    visible result or evidence artifact.
 4. Mark platform support explicitly:
-   `RabbitHole covered`, `LookingGlass covered`, or
-   `not supported in LookingGlass`.
+   `RabbitHole covered`, `LookingGlass covered`, `LookingGlass partial`, or
+   `not supported in LookingGlass`. Partial rows must name the bounded evidence,
+   the missing evidence, and any upstream PR or default-branch dependency.
 5. Validate the source scenario:
 
    ```bash
