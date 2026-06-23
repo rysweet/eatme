@@ -122,7 +122,7 @@ generation time with per-scenario values:
 
 | Placeholder | Source | Example value |
 | --- | --- | --- |
-| `{{scenario-asset-count}}` | Discovered scenario asset inventory count | `93` |
+| `{{scenario-asset-count}}` | Discovered scenario asset inventory count | `115` |
 | `{{scenario-id}}` | `EatmeScenarioAsset.id` | `building-a-scene-first-world` |
 
 Substitution uses `str::replace()` — no format-string injection, no runtime

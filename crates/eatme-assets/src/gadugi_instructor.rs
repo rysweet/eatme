@@ -43,7 +43,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let command_assertions = scenario
         .steps
         .iter()
@@ -62,7 +62,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let mut steps = Vec::new();
     steps.push(GeneratedStep {
         name: validate_step.into(),
@@ -71,7 +71,9 @@ pub(super) fn generate_instructor_agentic_adapter(
         params: BTreeMap::from([(
             "command".into(),
             repository_command(
-                "cargo run -q -p eatme-cli -- assets validate --json",
+                &format!(
+                    "cargo run -q -p eatme-cli -- assets validate --path {source_asset} --json"
+                ),
                 &format!("gadugi-{}", scenario.id),
             ),
         )]),
@@ -79,7 +81,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             exit_code: Some(0),
             stdout_contains: Some(vec![
                 "\"passed\": true".into(),
-                format!("\"{}\"", scenario.id),
+                format!("\"id\": \"{}\"", scenario.id),
             ]),
             output_contains: None,
         },
@@ -133,7 +135,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             parallel: false,
         },
         environment: GeneratedEnvironment {
-            requires: Vec::new(),
+            requires: required_environment(scenario),
             optional: optional_environment(scenario),
         },
         agents: vec![

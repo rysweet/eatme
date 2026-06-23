@@ -19,6 +19,10 @@ personas:
   - creative-storyteller
   - collaborative-peer-mentor
   - reflective-debugger
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
 agentic_flow:
   focus: facilitating-live-studio-workshops
   instructor_goal: Prepare a two-hour Alice live-studio workshop plan with a setup checklist, timing plan, observation points, intervention cues, checkpoint artifacts, share-out support, instructor-facing acceptance probes, student prompt cards, student-owned Alice action evidence, help signals, peer feedback, revision behavior, reflection, and share-out artifacts.

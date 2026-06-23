@@ -71,9 +71,9 @@ expect:
     - '"scenario_asset_count": 115'
 ```
 
-Instructor agentic generated adapters still run `assets validate --json`, but
-they assert the relevant instructor scenario id instead of embedding
-`scenario_asset_count`.
+Instructor generated adapters run `assets validate --path <scenario> --json` so
+their id check comes from the single source scenario, not from the full inventory
+report.
 
 When scenario assets are added, removed, or renamed, the generated adapters must
 be regenerated so committed expectations match the discovered inventory. For

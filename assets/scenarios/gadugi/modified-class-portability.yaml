@@ -11,6 +11,7 @@ environment:
   requires:
   - ALICE_HOME
   - EATME_REAL_ALICE
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
@@ -44,7 +45,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
-      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario modified-class-portability
+      EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario modified-class-portability
   expect:
     exit_code: 0
     stdout_contains:
@@ -68,6 +69,21 @@ steps:
     - '"passed": true'
     - '"id": "modified-class-portability"'
   timeout: 60000
+- name: Verify Lookingglass Class Behavior Package
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - test/entity-type-registry.test.ts
+    - src/project-io/class-behavior-package.persistence.test.ts
+    - src/server/routes/project-routes.class-behavior.test.ts
+  timeout: 60000
 assertions:
 - name: validate-assets succeeds
   type: command_success
@@ -84,6 +100,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Verify Portability Evidence
+- name: verify-lookingglass-class-behavior-package succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Class Behavior Package
 metadata:
   source_eatme_asset: assets/scenarios/eatme/modified-class-portability.yaml
   generated_by: eatme-assets gadugi adapter generator

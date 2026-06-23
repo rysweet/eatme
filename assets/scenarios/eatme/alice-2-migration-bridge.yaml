@@ -40,6 +40,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
   - manifest_assertions
@@ -62,6 +63,7 @@ acceptance_probes:
 - Bridge distinguishes keep, adapt, and retire choices for legacy lesson assumptions.
 - Student evidence is an Alice 3 world, run note, reflection, or artifact rather than nostalgia or screenshots alone.
 - Migration guidance respects prior teacher expertise and avoids promising automatic conversion.
+- LookingGlass bounded evidence detects Alice 2 versions as guidance-only, leaves XML unchanged, and states that automatic Alice 2 conversion is not supported.
 rubric:
 - criterion: Pedagogical preservation
   evidence:
@@ -82,8 +84,14 @@ steps:
   evidence:
   - migration output names Alice 2 intent, Alice 3 workflow, vocabulary delta, and visible student evidence
   - required evidence includes keep/adapt/retire decisions and a current artifact or reflection
+- id: verify-lookingglass-bounded-alice2-guidance
+  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+  evidence:
+  - Alice 2 project versions are detected as guidance-only
+  - automatic Alice 2 conversion remains explicitly unsupported
+  - migration evidence does not claim converted Alice 3 project output
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
   evidence:
   - manifest scenario_id equals alice-2-migration-bridge
   - manifest failure_category is null

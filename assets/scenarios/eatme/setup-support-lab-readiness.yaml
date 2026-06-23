@@ -95,7 +95,7 @@ steps:
   - LookingGlass /api/project/new creates a starter web project
   - LookingGlass /api/setup/evidence-handoff returns blocker, owner, fallback role, and retest-signal handoff fields
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
   evidence:
   - manifest scenario_id equals setup-support-lab-readiness
   - manifest failure_category is null

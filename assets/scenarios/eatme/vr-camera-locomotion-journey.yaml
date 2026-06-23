@@ -92,7 +92,7 @@ steps:
   - if real_vr_available=false, required evidence names the non-VR fallback artifacts instead of silently skipping VR expectations
   - if real_vr_available=true, required evidence names Alice Player or headset capture plus comfort notes and observer log
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
   evidence:
   - manifest scenario_id equals vr-camera-locomotion-journey
   - manifest failure_category is null
@@ -101,7 +101,7 @@ steps:
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
 - id: lookingglass-camera-comfort-evidence
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
   evidence:
   - web_platform_curriculum_e2e includes vr-camera-locomotion-journey
   - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1

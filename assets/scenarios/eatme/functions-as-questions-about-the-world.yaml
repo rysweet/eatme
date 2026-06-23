@@ -64,7 +64,7 @@ steps:
   evidence:
   - stdout JSON has all_required_available=true
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario functions-as-questions-about-the-world
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario functions-as-questions-about-the-world
   evidence:
   - manifest scenario_id equals functions-as-questions-about-the-world
   - manifest failure_category is null

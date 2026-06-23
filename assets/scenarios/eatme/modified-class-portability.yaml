@@ -38,6 +38,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 portability:
   source_project: learner-source-world
   destination_project: peer-import-world
@@ -69,6 +70,11 @@ acceptance_criteria:
 - given: gadugi needs to exercise the scenario
   when: the gadugi adapter runs commands for this scenario
   then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
+acceptance_probes:
+- LookingGlass support is bounded to parsed AliceProject.types class-behavior packages, not full desktop modified-class UI parity.
+- LookingGlass evidence command shows the entity type registry, class behavior package import, and save/read persistence tests passing.
+- LookingGlass /api/projects/current/classes/:typeName/behavior and class import evidence remains bounded to parsed AliceProject.types behavior packages.
+- Imported class behavior package evidence includes package validation, type import, and behavior persistence after import into another project.
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
@@ -76,7 +82,7 @@ steps:
   - stdout JSON has passed=true
   - stdout JSON includes modified-class-portability scenario assets
 - id: launch-portability-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario modified-class-portability
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario modified-class-portability
   evidence:
   - manifest scenario_id equals modified-class-portability
   - manifest failure_category is null
@@ -89,6 +95,12 @@ steps:
   - portability.evidence_after_import lists export evidence, import evidence, and post-import behavior evidence
   - acceptance criteria require behavior persistence after import into another project
   - instructor/student prompts ask for before-export and after-import comparison
+- id: verify-lookingglass-class-behavior-package
+  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+  evidence:
+  - class behavior package export identifies the modified class type
+  - import evidence shows the class available in a different AliceProject
+  - save/read evidence shows the imported behavior survives project persistence
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#modified-class-portability
   personality_assets:

@@ -8,7 +8,8 @@ config:
   retries: 0
   parallel: false
 environment:
-  requires: []
+  requires:
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
@@ -34,12 +35,26 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/teacher-community-sharing-loop.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"teacher-community-sharing-loop"'
+    - '"id": "teacher-community-sharing-loop"'
+  timeout: 60000
+- name: Verify Lookingglass Teacher Share Package
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-export.test.ts test/server.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - test/project-export.test.ts
+    - test/server.test.ts
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
@@ -51,6 +66,8 @@ steps:
       Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
       Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
       Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+      LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming a deployed community platform.
+      LookingGlass /api/project/export/web-package and /api/project/share preserve teacher-share metadata in the package/share artifacts.
     asset: assets/scenarios/eatme/teacher-community-sharing-loop.yaml
     prompt: Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, and remix feedback prompt grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, and two feedback questions for future remix. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
   expect:
@@ -65,6 +82,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: verify-lookingglass-teacher-share-package succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Teacher Share Package
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent

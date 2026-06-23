@@ -40,7 +40,7 @@ use eatme_assets::sharing_platform::{
 
 let input = SharingPlatformInput {
     assets_valid: true,
-    asset_reason: "All 105 scenario assets passed validation".into(),
+    asset_reason: "All 115 scenario assets passed validation".into(),
     deps_available: true,
     deps_reason: "All required dependencies available".into(),
 };
@@ -83,7 +83,7 @@ The report serializes to structured JSON:
       "feature": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "feature": "check-dependencies",
@@ -358,7 +358,7 @@ When assets are valid and all host dependencies are available:
       "feature": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "feature": "check-dependencies",
@@ -412,7 +412,7 @@ dependency graph:
       "feature": "validate-assets",
       "status": "ready",
       "depends_on": [],
-      "reason": "All 105 scenario assets passed validation"
+      "reason": "All 115 scenario assets passed validation"
     },
     {
       "feature": "check-dependencies",

@@ -197,7 +197,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let assertions = scenario
         .steps
         .iter()
@@ -209,7 +209,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
                 expected_scenario_asset_count,
             )
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
 
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {}", scenario.title),
@@ -322,9 +322,9 @@ fn generated_step(
     run_id: &str,
     launch_timeout: u64,
     expected_scenario_asset_count: usize,
-) -> GeneratedStep {
-    let command = repository_command(step.command.trim(), run_id);
-    GeneratedStep {
+) -> Result<GeneratedStep> {
+    let command = repository_command(&command_with_stdout_markers(step.command.trim()), run_id);
+    Ok(GeneratedStep {
         name: step_title(&step.id),
         agent: "eatme-cli-agent".into(),
         action: "execute_command".into(),
@@ -335,11 +335,11 @@ fn generated_step(
                 scenario,
                 step,
                 expected_scenario_asset_count,
-            )),
+            )?),
             output_contains: None,
         },
         timeout: step_timeout_ms(&step.id, launch_timeout),
-    }
+    })
 }
 
 fn command_success_assertion(step_id: &str, agent: &str) -> GeneratedAssertion {
@@ -356,12 +356,12 @@ fn generated_assertion(
     step: &EatmeScenarioStep,
     agent: &str,
     expected_scenario_asset_count: usize,
-) -> GeneratedAssertion {
+) -> Result<GeneratedAssertion> {
     if expected_exit_code(scenario, step) == 0 {
-        return command_success_assertion(&step.id, agent);
+        return Ok(command_success_assertion(&step.id, agent));
     }
 
-    GeneratedAssertion {
+    Ok(GeneratedAssertion {
         name: format!("{} expected failure is explicit", step.id),
         assertion_type: "output_contains_all".into(),
         agent: agent.into(),
@@ -369,10 +369,10 @@ fn generated_assertion(
             ("step".into(), step_title(&step.id)),
             (
                 "required_strings".into(),
-                expected_stdout(scenario, step, expected_scenario_asset_count).join("\n"),
+                expected_stdout(scenario, step, expected_scenario_asset_count)?.join("\n"),
             ),
         ]),
-    }
+    })
 }
 
 fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
@@ -387,6 +387,60 @@ fn scenario_timeout_ms(scenario: &EatmeScenarioAsset) -> u64 {
 
 fn repository_command(command: &str, run_id: &str) -> String {
     format!("cd \"${{EATME_REPO:-.}}\"\nexport RUN_ID=\"${{RUN_ID:-{run_id}}}\"\n{command}")
+}
+
+fn command_with_stdout_markers(command: &str) -> String {
+    if !is_executable_cargo_test_command(command) {
+        return command.to_owned();
+    }
+    let markers = cargo_test_success_markers(command);
+    if markers.is_empty() {
+        return command.to_owned();
+    }
+    let marker_lines = markers
+        .into_iter()
+        .map(|marker| format!("printf \"%s\\n\" \"{marker}\""))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("set -e\n{command}\n{marker_lines}")
+}
+
+fn is_executable_cargo_test_command(command: &str) -> bool {
+    let trimmed = command.trim_start();
+    let first_line = trimmed.lines().next().unwrap_or(trimmed);
+    command_contains_executed_cargo_test(first_line)
+        || command_executable_regions(command)
+            .iter()
+            .any(|region| command_contains_executed_cargo_test(region))
+}
+
+fn command_executable_regions(command: &str) -> Vec<String> {
+    let mut regions = Vec::new();
+    let mut in_heredoc = false;
+    for line in command.lines() {
+        let trimmed = line.trim();
+        if in_heredoc {
+            if trimmed == "EOF" {
+                in_heredoc = false;
+            }
+            continue;
+        }
+        if trimmed.contains("<<EOF") {
+            in_heredoc = true;
+            regions.push(trimmed.split("<<EOF").next().unwrap_or("").to_owned());
+            continue;
+        }
+        regions.push(trimmed.to_owned());
+    }
+    regions
+}
+
+fn command_contains_executed_cargo_test(command: &str) -> bool {
+    let trimmed = command.trim_start();
+    trimmed.starts_with("cargo test ")
+        || trimmed.contains(" cargo test ")
+        || trimmed.starts_with("cd ") && trimmed.contains("&& cargo test ")
+        || trimmed.starts_with("bash -lc 'cargo test ")
 }
 
 fn step_title(id: &str) -> String {
@@ -424,28 +478,193 @@ fn expected_stdout(
     scenario: &EatmeScenarioAsset,
     step: &EatmeScenarioStep,
     expected_scenario_asset_count: usize,
-) -> Vec<String> {
+) -> Result<Vec<String>> {
     let step_id = step.id.as_str();
     let command = step.command.as_str();
     if command.contains("assets validate") {
         if command.contains("--path") {
-            return vec![
+            return Ok(vec![
                 "\"passed\": true".into(),
                 format!("\"id\": \"{}\"", scenario.id),
-            ];
+            ]);
         }
-        return preflight_validate_assets_patterns(expected_scenario_asset_count);
+        return Ok(preflight_validate_assets_patterns(
+            expected_scenario_asset_count,
+        ));
     }
     if step_id.contains("dependencies") {
-        return preflight_check_dependencies_patterns();
+        return Ok(preflight_check_dependencies_patterns());
     }
     if step_id.contains("discover") {
-        return vec!["\"alice_ide_jar_exists\": true".into()];
+        return Ok(vec!["\"alice_ide_jar_exists\": true".into()]);
     }
     if is_launch_step(step_id, command) {
-        return launch_expected_stdout(scenario, step);
+        return Ok(launch_expected_stdout(scenario, step));
     }
-    Vec::new()
+    let expected = evidence_backed_expected_stdout(step);
+    if !expected.is_empty() {
+        return Ok(expected);
+    }
+    bail!(
+        "{} step {} generated Gadugi stdout assertions would be empty; add a supported command pattern or explicit evidence-bearing output",
+        scenario.id,
+        step.id
+    )
+}
+
+fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
+    let command = step.command.as_str();
+    let mut expected = Vec::new();
+
+    if command.contains("wrote=") {
+        expected.extend(wrote_stdout_markers(command));
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("npm test --") {
+        expected.extend(test_command_targets(command));
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("cargo test ") {
+        expected.extend(cargo_test_success_markers(command));
+        expected.push("test result: ok".into());
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("printf ") {
+        expected.extend(printf_evidence_markers(command));
+        expected.extend(durable_evidence_terms(&step.evidence));
+        expected.dedup();
+        return expected;
+    }
+    if command.trim_start().starts_with("inspect ") {
+        expected.push(command.trim_start_matches("inspect ").trim().into());
+        expected.extend(durable_evidence_terms(&step.evidence));
+        expected.dedup();
+        return expected;
+    }
+    expected
+}
+
+fn wrote_stdout_markers(command: &str) -> Vec<String> {
+    let mut markers = vec!["wrote=".to_owned()];
+    let emitted = command
+        .split("printf")
+        .filter(|segment| segment.contains("wrote="))
+        .collect::<Vec<_>>()
+        .join("\n");
+    if command.contains("wrote=$template")
+        && command.contains("comfort-playtest-guidance-template.md")
+    {
+        markers.push("comfort-playtest-guidance-template.md".into());
+        return markers;
+    }
+    for marker in [
+        "a3p-save-load-parity-gaps.md",
+        "gallery-media-parity-gaps.md",
+        "story-api-runtime-parity-gaps.md",
+        "starter-world-change-note.txt",
+        "run-observe-readiness-gaps.txt",
+        "starter-project-readiness-report.txt",
+        "vr-preflight.txt",
+        "vr-fallback-evidence.md",
+        "agentic-review-guidance.txt",
+        "vr-player-preflight.txt",
+        "vr-player-fallback-evidence.md",
+        "comfort-playtest-guidance.md",
+    ] {
+        if emitted.contains(marker) {
+            markers.push(marker.into());
+        }
+    }
+    markers
+}
+
+fn test_command_targets(command: &str) -> Vec<String> {
+    command
+        .split_whitespace()
+        .filter_map(|part| {
+            let trimmed = part.trim_matches('\'').trim_matches('"').trim_matches(';');
+            (trimmed.ends_with(".test.ts")
+                || trimmed.ends_with("_e2e")
+                || trimmed.ends_with("_coverage")
+                || trimmed.ends_with("_integration")
+                || trimmed.ends_with("_resilience")
+                || trimmed.ends_with("_support")
+                || trimmed.ends_with("_management")
+                || trimmed.ends_with("_real"))
+            .then(|| trimmed.to_owned())
+        })
+        .collect()
+}
+
+fn cargo_test_success_markers(command: &str) -> Vec<String> {
+    test_command_targets(command)
+        .into_iter()
+        .map(|target| format!("cargo-test-ok={target}"))
+        .collect()
+}
+
+fn printf_evidence_markers(command: &str) -> Vec<String> {
+    let mut markers = Vec::new();
+    for marker in [
+        "migration_fields=alice2-intent,alice3-workflow,vocabulary-delta,visible-student-evidence",
+        "required_evidence=keep-adapt-retire,current-artifact,student-reflection",
+        "import_fields=source,license,scale,orientation,texture-visibility,issue,fallback",
+        "readiness_fields=install,java,graphics,storage,account,fallback",
+        "starter_world_change=",
+        "run_or_observe_attempt=",
+        "save_reopen_export_readiness_gaps=",
+        "real_vr_available=",
+        "required_evidence=",
+        "wrote=",
+        "a3p-save-load-parity-gaps.md",
+        "gallery-media-parity-gaps.md",
+        "story-api-runtime-parity-gaps.md",
+        "starter-world-change-note.txt",
+        "run-observe-readiness-gaps.txt",
+        "starter-project-readiness-report.txt",
+        "agentic_review_mode=",
+        "perspective_choice=",
+        "comfort_constraint=",
+        "fallback_evidence=",
+    ] {
+        if command.contains(marker) {
+            markers.push(marker.into());
+        }
+    }
+    markers
+}
+
+fn durable_evidence_terms(evidence: &[String]) -> Vec<String> {
+    let text = evidence.join("\n");
+    let lower = text.to_lowercase();
+    let mut terms = Vec::new();
+    for (needle, term) in [
+        ("guidance-only", "guidance-only"),
+        (
+            "automatic alice 2 conversion",
+            "automatic Alice 2 conversion",
+        ),
+        ("converted alice 3 project", "converted Alice 3 project"),
+        ("class behavior package", "class behavior package"),
+        ("modified class type", "modified class type"),
+        ("different aliceproject", "different AliceProject"),
+        ("project persistence", "project persistence"),
+        ("behavior persistence", "behavior persistence"),
+        ("alice-web.teacher-share/v1", "alice-web.teacher-share/v1"),
+        ("teacher-share-metadata", "teacher-share-metadata"),
+        ("sha256", "sha256"),
+        ("passed=true", "passed=true"),
+        ("real_vr_available=false", "real_vr_available=false"),
+        ("real_vr_available=true", "real_vr_available=true"),
+    ] {
+        if lower.contains(needle) {
+            terms.push(term.into());
+        }
+    }
+    terms
 }
 
 fn is_launch_step(step_id: &str, command: &str) -> bool {
@@ -453,18 +672,26 @@ fn is_launch_step(step_id: &str, command: &str) -> bool {
         || step_id.contains("smoke")
         || command.contains("alice launch-smoke")
         || command.contains("alice run-howto")
+        || command.contains("alice run-objects-first-world")
         || command.contains("alice objects-first-full-path")
 }
 
 fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
-    let mut required = vec!["ALICE_HOME".into()];
-    if scenario
-        .real_alice
-        .as_ref()
-        .map(|real_alice| real_alice.gated_by == "EATME_REAL_ALICE=1")
-        .unwrap_or(false)
-    {
-        required.push("EATME_REAL_ALICE".into());
+    let mut required = Vec::new();
+    let commands = scenario
+        .steps
+        .iter()
+        .map(|step| step.command.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    for (name, marker) in [
+        ("ALICE_HOME", "ALICE_HOME"),
+        ("EATME_REAL_ALICE", "EATME_REAL_ALICE"),
+        ("LOOKINGGLASS_HOME", "LOOKINGGLASS_HOME"),
+    ] {
+        if commands.contains(marker) {
+            required.push(name.into());
+        }
     }
 
     required
@@ -478,6 +705,14 @@ fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
         .map(|step| step.command.as_str())
         .collect::<Vec<_>>()
         .join("\n");
+    for (name, marker) in [
+        ("EATME_REAL_VR", "EATME_REAL_VR"),
+        ("VR_HEADSET_AVAILABLE", "VR_HEADSET_AVAILABLE"),
+    ] {
+        if commands.contains(marker) {
+            optional.push(name.into());
+        }
+    }
     for variable in [
         "ALICE_WEB_URL",
         "ALICE_LOCAL_API_TOKEN",
@@ -489,7 +724,6 @@ fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
     }
     optional
 }
-
 #[cfg(test)]
 #[path = "gadugi_tests.rs"]
 mod gadugi_tests;

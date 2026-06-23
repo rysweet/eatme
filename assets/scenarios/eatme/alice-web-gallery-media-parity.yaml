@@ -74,7 +74,7 @@ steps:
       - stdout JSON has passed=true
       - stdout JSON includes alice-web-gallery-media-parity in the committed scenario set
   - id: record-gallery-media-gap-matrix
-    command: >-
+    command: |-
       bash -lc 'run_dir="runs/alice-web-gallery-media-parity/${RUN_ID}";
       mkdir -p "$run_dir";
       cat > "$run_dir/gallery-media-parity-gaps.md" <<EOF
@@ -106,8 +106,8 @@ steps:
   - id: launch-smoke
     command: >-
       EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice launch-smoke
-      --alice-home ${ALICE_HOME}
-      --run-id ${RUN_ID}
+      --alice-home "${ALICE_HOME:?}"
+      --run-id "${RUN_ID:?}"
       --runs-dir runs
       --timeout 900
       --json

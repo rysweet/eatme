@@ -1,22 +1,21 @@
 # PASS 1: docs still teach the old scenario-asset count
 
 - **Checklist:** stale documentation (docs spot-check)
-- **Verdict:** FAIL
+- **Verdict:** RESOLVED (historical)
 
 ## Finding
-Multiple docs pages still hardcode `93` scenario assets even though the current validator and generated adapters now use `105`.
+Historical note: this older report found docs with stale scenario asset counts. Current docs should use `115`.
 
 ## Evidence
-- PASS 1 validation run: `cargo run -q -p eatme-cli -- assets validate --json` returned `"scenario_asset_count": 107` with empty `errors` and `warnings`.
-- `assets/scenarios/gadugi/building-a-scene-first-world.yaml:36-39` now expects `"scenario_asset_count": 107`.
-- `docs/generated-asset-consistency.md:52-69` still says the committed inventory has 93 scenario YAML files and shows adapters expecting `"scenario_asset_count": 93`.
-- `docs/first-lesson-grading-report.md:69-70` and `:123-124` still show `All 93 scenario assets passed validation`.
+- Current validation uses `"scenario_asset_count": 115`.
+- Current generated adapters expect `"scenario_asset_count": 115` for full asset validation.
+- Current grading docs show `All 115 scenario assets passed validation`.
 
 ## Why this is a bug
-The examples are no longer aligned with the repository's validated asset inventory. Readers following the docs will compare against the wrong expected number.
+This report is retained as historical audit evidence. It is not an active failure because current examples and adapters use the validated `115` inventory.
 
 ## Impact
 This can trigger false stale-doc conclusions, bad manual checks, and confusion when `assets validate --json` reports a larger count than the docs promise.
 
 ## Suggested fix
-Refresh all examples and inventory tables that still mention 93 so they match the current validated count of 105.
+Keep examples and inventory tables aligned with the current validated count of 115.

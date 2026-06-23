@@ -86,7 +86,7 @@ steps:
   - starter-world change note names one small editable change for a later user-like Alice pass
   - note states the change is not creative assessment, not learner-world grading, and not proof of a completed save
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario starter-project-open-save-export-preflight
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario starter-project-open-save-export-preflight
   evidence:
   - manifest scenario_id equals starter-project-open-save-export-preflight
   - manifest launch_command includes africa.a3p
