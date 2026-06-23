@@ -66,8 +66,11 @@ fn matrix_rows() -> Vec<Value> {
 }
 
 fn collect_markdown_docs(dir: &Path, docs: &mut Vec<PathBuf>) {
-    for entry in fs::read_dir(dir).unwrap_or_else(|error| panic!("failed to read {}: {error}", dir.display())) {
-        let entry = entry.unwrap_or_else(|error| panic!("failed to read entry in {}: {error}", dir.display()));
+    for entry in fs::read_dir(dir)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", dir.display()))
+    {
+        let entry = entry
+            .unwrap_or_else(|error| panic!("failed to read entry in {}: {error}", dir.display()));
         let path = entry.path();
         if path.is_dir() {
             collect_markdown_docs(&path, docs);
@@ -82,7 +85,12 @@ fn durable_markdown_docs() -> Vec<String> {
     let mut docs = vec![root.join("README.md")];
     collect_markdown_docs(&root.join("docs"), &mut docs);
     docs.into_iter()
-        .map(|path| path.strip_prefix(&root).expect("doc is under repo root").to_string_lossy().replace('\\', "/"))
+        .map(|path| {
+            path.strip_prefix(&root)
+                .expect("doc is under repo root")
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
         .collect()
 }
 
