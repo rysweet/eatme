@@ -312,6 +312,12 @@ fn unsupported_lookingglass_rows_say_so_plainly() {
     for row in coverage_rows() {
         let looking_glass = row.looking_glass.to_ascii_lowercase();
         if looking_glass.starts_with("covered") {
+            if looking_glass.contains("covered where") {
+                unclear.push(format!(
+                    "{} => Covered rows must not use conditional 'Covered where' language; use Partial with missing evidence or explicit covered scope: {}",
+                    row.scenario, row.looking_glass
+                ));
+            }
             continue;
         }
         if looking_glass.starts_with("partial:") {

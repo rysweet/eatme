@@ -87,7 +87,7 @@ rows:
       status: partial
       source_status: "Partial: web launch, add object, and save only; missing adjust, transform, and run evidence"
       reason: "LookingGlass curriculum evidence covers launch, adding an object, and save for this row; adjust, transform, and run evidence are missing for this row."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student starts a browser project, adds a visible object, and saves; transform and run behavior are not claimed by this row."
     closure:
       required:
@@ -103,10 +103,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-world --run-id parity-alice-objects-first-world --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     looking_glass:
-      status: covered
-      source_status: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
+      status: partial
+      source_status: "Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform and adjust evidence"
+      reason: "LookingGlass save/reopen/export evidence covers adding an object, editing movement behavior, running, saving, reopening, and exporting; transform and adjust evidence are missing for this row."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      expected_behavior: "Student creates or opens an objects-first world, places an object, edits movement, runs, saves, reopens, and verifies persistence; transform and adjust behavior are not claimed by this row."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -124,7 +125,7 @@ rows:
       status: partial
       source_status: "Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform evidence"
       reason: "LookingGlass save/reopen/export evidence covers object placement, procedure edit, run, save, reopen, and export; transform evidence is missing for this row."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Automation performs object placement, procedure edit, run, save, reopen, export, and persistence assertions without claiming transform coverage."
     closure:
       required:
@@ -141,8 +142,8 @@ rows:
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
       status: covered
-      source_status: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      source_status: "Covered: web object, code-edit, run, and save proof is covered; desktop UI action completion is not claimed"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     closure:
       required:
@@ -160,7 +161,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result."
     closure:
       required:
@@ -178,7 +179,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes."
     closure:
       required:
@@ -196,7 +197,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results."
     closure:
       required:
@@ -214,7 +215,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student composes repeated creature movement with procedures and verifies the choreography after running."
     closure:
       required:
@@ -232,7 +233,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student adds a function-style question, uses the answer in behavior, and checks the observed branch or value."
     closure:
       required:
@@ -250,7 +251,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student creates score and timer variables, updates them during a run, and checks the displayed or recorded state."
     closure:
       required:
@@ -268,7 +269,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student uses Alice data categories in a project and verifies that typed values drive behavior correctly."
     closure:
       required:
@@ -286,7 +287,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds arithmetic expressions, runs the world, and checks movement, timing, or score results."
     closure:
       required:
@@ -304,7 +305,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds comparison expressions and verifies different branches for true and false cases."
     closure:
       required:
@@ -322,7 +323,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student combines repetition and a conditional rule, runs the world, and checks both repeated and branched behavior."
     closure:
       required:
@@ -340,7 +341,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student creates a weather-driven scene branch and verifies the selected animation path."
     closure:
       required:
@@ -358,7 +359,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student models repeated ecosystem changes, runs the simulation, and checks state changes over time."
     closure:
       required:
@@ -376,7 +377,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student registers interaction, collision, and proximity events, fires them, and verifies the correct handler runs."
     closure:
       required:
@@ -394,7 +395,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds a proximity mission, moves actors into range, and checks the triggered result."
     closure:
       required:
@@ -412,7 +413,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student creates a collection-driven choreography, iterates through objects, and checks that each object participates."
     closure:
       required:
@@ -430,7 +431,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student compares ordered and simultaneous actions and verifies timing-sensitive behavior."
     closure:
       required:
@@ -448,7 +449,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student adds meaningful comments to a procedure and verifies that the project behavior remains intact."
     closure:
       required:
@@ -466,7 +467,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction."
     closure:
       required:
@@ -484,7 +485,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions."
     closure:
       required:
@@ -502,7 +503,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student builds a branching story with event choices and checks that each choice reaches the expected scene result."
     closure:
       required:
@@ -519,10 +520,10 @@ rows:
       expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
     looking_glass:
       status: partial
-      source_status: "Covered where the web version supports the task"
-      reason: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
+      source_status: "Partial: launch/add/run evidence is covered; missing full design-process playtest and revision evidence"
+      reason: "LookingGlass curriculum evidence covers bounded launch/add/run API behavior; full design-process playtest observations and revision-loop evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student can exercise bounded browser project actions; full design-process playtest and revision behavior are not claimed by this row."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -539,7 +540,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence."
     closure:
       required:
@@ -574,7 +575,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student changes camera perspective, runs the world, and checks the expected viewpoint result."
     closure:
       required:
@@ -591,10 +592,10 @@ rows:
       expected_behavior: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
     looking_glass:
       status: partial
-      source_status: "Covered where the web version supports the task"
-      reason: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+      source_status: "Partial: bounded browser camera comfort API evidence is covered; missing camera movement and headset VR evidence"
+      reason: "LookingGlass curriculum evidence covers the browser camera comfort API contract; camera locomotion behavior and headset/native VR evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student checks bounded browser camera comfort API evidence; camera movement and headset VR behavior are not claimed by this row."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -627,10 +628,10 @@ rows:
       expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
     looking_glass:
       status: partial
-      source_status: "Covered where the web version supports the task"
-      reason: "Covered where the web version supports the task"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
+      source_status: "Partial: bounded audio cue metadata and simulated playback evidence are covered; missing native audio playback and full authoring evidence"
+      reason: "LookingGlass curriculum evidence covers audio cue metadata and simulated playback evidence; native browser audio playback and full audio authoring evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student records bounded cue metadata and simulated playback evidence; native audio playback is not claimed by this row."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -646,10 +647,10 @@ rows:
       expected_behavior: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
     looking_glass:
       status: partial
-      source_status: "Covered where export flow supports it"
-      reason: "Covered where export flow supports it"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
+      source_status: "Partial: camera, export, and browser-download share artifacts are covered; missing native audio playback and native Web Share evidence"
+      reason: "LookingGlass curriculum evidence covers camera/export/package validation and browser-download share artifacts; native audio playback and native Web Share success evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student combines camera/export/browser-download share artifacts with bounded audio metadata; native audio playback and native Web Share success are not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -665,8 +666,8 @@ rows:
       expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     looking_glass:
       status: covered
-      source_status: "Covered where the web version can open, save, and export projects"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      source_status: "Covered: web open, save, reopen, and export project evidence is covered; desktop starter-gallery selection is not claimed"
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       expected_behavior: "Student opens a starter project, saves it, exports it, and verifies the exported artifact."
     closure:
       required:
@@ -683,10 +684,10 @@ rows:
       expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
     looking_glass:
       status: partial
-      source_status: "Covered where the web version can use the imported asset"
-      reason: "Covered where the web version can use the imported asset"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student imports a model or texture, applies it, saves the project, and verifies the resource remains available."
+      source_status: "Partial: bounded model/texture metadata path is covered; missing default-branch LookingGlass PR #251 evidence"
+      reason: "LookingGlass PR #251 contains import, safe resource, export, and reopen persistence evidence; default-branch evidence is missing until that PR lands."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student uses bounded model/texture metadata evidence; complete import/export/reopen evidence waits for LookingGlass PR #251 on main."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -736,10 +737,10 @@ rows:
       expected_behavior: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
     looking_glass:
       status: partial
-      source_status: "Covered where browser accessibility applies"
-      reason: "Covered where browser accessibility applies"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
+      source_status: "Partial: browser caption and camera guidance evidence is covered; missing full desktop accessibility and assistive-technology evidence"
+      reason: "LookingGlass curriculum evidence covers bounded browser caption/camera guidance; full desktop accessibility parity and assistive-technology evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Student uses bounded browser caption/camera guidance; full desktop accessibility parity is not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -756,7 +757,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor."
     closure:
       required:
@@ -774,7 +775,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable."
     closure:
       required:
@@ -792,7 +793,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence."
     closure:
       required:
@@ -810,7 +811,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Instructor builds an exercise, adds expected student evidence, and verifies the rubric fits the task."
     closure:
       required:
@@ -828,7 +829,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Instructor remixes lesson materials, produces a student handout, and checks that the activity still maps to Alice actions."
     closure:
       required:
@@ -846,7 +847,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Instructor reorganizes a curriculum sequence and checks prerequisite and assessment coverage."
     closure:
       required:
@@ -864,7 +865,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence."
     closure:
       required:
@@ -882,7 +883,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes."
     closure:
       required:
@@ -900,7 +901,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student packages project, screenshot, notes, and share evidence for review."
     closure:
       required:
@@ -917,10 +918,10 @@ rows:
       expected_behavior: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
     looking_glass:
       status: partial
-      source_status: "Covered where the web review tools support it"
-      reason: "Covered where the web review tools support it"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
+      source_status: "Partial: bounded rubric API evidence is covered; missing full classroom gallery-walk workflow evidence"
+      reason: "LookingGlass curriculum evidence covers bounded rubric API behavior; full classroom gallery walk, peer review workflow, and teacher moderation evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      expected_behavior: "Classroom review is represented by bounded rubric API evidence; full gallery-walk workflow is not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -954,7 +955,7 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered"
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student turns local data into an Alice story and verifies that values drive scene behavior."
     closure:
       required:

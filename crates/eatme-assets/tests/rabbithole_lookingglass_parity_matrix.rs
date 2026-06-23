@@ -133,17 +133,37 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
         }
         if lookingglass_status == "covered" || lookingglass_status == "partial" {
             let targets = strings_at(&scenario_yaml, &["adapter", "targets"]);
+            let source_status = string_at(&row, &["looking_glass", "source_status"]);
+            let reason = string_at(&row, &["looking_glass", "reason"]);
             if !targets.iter().any(|target| target == "lookingglass") {
                 failures.push(format!(
                     "{scenario}: claimed LookingGlass support without lookingglass adapter target"
                 ));
             }
             if !lookingglass_command.contains("EATME_WEB_PLATFORM=1")
-                || !lookingglass_command.contains("ALICE_WEB_URL")
+                || !lookingglass_command
+                    .contains("ALICE_WEB_URL=\"${ALICE_WEB_URL:-http://localhost:3099}\"")
             {
                 failures.push(format!(
-                    "{scenario}: LookingGlass closure command must be runnable"
+                    "{scenario}: LookingGlass closure command must default ALICE_WEB_URL to localhost"
                 ));
+            }
+            if lookingglass_status == "partial" {
+                let source_lower = source_status.to_ascii_lowercase();
+                let reason_lower = reason.to_ascii_lowercase();
+                if !source_lower.starts_with("partial:")
+                    || !source_lower.contains("missing")
+                    || !source_lower.contains("evidence")
+                {
+                    failures.push(format!(
+                        "{scenario}: partial LookingGlass source_status must name covered and missing evidence"
+                    ));
+                }
+                if !reason_lower.contains("missing") || !reason_lower.contains("evidence") {
+                    failures.push(format!(
+                        "{scenario}: partial LookingGlass reason must name missing evidence"
+                    ));
+                }
             }
         } else if lookingglass_status == "not_supported" {
             if string_at(&row, &["looking_glass", "reason"]).is_empty() {

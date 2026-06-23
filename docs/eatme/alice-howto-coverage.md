@@ -108,7 +108,7 @@ Run the same scenario against LookingGlass when the inventory marks it as
 supported:
 
 ```bash
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
 ```
 
@@ -129,9 +129,9 @@ Alice.org HowTo coverage.
 | Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Covered | Not supported |
 | Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Covered | Not supported |
 | First scene | `building-a-scene-first-world` | Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project. | Covered | Partial: web launch, add object, and save only; missing adjust, transform, and run evidence |
-| First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Covered where the web version supports the task |
+| First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform and adjust evidence |
 | First scene | `alice-objects-first-full-path` | Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions. | Covered | Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform evidence |
-| First lessons | `first-lessons-real-ui-actions` | Student completes first-lesson UI actions and records object, code-edit, run, and save proof. | Covered | Covered where the web version supports the task |
+| First lessons | `first-lessons-real-ui-actions` | Student completes first-lesson UI actions and records object, code-edit, run, and save proof. | Covered | Covered: web object, code-edit, run, and save proof is covered; desktop UI action completion is not claimed |
 | Code editor | `code-editor-first-run` | Student opens code editing, changes a first procedure, predicts behavior, runs the world, and checks the result. | Covered | Covered |
 | Procedures | `reusable-methods-and-parameters` | Student creates reusable behavior, adds parameters, calls the method, and checks that the object behavior changes. | Covered | Covered |
 | Procedures | `alien-linguist-parameter-dialogue` | Student builds a parameterized dialogue, changes arguments, and verifies different visible speech results. | Covered | Covered |
@@ -152,19 +152,19 @@ Alice.org HowTo coverage.
 | Debugging | `lost-robot-debug-museum` | Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction. | Covered | Covered |
 | Games | `game-score-timer-win-lose-loop` | Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions. | Covered | Covered |
 | Narrative | `mythic-choice-event-tree` | Student builds a branching story with event choices and checks that each choice reaches the expected scene result. | Covered | Covered |
-| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Covered where the web version supports the task |
+| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Partial: launch/add/run evidence is covered; missing full design-process playtest and revision evidence |
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
 | Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
-| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Covered where the web version supports the task |
+| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Partial: bounded browser camera comfort API evidence is covered; missing camera movement and headset VR evidence |
 | VR | `vr-player-comfort-playtest` | Student playtests VR comfort rules, records observations, and revises the project. | Covered | Not supported |
-| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Covered where the web version supports the task |
-| Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Covered where export flow supports it |
-| Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where the web version can open, save, and export projects |
-| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered where the web version can use the imported asset |
+| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Partial: bounded audio cue metadata and simulated playback evidence are covered; missing native audio playback and full authoring evidence |
+| Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Partial: camera, export, and browser-download share artifacts are covered; missing native audio playback and native Web Share evidence |
+| Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered: web open, save, reopen, and export project evidence is covered; desktop starter-gallery selection is not claimed |
+| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Partial: bounded model/texture metadata path is covered; missing default-branch LookingGlass PR #251 evidence |
 | Alice 2 migration | `alice-2-migration-bridge` | Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result. | Covered | Not supported |
 | Classes | `modified-class-portability` | Student saves a modified class, imports it into another project, and checks that behavior travels with it. | Covered | Not supported |
-| Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Covered where browser accessibility applies |
+| Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Partial: browser caption and camera guidance evidence is covered; missing full desktop accessibility and assistive-technology evidence |
 | Accessibility | `ide-accessibility-parity` | Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor. | Covered | Covered |
 | Performance | `ide-performance-parity` | Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable. | Covered | Covered |
 | Instructor planning | `instructor-alice-concept-map` | Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence. | Covered | Covered |
@@ -174,7 +174,7 @@ Alice.org HowTo coverage.
 | Instructor review | `instructor-student-outcomes-rubric` | Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence. | Covered | Covered |
 | Student review | `student-reflection-artifact-review` | Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes. | Covered | Covered |
 | Sharing | `student-artifact-package-share-evidence` | Student packages project, screenshot, notes, and share evidence for review. | Covered | Covered |
-| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered where the web review tools support it |
+| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Partial: bounded rubric API evidence is covered; missing full classroom gallery-walk workflow evidence |
 | Sharing | `teacher-community-sharing-loop` | Teacher packages a reusable classroom resource and checks community-sharing metadata. | Covered | Not supported |
 | Data storytelling | `neighborhood-data-story` | Student turns local data into an Alice story and verifies that values drive scene behavior. | Covered | Covered |
 
