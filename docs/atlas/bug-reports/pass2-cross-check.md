@@ -43,8 +43,8 @@
 
 ### `pass1-stale-scenario-asset-counts.md`
 
-**Pass 1 verdict:** FAIL — docs still teach the old scenario-asset count  
-**Pass 2 verdict:** **CONFIRMED**
+**Pass 1 verdict:** FAIL — docs still taught the old scenario-asset count  
+**Pass 2 verdict:** **RESOLVED**
 
 **Rationale:** The repository now treats `115` as the current count. `crates/eatme-assets/src/lib.rs:199-204` asserts `report.scenario_asset_count == 115`, and generated Gadugi adapters expect `"scenario_asset_count": 115` for full asset validation. Current docs should keep that count aligned.
 

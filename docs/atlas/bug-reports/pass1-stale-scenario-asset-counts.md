@@ -1,7 +1,7 @@
 # PASS 1: docs still teach the old scenario-asset count
 
 - **Checklist:** stale documentation (docs spot-check)
-- **Verdict:** FAIL
+- **Verdict:** RESOLVED (historical)
 
 ## Finding
 Historical note: this older report found docs with stale scenario asset counts. Current docs should use `115`.
@@ -12,7 +12,7 @@ Historical note: this older report found docs with stale scenario asset counts. 
 - Current grading docs show `All 115 scenario assets passed validation`.
 
 ## Why this is a bug
-The examples are no longer aligned with the repository's validated asset inventory. Readers following the docs will compare against the wrong expected number.
+This report is retained as historical audit evidence. It is not an active failure because current examples and adapters use the validated `115` inventory.
 
 ## Impact
 This can trigger false stale-doc conclusions, bad manual checks, and confusion when `assets validate --json` reports a larger count than the docs promise.
