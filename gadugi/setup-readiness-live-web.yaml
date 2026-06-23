@@ -39,6 +39,7 @@ steps:
   params:
     command: |-
       cd "${EATME_REPO:-.}"
+      unset EATME_SETUP_READINESS_SCENARIO
       EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL}" ALICE_LOCAL_API_TOKEN="${ALICE_LOCAL_API_TOKEN}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
   expect:
     exit_code: 0
