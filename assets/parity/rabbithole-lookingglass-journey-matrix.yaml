@@ -648,10 +648,10 @@ rows:
       expected_behavior: "Student combines camera, audio, export, and sharing evidence for a finished artifact package."
     looking_glass:
       status: partial
-      source_status: "Partial: camera, export, and browser-download share artifacts are covered; missing native audio playback and native Web Share evidence"
-      reason: "LookingGlass curriculum evidence covers camera/export/package validation and browser-download share artifacts; native audio playback and native Web Share success evidence are missing."
+      source_status: "Partial: camera and bounded audio metadata evidence are covered; missing export/share artifacts, native audio playback, and native Web Share evidence"
+      reason: "LookingGlass curriculum evidence covers camera behavior and bounded audio metadata; export/share artifact, native audio playback, and native Web Share success evidence are missing."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student combines camera/export/browser-download share artifacts with bounded audio metadata; native audio playback and native Web Share success are not claimed."
+      expected_behavior: "Student combines camera behavior with bounded audio metadata; export/share artifacts, native audio playback, and native Web Share success are not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence

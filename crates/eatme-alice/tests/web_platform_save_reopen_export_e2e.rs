@@ -324,6 +324,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
     let mut saved_count = None;
     let mut saved_path = None;
     let mut edited_snippets = Vec::new();
+    let mut unsaved_object_names = Vec::new();
 
     for step in steps {
         let result = match step {
@@ -345,13 +346,19 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::AddUnsavedObject {
                 class_name,
                 instance_name,
-            } => post_add_object(
-                client,
-                &format!("{base}/api/scene/add-object"),
-                class_name,
-                instance_name,
-                &mut last_count,
-            ),
+            } => {
+                let result = post_add_object(
+                    client,
+                    &format!("{base}/api/scene/add-object"),
+                    class_name,
+                    instance_name,
+                    &mut last_count,
+                );
+                if result.ok {
+                    unsaved_object_names.push((*instance_name).to_string());
+                }
+                result
+            }
             Step::EditProcedure {
                 method_name,
                 edit_spec,
@@ -379,7 +386,12 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 saved_count.unwrap_or(last_count),
                 &mut last_count,
             ),
-            Step::ExportTypeScript => get_typescript_export(client, base),
+            Step::ExportTypeScript => get_typescript_export_matches_saved_state(
+                client,
+                base,
+                &edited_snippets,
+                &unsaved_object_names,
+            ),
             Step::AssertMinObjects { min } => StepResult {
                 name: format!("assert-min-objects({min})"),
                 ok: last_count >= *min,
@@ -576,21 +588,6 @@ fn post_reopen(
         Err(error) => failed("reopen", error),
     }
 }
-fn get_typescript_export(client: &ureq::Agent, base: &str) -> StepResult {
-    match get_typescript_export_bytes(client, base) {
-        Ok((content_type, bytes)) => StepResult {
-            name: "export-typescript".into(),
-            ok: content_type.contains("application/zip") && !bytes.is_empty(),
-            msg: format!("content_type={content_type} bytes={}", bytes.len()),
-        },
-        Err(error) => StepResult {
-            name: "export-typescript".into(),
-            ok: false,
-            msg: error,
-        },
-    }
-}
-
 fn get_typescript_export_contains(
     client: &ureq::Agent,
     base: &str,
@@ -631,6 +628,56 @@ fn get_typescript_export_contains(
             ok: false,
             msg: error,
         },
+    }
+}
+
+fn get_typescript_export_matches_saved_state(
+    client: &ureq::Agent,
+    base: &str,
+    snippets: &[String],
+    unsaved_object_names: &[String],
+) -> StepResult {
+    let (content_type, bytes) = match get_typescript_export_bytes(client, base) {
+        Ok(export) => export,
+        Err(error) => {
+            return StepResult {
+                name: "export-typescript".into(),
+                ok: false,
+                msg: error,
+            };
+        }
+    };
+    let text = match zip_text(&bytes) {
+        Ok(text) => text,
+        Err(error) => {
+            return StepResult {
+                name: "export-typescript".into(),
+                ok: false,
+                msg: error,
+            };
+        }
+    };
+    let missing = snippets
+        .iter()
+        .filter(|snippet| !text.contains(snippet.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+    let leaked_unsaved = unsaved_object_names
+        .iter()
+        .filter(|name| text.contains(name.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    StepResult {
+        name: "export-typescript".into(),
+        ok: content_type.contains("application/zip")
+            && !bytes.is_empty()
+            && missing.is_empty()
+            && leaked_unsaved.is_empty(),
+        msg: format!(
+            "content_type={content_type} bytes={} missing={missing:?} leaked_unsaved={leaked_unsaved:?}",
+            bytes.len()
+        ),
     }
 }
 
