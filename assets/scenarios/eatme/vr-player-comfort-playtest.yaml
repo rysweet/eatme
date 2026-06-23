@@ -84,11 +84,18 @@ steps:
   - stdout JSON has passed=true
   - stdout JSON includes vr-player-comfort-playtest in the committed scenario set
 - id: record-vr-player-preflight
-  command: bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "real_vr_available=true\nrequired_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note\n"; else printf "real_vr_available=false\nrequired_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet\n"; fi'
+  command: >-
+    bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; mkdir -p "$run_dir"; if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "%s\n" "real_vr_available=true" "required_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note" > "$run_dir/vr-player-preflight.txt"; else printf "%s\n" "real_vr_available=false" "required_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet" > "$run_dir/vr-player-preflight.txt"; fi; test -s "$run_dir/vr-player-preflight.txt"; grep -Eq "real_vr_available=(true|false)" "$run_dir/vr-player-preflight.txt"; printf "%s\n" "wrote=$run_dir/vr-player-preflight.txt"'
   evidence:
-  - preflight output states whether real VR execution is available
+  - preflight file states whether real VR execution is available
   - if real_vr_available=false, required evidence names desktop viewpoint, orientation, comfort check, and fallback playtest sheet
   - if real_vr_available=true, required evidence names headset or player capture, comfort notes, observer log, and revision note
+- id: record-comfort-playtest-notes
+  command: >-
+    bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; notes="$run_dir/comfort-playtest-notes.md"; mkdir -p "$run_dir"; printf "%s\n" "# Comfort playtest notes" "" "- VR available: see vr-player-preflight.txt." "- Comfort check: record comfort, stop points, and motion concerns." "- Orientation note: record whether the player knows where to look and go." "- Player cue: record what helped or confused the player." "- Fallback path: record desktop camera or screen viewer notes when no headset is available." "- Revision decision: record the change made or why no change is needed." > "$notes"; test -s "$notes"; grep -q "Comfort check" "$notes"; grep -q "Revision decision" "$notes"; printf "%s\n" "wrote=$notes"'
+  evidence:
+  - comfort playtest notes file exists and is non-empty
+  - notes ask for comfort, orientation, player cue, fallback path, and revision decision
 - id: launch-smoke
   command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
   evidence:

@@ -44,7 +44,19 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-vr-player-comfort-playtest}"
-      bash -lc 'if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "real_vr_available=true\nrequired_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note\n"; else printf "real_vr_available=false\nrequired_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet\n"; fi'
+      bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; mkdir -p "$run_dir"; if [ "${EATME_REAL_VR:-0}" = "1" ] && [ "${VR_HEADSET_AVAILABLE:-0}" = "1" ]; then printf "%s\n" "real_vr_available=true" "required_evidence=headset-or-player-capture,comfort-notes,observer-log,revision-note" > "$run_dir/vr-player-preflight.txt"; else printf "%s\n" "real_vr_available=false" "required_evidence=desktop-camera-view,orientation-note,comfort-check,fallback-playtest-sheet" > "$run_dir/vr-player-preflight.txt"; fi; test -s "$run_dir/vr-player-preflight.txt"; grep -Eq "real_vr_available=(true|false)" "$run_dir/vr-player-preflight.txt"; printf "%s\n" "wrote=$run_dir/vr-player-preflight.txt"'
+  expect:
+    exit_code: 0
+    stdout_contains: []
+  timeout: 60000
+- name: Record Comfort Playtest Notes
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-vr-player-comfort-playtest}"
+      bash -lc 'set -e; run_dir="runs/vr-player-comfort-playtest/${RUN_ID}"; notes="$run_dir/comfort-playtest-notes.md"; mkdir -p "$run_dir"; printf "%s\n" "# Comfort playtest notes" "" "- VR available: see vr-player-preflight.txt." "- Comfort check: record comfort, stop points, and motion concerns." "- Orientation note: record whether the player knows where to look and go." "- Player cue: record what helped or confused the player." "- Fallback path: record desktop camera or screen viewer notes when no headset is available." "- Revision decision: record the change made or why no change is needed." > "$notes"; test -s "$notes"; grep -q "Comfort check" "$notes"; grep -q "Revision decision" "$notes"; printf "%s\n" "wrote=$notes"'
   expect:
     exit_code: 0
     stdout_contains: []
@@ -77,6 +89,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Record Vr Player Preflight
+- name: record-comfort-playtest-notes succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Record Comfort Playtest Notes
 - name: launch-smoke succeeds
   type: command_success
   agent: eatme-cli-agent

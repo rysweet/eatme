@@ -98,6 +98,38 @@ fn vr_camera_curriculum_contract_records_real_vr_gate_and_desktop_fallback() {
 }
 
 #[test]
+fn vr_player_comfort_playtest_declared_files_are_written_and_checked() {
+    let (path, yaml) = read_scenario("vr-player-comfort-playtest");
+    let validation = validate_scenario_asset(&path).expect("scenario should validate");
+
+    assert!(validation.passed, "{:?}", validation.errors);
+    assert!(
+        yaml.contains("vr_player_preflight_record")
+            && yaml.contains("comfort_playtest_notes")
+            && yaml.contains("runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt")
+            && yaml.contains("runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-notes.md"),
+        "vr player comfort contract should keep the declared preflight and notes files explicit"
+    );
+    assert!(
+        yaml.contains("> \"$run_dir/vr-player-preflight.txt\"")
+            && yaml.contains("test -s \"$run_dir/vr-player-preflight.txt\"")
+            && yaml.contains("grep -Eq \"real_vr_available=(true|false)\"")
+            && yaml.contains("notes=\"$run_dir/comfort-playtest-notes.md\"")
+            && yaml.contains("> \"$notes\"")
+            && yaml.contains("test -s \"$notes\""),
+        "vr player comfort commands should write and check the declared files"
+    );
+    assert!(
+        yaml.contains("Comfort check")
+            && yaml.contains("Orientation note")
+            && yaml.contains("Player cue")
+            && yaml.contains("Fallback path")
+            && yaml.contains("Revision decision"),
+        "vr player comfort notes should keep the player feedback prompts explicit"
+    );
+}
+
+#[test]
 fn arrays_curriculum_contract_requires_visible_collection_order_and_boundary_evidence() {
     let (path, yaml) = read_scenario("arrays-collection-choreography");
     let validation = validate_scenario_asset(&path).expect("scenario should validate");
