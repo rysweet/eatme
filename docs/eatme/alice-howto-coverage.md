@@ -160,10 +160,10 @@ Alice.org HowTo coverage.
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
 | VR | `vr-camera-locomotion-journey` | Student records VR camera comfort planning and checks bounded movement-comfort evidence. | Covered | Covered for bounded browser camera comfort API evidence; true headset/native VR remains unsupported |
 | VR | `vr-player-comfort-playtest` | Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims. | Covered | Not supported |
-| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Covered where the web version supports the task |
-| Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Covered where export flow supports it |
+| Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Partial: bounded audio cue metadata and simulated playback bridge evidence only |
+| Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, bounded audio cue metadata, export, and browser-download sharing evidence for a sharecase package. | Covered | Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence |
 | Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered where the web version can open, save, and export projects |
-| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered where the web version can use the imported asset |
+| Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Covered: LookingGlass main contains imported model, texture, safe resource, export, and reopen persistence contract tests |
 | Alice 2 migration | `alice-2-migration-bridge` | Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result. | Covered | Not supported |
 | Classes | `modified-class-portability` | Student saves a modified class, imports it into another project, and checks that behavior travels with it. | Covered | Not supported |
 | Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Covered for browser accessibility caption evidence |
@@ -187,8 +187,9 @@ Alice.org HowTo coverage.
 3. Describe the user steps in plain language. Each step must include an expected
    visible result or evidence artifact.
 4. Mark platform support explicitly:
-   `RabbitHole covered`, `LookingGlass covered`, or
-   `not supported in LookingGlass`.
+   `RabbitHole covered`, `LookingGlass covered`, `LookingGlass partial`, or
+   `not supported in LookingGlass`. Partial rows must name the bounded evidence,
+   the missing evidence, and any upstream PR or default-branch dependency.
 5. Validate the source scenario:
 
    ```bash
