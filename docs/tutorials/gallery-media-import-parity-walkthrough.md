@@ -126,14 +126,14 @@ Run the LookingGlass tests that cover the import path:
 cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
 
-npm run test -- \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test -- \
   test/imported-project-assets-security.contract.test.ts \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
   test/imported-project-assets.test.ts \
   test/imported-asset-project-io.test.ts \
   test/model-texture-camera-joint-export-workflow.contract.test.ts \
   test/project-export.test.ts
-npm run test:e2e -- e2e/import-model-texture-workflow.spec.ts
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test:e2e -- e2e/import-model-texture-workflow.spec.ts
 ```
 
 The proof is complete when tests show:

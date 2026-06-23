@@ -244,6 +244,22 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
                 && !text.contains("ALICE_WEB_URL=\"$ALICE_WEB_URL\""),
             "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
         );
+        for line in text.lines() {
+            let direct_web_command = (line.contains("npm test --")
+                || line.contains("npm run test --")
+                || line.contains("npm run test:e2e --"))
+                && (line.contains("import-model-texture")
+                    || line.contains("alice-evidence-workflow")
+                    || line.contains("project-audio")
+                    || line.contains("project-export-share")
+                    || line.contains("model-texture"));
+            if direct_web_command {
+                assert!(
+                    line.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+                    "{doc_path} direct LookingGlass web evidence command must default ALICE_WEB_URL: {line}"
+                );
+            }
+        }
     }
 
     for doc_path in [

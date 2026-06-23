@@ -60,7 +60,7 @@ cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
 
 npm run build
-npm run test -- \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test -- \
   test/imported-project-assets-security.contract.test.ts \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
   test/project-audio-bounded-evidence.contract.test.ts \
@@ -82,8 +82,8 @@ the claim:
 ```bash
 cd "${LOOKINGGLASS_HOME:?}"
 export NODE_OPTIONS=--max-old-space-size=32768
-npm run test:e2e -- e2e/alice-evidence-workflow.spec.ts
-npm run test:e2e -- e2e/import-model-texture-workflow.spec.ts
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test:e2e -- e2e/alice-evidence-workflow.spec.ts
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test:e2e -- e2e/import-model-texture-workflow.spec.ts
 ```
 
 The LookingGlass evidence is valid only when the checks prove all relevant
