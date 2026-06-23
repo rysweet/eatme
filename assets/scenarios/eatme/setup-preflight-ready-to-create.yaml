@@ -34,6 +34,11 @@ agentic_flow:
   - setup_readiness_checklist
   - student_self_check_card
   - fallback_path_guide
+adapter:
+  targets:
+  - eatme-cli
+  - gadugi-cli
+  - lookingglass
 agentic_test_prompt: "Act as an instructor acceptance agent preparing a setup preflight Alice lesson. Produce a setup readiness checklist, student self-check card, and fallback path guide grounded in the listed resources and this setup-preflight-ready-to-create scenario. The setup readiness checklist must name the OS-level conditions Alice requires, identify the Java and OpenGL dependency versions or minimums cited on the Alice download page, note the install permission consideration for school-managed devices, and include the Chromebook Linux access case as a distinct item. The student self-check card must prompt each student to attempt an Alice launch or installation, write one sentence stating what they can do right now in Alice, and write one sentence naming one specific blocker if Alice did not launch \u2014 framing the blocker as an environment problem, not a student mistake. The fallback path guide must describe at least two no-install options: a pairing option where a student without\
   \ a working device works alongside a partner who has one, and either an instructor-led demo option or a printed design-planning option that lets the student complete the creative thinking portion of the lesson without a working device. The handoff note must tell the instructor to collect every reported blocker and address each one before the first creation task begins. Include a note that the readiness checklist items are based on the Alice download page requirements and may need updating when a new Alice version changes system requirements. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage."
 acceptance_criteria:
@@ -86,6 +91,13 @@ steps:
   evidence:
   - stdout JSON has passed=true
   - stdout JSON includes setup-preflight-ready-to-create
+- id: lookingglass-setup-readiness
+  command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+  evidence:
+  - LookingGlass /api/health and /api/config respond for the web runtime
+  - LookingGlass /api/setup/preflight names setup-preflight-ready-to-create and desktop-only boundaries
+  - LookingGlass /api/project/new creates a starter web project
+  - LookingGlass /api/setup/evidence-handoff writes a student-facing readiness handoff
 - id: agentic-instructor-review
   command: agentic instructor acceptance review using assets/scenarios/eatme/setup-preflight-ready-to-create.yaml
   evidence:

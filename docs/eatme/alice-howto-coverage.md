@@ -110,6 +110,8 @@ supported:
 ```bash
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+  cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
 ```
 
 The run passes only when the scenario assertions match the expected Alice user
@@ -124,10 +126,10 @@ Alice.org HowTo coverage.
 
 | HowTo area | Scenario | User journey covered | RabbitHole | LookingGlass |
 | --- | --- | --- | --- | --- |
-| Setup and first use | `setup-preflight-ready-to-create` | Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path. | Covered | Not supported |
-| Setup and first use | `setup-support-lab-readiness` | Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance. | Covered | Not supported |
-| Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Covered | Not supported |
-| Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Covered | Not supported |
+| Setup and first use | `setup-preflight-ready-to-create` | Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path. | Partial: editable scenario asset validates; missing instructor agentic acceptance output evidence | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `setup-support-lab-readiness` | Support helper reproduces setup guidance, diagnoses missing desktop prerequisites, and records repair guidance. | Covered | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `instructor-classroom-setup-readiness` | Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence. | Partial: editable scenario asset validates; missing instructor agentic checklist/fallback/student-note output evidence | Covered where the web setup/readiness APIs apply |
+| Setup and first use | `instructor-student-launch-evidence-handoff` | Instructor hands students a verified launch package with expected next actions and evidence review notes. | Partial: editable scenario asset validates; missing instructor agentic student handoff output evidence | Covered where the web setup/readiness APIs apply |
 | First scene | `building-a-scene-first-world` | Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project. | Covered | Covered |
 | First scene | `alice-objects-first-world` | Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence. | Covered | Covered where the web version supports the task |
 | First scene | `alice-objects-first-full-path` | Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions. | Covered | Covered where the web version supports the needed actions |

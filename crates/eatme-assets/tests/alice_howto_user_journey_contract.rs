@@ -205,7 +205,23 @@ fn covered_howto_scenarios_walk_real_user_steps_not_readiness_only_paths() {
     let mut failures = Vec::new();
 
     for row in coverage_rows() {
-        if !row.rabbit_hole.to_ascii_lowercase().starts_with("covered") {
+        let yaml = read_yaml(&format!("assets/scenarios/eatme/{}.yaml", row.scenario));
+        let kind = string_at(&yaml, &["kind"]);
+        let rabbit_hole = row.rabbit_hole.to_ascii_lowercase();
+        let setup_readiness_instructor = matches!(
+            row.scenario.as_str(),
+            "setup-preflight-ready-to-create"
+                | "instructor-classroom-setup-readiness"
+                | "instructor-student-launch-evidence-handoff"
+        );
+        if setup_readiness_instructor && kind == "instructor_agentic_flow" {
+            if !rabbit_hole.starts_with("partial:") || !rabbit_hole.contains("agentic") {
+                failures.push(format!(
+                    "{}: setup readiness instructor RabbitHole status must be explicit Partial agentic evidence",
+                    row.scenario
+                ));
+            }
+        } else if !rabbit_hole.starts_with("covered") {
             failures.push(format!(
                 "{}: RabbitHole status must be Covered",
                 row.scenario
@@ -213,9 +229,7 @@ fn covered_howto_scenarios_walk_real_user_steps_not_readiness_only_paths() {
             continue;
         }
 
-        let yaml = read_yaml(&format!("assets/scenarios/eatme/{}.yaml", row.scenario));
         let text = joined_yaml_text(&yaml);
-        let kind = string_at(&yaml, &["kind"]);
         let launcher_command = string_at(&yaml, &["launcher", "command"]);
         let step_commands = value_at(&yaml, &["steps"])
             .and_then(Value::as_sequence)

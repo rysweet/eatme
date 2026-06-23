@@ -10,6 +10,7 @@ config:
 environment:
   requires: []
   optional:
+  - RUN_ID
   - EATME_REPO
 agents:
 - name: eatme-cli-agent
