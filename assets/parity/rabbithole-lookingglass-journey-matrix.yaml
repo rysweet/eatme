@@ -19,7 +19,7 @@ rows:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
       reason: "LookingGlass covers web health, config, setup preflight, create-project readiness, and evidence handoff, but does not claim Java desktop launch, installer automation, OpenGL diagnosis, or full Alice UI automation."
-      command: EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor checks LookingGlass web server health/config, confirms the web create-project path is ready, receives explicit desktop-only boundaries, and creates a setup-readiness evidence handoff."
     closure:
       required:
@@ -38,7 +38,7 @@ rows:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
       reason: "LookingGlass covers web lab-readiness signals and support handoff fields, but does not claim Java desktop launch, native screenshots, installer automation, or OpenGL diagnosis."
-      command: EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Support helper verifies LookingGlass health/config, runs web setup preflight, creates a starter project, and receives blocker-owner-retest handoff guidance with desktop-only boundaries named."
     closure:
       required:
@@ -57,7 +57,7 @@ rows:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
       reason: "LookingGlass covers web classroom readiness, project creation, and evidence handoff, but does not claim Java desktop launch, installer automation, OpenGL diagnosis, or learner-world grading."
-      command: EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor verifies LookingGlass health/config, setup preflight, template availability, web project creation, and a classroom readiness handoff while desktop-only boundaries remain explicit."
     closure:
       required:
@@ -76,7 +76,7 @@ rows:
       status: partial
       source_status: "Covered where the web setup/readiness APIs apply"
       reason: "LookingGlass covers web launch readiness and student evidence handoff, but does not claim Java desktop launch evidence, native screenshots, full Alice UI automation, or learner-world grading."
-      command: EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-student-launch-evidence-handoff ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       expected_behavior: "Instructor verifies LookingGlass health/config, runs web setup preflight and launch readiness, and creates a student-facing evidence handoff with expected next actions and explicit desktop-only boundaries."
     closure:
       required:

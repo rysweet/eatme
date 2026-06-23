@@ -22,6 +22,13 @@ pub fn web_base_url() -> String {
         .unwrap_or_else(|| "http://localhost:3099".into())
 }
 
+fn local_api_token() -> String {
+    env::var("ALICE_LOCAL_API_TOKEN")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "gadugi-local-api-token".into())
+}
+
 pub fn http_client() -> ureq::Agent {
     ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(5))
@@ -246,7 +253,11 @@ where
     T: for<'de> Deserialize<'de>,
     F: FnOnce(T) -> (bool, String),
 {
-    match client.post(url).send_json(body) {
+    match client
+        .post(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
+        .send_json(body)
+    {
         Ok(resp) => match resp.into_json::<T>() {
             Ok(value) => {
                 let (ok, msg) = validate(value);

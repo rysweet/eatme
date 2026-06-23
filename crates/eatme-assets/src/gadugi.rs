@@ -474,7 +474,11 @@ fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
         .map(|step| step.command.as_str())
         .collect::<Vec<_>>()
         .join("\n");
-    for variable in ["ALICE_WEB_URL", "EATME_SETUP_READINESS_SCENARIO"] {
+    for variable in [
+        "ALICE_WEB_URL",
+        "ALICE_LOCAL_API_TOKEN",
+        "EATME_SETUP_READINESS_SCENARIO",
+    ] {
         if commands.contains(variable) && !optional.iter().any(|entry| entry == variable) {
             optional.push(variable.into());
         }

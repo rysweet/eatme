@@ -15,6 +15,7 @@ environment:
   - RUN_ID
   - EATME_REPO
   - ALICE_WEB_URL
+  - ALICE_LOCAL_API_TOKEN
   - EATME_SETUP_READINESS_SCENARIO
 agents:
 - name: eatme-cli-agent
@@ -71,7 +72,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-setup-support-lab-readiness}"
-      EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
   expect:
     exit_code: 0
     stdout_contains: []
