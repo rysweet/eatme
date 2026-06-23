@@ -20,9 +20,13 @@ fn web_platform_enabled() -> bool {
 }
 
 fn web_base_url() -> String {
-    env::var("ALICE_WEB_URL")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
+    normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
+}
+
+fn normalize_web_base_url(raw_url: Option<String>) -> String {
+    raw_url
+        .map(|url| url.trim().to_string())
+        .filter(|url| !url.is_empty())
         .unwrap_or_else(|| "http://localhost:3099".into())
 }
 
@@ -129,6 +133,9 @@ enum Step {
         expected_status: u16,
         expected_message: String,
     },
+    CameraComfortEvidence,
+    AccessibilityCaptionEvidence,
+    GalleryWalkRubricEvidence,
     AssertMinObjects {
         min: usize,
     },
@@ -263,6 +270,91 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     Err(e) => StepResult { name: name.clone(), ok: false, msg: e.to_string() },
                 }
             }
+            Step::CameraComfortEvidence => {
+                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.camera-vr-comfort-evidence/v1")
+                                && value.get("desktopCameraAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
+                            StepResult { name: "camera-comfort-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::AccessibilityCaptionEvidence => {
+                match client.get(&format!("{base}/api/accessibility/rescue-camera-captions")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let caption_ids: Vec<_> = value
+                                .get("captionChecks")
+                                .and_then(Value::as_array)
+                                .map(|checks| {
+                                    checks
+                                        .iter()
+                                        .filter_map(|check| check.get("id").and_then(Value::as_str))
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.accessibility-rescue-camera-captions/v1")
+                                && value.get("cameraCaption").and_then(Value::as_str).unwrap_or_default().contains("Camera")
+                                && value.get("objectCaption").and_then(Value::as_str).unwrap_or_default().contains("captionGuide")
+                                && value.get("keyboardReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("highContrastReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                && caption_ids.contains(&"aria-live-status")
+                                && caption_ids.contains(&"camera-caption")
+                                && caption_ids.contains(&"scene-object-caption");
+                            StepResult { name: "accessibility-caption-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::GalleryWalkRubricEvidence => {
+                match client.get(&format!("{base}/api/review/gallery-walk-rubric")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let rubric_ids: Vec<_> = value
+                                .get("rubric")
+                                .and_then(Value::as_array)
+                                .map(|criteria| {
+                                    criteria
+                                        .iter()
+                                        .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let has_review_prompt = value
+                                .get("galleryItems")
+                                .and_then(Value::as_array)
+                                .map(|items| items.iter().any(|item| {
+                                    item.get("title").and_then(Value::as_str) == Some("reviewCheckpoint")
+                                        && item.get("reviewPrompt").and_then(Value::as_str).unwrap_or_default().contains("reviewCheckpoint")
+                                }))
+                                .unwrap_or(false);
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.gallery-walk-rubric-evidence/v1")
+                                && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
+                                && has_review_prompt
+                                && rubric_ids.contains(&"visible-world")
+                                && rubric_ids.contains(&"camera-framing")
+                                && rubric_ids.contains(&"accessibility-captions");
+                            StepResult { name: "gallery-walk-rubric-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
             Step::AssertMinObjects { min } => {
                 StepResult { name: format!("assert(>={min})"), ok: last_count >= *min, msg: format!("actual={last_count}") }
             }
@@ -270,6 +362,21 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
         results.push(r);
     }
     results
+}
+
+fn assert_live_scenario(name: &str, steps: Vec<Step>) {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let client = http_client();
+    let base = web_base_url();
+    let failures = execute(&base, &client, &steps)
+        .into_iter()
+        .filter(|result| !result.ok)
+        .map(|result| format!("{name}/{}: {}", result.name, result.msg))
+        .collect::<Vec<_>>();
+    assert!(failures.is_empty(), "failures:\n{}", failures.join("\n"));
 }
 
 // ── Scenario builders ───────────────────────────────────────────────
@@ -592,6 +699,41 @@ fn camera_viewpoint() -> (&'static str, Vec<Step>) {
                 ],
             },
             Step::RunWorld,
+        ],
+    )
+}
+
+fn vr_camera_locomotion_journey() -> (&'static str, Vec<Step>) {
+    (
+        "vr-camera-locomotion-journey",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "comfortGuide".into(),
+            },
+            Step::CameraComfortEvidence,
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn accessibility_rescue_camera_captions() -> (&'static str, Vec<Step>) {
+    (
+        "accessibility-rescue-camera-captions",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "captionGuide".into(),
+            },
+            Step::AccessibilityCaptionEvidence,
         ],
     )
 }
@@ -1217,6 +1359,27 @@ fn instructor_grading() -> (&'static str, Vec<Step>) {
     )
 }
 
+fn classroom_gallery_walk_and_rubric() -> (&'static str, Vec<Step>) {
+    (
+        "classroom-gallery-walk-and-rubric",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "reviewHero".into(),
+            },
+            Step::AddObject {
+                class_name: "Prop".into(),
+                instance_name: "reviewCheckpoint".into(),
+            },
+            Step::GalleryWalkRubricEvidence,
+        ],
+    )
+}
+
 fn error_recovery() -> (&'static str, Vec<Step>) {
     (
         "error-recovery",
@@ -1267,6 +1430,8 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         say_think(),
         design_process(),
         camera_viewpoint(),
+        vr_camera_locomotion_journey(),
+        accessibility_rescue_camera_captions(),
         audio(),
         vehicle_parenting(),
         joint_manipulation(),
@@ -1275,6 +1440,7 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         nested_control_flow(),
         full_student_journey(),
         instructor_grading(),
+        classroom_gallery_walk_and_rubric(),
         error_recovery(),
     ]
 }
@@ -1429,6 +1595,60 @@ fn camera_uses_camera_methods() {
             _ => false,
         }
     }));
+}
+
+#[test]
+fn vr_camera_locomotion_records_bounded_comfort_evidence() {
+    let (_, steps) = vr_camera_locomotion_journey();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR camera journey should prove web camera comfort evidence"
+    );
+    assert!(
+        !steps
+            .iter()
+            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
+        "VR camera journey must not claim unrelated review tooling"
+    );
+}
+
+#[test]
+fn blank_alice_web_url_uses_default_base_url() {
+    assert_eq!(normalize_web_base_url(None), "http://localhost:3099");
+    assert_eq!(
+        normalize_web_base_url(Some("   \n\t  ".into())),
+        "http://localhost:3099"
+    );
+    assert_eq!(
+        normalize_web_base_url(Some(" http://127.0.0.1:4000/ ".into())),
+        "http://127.0.0.1:4000/"
+    );
+}
+
+#[test]
+fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
+    let (name, steps) = vr_camera_locomotion_journey();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn accessibility_rescue_camera_captions_records_caption_evidence() {
+    let (_, steps) = accessibility_rescue_camera_captions();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
+        "accessibility rescue scenario should prove browser caption evidence"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
+}
+
+#[test]
+fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
+    let (name, steps) = accessibility_rescue_camera_captions();
+    assert_live_scenario(name, steps);
 }
 
 #[test]
@@ -1678,264 +1898,5 @@ fn joint_manipulation_targets_biped_joints() {
     assert!(joint_methods.contains(&"dancer.leftKnee.turn"));
 }
 
-#[test]
-fn scene_transition_declares_two_scenes_and_switches_between_them() {
-    let (_, steps) = scene_transition();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    let declarations: Vec<_> = entrypoint
-        .iter()
-        .filter(|statement| statement.kind == "sceneDeclaration")
-        .flat_map(|statement| statement.args.iter().cloned())
-        .collect();
-    assert_eq!(
-        declarations,
-        vec!["introScene".to_string(), "creditsScene".to_string()]
-    );
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("setActiveScene")
-            && statement.args == vec!["creditsScene".to_string()]
-    }));
-}
-
-#[test]
-fn property_animation_animates_opacity_and_color() {
-    let (_, steps) = property_animation();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(entrypoint.iter().any(|statement| {
-        statement.kind == "animateProperty"
-            && statement.args
-                == vec![
-                    "overlay.opacity".to_string(),
-                    "1.0".to_string(),
-                    "0.25".to_string(),
-                    "1.5".to_string(),
-                ]
-    }));
-    assert!(entrypoint.iter().any(|statement| {
-        statement.kind == "animateProperty"
-            && statement.args
-                == vec![
-                    "overlay.color".to_string(),
-                    "Color.WHITE".to_string(),
-                    "Color.BLUE".to_string(),
-                    "1.5".to_string(),
-                ]
-    }));
-}
-
-#[test]
-fn nested_control_flow_layers_together_branching_and_loops() {
-    let (_, steps) = nested_control_flow();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert_eq!(entrypoint[0].kind, "doTogether");
-    assert_eq!(entrypoint[1].kind, "ifElse");
-    assert_eq!(entrypoint[2].kind, "countLoop");
-    assert_eq!(entrypoint[3].method.as_deref(), Some("logicHero.say"));
-}
-
-#[test]
-fn full_curriculum_breadth_covered() {
-    let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
-    for required in [
-        "hello-world",
-        "procedures",
-        "parameters",
-        "inheritance-oop",
-        "comments",
-        "events-collision",
-        "loops-conditionals",
-        "functions",
-        "variables",
-        "concurrency",
-        "arrays",
-        "project-io",
-        "game-narrative",
-        "say-think",
-        "design-process",
-        "camera-viewpoint",
-        "audio",
-        "vehicle-parenting",
-        "joint-manipulation",
-        "scene-transition",
-        "property-animation",
-        "nested-control-flow",
-        "full-student-journey",
-        "instructor-grading",
-        "error-recovery",
-    ] {
-        assert!(names.contains(&required), "missing: {required}");
-    }
-}
-
-#[test]
-fn every_scenario_has_at_least_three_steps() {
-    for (name, steps) in all_scenarios() {
-        assert!(steps.len() >= 3, "{name} has only {} steps", steps.len());
-    }
-}
-
-#[test]
-fn full_student_journey_covers_student_build_run_and_save_flow() {
-    let (_, steps) = full_student_journey();
-    let add_count = steps
-        .iter()
-        .filter(|step| matches!(step, Step::AddObject { .. }))
-        .count();
-    assert_eq!(
-        add_count, 3,
-        "student journey should add three authored objects"
-    );
-    assert!(steps.iter().any(|step| {
-        matches!(
-            step,
-            Step::RegisterEvent { event_type, handler_name }
-                if event_type == "collision" && handler_name == "onStudentCollision"
-        )
-    }));
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(
-        entrypoint
-            .iter()
-            .any(|statement| statement.kind == "countLoop")
-    );
-    assert!(
-        entrypoint
-            .iter()
-            .any(|statement| statement.kind == "ifElse")
-    );
-    assert!(
-        steps.iter().any(
-            |step| matches!(step, Step::Save { path } if path == FULL_STUDENT_JOURNEY_SAVE_PATH)
-        )
-    );
-}
-
-#[test]
-fn instructor_grading_round_trips_saved_project_structure() {
-    let (_, steps) = instructor_grading();
-    let save_index = steps
-        .iter()
-        .position(
-            |step| matches!(step, Step::Save { path } if path == INSTRUCTOR_GRADING_SAVE_PATH),
-        )
-        .expect("grading scenario should save work");
-    let load_index = steps
-        .iter()
-        .position(
-            |step| matches!(step, Step::Load { path } if path == INSTRUCTOR_GRADING_SAVE_PATH),
-        )
-        .expect("grading scenario should load saved work");
-    assert!(
-        save_index < load_index,
-        "saved work should be loaded after save"
-    );
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(
-        entrypoint
-            .iter()
-            .any(|statement| statement.method.as_deref() == Some("learner.walk"))
-    );
-    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
-}
-
-#[test]
-fn error_recovery_expects_failures_and_then_recovers() {
-    let (_, steps) = error_recovery();
-    let error_steps: Vec<_> = steps
-        .iter()
-        .filter(|step| matches!(step, Step::ExpectError { .. }))
-        .collect();
-    assert_eq!(
-        error_steps.len(),
-        2,
-        "recovery scenario should intentionally exercise two failure modes"
-    );
-    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "resilientHero")));
-    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
-}
-
-// ── Tier 2: Live tests (gated) ─────────────────────────────────────
-
-#[test]
-fn live_hello_world() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    for r in execute(&b, &c, &hello_world().1) {
-        assert!(r.ok, "{}: {}", r.name, r.msg);
-    }
-}
-
-#[test]
-fn live_procedures() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    for r in execute(&b, &c, &procedures().1) {
-        assert!(r.ok, "{}: {}", r.name, r.msg);
-    }
-}
-
-#[test]
-fn live_full_student_journey() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    for r in execute(&b, &c, &full_student_journey().1) {
-        assert!(r.ok, "{}: {}", r.name, r.msg);
-    }
-}
-
-#[test]
-fn live_instructor_grading() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    for r in execute(&b, &c, &instructor_grading().1) {
-        assert!(r.ok, "{}: {}", r.name, r.msg);
-    }
-}
-
-#[test]
-fn live_error_recovery() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    for r in execute(&b, &c, &error_recovery().1) {
-        assert!(r.ok, "{}: {}", r.name, r.msg);
-    }
-}
-
-#[test]
-fn live_all_curriculum() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
-        return;
-    }
-    let c = http_client();
-    let b = web_base_url();
-    let mut fails = Vec::new();
-    for (name, steps) in all_scenarios() {
-        for r in execute(&b, &c, &steps) {
-            if !r.ok {
-                fails.push(format!("{name}/{}: {}", r.name, r.msg));
-            }
-        }
-    }
-    assert!(fails.is_empty(), "failures:\n{}", fails.join("\n"));
-}
+#[path = "support/web_platform_curriculum_tail.rs"]
+mod web_platform_curriculum_tail;

@@ -227,8 +227,19 @@ fn alice_org_curriculum_concepts_have_desktop_and_web_coverage() {
 
     let root = repository_root();
     let web_file = root.join("crates/eatme-alice/tests/web_platform_curriculum_e2e.rs");
+    let web_support_file =
+        root.join("crates/eatme-alice/tests/support/web_platform_curriculum_tail.rs");
     assert!(web_file.is_file(), "{} must exist", web_file.display());
-    let web_content = normalized_content(&web_file);
+    assert!(
+        web_support_file.is_file(),
+        "{} must exist",
+        web_support_file.display()
+    );
+    let web_content = format!(
+        "{}\n{}",
+        normalized_content(&web_file),
+        normalized_content(&web_support_file)
+    );
 
     let mut gaps = Vec::new();
     for concept in ALICE_ORG_CONCEPTS {

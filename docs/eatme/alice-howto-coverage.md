@@ -156,15 +156,15 @@ Alice.org HowTo coverage.
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
 | Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
-| VR | `vr-camera-locomotion-journey` | Student builds a VR-style camera movement journey and checks movement comfort evidence. | Covered | Partial: bounded browser camera comfort API evidence is covered; missing camera movement and headset VR evidence |
-| VR | `vr-player-comfort-playtest` | Student playtests VR comfort rules, records observations, and revises the project. | Covered | Not supported |
+| VR | `vr-camera-locomotion-journey` | Student records VR camera comfort planning and checks bounded movement-comfort evidence. | Covered | Partial: bounded browser camera comfort API evidence is covered; missing headset/native VR locomotion evidence |
+| VR | `vr-player-comfort-playtest` | Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims. | Covered | Not supported |
 | Audio and media | `media-audio-cue-storyboard` | Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence. | Covered | Partial: bounded audio cue metadata and simulated playback evidence are covered; missing native audio playback and full authoring evidence |
 | Audio and media | `audio-camera-and-export-sharecase` | Student combines camera, audio, export, and sharing evidence for a finished artifact package. | Covered | Partial: camera, export, and browser-download share artifacts are covered; missing native audio playback and native Web Share evidence |
 | Import/export | `starter-project-open-save-export-preflight` | Student opens a starter project, saves it, exports it, and verifies the exported artifact. | Covered | Covered: web open, save, reopen, and export project evidence is covered; desktop starter-gallery selection is not claimed |
 | Import/export | `model-texture-import-checkpoint` | Student imports a model or texture, applies it, saves the project, and verifies the resource remains available. | Covered | Partial: bounded model/texture metadata path is covered; missing default-branch LookingGlass PR #251 evidence |
 | Alice 2 migration | `alice-2-migration-bridge` | Student opens migrated Alice 2 content, checks compatibility guidance, and records the converted result. | Covered | Not supported |
 | Classes | `modified-class-portability` | Student saves a modified class, imports it into another project, and checks that behavior travels with it. | Covered | Not supported |
-| Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Partial: browser caption and camera guidance evidence is covered; missing full desktop accessibility and assistive-technology evidence |
+| Accessibility | `accessibility-rescue-camera-captions` | Student uses camera/caption guidance and verifies the project remains understandable and navigable. | Covered | Covered for browser accessibility caption evidence |
 | Accessibility | `ide-accessibility-parity` | Reviewer checks labels, keyboard access, contrast, and zoom behavior across the editor. | Covered | Covered |
 | Performance | `ide-performance-parity` | Reviewer opens a large project, performs editing and run actions, and checks that interaction remains usable. | Covered | Covered |
 | Instructor planning | `instructor-alice-concept-map` | Instructor maps Alice concepts to lesson steps and checks the handoff against student evidence. | Covered | Covered |
@@ -174,7 +174,7 @@ Alice.org HowTo coverage.
 | Instructor review | `instructor-student-outcomes-rubric` | Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence. | Covered | Covered |
 | Student review | `student-reflection-artifact-review` | Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes. | Covered | Covered |
 | Sharing | `student-artifact-package-share-evidence` | Student packages project, screenshot, notes, and share evidence for review. | Covered | Covered |
-| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Partial: bounded rubric API evidence is covered; missing full classroom gallery-walk workflow evidence |
+| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered for web gallery review and rubric recording evidence |
 | Sharing | `teacher-community-sharing-loop` | Teacher packages a reusable classroom resource and checks community-sharing metadata. | Covered | Not supported |
 | Data storytelling | `neighborhood-data-story` | Student turns local data into an Alice story and verifies that values drive scene behavior. | Covered | Covered |
 

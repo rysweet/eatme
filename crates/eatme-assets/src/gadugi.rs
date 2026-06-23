@@ -176,7 +176,13 @@ fn generate_gadugi_adapter_yaml_for_scenario(
     let run_id = format!("gadugi-{}", scenario.id);
 
     if scenario.kind == "instructor_agentic_flow" {
-        return generate_instructor_agentic_adapter(scenario, source_asset, timeout_ms);
+        return generate_instructor_agentic_adapter(
+            scenario,
+            source_asset,
+            timeout_ms,
+            launch_timeout,
+            expected_scenario_asset_count,
+        );
     }
 
     let steps = scenario
@@ -264,6 +270,10 @@ fn generate_gadugi_adapter_yaml_for_scenario(
 fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     if scenario.id == "starter-project-open-save-export-preflight" {
         return "gadugi invokes eatme commands, records bounded starter-world and readiness-gap artifacts, checks eatme launch evidence, and points reviewers to separate LookingGlass save/reopen/export evidence";
+    }
+
+    if scenario.id == "vr-camera-locomotion-journey" {
+        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR preflight artifacts, and runs bounded LookingGlass camera comfort API evidence without claiming native headset VR support";
     }
 
     if scenario.kind == "alice_howto_user_journey" {

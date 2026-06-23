@@ -4,6 +4,8 @@ pub(super) fn generate_instructor_agentic_adapter(
     scenario: &EatmeScenarioAsset,
     source_asset: String,
     timeout_ms: u64,
+    launch_timeout: u64,
+    expected_scenario_asset_count: usize,
 ) -> Result<String> {
     let agentic_timeout_ms = scenario
         .timeouts
@@ -22,6 +24,103 @@ pub(super) fn generate_instructor_agentic_adapter(
         .unwrap_or_default();
     let validate_step = "Validate editable Alice instructor assets";
     let agentic_step = "Run instructor agentic acceptance review";
+    let command_steps = scenario
+        .steps
+        .iter()
+        .filter(|step| {
+            step.id != "validate-assets"
+                && !step
+                    .command
+                    .trim_start()
+                    .starts_with("agentic instructor acceptance review")
+        })
+        .map(|step| {
+            generated_step(
+                scenario,
+                step,
+                &format!("gadugi-{}", scenario.id),
+                launch_timeout,
+                expected_scenario_asset_count,
+            )
+        })
+        .collect::<Vec<_>>();
+    let command_assertions = scenario
+        .steps
+        .iter()
+        .filter(|step| {
+            step.id != "validate-assets"
+                && !step
+                    .command
+                    .trim_start()
+                    .starts_with("agentic instructor acceptance review")
+        })
+        .map(|step| {
+            generated_assertion(
+                scenario,
+                step,
+                "eatme-cli-agent",
+                expected_scenario_asset_count,
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut steps = Vec::new();
+    steps.push(GeneratedStep {
+        name: validate_step.into(),
+        agent: "eatme-cli-agent".into(),
+        action: "execute_command".into(),
+        params: BTreeMap::from([(
+            "command".into(),
+            repository_command(
+                "cargo run -q -p eatme-cli -- assets validate --json",
+                &format!("gadugi-{}", scenario.id),
+            ),
+        )]),
+        expect: GeneratedExpect {
+            exit_code: Some(0),
+            stdout_contains: Some(vec![
+                "\"passed\": true".into(),
+                format!("\"{}\"", scenario.id),
+            ]),
+            output_contains: None,
+        },
+        timeout: 60_000,
+    });
+    steps.extend(command_steps);
+    steps.push(GeneratedStep {
+        name: agentic_step.into(),
+        agent: "instructor-acceptance-agent".into(),
+        action: "agentic_test".into(),
+        params: BTreeMap::from([
+            ("asset".into(), source_asset.clone()),
+            ("prompt".into(), scenario.agentic_test_prompt.clone()),
+            (
+                "acceptance_probes".into(),
+                scenario.acceptance_probes.join("\n"),
+            ),
+        ]),
+        expect: GeneratedExpect {
+            exit_code: None,
+            stdout_contains: None,
+            output_contains: Some(expected_outputs),
+        },
+        timeout: agentic_timeout_ms,
+    });
+    let mut assertions = vec![GeneratedAssertion {
+        name: "Assets Validate".into(),
+        assertion_type: "command_success".into(),
+        agent: "eatme-cli-agent".into(),
+        params: BTreeMap::from([("step".into(), validate_step.into())]),
+    }];
+    assertions.extend(command_assertions);
+    assertions.push(GeneratedAssertion {
+        name: "Instructor Agentic Acceptance Review Covers Probes".into(),
+        assertion_type: "agentic_acceptance".into(),
+        agent: "instructor-acceptance-agent".into(),
+        params: BTreeMap::from([
+            ("step".into(), agentic_step.into()),
+            ("asset".into(), source_asset.clone()),
+        ]),
+    });
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {} Agentic Flow", scenario.title),
         description: format!(
@@ -63,65 +162,8 @@ pub(super) fn generate_instructor_agentic_adapter(
                 },
             },
         ],
-        steps: vec![
-            GeneratedStep {
-                name: validate_step.into(),
-                agent: "eatme-cli-agent".into(),
-                action: "execute_command".into(),
-                params: BTreeMap::from([(
-                    "command".into(),
-                    repository_command(
-                        "cargo run -q -p eatme-cli -- assets validate --json",
-                        &format!("gadugi-{}", scenario.id),
-                    ),
-                )]),
-                expect: GeneratedExpect {
-                    exit_code: Some(0),
-                    stdout_contains: Some(vec![
-                        "\"passed\": true".into(),
-                        format!("\"{}\"", scenario.id),
-                    ]),
-                    output_contains: None,
-                },
-                timeout: 60_000,
-            },
-            GeneratedStep {
-                name: agentic_step.into(),
-                agent: "instructor-acceptance-agent".into(),
-                action: "agentic_test".into(),
-                params: BTreeMap::from([
-                    ("asset".into(), source_asset.clone()),
-                    ("prompt".into(), scenario.agentic_test_prompt.clone()),
-                    (
-                        "acceptance_probes".into(),
-                        scenario.acceptance_probes.join("\n"),
-                    ),
-                ]),
-                expect: GeneratedExpect {
-                    exit_code: None,
-                    stdout_contains: None,
-                    output_contains: Some(expected_outputs),
-                },
-                timeout: agentic_timeout_ms,
-            },
-        ],
-        assertions: vec![
-            GeneratedAssertion {
-                name: "Assets Validate".into(),
-                assertion_type: "command_success".into(),
-                agent: "eatme-cli-agent".into(),
-                params: BTreeMap::from([("step".into(), validate_step.into())]),
-            },
-            GeneratedAssertion {
-                name: "Instructor Agentic Acceptance Review Covers Probes".into(),
-                assertion_type: "agentic_acceptance".into(),
-                agent: "instructor-acceptance-agent".into(),
-                params: BTreeMap::from([
-                    ("step".into(), agentic_step.into()),
-                    ("asset".into(), source_asset.clone()),
-                ]),
-            },
-        ],
+        steps,
+        assertions,
         metadata: GeneratedMetadata {
             source_eatme_asset: source_asset,
             generated_by: GENERATED_BY.into(),

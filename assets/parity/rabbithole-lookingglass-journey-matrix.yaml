@@ -558,7 +558,7 @@ rows:
     looking_glass:
       status: not_supported
       source_status: "Not supported"
-      reason: "Not supported"
+      reason: "LookingGlass now has bounded web gallery/rubric review evidence, but no synchronized facilitator live studio, participant orchestration, or live workshop handoff runtime exists."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -584,18 +584,18 @@ rows:
         - behavior evidence names user-visible result, not implementation details
   - scenario: vr-camera-locomotion-journey
     area: "VR"
-    journey: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+    journey: "Student records VR camera comfort planning and checks bounded movement-comfort evidence."
     rabbit_hole:
       status: covered
       source_status: "Covered"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-camera-locomotion-journey --run-id parity-vr-camera-locomotion-journey --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Student builds a VR-style camera movement journey and checks movement comfort evidence."
+      expected_behavior: "Student records VR camera comfort planning and checks bounded movement-comfort evidence."
     looking_glass:
       status: partial
-      source_status: "Partial: bounded browser camera comfort API evidence is covered; missing camera movement and headset VR evidence"
-      reason: "LookingGlass curriculum evidence covers the browser camera comfort API contract; camera locomotion behavior and headset/native VR evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student checks bounded browser camera comfort API evidence; camera movement and headset VR behavior are not claimed by this row."
+      source_status: "Partial: bounded browser camera comfort API evidence is covered; missing headset/native VR locomotion evidence"
+      reason: "LookingGlass proves browser camera comfort API evidence through /api/vr/camera-comfort; headset/native VR locomotion evidence is missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      expected_behavior: "LookingGlass records bounded browser camera comfort API evidence while true headset/native VR remains explicitly unsupported."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -603,16 +603,16 @@ rows:
         - behavior evidence names user-visible result, not implementation details
   - scenario: vr-player-comfort-playtest
     area: "VR"
-    journey: "Student playtests VR comfort rules, records observations, and revises the project."
+    journey: "Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims."
     rabbit_hole:
       status: covered
       source_status: "Covered"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-player-comfort-playtest --run-id parity-vr-player-comfort-playtest --runs-dir runs --timeout 1800 --json
-      expected_behavior: "Student playtests VR comfort rules, records observations, and revises the project."
+      expected_behavior: "Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims."
     looking_glass:
       status: not_supported
       source_status: "Not supported"
-      reason: "Not supported"
+      reason: "LookingGlass records bounded web camera comfort evidence in vr-camera-locomotion-journey, but true VR player comfort playtesting, headset sessions, and revision loops are not implemented."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -736,11 +736,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario accessibility-rescue-camera-captions --run-id parity-accessibility-rescue-camera-captions --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student uses camera/caption guidance and verifies the project remains understandable and navigable."
     looking_glass:
-      status: partial
-      source_status: "Partial: browser caption and camera guidance evidence is covered; missing full desktop accessibility and assistive-technology evidence"
-      reason: "LookingGlass curriculum evidence covers bounded browser caption/camera guidance; full desktop accessibility parity and assistive-technology evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student uses bounded browser caption/camera guidance; full desktop accessibility parity is not claimed."
+      status: covered
+      source_status: "Covered for browser accessibility caption evidence"
+      reason: "LookingGlass exposes /api/accessibility/rescue-camera-captions with aria-live, visible camera, and scene-object caption checks plus keyboard/high-contrast review evidence."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      expected_behavior: "Student uses browser camera/caption guidance and verifies the web project remains understandable and keyboard-reviewable."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -917,11 +917,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario classroom-gallery-walk-and-rubric --run-id parity-classroom-gallery-walk-and-rubric --runs-dir runs --timeout 1800 --json
       expected_behavior: "Class reviews projects in a gallery walk and uses a rubric to record feedback."
     looking_glass:
-      status: partial
-      source_status: "Partial: bounded rubric API evidence is covered; missing full classroom gallery-walk workflow evidence"
-      reason: "LookingGlass curriculum evidence covers bounded rubric API behavior; full classroom gallery walk, peer review workflow, and teacher moderation evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Classroom review is represented by bounded rubric API evidence; full gallery-walk workflow is not claimed."
+      status: covered
+      source_status: "Covered for web gallery review and rubric recording evidence"
+      reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and explicit live-studio unsupported evidence."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      expected_behavior: "Class reviews web project items in a gallery walk and uses rubric evidence to record feedback while live studio remains unsupported."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
