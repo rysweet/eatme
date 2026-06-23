@@ -87,7 +87,7 @@ steps:
   - LookingGlass /api/health and /api/config respond for the web runtime
   - LookingGlass /api/setup/preflight names instructor-student-launch-evidence-handoff and desktop-only boundaries
   - LookingGlass /api/launch proves web launch readiness without claiming Java desktop launch evidence
-  - LookingGlass /api/setup/evidence-handoff returns student next actions and evidence-review notes
+  - LookingGlass /api/setup/evidence-handoff returns student next actions for visible-result evidence and the next revision or setup blocker
 - id: agentic-instructor-review
   command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml
   evidence:
