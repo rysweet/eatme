@@ -226,7 +226,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
         },
         environment: GeneratedEnvironment {
             requires: required_environment(scenario),
-            optional: vec!["RUN_ID".into(), "EATME_REPO".into()],
+            optional: optional_environment(scenario),
         },
         agents: vec![GeneratedAgent {
             name: "eatme-cli-agent".into(),
@@ -462,7 +462,24 @@ fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
     {
         required.push("EATME_REAL_ALICE".into());
     }
+
     required
+}
+
+fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
+    let mut optional = vec!["RUN_ID".into(), "EATME_REPO".into()];
+    let commands = scenario
+        .steps
+        .iter()
+        .map(|step| step.command.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    for variable in ["ALICE_WEB_URL", "EATME_SETUP_READINESS_SCENARIO"] {
+        if commands.contains(variable) && !optional.iter().any(|entry| entry == variable) {
+            optional.push(variable.into());
+        }
+    }
+    optional
 }
 
 #[cfg(test)]

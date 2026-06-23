@@ -8,7 +8,7 @@ the TypeScript web port.
 
 ## What it tests
 
-The test suite covers **54 scenario definitions** spanning every concept taught
+The test suite covers **57 scenario definitions** spanning every concept taught
 on Alice.org plus setup and readiness checks:
 
 | Curriculum Area | Example Scenarios |
@@ -110,7 +110,7 @@ Set `ALICE_WEB_URL` to override the default `http://localhost:3099`.
 ## Repository layout
 
 ```text
-assets/scenarios/eatme/     54 scenario definitions (YAML)
+assets/scenarios/eatme/     57 scenario definitions (YAML)
 assets/scenarios/gadugi/    Generated adapter scenarios (do not hand-edit)
 crates/eatme-core/          Core types: AST, collaboration, commands
 crates/eatme-alice/         Alice integration: discovery, launch, web adapter
