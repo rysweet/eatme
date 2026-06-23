@@ -12,6 +12,7 @@ environment:
   optional:
   - EATME_REPO
   - ALICE_WEB_URL
+  - ALICE_LOCAL_API_TOKEN
   - EATME_SETUP_READINESS_SCENARIO
 agents:
 - name: eatme-cli-agent

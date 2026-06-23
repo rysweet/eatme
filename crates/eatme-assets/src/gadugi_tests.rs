@@ -244,6 +244,7 @@ fn generated_setup_readiness_adapters_declare_web_optional_environment() {
     let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
 
     assert!(generated.contains("- ALICE_WEB_URL"), "{generated}");
+    assert!(generated.contains("- ALICE_LOCAL_API_TOKEN"), "{generated}");
     assert!(
         generated.contains("- EATME_SETUP_READINESS_SCENARIO"),
         "{generated}"

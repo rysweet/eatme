@@ -137,6 +137,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             optional: vec![
                 "EATME_REPO".into(),
                 "ALICE_WEB_URL".into(),
+                "ALICE_LOCAL_API_TOKEN".into(),
                 "EATME_SETUP_READINESS_SCENARIO".into(),
             ],
         },
