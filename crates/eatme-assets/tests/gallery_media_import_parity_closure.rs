@@ -94,6 +94,33 @@ fn durable_markdown_docs() -> Vec<String> {
         .collect()
 }
 
+fn logical_shell_commands(text: &str) -> Vec<String> {
+    let mut commands = Vec::new();
+    let mut current = String::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            if !current.is_empty() {
+                commands.push(current.trim().to_string());
+                current.clear();
+            }
+            continue;
+        }
+        if !current.is_empty() {
+            current.push(' ');
+        }
+        current.push_str(trimmed.trim_end_matches('\\').trim_end());
+        if !trimmed.ends_with('\\') {
+            commands.push(current.trim().to_string());
+            current.clear();
+        }
+    }
+    if !current.is_empty() {
+        commands.push(current.trim().to_string());
+    }
+    commands
+}
+
 fn lookingglass_test_refs(row: &Value) -> Vec<String> {
     strings_at(row, &["closure", "required"])
         .join("\n")
@@ -244,19 +271,16 @@ fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
                 && !text.contains("ALICE_WEB_URL=\"$ALICE_WEB_URL\""),
             "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
         );
-        for line in text.lines() {
-            let direct_web_command = (line.contains("npm test --")
-                || line.contains("npm run test --")
-                || line.contains("npm run test:e2e --"))
-                && (line.contains("import-model-texture")
-                    || line.contains("alice-evidence-workflow")
-                    || line.contains("project-audio")
-                    || line.contains("project-export-share")
-                    || line.contains("model-texture"));
+        for command in logical_shell_commands(&text) {
+            let direct_web_command = command.contains("npm test --")
+                || command.contains("npm run test --")
+                || command.contains("npm run test:e2e --");
             if direct_web_command {
                 assert!(
-                    line.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
-                    "{doc_path} direct LookingGlass web evidence command must default ALICE_WEB_URL: {line}"
+                    command.contains("EATME_WEB_PLATFORM=1")
+                        && command
+                            .contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+                    "{doc_path} direct LookingGlass web evidence command must set web platform and default ALICE_WEB_URL: {command}"
                 );
             }
         }
