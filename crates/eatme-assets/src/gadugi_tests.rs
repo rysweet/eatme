@@ -497,6 +497,51 @@ fn generated_env_prefixed_cargo_test_steps_emit_success_markers_after_tests() {
 }
 
 #[test]
+fn generated_command_required_environment_is_declared() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for source in [
+        "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",
+        "assets/scenarios/eatme/modified-class-portability.yaml",
+    ] {
+        let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+        let adapter = generated_adapter_value(&generated);
+        let requires = adapter["environment"]["requires"]
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>();
+        let optional = adapter["environment"]["optional"]
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>();
+        let declared = requires
+            .iter()
+            .chain(optional.iter())
+            .copied()
+            .collect::<Vec<_>>();
+        let commands = adapter["steps"]
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .filter_map(|step| step["params"]["command"].as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        for variable in ["LOOKINGGLASS_HOME", "ALICE_HOME", "EATME_REAL_ALICE"] {
+            if commands.contains(&format!("${{{variable}:?}}")) {
+                assert!(
+                    declared.contains(&variable),
+                    "{source} uses ${{{variable}:?}} but does not declare it; requires={requires:?} optional={optional:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn generator_rejects_evidence_steps_without_derivable_stdout_assertions() {
     let root = scratch_root("generator-rejects-empty-evidence-stdout");
     let source_path = root.join("assets/scenarios/eatme/opaque-evidence.yaml");
