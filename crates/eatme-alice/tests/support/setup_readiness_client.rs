@@ -16,7 +16,10 @@ pub fn web_platform_enabled() -> bool {
 }
 
 pub fn web_base_url() -> String {
-    env::var("ALICE_WEB_URL").unwrap_or_else(|_| "http://localhost:3099".into())
+    env::var("ALICE_WEB_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "http://localhost:3099".into())
 }
 
 pub fn http_client() -> ureq::Agent {
@@ -60,6 +63,19 @@ pub fn setup_scenarios() -> Vec<(&'static str, Vec<Step>)> {
             "Student Launch Evidence Handoff",
         ),
     ]
+}
+
+pub fn selected_setup_scenarios() -> Vec<(&'static str, Vec<Step>)> {
+    let selected = env::var("EATME_SETUP_READINESS_SCENARIO")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    match selected.as_deref() {
+        Some(id) => setup_scenarios()
+            .into_iter()
+            .filter(|(scenario, _)| *scenario == id)
+            .collect(),
+        None => setup_scenarios(),
+    }
 }
 
 pub fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> {

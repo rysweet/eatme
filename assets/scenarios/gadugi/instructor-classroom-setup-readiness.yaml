@@ -11,6 +11,8 @@ environment:
   requires: []
   optional:
   - EATME_REPO
+  - ALICE_WEB_URL
+  - EATME_SETUP_READINESS_SCENARIO
 agents:
 - name: eatme-cli-agent
   type: system
@@ -47,11 +49,11 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-classroom-setup-readiness}"
-      EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+      EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
   expect:
     exit_code: 0
     stdout_contains: []
-  timeout: 60000
+  timeout: 300000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test

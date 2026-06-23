@@ -88,7 +88,7 @@ steps:
   - readiness output names install, Java, graphics, storage, account, and fallback fields
   - required evidence includes blocker category, owner, retest signal, and learner-safe fallback
 - id: lookingglass-setup-readiness
-  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
+  command: EATME_WEB_PLATFORM=1 EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL=${ALICE_WEB_URL:-http://localhost:3099} cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
   evidence:
   - LookingGlass /api/health and /api/config respond for the web runtime
   - LookingGlass /api/setup/preflight names setup-support-lab-readiness and desktop-only boundaries

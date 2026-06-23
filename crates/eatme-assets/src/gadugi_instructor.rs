@@ -134,7 +134,11 @@ pub(super) fn generate_instructor_agentic_adapter(
         },
         environment: GeneratedEnvironment {
             requires: Vec::new(),
-            optional: vec!["EATME_REPO".into()],
+            optional: vec![
+                "EATME_REPO".into(),
+                "ALICE_WEB_URL".into(),
+                "EATME_SETUP_READINESS_SCENARIO".into(),
+            ],
         },
         agents: vec![
             GeneratedAgent {

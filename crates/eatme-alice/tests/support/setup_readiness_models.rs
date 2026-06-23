@@ -19,6 +19,8 @@ pub struct SetupPreflightResponse {
     pub scenario: String,
     #[serde(rename = "unsupportedCapabilities")]
     pub unsupported_capabilities: Vec<String>,
+    #[serde(rename = "doesNotClaim")]
+    pub does_not_claim: Vec<String>,
     #[serde(rename = "classroomReadiness")]
     pub classroom_readiness: ClassroomReadiness,
 }

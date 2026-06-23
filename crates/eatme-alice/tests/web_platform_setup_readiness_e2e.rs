@@ -4,7 +4,8 @@
 mod setup_readiness;
 
 use setup_readiness::{
-    Step, assert_all, execute, http_client, setup_scenarios, web_base_url, web_platform_enabled,
+    Step, assert_all, execute, http_client, selected_setup_scenarios, setup_scenarios,
+    web_base_url, web_platform_enabled,
 };
 
 #[test]
@@ -38,7 +39,12 @@ fn live_setup_readiness_scenarios() {
 
     let client = http_client();
     let base = web_base_url();
-    for (_name, steps) in setup_scenarios() {
+    let scenarios = selected_setup_scenarios();
+    assert!(
+        !scenarios.is_empty(),
+        "EATME_SETUP_READINESS_SCENARIO must name a known setup readiness scenario"
+    );
+    for (_name, steps) in scenarios {
         assert_all(execute(&base, &client, &steps));
     }
 }
