@@ -127,10 +127,20 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
             "{scenario} must describe LookingGlass audio evidence as bounded metadata/playback-bridge support:\n{row_text}"
         );
         assert!(
-            row_text.contains("does not claim native audio playback")
-                && row_text.contains("does not claim native Web Share success"),
-            "{scenario} must explicitly avoid native audio and native Web Share overclaims:\n{row_text}"
+            row_text.contains("does not claim native audio playback"),
+            "{scenario} must explicitly avoid native audio overclaims:\n{row_text}"
         );
+        if scenario == "media-audio-cue-storyboard" {
+            assert!(
+                !row_text.contains("native Web Share"),
+                "{scenario} is audio-only and must not mention native Web Share evidence:\n{row_text}"
+            );
+        } else {
+            assert!(
+                row_text.contains("does not claim native Web Share success"),
+                "{scenario} must explicitly avoid native Web Share overclaims:\n{row_text}"
+            );
+        }
         assert!(
             !row_text.contains("finished artifact package")
                 && !row_text.contains("real/native audio playback")
@@ -177,6 +187,31 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
         !inventory.contains("finished artifact package"),
         "coverage inventory must not overclaim finished artifact package support"
     );
+}
+
+#[test]
+fn durable_gallery_media_docs_use_current_lookingglass_command_environment() {
+    for doc_path in [
+        "docs/howto/gallery-media-import-parity.md",
+        "docs/tutorials/gallery-media-import-parity-walkthrough.md",
+    ] {
+        let text = read_text(doc_path);
+        assert!(
+            !text.contains("LOOKINGGLASS_REPO"),
+            "{doc_path} must use LOOKINGGLASS_HOME for direct LookingGlass commands"
+        );
+        assert!(
+            !text.contains("ALICE_WEB_URL=${ALICE_WEB_URL}")
+                && !text.contains("ALICE_WEB_URL=$ALICE_WEB_URL")
+                && !text.contains("ALICE_WEB_URL=\"$ALICE_WEB_URL\""),
+            "{doc_path} must default ALICE_WEB_URL to http://localhost:3099 when unset"
+        );
+        assert!(
+            text.contains(r#"cd "${LOOKINGGLASS_HOME:?}""#)
+                && text.contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#),
+            "{doc_path} must publish the current direct LookingGlass command convention"
+        );
+    }
 }
 
 #[test]

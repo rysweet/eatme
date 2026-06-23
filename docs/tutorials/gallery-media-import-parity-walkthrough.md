@@ -238,7 +238,7 @@ const shareArtifacts = await generateShareArtifacts({
 
 This proves a valid export package and deterministic share artifacts. It does not
 prove native Web Share succeeded. If `navigator.share` is unavailable, the UI
-keeps export/download available and records share fallback evidence.
+keeps export/download available and records browser-download share evidence.
 
 ## 6. Confirm EatMe closure
 
@@ -253,11 +253,11 @@ cargo test -p eatme-assets --test remaining_curriculum_gaps
 cargo test -p eatme-assets --test gallery_media_import_parity_closure
 cargo test -p eatme-assets --test web_platform_scenario_parity
 
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-assets --test gallery_media_import_parity_closure
 
-cd ${LOOKINGGLASS_REPO:?}
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL=${ALICE_WEB_URL} npm test -- \
+cd "${LOOKINGGLASS_HOME:?}"
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
   test/imported-project-assets-security.contract.test.ts \
   test/imported-asset-project-io.test.ts \

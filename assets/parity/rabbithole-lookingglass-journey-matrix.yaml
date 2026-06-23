@@ -645,7 +645,7 @@ rows:
       required:
         - RabbitHole command passes with real Alice evidence
         - LookingGlass:test/project-audio-bounded-evidence.contract.test.ts records bounded metadata and playback bridge evidence
-        - LookingGlass evidence does not claim native audio playback and does not claim native Web Share success
+        - LookingGlass evidence does not claim native audio playback or full authoring evidence
         - behavior evidence names user-visible result, not implementation details
   - scenario: audio-camera-and-export-sharecase
     area: "Audio and media"
