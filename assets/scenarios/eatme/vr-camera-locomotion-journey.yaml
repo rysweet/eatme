@@ -92,7 +92,7 @@ steps:
   - if real_vr_available=false, required evidence names the non-VR fallback artifacts instead of silently skipping VR expectations
   - if real_vr_available=true, required evidence names Alice Player or headset capture plus comfort notes and observer log
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-camera-locomotion-journey
   evidence:
   - manifest scenario_id equals vr-camera-locomotion-journey
   - manifest failure_category is null

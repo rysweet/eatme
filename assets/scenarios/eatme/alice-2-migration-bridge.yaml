@@ -91,7 +91,7 @@ steps:
   - automatic Alice 2 conversion remains explicitly unsupported
   - migration evidence does not claim converted Alice 3 project output
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario alice-2-migration-bridge
   evidence:
   - manifest scenario_id equals alice-2-migration-bridge
   - manifest failure_category is null

@@ -105,7 +105,7 @@ steps:
   evidence:
   - stdout JSON has all_required_available=true
 - id: run-objects-first-full-path
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice objects-first-full-path --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package
   evidence:
   - manifest scenario_id equals alice-objects-first-full-path
   - manifest command argv equals eatme alice objects-first-full-path

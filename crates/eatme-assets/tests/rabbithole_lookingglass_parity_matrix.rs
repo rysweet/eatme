@@ -138,17 +138,32 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                     "{scenario}: claimed LookingGlass support without lookingglass adapter target"
                 ));
             }
-            if !lookingglass_command.contains("EATME_WEB_PLATFORM=1")
-                || !lookingglass_command.contains("ALICE_WEB_URL")
-            {
+            let is_eatme_web_command = lookingglass_command.contains("EATME_WEB_PLATFORM=1")
+                && lookingglass_command.contains("ALICE_WEB_URL");
+            let is_direct_lookingglass_command = lookingglass_command
+                .contains("cd \"${LOOKINGGLASS_HOME:?}\"")
+                && lookingglass_command.contains("npm test --");
+            if !is_eatme_web_command && !is_direct_lookingglass_command {
                 failures.push(format!(
                     "{scenario}: LookingGlass closure command must be runnable"
+                ));
+            }
+            if closure.contains(
+                "LookingGlass unsupported status remains explicit until implementation exists",
+            ) {
+                failures.push(format!(
+                    "{scenario}: supported LookingGlass row must not use unsupported closure wording"
                 ));
             }
         } else if lookingglass_status == "not_supported" {
             if string_at(&row, &["looking_glass", "reason"]).is_empty() {
                 failures.push(format!(
                     "{scenario}: unsupported LookingGlass row must state a reason"
+                ));
+            }
+            if closure.contains("LookingGlass command passes when web support is claimed") {
+                failures.push(format!(
+                    "{scenario}: unsupported LookingGlass row must not require a command pass"
                 ));
             }
         } else {

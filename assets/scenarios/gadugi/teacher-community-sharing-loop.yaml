@@ -11,6 +11,7 @@ environment:
   requires:
   - LOOKINGGLASS_HOME
   optional:
+  - RUN_ID
   - EATME_REPO
 agents:
 - name: eatme-cli-agent

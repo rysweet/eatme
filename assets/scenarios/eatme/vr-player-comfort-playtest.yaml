@@ -90,7 +90,7 @@ steps:
   - if real_vr_available=false, required evidence names desktop viewpoint, orientation, comfort check, and fallback playtest sheet
   - if real_vr_available=true, required evidence names headset or player capture, comfort notes, observer log, and revision note
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario vr-player-comfort-playtest
   evidence:
   - manifest scenario_id equals vr-player-comfort-playtest
   - manifest failure_category is null

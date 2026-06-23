@@ -87,7 +87,7 @@ steps:
   - readiness output names install, Java, graphics, storage, account, and fallback fields
   - required evidence includes blocker category, owner, retest signal, and learner-safe fallback
 - id: launch-smoke
-  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --run-id ${RUN_ID} --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
+  command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home "${ALICE_HOME:?}" --run-id "${RUN_ID:?}" --runs-dir runs --timeout 900 --json --no-memory --offline-package --scenario setup-support-lab-readiness
   evidence:
   - manifest scenario_id equals setup-support-lab-readiness
   - manifest failure_category is null
