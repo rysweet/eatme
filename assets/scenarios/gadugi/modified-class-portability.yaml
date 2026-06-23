@@ -83,10 +83,6 @@ steps:
     - test/entity-type-registry.test.ts
     - src/project-io/class-behavior-package.persistence.test.ts
     - src/server/routes/project-routes.class-behavior.test.ts
-    - class behavior package
-    - modified class type
-    - different AliceProject
-    - project persistence
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

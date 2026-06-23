@@ -65,9 +65,6 @@ steps:
     exit_code: 0
     stdout_contains:
     - test/project-migration.test.ts
-    - guidance-only
-    - automatic Alice 2 conversion
-    - converted Alice 3 project
   timeout: 60000
 - name: Launch Smoke
   agent: eatme-cli-agent

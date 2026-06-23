@@ -281,37 +281,23 @@ fn generated_starter_project_preflight_adapter_preserves_plain_user_facing_bound
 }
 
 #[test]
-fn generated_lookingglass_verification_steps_assert_source_evidence_terms() {
+fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let expectations = [
         (
             "assets/scenarios/eatme/alice-2-migration-bridge.yaml",
             "Verify Lookingglass Bounded Alice2 Guidance",
-            vec![
-                "test/project-migration.test.ts",
-                "guidance-only",
-                "automatic Alice 2 conversion",
-            ],
+            vec!["test/project-migration.test.ts"],
         ),
         (
             "assets/scenarios/eatme/modified-class-portability.yaml",
             "Verify Lookingglass Class Behavior Package",
-            vec![
-                "class-behavior-package.persistence.test.ts",
-                "class behavior package",
-                "different AliceProject",
-                "project persistence",
-            ],
+            vec!["class-behavior-package.persistence.test.ts"],
         ),
         (
             "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",
             "Verify Lookingglass Teacher Share Package",
-            vec![
-                "test/project-export.test.ts",
-                "alice-web.teacher-share/v1",
-                "teacher-share-metadata",
-                "sha256",
-            ],
+            vec!["test/project-export.test.ts"],
         ),
     ];
 
@@ -322,6 +308,20 @@ fn generated_lookingglass_verification_steps_assert_source_evidence_terms() {
             assert!(
                 stdout.contains(required),
                 "{source} {step_name} must assert {required:?}; stdout assertions were {stdout:?}"
+            );
+        }
+        for prose_only in [
+            "automatic Alice 2 conversion",
+            "converted Alice 3 project",
+            "different AliceProject",
+            "project persistence",
+            "alice-web.teacher-share/v1",
+            "teacher-share-metadata",
+            "sha256",
+        ] {
+            assert!(
+                !stdout.contains(prose_only),
+                "{source} {step_name} must not assert prose-only evidence term {prose_only:?}; stdout assertions were {stdout:?}"
             );
         }
     }

@@ -462,7 +462,6 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
 
     if command.contains("npm test --") {
         expected.extend(test_command_targets(command));
-        expected.extend(durable_evidence_terms(&step.evidence));
         expected.dedup();
         return expected;
     }
