@@ -23,6 +23,13 @@ pub struct SetupPreflightResponse {
     pub does_not_claim: Vec<String>,
     #[serde(rename = "classroomReadiness")]
     pub classroom_readiness: ClassroomReadiness,
+    pub checks: Vec<ReadinessCheck>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReadinessCheck {
+    pub id: String,
+    pub evidence: String,
 }
 
 #[derive(Debug, Deserialize)]

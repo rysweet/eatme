@@ -23,7 +23,7 @@ rows:
       expected_behavior: "Instructor checks LookingGlass web server health/config, confirms the web create-project path is ready, receives explicit desktop-only boundaries, and creates a setup-readiness evidence handoff."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
+        - RabbitHole editable scenario asset validates; missing agentic acceptance output remains explicitly partial
         - LookingGlass command passes for the setup-preflight-ready-to-create web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: setup-support-lab-readiness
@@ -42,7 +42,7 @@ rows:
       expected_behavior: "Support helper verifies LookingGlass health/config, runs web setup preflight, creates a starter project, and receives blocker-owner-retest handoff guidance with desktop-only boundaries named."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
+        - RabbitHole editable scenario asset validates; missing agentic checklist/fallback/student-note output remains explicitly partial
         - LookingGlass command passes for the setup-support-lab-readiness web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-classroom-setup-readiness
@@ -61,7 +61,7 @@ rows:
       expected_behavior: "Instructor verifies LookingGlass health/config, setup preflight, template availability, web project creation, and a classroom readiness handoff while desktop-only boundaries remain explicit."
     closure:
       required:
-        - RabbitHole command passes with real Alice evidence
+        - RabbitHole editable scenario asset validates; missing agentic student handoff output remains explicitly partial
         - LookingGlass command passes for the instructor-classroom-setup-readiness web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-student-launch-evidence-handoff
