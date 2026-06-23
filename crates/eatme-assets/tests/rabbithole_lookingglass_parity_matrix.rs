@@ -152,6 +152,7 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                 let source_lower = source_status.to_ascii_lowercase();
                 let reason_lower = reason.to_ascii_lowercase();
                 if !source_lower.starts_with("partial:")
+                    || !source_lower.contains("covered")
                     || !source_lower.contains("missing")
                     || !source_lower.contains("evidence")
                 {

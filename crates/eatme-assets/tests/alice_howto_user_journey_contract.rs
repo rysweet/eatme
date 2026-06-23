@@ -321,9 +321,12 @@ fn unsupported_lookingglass_rows_say_so_plainly() {
             continue;
         }
         if looking_glass.starts_with("partial:") {
-            if !looking_glass.contains("missing") || !looking_glass.contains("evidence") {
+            if !looking_glass.contains("covered")
+                || !looking_glass.contains("missing")
+                || !looking_glass.contains("evidence")
+            {
                 unclear.push(format!(
-                    "{} => Partial rows must name missing evidence plainly: {}",
+                    "{} => Partial rows must name covered and missing evidence plainly: {}",
                     row.scenario, row.looking_glass
                 ));
             }

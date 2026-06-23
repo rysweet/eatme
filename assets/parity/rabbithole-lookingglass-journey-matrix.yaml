@@ -85,7 +85,7 @@ rows:
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     looking_glass:
       status: partial
-      source_status: "Partial: web launch, add object, and save only; missing adjust, transform, and run evidence"
+      source_status: "Partial: web launch, add-object, and save evidence are covered; missing adjust, transform, and run evidence"
       reason: "LookingGlass curriculum evidence covers launch, adding an object, and save for this row; adjust, transform, and run evidence are missing for this row."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       expected_behavior: "Student starts a browser project, adds a visible object, and saves; transform and run behavior are not claimed by this row."
