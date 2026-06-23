@@ -74,7 +74,7 @@ acceptance_criteria:
   then: they explain how camera markers, camera moves, events, or object movement support comfort and orientation
 - given: gadugi needs to exercise the scenario
   when: the gadugi adapter runs commands for this scenario
-  then: gadugi invokes eatme CLI, records VR preflight expectations, and inspects manifest-level evidence only
+  then: gadugi invokes eatme CLI, records VR preflight expectations, checks manifest-level desktop evidence, and runs bounded LookingGlass /api/vr/camera-comfort evidence without claiming native headset VR support
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
