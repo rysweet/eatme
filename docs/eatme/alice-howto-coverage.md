@@ -108,7 +108,7 @@ Run the same scenario against LookingGlass when the inventory marks it as
 supported:
 
 ```bash
-EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$ALICE_WEB_URL" \
+EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" \
   cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
 ```
 

@@ -1,5 +1,5 @@
 use serde_yaml::Value;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -47,7 +47,14 @@ fn strings_at(value: &Value, path: &[&str]) -> Vec<String> {
 }
 
 fn coverage_inventory_scenarios() -> BTreeSet<String> {
+    coverage_inventory_statuses()
+        .into_keys()
+        .collect::<BTreeSet<_>>()
+}
+
+fn coverage_inventory_statuses() -> BTreeMap<String, (String, String)> {
     let mut rows = BTreeSet::new();
+    let mut statuses = BTreeMap::new();
     let mut in_table = false;
     for line in read_text("docs/eatme/alice-howto-coverage.md").lines() {
         if line.starts_with("| HowTo area") {
@@ -73,9 +80,10 @@ fn coverage_inventory_scenarios() -> BTreeSet<String> {
             .collect::<Vec<_>>();
         if cells.len() == 5 {
             rows.insert(cells[1].clone());
+            statuses.insert(cells[1].clone(), (cells[3].clone(), cells[4].clone()));
         }
     }
-    rows
+    statuses
 }
 
 fn matrix_rows(matrix: &Value) -> Vec<Value> {
@@ -148,6 +156,14 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                     "{scenario}: LookingGlass closure command must be runnable"
                 ));
             }
+            if lookingglass_command.contains("ALICE_WEB_URL")
+                && !lookingglass_command
+                    .contains(r#"ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}""#)
+            {
+                failures.push(format!(
+                    "{scenario}: LookingGlass web command must default ALICE_WEB_URL when it is unset"
+                ));
+            }
             if closure.contains(
                 "LookingGlass unsupported status remains explicit until implementation exists",
             ) {
@@ -181,6 +197,43 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
     assert!(
         failures.is_empty(),
         "parity matrix rows are incomplete:\n{}",
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn parity_matrix_source_statuses_match_the_howto_inventory() {
+    let inventory_statuses = coverage_inventory_statuses();
+    let matrix = read_yaml("assets/parity/rabbithole-lookingglass-journey-matrix.yaml");
+    let mut failures = Vec::new();
+
+    for row in matrix_rows(&matrix) {
+        let scenario = string_at(&row, &["scenario"]);
+        let Some((rabbit_hole_status, looking_glass_status)) = inventory_statuses.get(&scenario)
+        else {
+            failures.push(format!(
+                "{scenario}: missing from docs/eatme/alice-howto-coverage.md"
+            ));
+            continue;
+        };
+        let matrix_rabbit_hole_status = string_at(&row, &["rabbit_hole", "source_status"]);
+        let matrix_looking_glass_status = string_at(&row, &["looking_glass", "source_status"]);
+
+        if &matrix_rabbit_hole_status != rabbit_hole_status {
+            failures.push(format!(
+                "{scenario}: RabbitHole source_status {matrix_rabbit_hole_status:?} must match docs {rabbit_hole_status:?}"
+            ));
+        }
+        if &matrix_looking_glass_status != looking_glass_status {
+            failures.push(format!(
+                "{scenario}: LookingGlass source_status {matrix_looking_glass_status:?} must match docs {looking_glass_status:?}"
+            ));
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "parity matrix source_status values drifted:\n{}",
         failures.join("\n")
     );
 }

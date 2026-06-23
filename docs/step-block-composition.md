@@ -122,7 +122,7 @@ generation time with per-scenario values:
 
 | Placeholder | Source | Example value |
 | --- | --- | --- |
-| `{{scenario-asset-count}}` | Discovered scenario asset inventory count | `93` |
+| `{{scenario-asset-count}}` | Discovered scenario asset inventory count | `115` |
 | `{{scenario-id}}` | `EatmeScenarioAsset.id` | `building-a-scene-first-world` |
 
 Substitution uses `str::replace()` — no format-string injection, no runtime
@@ -223,13 +223,13 @@ version-controlled YAML under `assets/scenarios/gadugi/step-blocks/`.
 ### How the generator uses alice-preflight.yaml
 
 When generating the `validate-assets` step for `building-a-scene-first-world`
-with 93 discovered assets:
+with 115 discovered assets:
 
 1. Generator parses `alice-preflight.yaml` (once, at first use).
 2. Finds the entry with `id: validate-assets`.
 3. Takes `expect_stdout`: `['"passed": true', '"scenario_asset_count": {{scenario-asset-count}}']`.
-4. Substitutes `{{scenario-asset-count}}` → `93`.
-5. Returns `['"passed": true', '"scenario_asset_count": 93']`.
+4. Substitutes `{{scenario-asset-count}}` → `115`.
+5. Returns `['"passed": true', '"scenario_asset_count": 115']`.
 
 The generated adapter step is identical to what the hardcoded logic produced:
 
@@ -238,7 +238,7 @@ expect:
   exit_code: 0
   stdout_contains:
     - '"passed": true'
-    - '"scenario_asset_count": 93'
+    - '"scenario_asset_count": 115'
 ```
 
 ### How the generator uses alice-launch-smoke.yaml

@@ -34,12 +34,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alien-linguist-parameter-dialogue}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/alien-linguist-parameter-dialogue.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"alien-linguist-parameter-dialogue"'
+    - '"id": "alien-linguist-parameter-dialogue"'
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent

@@ -107,6 +107,54 @@ fn generated_cli_adapter_counts_missing_generated_adapter_before_writing() {
 }
 
 #[test]
+fn generated_instructor_adapter_validates_the_source_asset_before_checking_id() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let validate_step = adapter["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|step| step["name"] == "Validate editable Alice instructor assets")
+        .expect("instructor validation step is generated");
+    let command = validate_step["params"]["command"].as_str().unwrap();
+    let expected_stdout = validate_step["expect"]["stdout_contains"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert!(
+        command.contains(&format!("assets validate --path {source} --json")),
+        "{command}"
+    );
+    assert!(expected_stdout.contains(r#""passed": true"#));
+    assert!(expected_stdout.contains(r#""id": "instructor-classroom-setup-readiness""#));
+}
+
+#[test]
+fn generated_vr_adapters_declare_real_vr_switches_as_optional_environment() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/vr-player-comfort-playtest.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let optional = adapter["environment"]["optional"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>();
+
+    assert!(optional.contains(&"RUN_ID"), "{optional:?}");
+    assert!(optional.contains(&"EATME_REPO"), "{optional:?}");
+    assert!(optional.contains(&"EATME_REAL_VR"), "{optional:?}");
+    assert!(optional.contains(&"VR_HEADSET_AVAILABLE"), "{optional:?}");
+}
+
+#[test]
 fn generator_rejects_scenario_ids_that_escape_gadugi_root() {
     let root = scratch_root("generator-rejects-path-traversal-id");
     let source_path = root.join("assets/scenarios/eatme/path-traversal.yaml");
@@ -129,12 +177,7 @@ fn generated_real_ui_action_contract_preserves_loud_failure_semantics() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source_path = root.join("assets/scenarios/eatme/first-lessons-real-ui-actions.yaml");
     let generated = generate_gadugi_adapter_yaml(&root, &source_path).unwrap();
-    let yaml_without_header = generated
-        .lines()
-        .filter(|line| !line.starts_with("# "))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let adapter: Value = serde_yaml::from_str(&yaml_without_header).unwrap();
+    let adapter = generated_adapter_value(&generated);
     let launch_step = adapter["steps"]
         .as_sequence()
         .unwrap()
@@ -250,6 +293,15 @@ fn assert_portable_gadugi_yaml(generated: &str, root: &Path) {
     );
     assert!(generated.contains("cwd: ."));
     assert!(generated.contains("cd \"${EATME_REPO:-.}\""));
+}
+
+fn generated_adapter_value(generated: &str) -> Value {
+    let yaml_without_header = generated
+        .lines()
+        .filter(|line| !line.starts_with("# "))
+        .collect::<Vec<_>>()
+        .join("\n");
+    serde_yaml::from_str(&yaml_without_header).unwrap()
 }
 
 fn scratch_root(name: &str) -> std::path::PathBuf {

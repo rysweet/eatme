@@ -34,12 +34,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-classroom-gallery-walk-and-rubric}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"classroom-gallery-walk-and-rubric"'
+    - '"id": "classroom-gallery-walk-and-rubric"'
   timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent

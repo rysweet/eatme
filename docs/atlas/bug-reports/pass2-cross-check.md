@@ -8,7 +8,7 @@
 | `pass1-cli-usage-three-step-drift.md` | **CONFIRMED** | Quick-reference docs still describe a three-step report while code returns six steps. |
 | `pass1-dead-core-root-reexports.md` | **NEEDS_ATTENTION** | The root re-exports are unused by first-party consumers, but crate tests explicitly preserve them as supported API. |
 | `pass1-invented-a3p-grading-flow.md` | **NEEDS_ATTENTION** | The `.a3p` parser/grading path exists in test/integration code, but not in the shipped CLI contract described by the atlas. |
-| `pass1-stale-scenario-asset-counts.md` | **CONFIRMED** | Code, tests, and generated Gadugi expectations now use `105`, while docs still show `93`. |
+| `pass1-stale-scenario-asset-counts.md` | **CONFIRMED** | Historical count drift; current docs should use `115`. |
 | `pass1-web-load-is-synthetic.md` | **CONFIRMED** | Web-platform `Load` is still local bookkeeping, not a REST call. |
 
 ## Cross-checks
@@ -46,7 +46,7 @@
 **Pass 1 verdict:** FAIL — docs still teach the old scenario-asset count  
 **Pass 2 verdict:** **CONFIRMED**
 
-**Rationale:** The repository now treats `105` as the canonical count. `crates/eatme-assets/src/lib.rs:199-204` asserts `report.scenario_asset_count == 105`, and `assets/scenarios/gadugi/building-a-scene-first-world.yaml:34-39` expects `"scenario_asset_count": 107`. The stale references remain in `docs/generated-asset-consistency.md:52-69` and `docs/first-lesson-grading-report.md:69-70` plus `docs/first-lesson-grading-report.md:122-129`, so Pass 1 is fully supported.
+**Rationale:** The repository now treats `115` as the current count. `crates/eatme-assets/src/lib.rs:199-204` asserts `report.scenario_asset_count == 115`, and generated Gadugi adapters expect `"scenario_asset_count": 115` for full asset validation. Current docs should keep that count aligned.
 
 ### `pass1-web-load-is-synthetic.md`
 

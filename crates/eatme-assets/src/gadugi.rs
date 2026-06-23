@@ -226,7 +226,7 @@ fn generate_gadugi_adapter_yaml_for_scenario(
         },
         environment: GeneratedEnvironment {
             requires: required_environment(scenario),
-            optional: vec!["RUN_ID".into(), "EATME_REPO".into()],
+            optional: optional_environment(scenario),
         },
         agents: vec![GeneratedAgent {
             name: "eatme-cli-agent".into(),
@@ -468,6 +468,25 @@ fn required_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
         }
     }
     required
+}
+
+fn optional_environment(scenario: &EatmeScenarioAsset) -> Vec<String> {
+    let mut optional = vec!["RUN_ID".into(), "EATME_REPO".into()];
+    let commands = scenario
+        .steps
+        .iter()
+        .map(|step| step.command.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    for (name, marker) in [
+        ("EATME_REAL_VR", "EATME_REAL_VR"),
+        ("VR_HEADSET_AVAILABLE", "VR_HEADSET_AVAILABLE"),
+    ] {
+        if commands.contains(marker) {
+            optional.push(name.into());
+        }
+    }
+    optional
 }
 
 #[cfg(test)]

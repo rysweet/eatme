@@ -14,6 +14,8 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - EATME_REAL_VR
+  - VR_HEADSET_AVAILABLE
 agents:
 - name: eatme-cli-agent
   type: system

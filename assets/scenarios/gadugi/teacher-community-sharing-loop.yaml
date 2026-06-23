@@ -35,12 +35,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
-      cargo run -q -p eatme-cli -- assets validate --json
+      cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/teacher-community-sharing-loop.yaml --json
   expect:
     exit_code: 0
     stdout_contains:
     - '"passed": true'
-    - '"teacher-community-sharing-loop"'
+    - '"id": "teacher-community-sharing-loop"'
   timeout: 60000
 - name: Verify Lookingglass Teacher Share Package
   agent: eatme-cli-agent

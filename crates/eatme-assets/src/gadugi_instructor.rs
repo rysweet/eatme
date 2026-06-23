@@ -71,7 +71,9 @@ pub(super) fn generate_instructor_agentic_adapter(
         params: BTreeMap::from([(
             "command".into(),
             repository_command(
-                "cargo run -q -p eatme-cli -- assets validate --json",
+                &format!(
+                    "cargo run -q -p eatme-cli -- assets validate --path {source_asset} --json"
+                ),
                 &format!("gadugi-{}", scenario.id),
             ),
         )]),
@@ -79,7 +81,7 @@ pub(super) fn generate_instructor_agentic_adapter(
             exit_code: Some(0),
             stdout_contains: Some(vec![
                 "\"passed\": true".into(),
-                format!("\"{}\"", scenario.id),
+                format!("\"id\": \"{}\"", scenario.id),
             ]),
             output_contains: None,
         },
@@ -134,7 +136,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         },
         environment: GeneratedEnvironment {
             requires: required_environment(scenario),
-            optional: vec!["RUN_ID".into(), "EATME_REPO".into()],
+            optional: optional_environment(scenario),
         },
         agents: vec![
             GeneratedAgent {
