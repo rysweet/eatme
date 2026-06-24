@@ -51,6 +51,12 @@ fn authed_post(client: &ureq::Agent, url: &str) -> ureq::Request {
         .set("X-Alice-Local-Api-Token", &local_api_token())
 }
 
+fn authed_get(client: &ureq::Agent, url: &str) -> ureq::Request {
+    client
+        .get(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
+}
+
 // ── Response types ──────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -285,7 +291,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::CameraComfortEvidence => {
-                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let ok = value.get("schema_version").and_then(Value::as_str)
@@ -301,7 +307,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::AccessibilityCaptionEvidence => {
-                match client.get(&format!("{base}/api/accessibility/rescue-camera-captions")).call() {
+                match authed_get(client, &format!("{base}/api/accessibility/rescue-camera-captions")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let caption_ids: Vec<_> = value
@@ -331,11 +337,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::GalleryWalkRubricEvidence => {
-                match client
-                    .get(&format!("{base}/api/review/gallery-walk-rubric"))
-                    .set("X-Alice-Local-Api-Token", &local_api_token())
-                    .call()
-                {
+                match authed_get(client, &format!("{base}/api/review/gallery-walk-rubric")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let rubric_ids: Vec<_> = value
