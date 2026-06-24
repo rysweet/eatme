@@ -342,7 +342,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                     == Some("alice.gallery-walk-rubric-evidence/v1")
                                 && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
                                 && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(true)
-                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(true)
                                 && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
                                 && has_review_prompt
                                 && rubric_ids.contains(&"visible-world")

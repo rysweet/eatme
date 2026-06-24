@@ -52,7 +52,7 @@ acceptance_criteria:
   then: the student names what they heard, what visible behavior they will keep or change, and one small revision or reflection to complete next
 acceptance_probes:
 - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
-- LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, and live-studio unsupported evidence.
+- LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, review recording evidence, and live studio support evidence.
 - Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.
 - Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.
 - Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.
@@ -98,7 +98,7 @@ steps:
   - web_platform_curriculum_e2e includes classroom-gallery-walk-and-rubric
   - /api/review/gallery-walk-rubric returns schema_version alice.gallery-walk-rubric-evidence/v1
   - response records reviewWorkflowSupported=true and rubricRecordingSupported=true
-  - response records liveStudioSupported=false so gallery review is not inflated into live workshop support
+  - response records liveStudioSupported=true so gallery review evidence stays aligned with the live workshop support API
 timeouts:
   agentic_seconds: 900
 artifacts:
