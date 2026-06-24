@@ -384,33 +384,35 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 .unwrap_or_default();
                             let browser_boundary_ok = browser_session
                                 .map(|_| {
-                                matches!(
-                                    locomotion_mode,
-                                    "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
-                                )
+                                    matches!(
+                                        locomotion_mode,
+                                        "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
+                                    )
                                 })
-                                .unwrap_or_else(|| matches!(browser_status, "available" | "unavailable" | "unknown"));
+                                .unwrap_or(false);
                             let playtest_boundary_ok = playtest
                                 .map(|boundary| {
-                                boundary
-                                    .get("truePlayerComfortPlaytestSupported")
-                                    .and_then(Value::as_bool)
-                                    == Some(false)
-                                    && boundary
-                                        .get("revisionLoopEvidence")
-                                        .and_then(Value::as_str)
-                                        == Some("not-observed")
+                                    boundary
+                                        .get("truePlayerComfortPlaytestSupported")
+                                        .and_then(Value::as_bool)
+                                        == Some(false)
+                                        && boundary
+                                            .get("revisionLoopEvidence")
+                                            .and_then(Value::as_str)
+                                            == Some("not-observed")
                                 })
-                                .unwrap_or_else(|| evidence_codes.contains(&"true-vr-unsupported"));
+                                .unwrap_or(false);
                             let comfort_boundary_ok = comfort_checks
                                 .map(|checks| {
-                                checks.get("noForcedHeadset").and_then(Value::as_bool) == Some(true)
-                                    && checks.get("stableHorizon").and_then(Value::as_bool) == Some(true)
+                                    checks.get("noForcedHeadset").and_then(Value::as_bool) == Some(true)
+                                        && checks.get("stableHorizon").and_then(Value::as_bool) == Some(true)
                                 })
-                                .unwrap_or(true);
+                                .unwrap_or(false);
                             let ok = browser_boundary_ok
                                 && playtest_boundary_ok
                                 && comfort_boundary_ok
+                                && matches!(browser_status, "available" | "unavailable" | "unknown")
+                                && evidence_codes.contains(&"true-vr-unsupported")
                                 && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
                                 && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
                             StepResult { name: "vr-native-boundary-evidence".into(), ok, msg: value.to_string() }
