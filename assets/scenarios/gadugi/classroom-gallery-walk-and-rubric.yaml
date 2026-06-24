@@ -71,7 +71,7 @@ steps:
       grep -F -- 'instructor_boundary_note' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'lookingglass_gallery_rubric_api_evidence' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, review recording evidence, and live studio support evidence.' "$SOURCE_ASSET" >/dev/null
+      grep -F -- 'LookingGlass /api/review/gallery-walk-rubric returns visible gallery items, review prompts, rubric criteria, and live studio support evidence while rubric recording remains unsupported.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Gallery walk rubric works for stories, games, simulations, media scenes, or starter projects without enforcing one project template.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Peer feedback card asks for observed artifact behavior, concept or design connection, respectful question, and suggested revision.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Creator response prompt asks the student to compare peer observation with their own intent and name one student-owned next step.' "$SOURCE_ASSET" >/dev/null
