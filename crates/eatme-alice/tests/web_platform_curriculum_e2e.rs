@@ -215,6 +215,7 @@ enum Step {
     },
     CameraComfortEvidence,
     VrNativeBoundaryEvidence,
+    PlayerComfortSessionEvidence,
     AccessibilityCaptionEvidence,
     GalleryWalkRubricEvidence,
     AssertMinObjects {
@@ -522,6 +523,56 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::PlayerComfortSessionEvidence => {
+                let payload = serde_json::json!({
+                    "mode": "headset",
+                    "sessionLabel": "EatMe parity headset session",
+                    "playerAlias": "student player",
+                    "observerAlias": "teacher observer",
+                    "headsetEvidenceArtifact": "recordings/eatme-parity-headset-session.mp4",
+                    "comfort": {
+                        "orientationObservation": "Player faced the intended path after the visible arrow cue.",
+                        "locomotionComfort": "Player preferred point-click movement and avoided smooth turn motion.",
+                        "discoverabilityCue": "Player noticed the highlighted gate without verbal help.",
+                        "stopOrContinueDecision": "Observer stopped after one discomfort note and logged the trigger."
+                    },
+                    "revisionLoop": {
+                        "beforeObservation": "Before revision, the player missed the gate and turned too quickly.",
+                        "revisionChange": "Author brightened the gate cue and slowed the camera turn.",
+                        "afterObservation": "After revision, the player found the gate and completed the path."
+                    }
+                });
+                match authed_post(client, &format!("{base}/api/vr/player-comfort-session")).send_json(payload) {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let playtest = value
+                                .pointer("/cameraVrComfort/playerComfortPlaytest")
+                                .and_then(Value::as_object);
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("alice.player-comfort-session-runtime-parity/v1")
+                                && value.pointer("/playerComfortSession/schema_version").and_then(Value::as_str)
+                                    == Some("alice.player-comfort-session-evidence/v1")
+                                && value.pointer("/cameraVrComfort/nativeVrSupported").and_then(Value::as_bool)
+                                    == Some(false)
+                                && playtest
+                                    .and_then(|item| item.get("truePlayerComfortPlaytestSupported"))
+                                    .and_then(Value::as_bool)
+                                    == Some(true)
+                                && playtest
+                                    .and_then(|item| item.get("headsetSessionEvidence"))
+                                    .and_then(Value::as_str)
+                                    == Some("observed-headset-player-session")
+                                && playtest
+                                    .and_then(|item| item.get("revisionLoopEvidence"))
+                                    .and_then(Value::as_str)
+                                    == Some("observed-before-after-revision");
+                            StepResult { name: "player-comfort-session-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "player-comfort-session-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "player-comfort-session-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::AccessibilityCaptionEvidence => {
@@ -974,6 +1025,7 @@ fn vr_player_comfort_playtest() -> (&'static str, Vec<Step>) {
             },
             Step::CameraComfortEvidence,
             Step::VrNativeBoundaryEvidence,
+            Step::PlayerComfortSessionEvidence,
             Step::RunWorld,
         ],
     )
@@ -1810,7 +1862,6 @@ fn every_scenario_starts_with_health_check() {
         );
     }
 }
-
 #[test]
 fn every_scenario_launches_a_project() {
     for (name, steps) in all_scenarios() {
@@ -1820,14 +1871,12 @@ fn every_scenario_launches_a_project() {
         );
     }
 }
-
 #[test]
 fn hello_world_adds_object_and_saves() {
     let (_, steps) = hello_world();
     assert!(steps.iter().any(|s| matches!(s, Step::AddObject { .. })));
     assert!(steps.iter().any(|s| matches!(s, Step::Save { .. })));
 }
-
 #[test]
 fn procedures_edits_and_runs() {
     let (_, steps) = procedures();
@@ -1838,7 +1887,6 @@ fn procedures_edits_and_runs() {
     );
     assert!(steps.iter().any(|s| matches!(s, Step::RunWorld)));
 }
-
 #[test]
 fn events_collision_registers_handler() {
     let (_, steps) = events_collision();
@@ -1848,7 +1896,6 @@ fn events_collision_registers_handler() {
             .any(|s| matches!(s, Step::RegisterEvent { .. }))
     );
 }
-
 #[test]
 fn loops_conditionals_has_control_flow() {
     let (_, steps) = loops_conditionals();
@@ -1865,7 +1912,6 @@ fn loops_conditionals_has_control_flow() {
     assert!(has_loop, "needs countLoop");
     assert!(has_if, "needs ifElse");
 }
-
 #[test]
 fn variables_declares_and_assigns() {
     let (_, steps) = variables();
@@ -1883,7 +1929,6 @@ fn variables_declares_and_assigns() {
     });
     assert!(has_decl && has_assign);
 }
-
 #[test]
 fn concurrency_uses_do_together() {
     let (_, steps) = concurrency();
@@ -1893,25 +1938,29 @@ fn concurrency_uses_do_together() {
         _ => false,
     }));
 }
-
 #[test]
-fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
+fn vr_player_comfort_exercises_boundary_and_submitted_session_evidence() {
     let (_, steps) = vr_player_comfort_playtest();
     assert!(
         steps
             .iter()
             .any(|step| matches!(step, Step::CameraComfortEvidence)),
-        "VR player comfort should use the bounded camera/WebXR evidence endpoint"
+        "missing camera/WebXR boundary step"
     );
     assert!(
         steps
             .iter()
             .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
-        "VR player comfort must require explicit unsupported headset/revision-loop boundaries"
+        "missing unsupported headset boundary step"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::PlayerComfortSessionEvidence)),
+        "missing submitted comfort session step"
     );
     assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "playerTester")));
 }
-
 #[test]
 fn blank_alice_web_url_uses_default_base_url() {
     assert_eq!(normalize_web_base_url(None), "http://localhost:3099");
@@ -1924,24 +1973,20 @@ fn blank_alice_web_url_uses_default_base_url() {
         "http://127.0.0.1:4000/"
     );
 }
-
 #[test]
 fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
     let (name, steps) = vr_camera_locomotion_journey();
     assert_live_scenario(name, steps);
 }
-
 #[test]
 fn live_vr_player_comfort_exercises_vr_boundary_api() {
     let (name, steps) = vr_player_comfort_playtest();
     assert_live_scenario(name, steps);
 }
-
 #[test]
 fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
     let (name, steps) = accessibility_rescue_camera_captions();
     assert_live_scenario(name, steps);
 }
-
 #[path = "support/web_platform_curriculum_tail.rs"]
 mod web_platform_curriculum_tail;

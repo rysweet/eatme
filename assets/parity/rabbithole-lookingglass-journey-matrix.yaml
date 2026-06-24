@@ -623,15 +623,15 @@ rows:
       expected_behavior: "Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims."
     looking_glass:
       status: partial
-      source_status: "Partial: bounded browser WebXR/player comfort boundary evidence is covered; missing true headset player comfort sessions and revision-loop evidence"
-      reason: "LookingGlass records bounded browser WebXR/player comfort boundary evidence through /api/vr/camera-comfort; true headset player comfort sessions and revision-loop evidence are missing."
+      source_status: "Partial: bounded browser WebXR/player comfort boundary evidence and submitted player-comfort session/revision-loop evidence are covered; missing independently observed real headset session artifact from live hardware"
+      reason: "LookingGlass records bounded browser WebXR/player comfort boundary evidence through /api/vr/camera-comfort and validates submitted /api/vr/player-comfort-session observations; missing independently observed actual hardware headset playtest evidence remains an external requirement."
       command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
-      expected_behavior: "LookingGlass records bounded browser VR boundary evidence while true headset/player comfort playtesting remains explicitly unsupported."
+      expected_behavior: "LookingGlass records bounded browser VR boundary evidence, accepts concrete submitted headset/player comfort observations with before-after revision-loop evidence, and keeps native VR plus unobserved hardware-session gaps explicit."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when bounded browser VR boundary evidence is claimed
-        - True headset player comfort sessions and revision-loop evidence remain explicit missing evidence
+        - LookingGlass command passes when bounded browser VR boundary and submitted player comfort session/revision-loop evidence are claimed
+        - Independently observed real headset hardware session artifacts remain explicit missing evidence when not supplied
         - behavior evidence names user-visible result, not implementation details
   - scenario: media-audio-cue-storyboard
     area: "Audio and media"

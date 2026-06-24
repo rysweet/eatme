@@ -108,6 +108,13 @@ bounded browser WebXR session and locomotion evidence through
 and true player comfort playtesting as unsupported unless observed headset
 sessions and revision loops exist.
 
+The `vr-player-comfort-playtest` scenario extends that boundary with
+LookingGlass `/api/vr/player-comfort-session` evidence. The endpoint can record
+submitted headset or desktop-fallback player observations plus before/change/after
+revision-loop notes. This closes the executable evidence path for reviewer-supplied
+session data, but it still does not manufacture an independently observed live
+hardware headset session when no headset artifact is supplied.
+
 The expanded instructor/student outside-in scenarios use the same rule. Real Alice
 execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing
 manifest proves the selected scenario reached a smoke-ready desktop session; it does
