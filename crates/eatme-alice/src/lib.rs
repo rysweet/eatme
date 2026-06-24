@@ -3,6 +3,7 @@ pub mod deps;
 pub mod discover;
 pub mod launch;
 mod launch_artifacts;
+mod launch_class_portability;
 mod launch_desktop_controls;
 mod launch_desktop_execution;
 mod launch_edit_procedure;

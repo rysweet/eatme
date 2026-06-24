@@ -344,6 +344,115 @@ fn real_ui_action_contract_advances_when_object_placement_hook_proves_placement(
 }
 
 #[test]
+fn modified_class_portability_writes_bounded_desktop_contract_when_hook_is_missing() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "class-portability-contract-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("modified-class-portability"),
+    })
+    .unwrap();
+
+    assert_eq!(
+        manifest.failure_category.as_deref(),
+        Some("class_portability_desktop_contract_blocked")
+    );
+    assert!(
+        !manifest
+            .assertions
+            .get("desktop_class_portability_evidence")
+            .expect("class portability assertion should exist")
+            .passed
+    );
+    let contract_path = fixture.root.join(
+        "runs/modified-class-portability/class-portability-contract-run/portability/desktop-class-portability-contract.json",
+    );
+    assert!(contract_path.is_file());
+    let contract: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(contract_path).unwrap()).unwrap();
+    assert_eq!(
+        contract["schema_version"],
+        "eatme.desktop-class-portability-contract/v1"
+    );
+    assert_eq!(contract["status"], "blocked");
+    assert_eq!(
+        contract["required_actions"][0]["missing_affordance_id"],
+        "deterministic-alice-class-portability-affordance"
+    );
+    assert!(
+        contract["does_not_claim"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|claim| claim
+                .as_str()
+                .unwrap()
+                .contains("tools/eatme-class-portability is absent"))
+    );
+}
+
+#[test]
+fn modified_class_portability_passes_when_desktop_hook_returns_artifacts() {
+    let fixture = TestFixture::new();
+    fixture.write_fake_tools();
+    fixture.write_fake_alice_repo();
+    fixture.write_fake_class_portability_hook();
+    let _path_override = PathOverride::prepend(&fixture.bin);
+
+    let manifest = run_launch_smoke(&LaunchSmokeOptions {
+        alice_home: fixture.alice_home.clone(),
+        run_id: "class-portability-hook-run".into(),
+        runs_dir: fixture.root.join("runs"),
+        timeout_seconds: 1,
+        json: true,
+        no_memory: true,
+        offline_package: true,
+        scenario: LaunchSmokeScenario::new("modified-class-portability"),
+    })
+    .unwrap();
+
+    assert_eq!(manifest.failure_category, None);
+    assert!(
+        manifest
+            .assertions
+            .get("desktop_class_portability_evidence")
+            .expect("class portability assertion should exist")
+            .passed
+    );
+    let contract_path = fixture.root.join(
+        "runs/modified-class-portability/class-portability-hook-run/portability/desktop-class-portability-contract.json",
+    );
+    let contract: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(contract_path).unwrap()).unwrap();
+    assert_eq!(contract["status"], "passed");
+    let probe = &contract["candidate_affordance_probes"][0];
+    assert_eq!(probe["status"], "passed");
+    assert!(
+        probe["exported_class_package"]["size_bytes"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+    assert!(probe["import_report"]["size_bytes"].as_u64().unwrap() > 0);
+    assert!(probe["save_reopen_report"]["size_bytes"].as_u64().unwrap() > 0);
+    assert!(
+        probe["post_import_behavior"]["size_bytes"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+}
+
+#[test]
 fn real_ui_action_contract_finds_window_without_window_manager_client_list() {
     let fixture = TestFixture::new();
     fixture.write_fake_tools();

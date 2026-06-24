@@ -3,6 +3,7 @@ use std::path::PathBuf;
 const DEFAULT_STARTER_PROJECT: &str =
     "core/resources/target/distribution/application/starter-projects/africa.a3p";
 pub const OBJECTS_FIRST_FULL_PATH_SCENARIO_ID: &str = "alice-objects-first-full-path";
+pub const MODIFIED_CLASS_PORTABILITY_SCENARIO_ID: &str = "modified-class-portability";
 
 #[derive(Clone, Debug)]
 pub struct LaunchSmokeScenario {
@@ -34,10 +35,15 @@ impl LaunchSmokeScenario {
             || self.id == "code-editor-first-run"
             || self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
             || self.id == "alice-objects-first-world"
+            || self.is_modified_class_portability()
     }
 
     pub fn is_objects_first_full_path(&self) -> bool {
         self.id == OBJECTS_FIRST_FULL_PATH_SCENARIO_ID
+    }
+
+    pub fn is_modified_class_portability(&self) -> bool {
+        self.id == MODIFIED_CLASS_PORTABILITY_SCENARIO_ID
     }
 
     pub fn with_starter_project(mut self, starter_project: impl Into<PathBuf>) -> Self {
@@ -85,6 +91,10 @@ mod tests {
                 .requires_real_ui_actions()
         );
         assert!(LaunchSmokeScenario::new("alice-objects-first-world").requires_real_ui_actions());
+        assert!(
+            LaunchSmokeScenario::new(MODIFIED_CLASS_PORTABILITY_SCENARIO_ID)
+                .requires_real_ui_actions()
+        );
         assert!(!LaunchSmokeScenario::new("student-progression").requires_real_ui_actions());
         assert!(LaunchSmokeScenario::new("student-progression").accepts_window_evidence());
         assert!(
@@ -107,6 +117,18 @@ mod tests {
         assert_eq!(
             scenario.starter_project,
             PathBuf::from("fixtures/custom.a3p")
+        );
+    }
+
+    #[test]
+    fn modified_class_portability_has_named_scenario_helper() {
+        assert!(
+            LaunchSmokeScenario::new(MODIFIED_CLASS_PORTABILITY_SCENARIO_ID)
+                .is_modified_class_portability()
+        );
+        assert!(
+            !LaunchSmokeScenario::new("building-a-scene-first-world")
+                .is_modified_class_portability()
         );
     }
 }

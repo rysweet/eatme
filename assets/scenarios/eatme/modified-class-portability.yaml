@@ -72,6 +72,7 @@ acceptance_criteria:
   then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
 acceptance_probes:
 - Desktop Alice portability remains gated by EATME_REAL_ALICE=1 and must provide manifest/log/window/screenshot artifacts before desktop parity is claimed.
+- Desktop Alice modified-class portability is bounded by the EatMe desktop class portability contract; parity is claimed only when the manifest includes desktop_class_portability_evidence and portability/desktop-class-portability-contract.json records export, import, save/reopen, and post-import behavior artifacts from tools/eatme-class-portability.
 - LookingGlass evidence depends on rysweet/LookingGlass#266 until that PR is merged; it includes a browser UI journey that saves/exports a modified class behavior, imports it into a different project, creates an imported class instance, saves the destination project, reopens it, and verifies the behavior text remains visible.
 - LookingGlass unit evidence still covers entity type registry, class behavior package import, API import, and save/read persistence below the UI journey.
 - Imported class behavior package evidence includes package validation, type import, UI-visible behavior text, and behavior persistence after import into another project.
@@ -87,6 +88,7 @@ steps:
   - manifest scenario_id equals modified-class-portability
   - manifest failure_category is null
   - manifest assertions all pass
+  - manifest desktop_class_portability_evidence assertion passes before desktop portability is claimed
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
 - id: verify-portability-evidence
@@ -95,6 +97,12 @@ steps:
   - portability.evidence_after_import lists export evidence, import evidence, and post-import behavior evidence
   - acceptance criteria require behavior persistence after import into another project
   - instructor/student prompts ask for before-export and after-import comparison
+- id: verify-desktop-class-portability-contract
+  command: cargo test -p eatme-alice --test launch_smoke_fake modified_class_portability
+  evidence:
+  - missing tools/eatme-class-portability produces a runnable no-go desktop contract instead of a portability claim
+  - a passing desktop hook must produce exported-class-package.txt, import-report.json, save-reopen-report.json, and post-import-behavior.md
+  - desktop-class-portability-contract.json lists unsupported claims when desktop evidence is unavailable
 - id: verify-lookingglass-class-behavior-package
   command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
   evidence:
@@ -117,7 +125,9 @@ artifacts:
   screenshot: runs/modified-class-portability/${RUN_ID}/screenshots/startup.png
   log: runs/modified-class-portability/${RUN_ID}/alice.log
   window_list: runs/modified-class-portability/${RUN_ID}/window-list.txt
+  desktop_class_portability_contract: runs/modified-class-portability/${RUN_ID}/portability/desktop-class-portability-contract.json
   export_bundle: runs/modified-class-portability/${RUN_ID}/portability/exported-class-package.txt
   import_report: runs/modified-class-portability/${RUN_ID}/portability/import-report.json
+  save_reopen_report: runs/modified-class-portability/${RUN_ID}/portability/save-reopen-report.json
   behavior_evidence: runs/modified-class-portability/${RUN_ID}/portability/post-import-behavior.md
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, the explicit EATME_REAL_ALICE=1 gate, or export/import evidence is missing, fail loudly. Do not silently skip portability proof or substitute a mocked Alice runtime.
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, the explicit EATME_REAL_ALICE=1 gate, or tools/eatme-class-portability export/import/save/reopen behavior evidence is missing, fail loudly and keep desktop class portability at no-go. Do not silently skip portability proof or substitute a mocked Alice runtime.
