@@ -633,43 +633,44 @@ rows:
         - behavior evidence names user-visible result, not implementation details
   - scenario: media-audio-cue-storyboard
     area: "Audio and media"
-    journey: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
+    journey: "Student authors an audio cue storyboard, runs native Web Audio playback, and verifies cue timing evidence."
     rabbit_hole:
       status: covered
       source_status: "Covered"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario media-audio-cue-storyboard --run-id parity-media-audio-cue-storyboard --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student adds an audio cue to a storyboard, runs the scene, and verifies cue timing evidence."
     looking_glass:
-      status: partial
-      source_status: "Partial: bounded audio cue metadata and simulated playback bridge evidence only; covered metadata/playback bridge evidence; missing native audio playback and full authoring evidence"
-      reason: "LookingGlass evidence is bounded to audio manifest/cue metadata persistence and a simulated playback bridge; missing evidence includes native audio playback and full authoring evidence."
-      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
-      expected_behavior: "Student records storyboard cue timing with bounded audio metadata/playback bridge evidence, not native audio playback."
+      status: covered
+      source_status: "Covered: native Web Audio playback and audio authoring evidence covered by LookingGlass main contract test"
+      reason: "LookingGlass proves authored audio resources, background music, cue timeline bindings, save/reload evidence, and decoded Web Audio output start calls through the native authoring contract."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-native-authoring.contract.test.ts
+      expected_behavior: "Student records authored audio resources, cue timing, save/reload evidence, and Web Audio output start evidence."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass:test/project-audio-bounded-evidence.contract.test.ts records bounded metadata and playback bridge evidence
-        - LookingGlass evidence does not claim native audio playback or full authoring evidence
+        - LookingGlass:test/project-audio-native-authoring.contract.test.ts records native Web Audio output and full audio authoring evidence
+        - LookingGlass evidence avoids native desktop stack and autoplay permission overclaims
         - behavior evidence names user-visible result, not implementation details
   - scenario: audio-camera-and-export-sharecase
     area: "Audio and media"
-    journey: "Student combines camera, bounded audio cue metadata, export, and browser-download sharing evidence for a sharecase package."
+    journey: "Student combines camera, native audio playback, export, and native Web Share capability evidence for a sharecase package."
     rabbit_hole:
       status: covered
       source_status: "Covered"
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario audio-camera-and-export-sharecase --run-id parity-audio-camera-and-export-sharecase --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student combines camera, audio, export, and sharing evidence for a sharecase package with browser-download delivery."
     looking_glass:
-      status: partial
-      source_status: "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence; covered camera/export/download path; missing native audio playback and native Web Share evidence"
-      reason: "LookingGlass proves camera markers, export package, and browser-download share path, while audio remains bounded metadata/playback bridge evidence; missing evidence includes native audio playback and native Web Share success."
-      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
-      expected_behavior: "Student combines camera markers, bounded audio metadata/playback bridge evidence, export, and browser-download share evidence."
+      status: covered
+      source_status: "Covered: camera/export path, native Web Audio playback, and native Web Share capability evidence covered by LookingGlass main contract tests"
+      reason: "LookingGlass proves camera/export sharecase behavior, authored native Web Audio output, and navigator.share delivery evidence with browser-download fallback retained for unsupported clients."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-native-web-share.contract.test.ts test/project-audio-native-authoring.contract.test.ts test/project-export-share-fallback.contract.test.ts
+      expected_behavior: "Student combines camera markers, native Web Audio output evidence, export, native Web Share capability evidence, and fallback share behavior."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass:test/project-export-share-fallback.contract.test.ts proves browser-download share path and does not claim native Web Share success
-        - LookingGlass:test/project-audio-bounded-evidence.contract.test.ts records bounded metadata and playback bridge evidence and does not claim native audio playback
+        - LookingGlass:test/project-export-native-web-share.contract.test.ts proves navigator.share delivery evidence after a successful native share call
+        - LookingGlass:test/project-audio-native-authoring.contract.test.ts records native Web Audio output and full audio authoring evidence
+        - LookingGlass:test/project-export-share-fallback.contract.test.ts keeps browser-download fallback behavior for unsupported clients
         - behavior evidence names user-visible result, not implementation details
   - scenario: starter-project-open-save-export-preflight
     area: "Import/export"
@@ -1086,8 +1087,8 @@ closure_families:
       - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
-      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-bounded-evidence.contract.test.ts
-      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-share-fallback.contract.test.ts test/project-audio-bounded-evidence.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-native-authoring.contract.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export-native-web-share.contract.test.ts test/project-audio-native-authoring.contract.test.ts test/project-export-share-fallback.contract.test.ts
       - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/model-texture-import-checkpoint-closure.contract.test.ts test/imported-project-assets-security.contract.test.ts test/imported-asset-project-io.test.ts test/model-texture-camera-joint-export-workflow.contract.test.ts
     scenario_bindings:
       - alice-web-gallery-media-parity

@@ -26,8 +26,8 @@ The workstream covers only these parity rows:
 | Matrix row | Target LookingGlass status | Evidence boundary |
 | --- | --- | --- |
 | `model-texture-import-checkpoint` | `covered` | LookingGlass main contains imported model and texture resource evidence through the cited source/API tests. |
-| `media-audio-cue-storyboard` | `partial` | Audio support is bounded to resource metadata, manifest persistence, storyboard cue timing, and playback-bridge trigger evidence. It does not claim native browser playback, device media permissions, or complete audio authoring. |
-| `audio-camera-and-export-sharecase` | `partial` | Camera/viewpoint state, export package generation, validation, and browser-download share artifacts are covered. The row remains partial while audio is metadata/playback-bridge bounded and native Web Share availability is browser-dependent. |
+| `media-audio-cue-storyboard` | `covered` | Native Web Audio playback, cue metadata, manifest persistence, and authoring evidence are covered by LookingGlass contract tests. |
+| `audio-camera-and-export-sharecase` | `covered` | Camera/export, native Web Audio playback, native Web Share capability evidence, and browser-download handling are covered by LookingGlass contract tests. |
 
 Do not use this guide to close setup, save/reopen, class-sharing, broad gallery,
 or unrelated curriculum gaps.
@@ -63,7 +63,8 @@ npm run build
 EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm run test -- \
   test/imported-project-assets-security.contract.test.ts \
   test/model-texture-import-checkpoint-closure.contract.test.ts \
-  test/project-audio-bounded-evidence.contract.test.ts \
+  test/project-audio-native-authoring.contract.test.ts \
+  test/project-export-native-web-share.contract.test.ts \
   test/project-export-share-fallback.contract.test.ts \
   test/imported-project-assets.test.ts \
   test/imported-asset-project-io.test.ts \
@@ -101,11 +102,12 @@ claims:
 4. Reopened project archives preserve imported asset metadata, resource bytes,
    scene model references, texture bindings, camera workflow state, and package
    validation evidence.
-5. Audio checks prove `aliceAudio` manifest persistence, cue timing, background
-   metadata, supported-format validation, decode-status recording, and
-   playback-bridge trigger calls only.
-6. Share checks prove deterministic export/download artifacts and browser-download evidence when
-   native `navigator.share` or `navigator.canShare` is unavailable.
+5. Audio checks prove `aliceAudio` manifest persistence, cue timing, native Web
+   Audio playback, supported-format validation, decode-status recording, and
+   authoring evidence.
+6. Share checks prove native Web Share success only after a matching package
+   file is shared, plus browser-download handling when native sharing is
+   unavailable or rejected.
 
 ### Canonical LookingGlass evidence references
 
@@ -118,8 +120,9 @@ from the evidence it claims:
 | `LookingGlass:test/imported-project-assets-security.contract.test.ts` | Unsafe resource names are rejected and safe model/texture metadata stays project-scoped. |
 | `LookingGlass:test/model-texture-camera-joint-export-workflow.contract.test.ts` | Public workflow API imports resources, assigns textures, exports resources, and generates share fallback artifacts. |
 | `LookingGlass:test/imported-asset-project-io.test.ts` | Imported asset descriptors, resource bytes, model resource IDs, and texture bindings are written and read through `.a3p`. |
-| `LookingGlass:test/project-audio-bounded-evidence.contract.test.ts` | Audio evidence is bounded to metadata and playback-bridge claims, not native playback. |
-| `LookingGlass:test/project-export-share-fallback.contract.test.ts` | Export/share evidence is browser-download evidence, not native Web Share success. |
+| `LookingGlass:test/project-audio-native-authoring.contract.test.ts` | Native Web Audio playback and audio authoring evidence. |
+| `LookingGlass:test/project-export-native-web-share.contract.test.ts` | Native Web Share success only after a real matching package file is shared. |
+| `LookingGlass:test/project-export-share-fallback.contract.test.ts` | Browser-download handling when native Web Share is unavailable or rejected. |
 
 ## Run EatMe closure checks
 
@@ -146,7 +149,8 @@ EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm
   test/imported-project-assets-security.contract.test.ts \
   test/imported-asset-project-io.test.ts \
   test/model-texture-camera-joint-export-workflow.contract.test.ts \
-  test/project-audio-bounded-evidence.contract.test.ts \
+  test/project-audio-native-authoring.contract.test.ts \
+  test/project-export-native-web-share.contract.test.ts \
   test/project-export-share-fallback.contract.test.ts
 ```
 
@@ -187,14 +191,14 @@ closure:
     - LookingGlass:test/imported-asset-project-io.test.ts proves imported resource metadata and bytes round-trip through project IO
 ```
 
-Keep the audio rows partial unless the full row claim is proven by native
+Keep the audio rows covered only while the full row claim is proven by native
 browser/API behavior:
 
 ```yaml
 looking_glass:
-  status: partial
-  source_status: "Bounded metadata and fallback support"
-  reason: "Audio evidence is limited to resource metadata, manifest persistence, cue timing, and playback-bridge triggers; native playback/full authoring is not claimed."
+  status: covered
+  source_status: "Native audio and native share evidence"
+  reason: "Native Web Audio playback/full authoring and native Web Share capability evidence are covered by LookingGlass contract tests."
 ```
 
 ## Update scenarios
@@ -214,17 +218,16 @@ cargo run -q -p eatme-cli -- assets generate-gadugi --check --json
 ```
 
 Scenario text must match the matrix boundary before generated mirrors or parity
-rows are updated. Use "audio metadata", "cue timing", "playback-bridge trigger",
-and "browser-download share evidence". Do not describe simulated audio as native
-playback. Do not describe share-artifact evidence as guaranteed native Web Share
-success.
+rows are updated. Use "native Web Audio playback", "audio authoring evidence",
+"native Web Share capability evidence", and "browser-download handling". Do not
+describe metadata-only audio or share-artifact generation as native success.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
 | `model-texture-import-checkpoint` cannot be promoted | Confirm LookingGlass tests prove import, safe metadata, export/checkpoint inclusion, and reopen persistence. A scenario-only wording change is not enough. |
-| Audio row is tempting to mark `covered` | Leave it `partial` unless native playback and full authoring are proven. Metadata, cue timing, and playback-bridge calls are bounded support. |
+| Audio row evidence regresses to metadata only | Return it to `partial` unless native playback and full authoring are proven. Metadata, cue timing, and playback-trigger calls are bounded support. |
 | Web share is unavailable in a browser test | Keep the export/download fallback evidence. Native Web Share is optional and browser-policy dependent. |
 | Generated scenario mirrors drift | Update the `assets/scenarios/eatme/*.yaml` source, then run the Gadugi generation check. |
 | Unsafe resource names appear in evidence | Fail the closure. Project resources must use sanitized relative identifiers and must not persist raw local filesystem paths. |
