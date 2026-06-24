@@ -284,8 +284,9 @@ The playback-bridge contract proves that configured background music and
 timeline cues call the supplied output adapter with deterministic arguments. It
 does not prove native browser playback or full audio authoring.
 
-Rows that depend on native browser playback or full audio authoring remain
-`partial`.
+Rows that depend only on playback-bridge evidence remain `partial`. Rows can be
+`covered` only when native playback/full authoring is proven by the named native
+audio contract tests.
 
 ## EatMe closure contract
 
