@@ -175,7 +175,7 @@ fn instructor_contract_validation_command(
     agentic_test_prompt: &str,
 ) -> String {
     let mut command = format!(
-        "cargo run -q -p eatme-cli -- assets validate --path {} --json\n",
+        "set -euo pipefail\ncargo run -q -p eatme-cli -- assets validate --path {} --json\n",
         shell_quote(source_asset)
     );
     command.push_str(&format!(
@@ -206,21 +206,22 @@ fn instructor_contract_validation_command(
         command.push_str(&format!("printf '%s\\n' {}\n", shell_quote(output)));
     }
 
-    fn required_prompt_contract_phrases(agentic_test_prompt: &str) -> Vec<&'static str> {
-        [
-            "instructor-facing acceptance probes",
-            "student-owned Alice action evidence",
-        ]
-        .into_iter()
-        .filter(|phrase| {
-            agentic_test_prompt
-                .to_lowercase()
-                .contains(&phrase.to_lowercase())
-        })
-        .collect()
-    }
     command.push_str("printf '%s\\n' instructor-acceptance-contract-ok");
     command
+}
+
+fn required_prompt_contract_phrases(agentic_test_prompt: &str) -> Vec<&'static str> {
+    [
+        "instructor-facing acceptance probes",
+        "student-owned Alice action evidence",
+    ]
+    .into_iter()
+    .filter(|phrase| {
+        agentic_test_prompt
+            .to_lowercase()
+            .contains(&phrase.to_lowercase())
+    })
+    .collect()
 }
 
 fn instructor_contract_expected_stdout(expected_outputs: &[String]) -> Vec<String> {
@@ -231,4 +232,35 @@ fn instructor_contract_expected_stdout(expected_outputs: &[String]) -> Vec<Strin
 
 fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\"'\"'"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::instructor_contract_validation_command;
+    use std::path::Path;
+    use std::process::Command;
+
+    #[test]
+    fn instructor_contract_command_fails_when_expected_output_is_missing() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let command = instructor_contract_validation_command(
+            "assets/scenarios/eatme/workshop-facilitator-live-studio.yaml",
+            &["definitely_missing_expected_output_marker".into()],
+            &[],
+            "",
+        )
+        .replace(
+            "cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/workshop-facilitator-live-studio.yaml' --json",
+            "true",
+        );
+
+        let status = Command::new("bash")
+            .arg("-lc")
+            .arg(command)
+            .current_dir(root)
+            .status()
+            .expect("generated instructor contract command should run under bash");
+
+        assert!(!status.success());
+    }
 }

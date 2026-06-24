@@ -42,6 +42,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-student-outcomes-rubric}"
+      set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-student-outcomes-rubric.yaml' --json
       AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent helping an instructor discuss a student Alice project. Produce a student outcomes rubric, feedback frame, revision next step, and project discussion guide. Include student evidence questions and an instructor boundary note. Ask for visible Alice project behavior, learner explanation, debugging/process evidence, reflection, and one student-owned next revision. Discuss creative communication as learner evidence without claiming automated creative assessment. State that this is not learner-world grading, not full user interface automation, not complete Alice coverage, and not a deployed service.'
       printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null

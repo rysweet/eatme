@@ -42,6 +42,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-student-reflection-artifact-review}"
+      set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/student-reflection-artifact-review.yaml' --json
       AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent reviewing one student learning artifact after the student used Alice. Produce a reflection evidence card, instructor review note, and student revision prompt grounded in the listed resources and this student-reflection-artifact-review scenario. Require the student to explain one Alice action, the visible artifact behavior it caused, what changed after running, and one learner-owned next revision. Review artifact behavior and learner explanation; do not use visual polish alone. State explicitly that this is not full user interface automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.'
       printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null

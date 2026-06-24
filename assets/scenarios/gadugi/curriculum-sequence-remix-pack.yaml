@@ -42,6 +42,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-curriculum-sequence-remix-pack}"
+      set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/curriculum-sequence-remix-pack.yaml' --json
       AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing an Alice curriculum sequence remix pack. Produce a curriculum sequence map, lesson sequence remix pack, and student evidence plan grounded in the listed resources and this curriculum-sequence-remix-pack scenario. Reference at least three committed Alice scenario assets, name the prerequisite or concept progression between them, identify pacing and teacher swap points, and describe visible student evidence at each checkpoint. Include fallback or extension notes for uneven device readiness and prior knowledge. Keep language editable and classroom-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, and not proof that a whole course has been delivered.'
       printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null

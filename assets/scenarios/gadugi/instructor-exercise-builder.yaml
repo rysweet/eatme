@@ -42,6 +42,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-exercise-builder}"
+      set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-exercise-builder.yaml' --json
       AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent. Using the resource_basis and persona goals in this YAML, draft a classroom-ready Alice exercise brief. The brief must name one target Alice concept, a starter world or code action, student choice points, hints, stretch options, and visible evidence students can submit. Keep all directions editable by a non-coder and avoid exact user interface coordinates.'
       printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null

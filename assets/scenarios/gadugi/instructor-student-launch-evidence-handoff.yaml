@@ -61,6 +61,7 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-student-launch-evidence-handoff}"
+      set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml' --json
       AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing a classroom handoff after eatme has collected real Alice launch evidence. Produce a real Alice evidence handoff card, instructor readiness note, and student action prompt grounded in the listed resources and this scenario. Name which evidence comes from the manifest, log, window list, screenshot, and ui-action-contract.json. Separate environment readiness from student project behavior. Ask students to record one Alice action, the visible result after running, and one next revision. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed service.'
       printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
