@@ -89,6 +89,7 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
+    - e2e/first-lessons-real-ui-actions.spec.ts
     - lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen
   timeout: 60000
 assertions:
