@@ -11,10 +11,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor checks install readiness, confirms required tools, and prepares a classroom-ready create-project path."
     rabbit_hole:
-      status: partial
-      source_status: "Partial: editable scenario asset validates; missing instructor agentic acceptance output evidence"
-      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
-      expected_behavior: "Instructor setup-readiness asset validates; real Alice launch readiness remains an input and agentic acceptance output is not claimed by this command."
+      status: covered
+      source_status: "Covered"
+      command: cargo run -q -p eatme-cli -- assets agentic-acceptance --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
+      expected_behavior: "Instructor setup-readiness acceptance output emits the setup readiness checklist, student self-check card, fallback path guide, and probe results while real Alice launch readiness remains an input."
     looking_glass:
       status: covered
       source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
@@ -23,7 +23,7 @@ rows:
       expected_behavior: "Instructor checks LookingGlass web server health/config, confirms the web create-project path is ready, receives explicit desktop-only boundaries, and creates a setup-readiness evidence handoff."
     closure:
       required:
-        - RabbitHole editable scenario asset validates; missing agentic acceptance output remains explicitly partial
+        - RabbitHole agentic acceptance command passes and emits checklist, self-check card, fallback guide, and probe results
         - LookingGlass command passes for the setup-preflight-ready-to-create web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: setup-support-lab-readiness

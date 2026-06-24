@@ -1,3 +1,4 @@
+use crate::generate_instructor_agentic_acceptance_output;
 use crate::schema::EatmeScenarioAsset;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -42,6 +43,57 @@ fn setup_preflight_ready_to_create_covers_curious_novice_and_collaborative_peer_
             "not learner-world grading",
             "not complete Alice coverage",
         ],
+    );
+}
+
+#[test]
+fn setup_preflight_ready_to_create_generates_runnable_instructor_acceptance_output() {
+    let root = repository_root();
+    let path = scenario_path(&root, "setup-preflight-ready-to-create");
+
+    let report = generate_instructor_agentic_acceptance_output(&path).unwrap();
+
+    assert!(report.passed, "{:?}", report.errors);
+    for output in [
+        "setup_readiness_checklist",
+        "student_self_check_card",
+        "fallback_path_guide",
+    ] {
+        assert!(
+            report.output_evidence.contains_key(output),
+            "missing output evidence {output}"
+        );
+    }
+    let evidence = report
+        .output_evidence
+        .values()
+        .map(|output| output.evidence.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert_contains_all(
+        "setup-preflight-ready-to-create generated acceptance output",
+        &evidence,
+        &[
+            "Windows 64-bit",
+            "macOS",
+            "Linux .deb",
+            "Java 21",
+            "OpenGL-capable graphics drivers",
+            "install permission",
+            "Chromebook",
+            "Right now in Alice I can",
+            "My device blocker is",
+            "environment problem, not a student mistake",
+            "Pairing path",
+            "Instructor-led demo path",
+            "Printed design-planning path",
+            "collect every reported blocker",
+        ],
+    );
+    assert!(
+        report.probe_results.iter().all(|probe| probe.passed),
+        "{:?}",
+        report.probe_results
     );
 }
 

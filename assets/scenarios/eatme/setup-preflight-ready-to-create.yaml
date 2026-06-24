@@ -99,14 +99,15 @@ steps:
   - LookingGlass /api/project/new creates a starter web project
   - LookingGlass /api/setup/evidence-handoff writes a student-facing readiness handoff
 - id: agentic-instructor-review
-  command: agentic instructor acceptance review using assets/scenarios/eatme/setup-preflight-ready-to-create.yaml
+  command: cargo run -q -p eatme-cli -- assets agentic-acceptance --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
   evidence:
-  - agent output addresses every acceptance_probe
-  - agent output returns the expected_outputs listed in this YAML
+  - stdout JSON has passed=true
+  - stdout JSON includes setup_readiness_checklist, student_self_check_card, and fallback_path_guide output evidence
+  - stdout JSON includes probe_results proving every acceptance_probe is addressed
 timeouts:
   agentic_seconds: 900
 artifacts:
-  setup_readiness_checklist: agentic://instructor/setup-readiness-checklist
-  student_self_check_card: agentic://student/self-check-card
-  fallback_path_guide: agentic://instructor/fallback-path-guide
+  setup_readiness_checklist: eatme-cli://assets/agentic-acceptance/setup-preflight-ready-to-create#setup_readiness_checklist
+  student_self_check_card: eatme-cli://assets/agentic-acceptance/setup-preflight-ready-to-create#student_self_check_card
+  fallback_path_guide: eatme-cli://assets/agentic-acceptance/setup-preflight-ready-to-create#fallback_path_guide
 unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice-facing resources, fail visibly and report the missing evidence. Do not replace instructor judgment with launch, screenshot, or export-preflight artifacts. Do not claim full user interface automation, automated creative assessment, learner-world grading, or complete Alice coverage.

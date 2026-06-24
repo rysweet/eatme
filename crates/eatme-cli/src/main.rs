@@ -45,6 +45,7 @@ enum Commands {
 enum AssetsCommand {
     Validate(AssetsValidateArgs),
     GenerateGadugi(AssetsGenerateGadugiArgs),
+    AgenticAcceptance(AssetsAgenticAcceptanceArgs),
     GradingReport(AssetsGradingReportArgs),
 }
 
@@ -115,6 +116,15 @@ struct AssetsGenerateGadugiArgs {
     #[arg(long)]
     json: bool,
 }
+
+#[derive(Args)]
+struct AssetsAgenticAcceptanceArgs {
+    #[arg(long)]
+    path: PathBuf,
+    #[arg(long)]
+    json: bool,
+}
+
 #[derive(Args)]
 struct AliceHomeArgs {
     #[arg(long, env = "ALICE_HOME")]
@@ -264,6 +274,15 @@ fn main() -> Result<()> {
             print_result(args.json, &report)?;
             if !report.passed {
                 bail!("gadugi adapter generation check failed");
+            }
+        }
+        Commands::Assets {
+            command: AssetsCommand::AgenticAcceptance(args),
+        } => {
+            let report = eatme_assets::generate_instructor_agentic_acceptance_output(&args.path)?;
+            print_result(args.json, &report)?;
+            if !report.passed {
+                bail!("instructor agentic acceptance output incomplete");
             }
         }
         Commands::Assets {
