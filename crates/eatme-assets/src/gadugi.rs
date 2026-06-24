@@ -460,9 +460,7 @@ fn step_title(id: &str) -> String {
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
     if step_id.contains("launch") || step_id.contains("howto") || step_id.contains("full-path") {
         launch_timeout * 1000
-    } else if step_id.contains("setup-readiness") {
-        300_000
-    } else if step_id.contains("class-behavior") {
+    } else if step_id.contains("setup-readiness") || step_id.contains("class-behavior") {
         300_000
     } else {
         60_000
