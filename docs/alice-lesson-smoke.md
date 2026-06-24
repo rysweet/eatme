@@ -94,9 +94,11 @@ unless the matching evidence boundary is present.
 The `modified-class-portability` scenario is also not a plain lesson smoke. Its YAML
 defines the export package, import report, and after-import behavior evidence
 required before anyone claims a modified class travels between Alice projects.
-The shared launch-smoke path records the scenario manifest; class export/import
-proof remains an explicit evidence contract for follow-on automation or agentic
-review.
+The shared launch-smoke path now writes
+`portability/desktop-class-portability-contract.json`. That contract is runnable
+without overclaiming: it stays `blocked` until the Alice checkout exposes
+`tools/eatme-class-portability`, and it passes only when desktop export, import,
+save/reopen, and post-import behavior artifacts are present.
 
 The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight
 contract: real headset or Alice Player VR execution is optional, but availability

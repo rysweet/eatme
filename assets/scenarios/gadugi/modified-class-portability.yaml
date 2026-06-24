@@ -70,6 +70,19 @@ steps:
     - '"passed": true'
     - '"id": "modified-class-portability"'
   timeout: 60000
+- name: Verify Desktop Class Portability Contract
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
+      cargo test -p eatme-alice --test launch_smoke_fake modified_class_portability
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - 'test result: ok'
+  timeout: 60000
 - name: Verify Lookingglass Class Behavior Package
   agent: eatme-cli-agent
   action: execute_command
@@ -103,6 +116,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Verify Portability Evidence
+- name: verify-desktop-class-portability-contract succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Desktop Class Portability Contract
 - name: verify-lookingglass-class-behavior-package succeeds
   type: command_success
   agent: eatme-cli-agent

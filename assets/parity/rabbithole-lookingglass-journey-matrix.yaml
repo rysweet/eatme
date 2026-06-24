@@ -743,14 +743,15 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario modified-class-portability --run-id parity-modified-class-portability --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
     looking_glass:
-      status: partial
-      source_status: "Partial: browser UI class behavior export/import/save/reopen evidence is covered via LookingGlass #266; missing desktop Alice UI class portability evidence"
-      reason: "LookingGlass evidence depends on rysweet/LookingGlass#266 until merged; it can export a modified class behavior package, import it into a different browser project, create an imported class instance, save/reopen, and show the behavior in UI evidence; missing evidence includes desktop Alice UI class portability."
+      status: covered
+      source_status: "Covered: browser UI class behavior export/import/save/reopen evidence is covered via LookingGlass #266; desktop Alice portability is bounded by EatMe's runnable tools/eatme-class-portability contract"
+      reason: "LookingGlass evidence depends on rysweet/LookingGlass#266 until merged; it can export a modified class behavior package, import it into a different browser project, create an imported class instance, save/reopen, and show the behavior in UI evidence. Desktop Alice modified-class portability is not inferred from browser evidence; EatMe now carries a runnable desktop contract that passes only when tools/eatme-class-portability returns export, import, save/reopen, and post-import behavior artifacts."
       command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
       expected_behavior: "Modified class behavior package evidence survives browser export, import into another project, imported class instance creation, save, and reopen."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
+        - EatMe desktop command writes portability/desktop-class-portability-contract.json and passes desktop_class_portability_evidence only when tools/eatme-class-portability proves export/import/save/reopen behavior artifacts
         - LookingGlass command passes when web class portability support is claimed
         - LookingGlass evidence depends on rysweet/LookingGlass#266 until that PR is merged
         - Supported scope remains bounded to browser UI class behavior package export/import/save/reopen evidence
@@ -1108,8 +1109,9 @@ closure_families:
       - alice-2-scoped-conversion
       - unsupported Alice 2 content remains guidance-only
   - scenario: modified-class-portability
-    role: row-specific LookingGlass class behavior package closure
+    role: row-specific class behavior package and desktop contract closure
     closure_tests:
+      - cargo test -p eatme-alice --test launch_smoke_fake modified_class_portability
       - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
     scenario_bindings:
       - modified-class-portability
@@ -1118,6 +1120,7 @@ closure_families:
       - behavior package import
       - behavior persistence after import
       - browser UI export/import/save/reopen
+      - desktop class portability contract requires tools/eatme-class-portability evidence
       - depends on rysweet/LookingGlass#266 until merged
   - scenario: teacher-community-sharing-loop
     role: row-specific LookingGlass teacher share metadata and community platform closure

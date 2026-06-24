@@ -404,6 +404,34 @@ printf '%s\n' '{"schema_version":"eatme.alice-object-placement-result/v1","statu
         );
     }
 
+    pub fn write_fake_class_portability_hook(&self) {
+        let tools = self.alice_home.join("tools");
+        fs::create_dir_all(&tools).unwrap();
+        self.write_tool_at(
+            &tools.join("eatme-class-portability"),
+            r#"#!/bin/sh
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --evidence-dir) shift; evidence_dir="$1" ;;
+  esac
+  shift
+done
+mkdir -p "$evidence_dir"
+echo 'modified class package: learner-modified-character-class' > "$evidence_dir/exported-class-package.txt"
+cat > "$evidence_dir/import-report.json" <<'JSON'
+{"imported":true,"destination_project":"peer-import-world","modified_class":"learner-modified-character-class"}
+JSON
+cat > "$evidence_dir/save-reopen-report.json" <<'JSON'
+{"saved":true,"reopened":true,"destination_project":"peer-import-world","modified_class":"learner-modified-character-class"}
+JSON
+cat > "$evidence_dir/post-import-behavior.md" <<'MD'
+The imported learner-modified-character-class behavior remains visible after import, save, and reopen.
+MD
+printf '%s\n' '{"schema_version":"eatme.alice-class-portability/v1","status":"passed","source_project":"learner-source-world","destination_project":"peer-import-world","modified_class":"learner-modified-character-class","behavior_selector":"modified-class-behavior-visible-after-import","exported_class_package":"exported-class-package.txt","import_report":"import-report.json","save_reopen_report":"save-reopen-report.json","post_import_behavior":"post-import-behavior.md"}'
+"#,
+        );
+    }
+
     fn write_tool_at(&self, path: &Path, script: &str) {
         fs::write(path, script).unwrap();
         let mut permissions = fs::metadata(path).unwrap().permissions();
