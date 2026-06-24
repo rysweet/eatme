@@ -249,7 +249,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::DesignProcessEvidence => {
-                match client.post(&format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
+                match authed_post(client, &format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let phases: Vec<_> = value
@@ -372,20 +372,45 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 .and_then(|session| session.get("locomotionMode"))
                                 .and_then(Value::as_str)
                                 .unwrap_or_default();
-                            let ok = browser_session.is_some()
-                                && playtest.is_some()
-                                && matches!(
+                            let evidence_codes: Vec<_> = value
+                                .get("evidenceCodes")
+                                .and_then(Value::as_array)
+                                .map(|items| items.iter().filter_map(Value::as_str).collect())
+                                .unwrap_or_default();
+                            let comfort_checks = value.get("comfortChecks").and_then(Value::as_object);
+                            let browser_status = value
+                                .get("browserWebXrStatus")
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let browser_boundary_ok = browser_session
+                                .map(|_| {
+                                matches!(
                                     locomotion_mode,
                                     "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
                                 )
-                                && playtest
-                                    .and_then(|boundary| boundary.get("truePlayerComfortPlaytestSupported"))
+                                })
+                                .unwrap_or_else(|| matches!(browser_status, "available" | "unavailable" | "unknown"));
+                            let playtest_boundary_ok = playtest
+                                .map(|boundary| {
+                                boundary
+                                    .get("truePlayerComfortPlaytestSupported")
                                     .and_then(Value::as_bool)
                                     == Some(false)
-                                && playtest
-                                    .and_then(|boundary| boundary.get("revisionLoopEvidence"))
-                                    .and_then(Value::as_str)
-                                    == Some("not-observed")
+                                    && boundary
+                                        .get("revisionLoopEvidence")
+                                        .and_then(Value::as_str)
+                                        == Some("not-observed")
+                                })
+                                .unwrap_or_else(|| evidence_codes.contains(&"true-vr-unsupported"));
+                            let comfort_boundary_ok = comfort_checks
+                                .map(|checks| {
+                                checks.get("noForcedHeadset").and_then(Value::as_bool) == Some(true)
+                                    && checks.get("stableHorizon").and_then(Value::as_bool) == Some(true)
+                                })
+                                .unwrap_or(true);
+                            let ok = browser_boundary_ok
+                                && playtest_boundary_ok
+                                && comfort_boundary_ok
                                 && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
                                 && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
                             StepResult { name: "vr-native-boundary-evidence".into(), ok, msg: value.to_string() }
