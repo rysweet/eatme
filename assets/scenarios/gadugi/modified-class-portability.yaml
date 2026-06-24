@@ -81,6 +81,10 @@ steps:
   expect:
     exit_code: 0
     stdout_contains:
+    - test/entity-type-registry.test.ts
+    - src/project-io/class-behavior-package.persistence.test.ts
+    - src/server/routes/project-routes.class-behavior.test.ts
+    - e2e/class-behavior-package.spec.ts
     - lookingglass-class-ui-evidence=export-import-instance-save-reopen
   timeout: 300000
 assertions:

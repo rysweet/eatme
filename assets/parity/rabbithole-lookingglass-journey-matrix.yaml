@@ -149,11 +149,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario first-lessons-real-ui-actions --run-id parity-first-lessons-real-ui-actions --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
-      status: partial
-      source_status: "Partial: web object, code-edit, run, save, and reopen proof is covered; missing desktop UI action completion evidence"
-      reason: "LookingGlass web REST evidence covers object, code-edit, run, save, and reopen proof; desktop UI action completion evidence is missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Web REST evidence records object, code-edit, run, save, and reopen proof; desktop first-lesson UI action completion is not claimed."
+      status: covered
+      source_status: "Covered: browser UI action evidence covers object placement, code edit, run, visible evidence capture, save, and reopen; desktop Alice UI actions are not claimed"
+      reason: "LookingGlass Playwright evidence drives the browser controls for object placement, code edit, run, visible evidence capture, save, and reopen without using REST-only proof or claiming desktop Alice automation."
+      command: cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e -- e2e/first-lessons-real-ui-actions.spec.ts
+      expected_behavior: "Browser UI actions complete object placement, code edit, run, visible evidence capture, save, and reopen proof; desktop Alice first-lesson UI action completion is not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -1044,6 +1044,7 @@ closure_families:
     role: row-specific LookingGlass save reopen export closure
     closure_tests:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      - cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e -- e2e/first-lessons-real-ui-actions.spec.ts
     scenario_bindings:
       - alice-objects-first-world
       - alice-objects-first-full-path

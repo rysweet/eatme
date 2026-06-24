@@ -522,15 +522,13 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
         return expected;
     }
     if command.contains("npm test --") {
-        if command.contains("npx playwright test") {
-            expected.extend(printf_evidence_markers(command));
-        } else {
-            expected.extend(test_command_targets(command));
-        }
+        expected.extend(test_command_targets(command));
+        expected.extend(printf_evidence_markers(command));
         expected.dedup();
         return expected;
     }
     if command.contains("npx playwright test") {
+        expected.extend(test_command_targets(command));
         expected.extend(printf_evidence_markers(command));
         expected.dedup();
         return expected;
@@ -628,6 +626,7 @@ fn printf_evidence_markers(command: &str) -> Vec<String> {
         "save_reopen_export_readiness_gaps=",
         "real_vr_available=",
         "required_evidence=",
+        "lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen",
         "lookingglass-class-ui-evidence=export-import-instance-save-reopen",
         "wrote=",
         "a3p-save-load-parity-gaps.md",
