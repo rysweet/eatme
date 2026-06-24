@@ -205,6 +205,140 @@ fn error_recovery_expects_failures_and_then_recovers() {
 }
 
 #[test]
+fn game_narrative_tracks_score_and_win_state() {
+    let (_, steps) = game_narrative();
+    assert!(steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::RegisterEvent { event_type, handler_name }
+                if event_type == "keyPress" && handler_name == "onSpacePressed"
+        )
+    }));
+
+    let handler = edit_statements(&steps, "onSpacePressed");
+    let score_declaration = handler
+        .iter()
+        .find(|statement| statement.kind == "localDeclaration")
+        .expect("game narrative should declare a score variable");
+    assert_eq!(
+        score_declaration.args,
+        vec!["score".to_string(), "0".to_string()]
+    );
+
+    let score_update = handler
+        .iter()
+        .find(|statement| statement.kind == "assignment")
+        .expect("game narrative should update the score");
+    assert_eq!(
+        score_update.args,
+        vec!["score".to_string(), "score + 1".to_string()]
+    );
+
+    let win_check = handler
+        .iter()
+        .find(|statement| statement.kind == "ifElse")
+        .expect("game narrative should define a win condition");
+    assert_eq!(win_check.args, vec!["score >= 3".to_string()]);
+
+    assert!(handler.iter().any(|statement| {
+        statement.method.as_deref() == Some("player.say")
+            && statement.args == vec!["\"You win!\"".to_string()]
+    }));
+}
+
+#[test]
+fn say_think_uses_speech_and_thought_bubbles() {
+    let (_, steps) = say_think();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.say")
+            && statement.args == vec!["\"Welcome to the bubble lab\"".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.think")
+            && statement.args == vec!["\"I should keep this plan quiet\"".to_string()]
+    }));
+}
+
+#[test]
+fn design_process_tracks_plan_build_playtest_and_revision() {
+    let (_, steps) = design_process();
+    let first_run_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::RunWorld))
+        .expect("design process should run the prototype");
+    let revision_index = steps
+        .iter()
+        .position(|step| {
+            matches!(step, Step::EditProcedure { statements, .. } if statements
+                .iter()
+                .any(|statement| statement
+                    .args
+                    .iter()
+                    .any(|arg| arg.contains("Revision: show win feedback"))))
+        })
+        .expect("design process should revise after playtest");
+    let evidence_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::DesignProcessEvidence))
+        .expect("design process should record evidence through the LookingGlass API");
+    let run_count = steps
+        .iter()
+        .filter(|step| matches!(step, Step::RunWorld))
+        .count();
+
+    assert_eq!(
+        run_count, 2,
+        "revision loop should run before and after revise"
+    );
+    assert!(
+        first_run_index < revision_index && revision_index < evidence_index,
+        "evidence follows playtest and revision"
+    );
+
+    let payload = design_process_evidence_payload();
+    let phases = ["plan", "build", "playtest", "revise", "review"];
+    for phase in phases {
+        assert!(
+            payload.to_string().contains(phase),
+            "design-process payload should cover {phase}"
+        );
+    }
+}
+
+#[test]
+fn live_design_process_records_playtest_revision_and_review_evidence() {
+    let (name, steps) = design_process();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn vehicle_parenting_attaches_camera_to_character() {
+    let (_, steps) = vehicle_parenting();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("camera.setVehicle")
+            && statement.args == vec!["driver".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("driver.walk")
+            && statement.args == vec!["1.0".to_string()]
+    }));
+}
+
+#[test]
+fn joint_manipulation_targets_biped_joints() {
+    let (_, steps) = joint_manipulation();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    let joint_methods: Vec<_> = entrypoint
+        .iter()
+        .filter_map(|statement| statement.method.as_deref())
+        .collect();
+    assert!(joint_methods.contains(&"dancer.rightShoulder.turn"));
+    assert!(joint_methods.contains(&"dancer.leftKnee.turn"));
+}
+
+#[test]
 fn live_hello_world() {
     if !web_platform_enabled() {
         eprintln!("skip (set EATME_WEB_PLATFORM=1)");
