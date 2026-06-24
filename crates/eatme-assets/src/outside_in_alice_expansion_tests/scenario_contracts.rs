@@ -217,7 +217,9 @@ fn teacher_community_sharing_loop_contract_names_handoff_and_honest_boundaries()
             "not creative assessment",
             "not learner-world grading",
             "not complete Alice coverage",
-            "not a deployed community platform",
+            "local LookingGlass community platform publication evidence",
+            "not an external cloud community platform",
+            "/api/community/shares",
         ],
     );
 }

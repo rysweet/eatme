@@ -376,10 +376,10 @@ fn full_student_journey_covers_student_build_run_and_save_flow() {
 fn building_a_scene_first_world_covers_adjust_run_and_save_flow() {
     let (_, steps) = building_a_scene_first_world();
     assert!(steps.iter().any(
-        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "bunny")
+        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "sceneHero")
     ));
     assert!(steps.iter().any(
-        |step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "bunny")
+        |step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "sceneHero")
     ));
     assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
     assert!(
@@ -456,6 +456,84 @@ fn error_recovery_expects_failures_and_then_recovers() {
     );
     assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "resilientHero")));
     assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+}
+
+#[test]
+fn design_process_tracks_plan_build_playtest_and_revision() {
+    let (_, steps) = design_process();
+    let first_run_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::RunWorld))
+        .expect("design process should run the prototype");
+    let revision_index = steps
+        .iter()
+        .position(|step| {
+            matches!(step, Step::EditProcedure { statements, .. } if statements
+                .iter()
+                .any(|statement| statement
+                    .args
+                    .iter()
+                    .any(|arg| arg.contains("Revision: show win feedback"))))
+        })
+        .expect("design process should revise after playtest");
+    let evidence_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::DesignProcessEvidence))
+        .expect("design process should record evidence through the LookingGlass API");
+    let run_count = steps
+        .iter()
+        .filter(|step| matches!(step, Step::RunWorld))
+        .count();
+
+    assert_eq!(
+        run_count, 2,
+        "revision loop should run before and after revise"
+    );
+    assert!(
+        first_run_index < revision_index && revision_index < evidence_index,
+        "evidence follows playtest and revision"
+    );
+
+    let payload = design_process_evidence_payload();
+    let phases = ["plan", "build", "playtest", "revise", "review"];
+    for phase in phases {
+        assert!(
+            payload.to_string().contains(phase),
+            "design-process payload should cover {phase}"
+        );
+    }
+}
+
+#[test]
+fn live_design_process_records_playtest_revision_and_review_evidence() {
+    let (name, steps) = design_process();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn vehicle_parenting_attaches_camera_to_character() {
+    let (_, steps) = vehicle_parenting();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("camera.setVehicle")
+            && statement.args == vec!["driver".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("driver.walk")
+            && statement.args == vec!["1.0".to_string()]
+    }));
+}
+
+#[test]
+fn joint_manipulation_targets_biped_joints() {
+    let (_, steps) = joint_manipulation();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    let joint_methods: Vec<_> = entrypoint
+        .iter()
+        .filter_map(|statement| statement.method.as_deref())
+        .collect();
+    assert!(joint_methods.contains(&"dancer.rightShoulder.turn"));
+    assert!(joint_methods.contains(&"dancer.leftKnee.turn"));
 }
 
 #[test]

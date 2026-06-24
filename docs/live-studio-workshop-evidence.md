@@ -93,14 +93,23 @@ contract below.
 Run commands from the repository root unless a command explicitly accepts
 `--root`.
 
-The completed live studio scenario does not require a new external service,
-credential, account, or environment variable. The generated Gadugi adapter uses
-`EATME_REPO` before it runs eatme commands when the runner needs to point at a
-repository checkout:
+The completed live studio scenario uses a local LookingGlass runtime for API
+evidence. It does not require a cloud service, external account, or credential,
+but the generated Gadugi adapter needs `LOOKINGGLASS_HOME` when it runs the
+LookingGlass runtime contract tests. The generated adapter also uses `EATME_REPO`
+before it runs eatme commands when the runner needs to point at a repository
+checkout:
 
 ```bash
 export EATME_REPO=/path/to/eatme
+export LOOKINGGLASS_HOME=/path/to/LookingGlass
 ```
+
+The LookingGlass evidence boundary is local and explicit: `/api/workshops/live-studio/start`,
+`/api/workshops/live-studio/participants`, `/api/workshops/live-studio/handoff`,
+and `/api/review/runtime-parity` must prove synchronized facilitator state,
+participant orchestration, handoff packet creation, and `liveStudioSupported`
+runtime evidence.
 
 For direct local CLI use from another directory, pass `--root` to the command
 that supports it:

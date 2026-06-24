@@ -23,6 +23,14 @@ fn web_base_url() -> String {
     normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
 }
 
+fn local_api_token() -> String {
+    env::var("ALICE_LOCAL_API_TOKEN")
+        .ok()
+        .map(|token| token.trim().to_string())
+        .filter(|token| !token.is_empty())
+        .unwrap_or_else(|| "gadugi-local-api-token".into())
+}
+
 fn normalize_web_base_url(raw_url: Option<String>) -> String {
     raw_url
         .map(|url| url.trim().to_string())
@@ -37,16 +45,16 @@ fn http_client() -> ureq::Agent {
         .build()
 }
 
-fn local_api_token() -> String {
-    env::var("ALICE_LOCAL_API_TOKEN").unwrap_or_else(|_| "gadugi-local-api-token".into())
-}
-
-#[allow(clippy::result_large_err)]
-fn post_json(client: &ureq::Agent, url: &str, body: Value) -> Result<ureq::Response, ureq::Error> {
+fn authed_post(client: &ureq::Agent, url: &str) -> ureq::Request {
     client
         .post(url)
         .set("X-Alice-Local-Api-Token", &local_api_token())
-        .send_json(body)
+}
+
+fn authed_get(client: &ureq::Agent, url: &str) -> ureq::Request {
+    client
+        .get(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
 }
 
 // ── Response types ──────────────────────────────────────────────────
@@ -143,10 +151,7 @@ enum Step {
     Load {
         path: String,
     },
-    DesignCheckpoint {
-        phase: String,
-        artifact: String,
-    },
+    DesignProcessEvidence,
     RegisterEvent {
         event_type: String,
         handler_name: String,
@@ -159,6 +164,7 @@ enum Step {
         expected_message: String,
     },
     CameraComfortEvidence,
+    VrNativeBoundaryEvidence,
     AccessibilityCaptionEvidence,
     GalleryWalkRubricEvidence,
     AssertMinObjects {
@@ -183,82 +189,31 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
 
     for step in steps {
         let r = match step {
-            Step::Health => match client.get(&format!("{base}/api/health")).call() {
-                Ok(resp) => match resp.into_json::<HealthResponse>() {
-                    Ok(h) => StepResult {
-                        name: "health".into(),
-                        ok: matches!(h.status.as_str(), "ok" | "running"),
-                        msg: "ok".into(),
+            Step::Health => {
+                match client.get(&format!("{base}/api/health")).call() {
+                    Ok(resp) => match resp.into_json::<HealthResponse>() {
+                        Ok(h) => StepResult { name: "health".into(), ok: matches!(h.status.as_str(), "ok" | "running"), msg: "ok".into() },
+                        Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: "health".into(),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
-                },
-                Err(e) => StepResult {
-                    name: "health".into(),
-                    ok: false,
-                    msg: e.to_string(),
-                },
-            },
-            Step::Launch { template } => {
-                match post_json(
-                    client,
-                    &format!("{base}/api/launch"),
-                    ureq::json!({ "template": template }),
-                ) {
-                    Ok(resp) => match resp.into_json::<LaunchResponse>() {
-                        Ok(r) => {
-                            last_count = r.scene_object_count;
-                            StepResult {
-                                name: format!("launch({template})"),
-                                ok: matches!(r.status.as_str(), "ok" | "launched"),
-                                msg: format!("objects={}", r.scene_object_count),
-                            }
-                        }
-                        Err(e) => StepResult {
-                            name: format!("launch({template})"),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
-                    },
-                    Err(e) => StepResult {
-                        name: format!("launch({template})"),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
                 }
             }
-            Step::AddObject {
-                class_name,
-                instance_name,
-            } => {
-                match post_json(
-                    client,
-                    &format!("{base}/api/scene/add-object"),
-                    ureq::json!({ "className": class_name, "name": instance_name }),
-                ) {
+            Step::Launch { template } => {
+                match authed_post(client, &format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
+                    Ok(resp) => match resp.into_json::<LaunchResponse>() {
+                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: matches!(r.status.as_str(), "ok" | "launched"), msg: format!("objects={}", r.scene_object_count) } },
+                        Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::AddObject { class_name, instance_name } => {
+                match authed_post(client, &format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "className": class_name, "name": instance_name })) {
                     Ok(resp) => match resp.into_json::<AddObjectResponse>() {
-                        Ok(r) => {
-                            last_count = r.scene_field_count_after;
-                            StepResult {
-                                name: format!("add({class_name})"),
-                                ok: matches!(r.status.as_str(), "ok" | "added"),
-                                msg: format!("after={}", r.scene_field_count_after),
-                            }
-                        }
-                        Err(e) => StepResult {
-                            name: format!("add({class_name})"),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: matches!(r.status.as_str(), "ok" | "added"), msg: format!("after={}", r.scene_field_count_after) } },
+                        Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: format!("add({class_name})"),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::TransformObject {
@@ -273,7 +228,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     "orientation": { "x": orientation.0, "y": orientation.1, "z": orientation.2, "w": orientation.3 },
                     "size": { "width": size.0, "height": size.1, "depth": size.2 },
                 });
-                match post_json(client, &format!("{base}/api/scene/transform-object"), body) {
+                match authed_post(client, &format!("{base}/api/scene/transform-object")).send_json(body) {
                     Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
                         Ok(r) => StepResult {
                             name: format!("transform({object_name})"),
@@ -294,88 +249,37 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     },
                 }
             }
-            Step::EditProcedure {
-                class_name,
-                method_name,
-                statements,
-            } => {
-                match post_json(
-                    client,
-                    &format!("{base}/api/code/edit-procedure"),
-                    ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) }),
-                ) {
+            Step::EditProcedure { class_name, method_name, statements } => {
+                match authed_post(client, &format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
                     Ok(resp) => match resp.into_json::<EditProcedureResponse>() {
-                        Ok(r) => StepResult {
-                            name: format!("edit({class_name}.{method_name})"),
-                            ok: matches!(r.status.as_str(), "ok" | "proved"),
-                            msg: "ok".into(),
-                        },
-                        Err(e) => StepResult {
-                            name: format!("edit({class_name}.{method_name})"),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: matches!(r.status.as_str(), "ok" | "proved"), msg: "ok".into() },
+                        Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: format!("edit({class_name}.{method_name})"),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::RunWorld => {
-                match post_json(client, &format!("{base}/api/world/run"), ureq::json!({})) {
+                match authed_post(client, &format!("{base}/api/world/run")).send_json(ureq::json!({})) {
                     Ok(resp) => match resp.into_json::<RunWorldResponse>() {
-                        Ok(r) => {
-                            last_count = r.scene_object_count;
-                            StepResult {
-                                name: "run".into(),
-                                ok: matches!(r.status.as_str(), "ok" | "completed"),
-                                msg: format!("objects={}", r.scene_object_count),
-                            }
-                        }
-                        Err(e) => StepResult {
-                            name: "run".into(),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: matches!(r.status.as_str(), "ok" | "completed"), msg: format!("objects={}", r.scene_object_count) } },
+                        Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: "run".into(),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::Save { path } => {
-                match post_json(
-                    client,
-                    &format!("{base}/api/project/save"),
-                    ureq::json!({ "targetPath": path }),
-                ) {
+                match authed_post(client, &format!("{base}/api/project/save")).send_json(ureq::json!({ "targetPath": path })) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
                         Ok(r) => {
                             if matches!(r.status.as_str(), "ok" | "saved") {
                                 saved_count = Some(last_count);
                                 saved_path = Some(path.clone());
                             }
-                            StepResult {
-                                name: format!("save({path})"),
-                                ok: matches!(r.status.as_str(), "ok" | "saved"),
-                                msg: "ok".into(),
-                            }
-                        }
-                        Err(e) => StepResult {
-                            name: format!("save({path})"),
-                            ok: false,
-                            msg: e.to_string(),
+                            StepResult { name: format!("save({path})"), ok: matches!(r.status.as_str(), "ok" | "saved"), msg: "ok".into() }
                         },
+                        Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: format!("save({path})"),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                 }
             }
             Step::Load { path } => {
@@ -390,118 +294,182 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     msg: format!("restored_objects={restored_count}"),
                 }
             }
-            Step::DesignCheckpoint { phase, artifact } => StepResult {
-                name: format!("design({phase})"),
-                ok: !phase.is_empty() && !artifact.is_empty(),
-                msg: artifact.clone(),
-            },
-            Step::RegisterEvent {
-                event_type,
-                handler_name,
-            } => {
-                let mut payload =
-                    serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
+            Step::DesignProcessEvidence => {
+                match authed_post(client, &format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let phases: Vec<_> = value
+                                .get("phases")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let authored_objects: Vec<_> = value
+                                .pointer("/journeyEvidence/build/authoredObjectNames")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let does_not_claim: Vec<_> = value
+                                .get("doesNotClaim")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let run_count = value
+                                .pointer("/journeyEvidence/playtest/runCount")
+                                .and_then(Value::as_u64)
+                                .unwrap_or_default();
+                            let revision_note = value
+                                .pointer("/journeyEvidence/revise/revisionNote")
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("lookingglass.design-process-story-or-game-evidence/v1")
+                                && value.get("status").and_then(Value::as_str) == Some("evidence-recorded")
+                                && ["plan", "build", "playtest", "revise", "review"]
+                                    .iter()
+                                    .all(|phase| phases.contains(phase))
+                                && authored_objects.contains(&"prototypeHero")
+                                && run_count >= 2
+                                && revision_note.contains("second narration line")
+                                && does_not_claim.contains(&"automated creative assessment");
+                            StepResult { name: "design-process-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "design-process-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "design-process-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::RegisterEvent { event_type, handler_name } => {
+                let mut payload = serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
                 if event_type == "keyPress" || event_type == "keyPressed" {
                     payload["key"] = serde_json::json!("SPACE");
                 }
-                match post_json(client, &format!("{base}/api/events/register"), payload) {
+                match authed_post(client, &format!("{base}/api/events/register")).send_json(payload) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
-                        Ok(r) => StepResult {
-                            name: format!("register({event_type})"),
-                            ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(),
-                            msg: "ok".into(),
-                        },
-                        Err(e) => StepResult {
-                            name: format!("register({event_type})"),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
+                        Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: format!("register({event_type})"),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
                 }
             }
-            Step::ExpectError {
-                name,
-                endpoint,
-                body,
-                expected_status,
-                expected_message,
-            } => match post_json(client, &format!("{base}{endpoint}"), body.clone()) {
-                Ok(resp) => StepResult {
-                    name: name.clone(),
-                    ok: false,
-                    msg: format!("expected status {expected_status}, got {}", resp.status()),
-                },
-                Err(ureq::Error::Status(code, resp)) => {
-                    let message = resp
-                        .into_json::<Value>()
-                        .ok()
-                        .and_then(|value| {
-                            value
-                                .get("error")
-                                .and_then(Value::as_str)
-                                .map(str::to_string)
-                        })
-                        .unwrap_or_default();
-                    StepResult {
+            Step::ExpectError { name, endpoint, body, expected_status, expected_message } => {
+                match authed_post(client, &format!("{base}{endpoint}")).send_json(body.clone()) {
+                    Ok(resp) => StepResult {
                         name: name.clone(),
-                        ok: code == *expected_status && message.contains(expected_message),
-                        msg: format!("status={code} message={message}"),
+                        ok: false,
+                        msg: format!("expected status {expected_status}, got {}", resp.status()),
+                    },
+                    Err(ureq::Error::Status(code, resp)) => {
+                        let message = resp
+                            .into_json::<Value>()
+                            .ok()
+                            .and_then(|value| value.get("error").and_then(Value::as_str).map(str::to_string))
+                            .unwrap_or_default();
+                        StepResult {
+                            name: name.clone(),
+                            ok: code == *expected_status && message.contains(expected_message),
+                            msg: format!("status={code} message={message}"),
+                        }
                     }
+                    Err(e) => StepResult { name: name.clone(), ok: false, msg: e.to_string() },
                 }
-                Err(e) => StepResult {
-                    name: name.clone(),
-                    ok: false,
-                    msg: e.to_string(),
-                },
-            },
+            }
             Step::CameraComfortEvidence => {
-                let token = local_api_token();
-                match client
-                    .get(&format!("{base}/api/vr/camera-comfort"))
-                    .set("X-Alice-Local-Api-Token", &token)
-                    .call()
-                {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                == Some("alice.camera-vr-comfort-evidence/v1")
-                                && value.get("desktopCameraAvailable").and_then(Value::as_bool)
-                                    == Some(true)
-                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool)
-                                    == Some(false)
-                                && value.get("nativeVrSupported").and_then(Value::as_bool)
-                                    == Some(false);
-                            StepResult {
-                                name: "camera-comfort-evidence".into(),
-                                ok,
-                                msg: value.to_string(),
-                            }
+                                    == Some("alice.camera-vr-comfort-evidence/v1")
+                                && value.get("desktopCameraAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
+                            StepResult { name: "camera-comfort-evidence".into(), ok, msg: value.to_string() }
                         }
-                        Err(e) => StepResult {
-                            name: "camera-comfort-evidence".into(),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: "camera-comfort-evidence".into(),
-                        ok: false,
-                        msg: e.to_string(),
+                    Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::VrNativeBoundaryEvidence => {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let browser_session = value
+                                .get("browserWebXrSession")
+                                .and_then(Value::as_object);
+                            let playtest = value
+                                .get("playerComfortPlaytest")
+                                .and_then(Value::as_object);
+                            let locomotion_mode = browser_session
+                                .and_then(|session| session.get("locomotionMode"))
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let evidence_codes: Vec<_> = value
+                                .get("evidenceCodes")
+                                .and_then(Value::as_array)
+                                .map(|items| items.iter().filter_map(Value::as_str).collect())
+                                .unwrap_or_default();
+                            let comfort_checks = value.get("comfortChecks").and_then(Value::as_object);
+                            let browser_status = value
+                                .get("browserWebXrStatus")
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let browser_boundary_ok = browser_session
+                                .map(|_| {
+                                    matches!(
+                                        locomotion_mode,
+                                        "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
+                                    )
+                                })
+                                .unwrap_or(false);
+                            let playtest_boundary_ok = playtest
+                                .map(|boundary| {
+                                    boundary
+                                        .get("truePlayerComfortPlaytestSupported")
+                                        .and_then(Value::as_bool)
+                                        == Some(false)
+                                        && boundary
+                                            .get("revisionLoopEvidence")
+                                            .and_then(Value::as_str)
+                                            == Some("not-observed")
+                                })
+                                .unwrap_or(false);
+                            let comfort_boundary_ok = comfort_checks
+                                .map(|checks| {
+                                    checks.get("noForcedHeadset").and_then(Value::as_bool) == Some(true)
+                                        && checks.get("stableHorizon").and_then(Value::as_bool) == Some(true)
+                                })
+                                .unwrap_or(false);
+                            let ok = browser_boundary_ok
+                                && playtest_boundary_ok
+                                && comfort_boundary_ok
+                                && matches!(browser_status, "available" | "unavailable" | "unknown")
+                                && evidence_codes.contains(&"true-vr-unsupported")
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
+                            StepResult { name: "vr-native-boundary-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
                     },
+                    Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::AccessibilityCaptionEvidence => {
-                let token = local_api_token();
-                match client
-                    .get(&format!("{base}/api/accessibility/rescue-camera-captions"))
-                    .set("X-Alice-Local-Api-Token", &token)
-                    .call()
-                {
+                match authed_get(client, &format!("{base}/api/accessibility/rescue-camera-captions")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let caption_ids: Vec<_> = value
@@ -515,54 +483,23 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 })
                                 .unwrap_or_default();
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                == Some("alice.accessibility-rescue-camera-captions/v1")
-                                && value
-                                    .get("cameraCaption")
-                                    .and_then(Value::as_str)
-                                    .unwrap_or_default()
-                                    .contains("Camera")
-                                && value
-                                    .get("objectCaption")
-                                    .and_then(Value::as_str)
-                                    .unwrap_or_default()
-                                    .contains("captionGuide")
-                                && value
-                                    .get("keyboardReviewAvailable")
-                                    .and_then(Value::as_bool)
-                                    == Some(true)
-                                && value
-                                    .get("highContrastReviewAvailable")
-                                    .and_then(Value::as_bool)
-                                    == Some(true)
+                                    == Some("alice.accessibility-rescue-camera-captions/v1")
+                                && value.get("cameraCaption").and_then(Value::as_str).unwrap_or_default().contains("Camera")
+                                && value.get("objectCaption").and_then(Value::as_str).unwrap_or_default().contains("captionGuide")
+                                && value.get("keyboardReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                && value.get("highContrastReviewAvailable").and_then(Value::as_bool) == Some(true)
                                 && caption_ids.contains(&"aria-live-status")
                                 && caption_ids.contains(&"camera-caption")
                                 && caption_ids.contains(&"scene-object-caption");
-                            StepResult {
-                                name: "accessibility-caption-evidence".into(),
-                                ok,
-                                msg: value.to_string(),
-                            }
+                            StepResult { name: "accessibility-caption-evidence".into(), ok, msg: value.to_string() }
                         }
-                        Err(e) => StepResult {
-                            name: "accessibility-caption-evidence".into(),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: "accessibility-caption-evidence".into(),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::GalleryWalkRubricEvidence => {
-                let token = local_api_token();
-                match client
-                    .get(&format!("{base}/api/review/gallery-walk-rubric"))
-                    .set("X-Alice-Local-Api-Token", &token)
-                    .call()
-                {
+                match authed_get(client, &format!("{base}/api/review/gallery-walk-rubric")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let rubric_ids: Vec<_> = value
@@ -571,72 +508,38 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 .map(|criteria| {
                                     criteria
                                         .iter()
-                                        .filter_map(|criterion| {
-                                            criterion.get("id").and_then(Value::as_str)
-                                        })
+                                        .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
                                         .collect()
                                 })
                                 .unwrap_or_default();
                             let has_review_prompt = value
                                 .get("galleryItems")
                                 .and_then(Value::as_array)
-                                .map(|items| {
-                                    items.iter().any(|item| {
-                                        item.get("title").and_then(Value::as_str)
-                                            == Some("reviewCheckpoint")
-                                            && item
-                                                .get("reviewPrompt")
-                                                .and_then(Value::as_str)
-                                                .unwrap_or_default()
-                                                .contains("reviewCheckpoint")
-                                    })
-                                })
+                                .map(|items| items.iter().any(|item| {
+                                    item.get("title").and_then(Value::as_str) == Some("reviewCheckpoint")
+                                        && item.get("reviewPrompt").and_then(Value::as_str).unwrap_or_default().contains("reviewCheckpoint")
+                                }))
                                 .unwrap_or(false);
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                == Some("alice.gallery-walk-rubric-evidence/v1")
-                                && value
-                                    .get("reviewWorkflowSupported")
-                                    .and_then(Value::as_bool)
-                                    == Some(true)
-                                && value
-                                    .get("rubricRecordingSupported")
-                                    .and_then(Value::as_bool)
-                                    == Some(true)
-                                && value.get("liveStudioSupported").and_then(Value::as_bool)
-                                    == Some(false)
-                                && value
-                                    .get("galleryItemCount")
-                                    .and_then(Value::as_u64)
-                                    .unwrap_or_default()
-                                    >= 1
+                                    == Some("alice.gallery-walk-rubric-evidence/v1")
+                                && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(true)
+                                && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
                                 && has_review_prompt
                                 && rubric_ids.contains(&"visible-world")
                                 && rubric_ids.contains(&"camera-framing")
                                 && rubric_ids.contains(&"accessibility-captions");
-                            StepResult {
-                                name: "gallery-walk-rubric-evidence".into(),
-                                ok,
-                                msg: value.to_string(),
-                            }
+                            StepResult { name: "gallery-walk-rubric-evidence".into(), ok, msg: value.to_string() }
                         }
-                        Err(e) => StepResult {
-                            name: "gallery-walk-rubric-evidence".into(),
-                            ok: false,
-                            msg: e.to_string(),
-                        },
+                        Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult {
-                        name: "gallery-walk-rubric-evidence".into(),
-                        ok: false,
-                        msg: e.to_string(),
-                    },
+                    Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
-            Step::AssertMinObjects { min } => StepResult {
-                name: format!("assert(>={min})"),
-                ok: last_count >= *min,
-                msg: format!("actual={last_count}"),
-            },
+            Step::AssertMinObjects { min } => {
+                StepResult { name: format!("assert(>={min})"), ok: last_count >= *min, msg: format!("actual={last_count}") }
+            }
         };
         results.push(r);
     }
@@ -676,33 +579,6 @@ fn hello_world() -> (&'static str, Vec<Step>) {
             Step::Save {
                 path: HELLO_WORLD_SAVE_PATH.into(),
             },
-        ],
-    )
-}
-
-fn building_a_scene_first_world() -> (&'static str, Vec<Step>) {
-    (
-        "building-a-scene-first-world",
-        vec![
-            Step::Health,
-            Step::Launch {
-                template: "blank".into(),
-            },
-            Step::AddObject {
-                class_name: "Biped".into(),
-                instance_name: "bunny".into(),
-            },
-            Step::TransformObject {
-                object_name: "bunny".into(),
-                position: (1.5, 0.0, -2.0),
-                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
-                size: (1.25, 1.25, 1.25),
-            },
-            Step::RunWorld,
-            Step::Save {
-                path: BUILDING_A_SCENE_SAVE_PATH.into(),
-            },
-            Step::AssertMinObjects { min: 3 },
         ],
     )
 }
@@ -1022,6 +898,26 @@ fn vr_camera_locomotion_journey() -> (&'static str, Vec<Step>) {
                 instance_name: "comfortGuide".into(),
             },
             Step::CameraComfortEvidence,
+            Step::VrNativeBoundaryEvidence,
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn vr_player_comfort_playtest() -> (&'static str, Vec<Step>) {
+    (
+        "vr-player-comfort-playtest",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "playerTester".into(),
+            },
+            Step::CameraComfortEvidence,
+            Step::VrNativeBoundaryEvidence,
             Step::RunWorld,
         ],
     )
@@ -1089,6 +985,33 @@ const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-rel
 const FULL_STUDENT_JOURNEY_SAVE_PATH: &str =
     "target/test-work/web-platform/full-student-journey.a3p";
 const INSTRUCTOR_GRADING_SAVE_PATH: &str = "target/test-work/web-platform/instructor-grading.a3p";
+
+fn building_a_scene_first_world() -> (&'static str, Vec<Step>) {
+    (
+        "building-a-scene-first-world",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "sceneHero".into(),
+            },
+            Step::TransformObject {
+                object_name: "sceneHero".into(),
+                position: (1.0, 0.0, -1.5),
+                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
+                size: (1.2, 1.2, 1.2),
+            },
+            Step::RunWorld,
+            Step::Save {
+                path: BUILDING_A_SCENE_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 3 },
+        ],
+    )
+}
 
 fn parameters() -> (&'static str, Vec<Step>) {
     (
@@ -1327,14 +1250,6 @@ fn design_process() -> (&'static str, Vec<Step>) {
         "design-process",
         vec![
             Step::Health,
-            Step::DesignCheckpoint {
-                phase: "plan".into(),
-                artifact: "story-vs-game brief".into(),
-            },
-            Step::DesignCheckpoint {
-                phase: "sketch".into(),
-                artifact: "scene-sketch card".into(),
-            },
             Step::Launch {
                 template: "blank".into(),
             },
@@ -1352,14 +1267,17 @@ fn design_process() -> (&'static str, Vec<Step>) {
                 }],
             },
             Step::RunWorld,
-            Step::DesignCheckpoint {
-                phase: "playtest".into(),
-                artifact: "first-playthrough notes".into(),
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("prototypeHero.say".into()),
+                    args: vec!["\"Revision: show win feedback\"".into()],
+                }],
             },
-            Step::DesignCheckpoint {
-                phase: "revise".into(),
-                artifact: "design-to-code bridge card".into(),
-            },
+            Step::RunWorld,
+            Step::DesignProcessEvidence,
         ],
     )
 }
@@ -1740,6 +1658,7 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         design_process(),
         camera_viewpoint(),
         vr_camera_locomotion_journey(),
+        vr_player_comfort_playtest(),
         accessibility_rescue_camera_captions(),
         audio(),
         vehicle_parenting(),
@@ -1785,6 +1704,42 @@ fn build_edit_spec(class_name: &str, method_name: &str, statements: &[StatementS
         .collect::<Vec<_>>()
         .join(" | ");
     format!("append-comment:{class_name}.{method_name}: {summary}")
+}
+
+fn design_process_evidence_payload() -> Value {
+    serde_json::json!({
+        "scenario": "design-process-story-or-game",
+        "mode": "game",
+        "designBrief": "Game: guide the hero from goal setup to win feedback.",
+        "sceneSketches": [
+            {
+                "name": "setup-state",
+                "character": "prototypeHero",
+                "action": "explains the win goal"
+            },
+            {
+                "name": "win-state",
+                "character": "prototypeHero",
+                "action": "reports the successful revision"
+            }
+        ],
+        "bridgeMappings": [
+            {
+                "scene": "setup-state",
+                "aliceConcept": "myFirstMethod",
+                "controls": "prototypeHero goal narration"
+            },
+            {
+                "scene": "win-state",
+                "aliceConcept": "conditional",
+                "controls": "revised win feedback"
+            }
+        ],
+        "playtestObservation": "First playtest showed the goal, but the win feedback was missing.",
+        "revisionNote": "Added a second narration line after playtest so the player sees the win feedback.",
+        "reviewNote": "Review confirms plan, build, playtest, revise, and review evidence are present.",
+        "accessibilityChoice": "Use narrated text instead of extra characters."
+    })
 }
 
 // ── Tier 1: Offline structural tests (always run) ───────────────────
@@ -1884,6 +1839,70 @@ fn concurrency_uses_do_together() {
 }
 
 #[test]
+fn arrays_uses_each_in_array() {
+    let (_, steps) = arrays();
+    assert!(steps.iter().any(|s| match s {
+        Step::EditProcedure { statements, .. } =>
+            statements.iter().any(|st| st.kind == "eachInArrayTogether"),
+        _ => false,
+    }));
+}
+
+#[test]
+fn camera_uses_camera_methods() {
+    let (_, steps) = camera_viewpoint();
+    assert!(steps.iter().any(|s| {
+        match s {
+            Step::EditProcedure { statements, .. } => statements
+                .iter()
+                .any(|st| st.method.as_deref().unwrap_or("").starts_with("camera.")),
+            _ => false,
+        }
+    }));
+}
+
+#[test]
+fn vr_camera_locomotion_records_bounded_comfort_evidence() {
+    let (_, steps) = vr_camera_locomotion_journey();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR camera journey should prove web camera comfort evidence"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
+    );
+    assert!(
+        !steps
+            .iter()
+            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
+        "VR camera journey must not claim unrelated review tooling"
+    );
+}
+
+#[test]
+fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
+    let (_, steps) = vr_player_comfort_playtest();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR player comfort should use the bounded camera/WebXR evidence endpoint"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR player comfort must require explicit unsupported headset/revision-loop boundaries"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "playerTester")));
+}
+
+#[test]
 fn blank_alice_web_url_uses_default_base_url() {
     assert_eq!(normalize_web_base_url(None), "http://localhost:3099");
     assert_eq!(
@@ -1903,74 +1922,40 @@ fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
 }
 
 #[test]
+fn live_vr_player_comfort_exercises_vr_boundary_api() {
+    let (name, steps) = vr_player_comfort_playtest();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn accessibility_rescue_camera_captions_records_caption_evidence() {
+    let (_, steps) = accessibility_rescue_camera_captions();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
+        "accessibility rescue scenario should prove browser caption evidence"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
+}
+
+#[test]
 fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
     let (name, steps) = accessibility_rescue_camera_captions();
     assert_live_scenario(name, steps);
 }
 
 #[test]
-fn design_process_tracks_plan_build_playtest_and_revision() {
-    let (_, steps) = design_process();
-    let phases: Vec<_> = steps
-        .iter()
-        .filter_map(|step| match step {
-            Step::DesignCheckpoint { phase, .. } => Some(phase.as_str()),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(phases, vec!["plan", "sketch", "playtest", "revise"]);
-
-    let artifacts: Vec<_> = steps
-        .iter()
-        .filter_map(|step| match step {
-            Step::DesignCheckpoint { artifact, .. } => Some(artifact.as_str()),
-            _ => None,
-        })
-        .collect();
-    assert!(artifacts.contains(&"story-vs-game brief"));
-    assert!(artifacts.contains(&"scene-sketch card"));
-    assert!(artifacts.contains(&"design-to-code bridge card"));
-
-    let run_index = steps
-        .iter()
-        .position(|step| matches!(step, Step::RunWorld))
-        .expect("design process should run the prototype");
-    let playtest_index = steps
-        .iter()
-        .position(
-            |step| matches!(step, Step::DesignCheckpoint { phase, .. } if phase == "playtest"),
-        )
-        .expect("design process should include playtesting");
-    assert!(
-        run_index < playtest_index,
-        "playtest follows the runnable thin slice"
-    );
-}
-
-#[test]
-fn vehicle_parenting_attaches_camera_to_character() {
-    let (_, steps) = vehicle_parenting();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("camera.setVehicle")
-            && statement.args == vec!["driver".to_string()]
+fn audio_uses_play_audio() {
+    let (_, steps) = audio();
+    assert!(steps.iter().any(|s| {
+        match s {
+            Step::EditProcedure { statements, .. } => statements
+                .iter()
+                .any(|st| st.method.as_deref().unwrap_or("").contains("playAudio")),
+            _ => false,
+        }
     }));
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("driver.walk")
-            && statement.args == vec!["1.0".to_string()]
-    }));
-}
-
-#[test]
-fn joint_manipulation_targets_biped_joints() {
-    let (_, steps) = joint_manipulation();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    let joint_methods: Vec<_> = entrypoint
-        .iter()
-        .filter_map(|statement| statement.method.as_deref())
-        .collect();
-    assert!(joint_methods.contains(&"dancer.rightShoulder.turn"));
-    assert!(joint_methods.contains(&"dancer.leftKnee.turn"));
 }
 
 #[path = "support/web_platform_curriculum_tail.rs"]

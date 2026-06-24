@@ -1,7 +1,7 @@
 # Gallery/media/import parity walkthrough
 
-This tutorial walks through the covered model/texture import closure path and the
-bounded audio/camera/export evidence path enforced by the named LookingGlass and
+This tutorial walks through the covered model/texture import, native audio,
+camera, export, and share evidence paths enforced by the named LookingGlass and
 EatMe tests.
 
 Last updated: 2026-06-23.
@@ -13,8 +13,8 @@ You will:
 1. Import a safe model and texture into LookingGlass.
 2. Bind the texture to a scene object.
 3. Save/checkpoint, export, validate, and reopen the project.
-4. Record bounded audio cue metadata without claiming native playback.
-5. Verify camera and share fallback evidence.
+4. Record native audio authoring and playback evidence.
+5. Verify camera, native Web Share, and browser-download handling evidence.
 6. Confirm the EatMe matrix status matches the proven behavior.
 
 ## Before you start
@@ -148,11 +148,12 @@ The proof is complete when tests show:
 That is enough to keep `model-texture-import-checkpoint` as a LookingGlass
 `covered` row because the cited tests are present on LookingGlass `main`.
 
-## 4. Record bounded audio storyboard evidence
+## 4. Record native audio storyboard evidence
 
-Use audio workflow-state metadata and cue timing for storyboard evidence. This
-snippet is illustrative; executable evidence lives in
-`test/project-audio-contract.test.ts` and
+Use audio workflow-state metadata, cue timing, authoring, and native Web Audio
+playback for storyboard evidence. This snippet is illustrative; executable
+evidence lives in `test/project-audio-native-authoring.contract.test.ts`,
+`test/project-audio-contract.test.ts`, and
 `test/project-audio-project-io-contract.test.ts`.
 
 ```ts
@@ -185,17 +186,16 @@ const audio2 = upsertAudioCue(audio1, {
 const manifest = serializeProjectAudioWorkflowManifest(audio2);
 ```
 
-This proves cue metadata and manifest persistence. It does not prove that the
-browser produced audible sound.
+This proves cue metadata and manifest persistence. Native playback and full
+authoring coverage come from the native authoring contract test named above.
 
-Playback-bridge trigger evidence is separate. It uses the legacy
+Playback-trigger evidence is separate. It uses the legacy
 `ProjectAudioState` surface tested by
 `test/audio-workflow-parity.test.ts::Alice audio workflow playback bridge`.
-Scenario and matrix wording must say "audio metadata", "cue timing", "manifest
-persistence", or "playback-bridge trigger"; it must not say "native audio
-playback" unless that behavior has separate tests.
+Scenario and matrix wording can say "native Web Audio playback" only while that
+native authoring/playback contract test remains part of the evidence set.
 
-## 5. Verify camera and share fallback behavior
+## 5. Verify camera and share behavior
 
 Use camera workflow state for viewpoint evidence. This snippet is illustrative;
 the executable contract is `test/camera-workflow.test.ts`.
@@ -225,7 +225,7 @@ import {
 
 const exported = await exportWebPackage(project, {
   title: "Sharecase overview",
-  description: "Camera marker plus bounded audio cue metadata.",
+  description: "Camera marker plus native audio cue evidence.",
 });
 const validation = await validateWebPackage({
   packageBase64: exported.package.base64,
@@ -236,9 +236,11 @@ const shareArtifacts = await generateShareArtifacts({
 });
 ```
 
-This proves a valid export package and deterministic share artifacts. It does not
-prove native Web Share succeeded. If `navigator.share` is unavailable, the UI
-keeps export/download available and records browser-download share evidence.
+This proves a valid export package and deterministic share artifacts. Native Web
+Share success is covered by `test/project-export-native-web-share.contract.test.ts`
+only when a real matching package file is shared. If `navigator.share` is
+unavailable or rejects the file, export/download remains available and records
+browser-download handling evidence.
 
 ## 6. Confirm EatMe closure
 
@@ -262,7 +264,8 @@ EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm
   test/imported-project-assets-security.contract.test.ts \
   test/imported-asset-project-io.test.ts \
   test/model-texture-camera-joint-export-workflow.contract.test.ts \
-  test/project-audio-bounded-evidence.contract.test.ts \
+  test/project-audio-native-authoring.contract.test.ts \
+  test/project-export-native-web-share.contract.test.ts \
   test/project-export-share-fallback.contract.test.ts
 ```
 
@@ -271,8 +274,8 @@ The matrix state enforced by the closure tests is:
 | Row | LookingGlass status |
 | --- | --- |
 | `model-texture-import-checkpoint` | `covered` |
-| `media-audio-cue-storyboard` | `partial` |
-| `audio-camera-and-export-sharecase` | `partial` |
+| `media-audio-cue-storyboard` | `covered` |
+| `audio-camera-and-export-sharecase` | `covered` |
 
 ## Related documentation
 

@@ -163,7 +163,7 @@ fn model_texture_import_checkpoint_is_covered_by_lookingglass_main_evidence() {
 }
 
 #[test]
-fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
+fn audio_gap_rows_are_covered_by_native_audio_and_share_evidence() {
     for scenario in [
         "media-audio-cue-storyboard",
         "audio-camera-and-export-sharecase",
@@ -173,18 +173,17 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
 
         assert_eq!(
             string_at(&row, &["looking_glass", "status"]),
-            "partial",
-            "{scenario} must stay partial until native audio/full audio authoring is proven"
+            "covered",
+            "{scenario} must be covered once native audio/share evidence is cited"
         );
         assert!(
-            row_text.contains("bounded")
-                && row_text.contains("metadata")
-                && row_text.contains("playback bridge"),
-            "{scenario} must describe LookingGlass audio evidence as bounded metadata/playback-bridge support:\n{row_text}"
+            row_text.contains("native Web Audio") || row_text.contains("native audio playback"),
+            "{scenario} must describe the current native audio evidence:\n{row_text}"
         );
         assert!(
-            row_text.contains("does not claim native audio playback"),
-            "{scenario} must explicitly avoid native audio overclaims:\n{row_text}"
+            row_text.contains("full audio authoring evidence")
+                || row_text.contains("audio authoring evidence"),
+            "{scenario} must cite full audio authoring evidence:\n{row_text}"
         );
         if scenario == "media-audio-cue-storyboard" {
             assert!(
@@ -193,14 +192,14 @@ fn audio_gap_rows_stay_partial_and_use_bounded_metadata_language() {
             );
         } else {
             assert!(
-                row_text.contains("does not claim native Web Share success"),
-                "{scenario} must explicitly avoid native Web Share overclaims:\n{row_text}"
+                row_text.contains("native Web Share capability evidence")
+                    && row_text.contains("browser-download fallback"),
+                "{scenario} must cite native Web Share evidence and retain fallback coverage:\n{row_text}"
             );
         }
         assert!(
             !row_text.contains("finished artifact package")
-                && !row_text.contains("real/native audio playback")
-                && !row_text.contains("full audio authoring"),
+                && !row_text.contains("autoplay permission success"),
             "{scenario} row still contains overbroad audio/export wording:\n{row_text}"
         );
     }
@@ -212,11 +211,11 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
     let expectations = [
         (
             "media-audio-cue-storyboard",
-            "Partial: bounded audio cue metadata and simulated playback bridge evidence only; covered metadata/playback bridge evidence; missing native audio playback and full authoring evidence",
+            "Covered: native Web Audio playback and audio authoring evidence covered by LookingGlass main contract test",
         ),
         (
             "audio-camera-and-export-sharecase",
-            "Partial: camera/export/browser-download path proven; audio remains bounded metadata/playback bridge evidence; covered camera/export/download path; missing native audio playback and native Web Share evidence",
+            "Covered: camera/export path, native Web Audio playback, and native Web Share capability evidence covered by LookingGlass main contract tests",
         ),
         (
             "model-texture-import-checkpoint",
@@ -234,11 +233,16 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
             "{scenario} coverage inventory must carry the current LookingGlass boundary; row was:\n{row}"
         );
     }
-    assert!(
-        read_text("docs/tutorials/gallery-media-import-parity-walkthrough.md")
-            .contains("covered model/texture import closure path"),
-        "gallery/media walkthrough must describe model/texture import as covered once LookingGlass main evidence exists"
-    );
+    let walkthrough = read_text("docs/tutorials/gallery-media-import-parity-walkthrough.md");
+    for required in [
+        "covered model/texture import, native audio",
+        "camera, export, and share evidence paths",
+    ] {
+        assert!(
+            walkthrough.contains(required),
+            "gallery/media walkthrough must describe the currently covered media evidence paths"
+        );
+    }
     assert!(
         !inventory.contains("finished artifact package"),
         "coverage inventory must not overclaim finished artifact package support"
@@ -366,15 +370,15 @@ fn target_scenarios_include_precise_lookingglass_evidence_references() {
         (
             "media-audio-cue-storyboard",
             [
-                "LookingGlass:test/project-audio-bounded-evidence.contract.test.ts",
-                "bounded metadata/playback-bridge evidence",
+                "LookingGlass:test/project-audio-native-authoring.contract.test.ts",
+                "Web Audio output and full audio authoring evidence",
             ],
         ),
         (
             "audio-camera-and-export-sharecase",
             [
-                "LookingGlass:test/project-export-share-fallback.contract.test.ts",
-                "does not claim native Web Share success",
+                "LookingGlass:test/project-export-native-web-share.contract.test.ts",
+                "LookingGlass:test/project-audio-native-authoring.contract.test.ts",
             ],
         ),
     ];
@@ -393,15 +397,15 @@ fn target_scenarios_include_precise_lookingglass_evidence_references() {
         (
             "media-audio-cue-storyboard",
             [
-                "LookingGlass:test/project-audio-bounded-evidence.contract.test.ts",
-                "bounded metadata/playback-bridge evidence",
+                "LookingGlass:test/project-audio-native-authoring.contract.test.ts",
+                "Web Audio output and full audio authoring evidence",
             ],
         ),
         (
             "audio-camera-and-export-sharecase",
             [
-                "LookingGlass:test/project-export-share-fallback.contract.test.ts",
-                "does not claim native Web Share success",
+                "LookingGlass:test/project-export-native-web-share.contract.test.ts",
+                "LookingGlass:test/project-audio-native-authoring.contract.test.ts",
             ],
         ),
     ] {
