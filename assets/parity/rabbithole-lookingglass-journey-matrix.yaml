@@ -619,13 +619,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-player-comfort-playtest --run-id parity-vr-player-comfort-playtest --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "LookingGlass records bounded web camera comfort evidence in vr-camera-locomotion-journey, but true VR player comfort playtesting, headset sessions, and revision loops are not implemented."
+      status: partial
+      source_status: "Partial: bounded browser WebXR/player comfort boundary evidence is covered; missing true headset player comfort sessions and revision-loop evidence"
+      reason: "LookingGlass records bounded browser WebXR/player comfort boundary evidence through /api/vr/camera-comfort; true headset player comfort sessions and revision-loop evidence are missing."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
+      expected_behavior: "LookingGlass records bounded browser VR boundary evidence while true headset/player comfort playtesting remains explicitly unsupported."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when bounded browser VR boundary evidence is claimed
+        - True headset player comfort sessions and revision-loop evidence remain explicit missing evidence
         - behavior evidence names user-visible result, not implementation details
   - scenario: media-audio-cue-storyboard
     area: "Audio and media"
@@ -991,6 +994,7 @@ closure_families:
     closure_tests:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
@@ -1027,6 +1031,7 @@ closure_families:
       - hour-of-code-studio-kickoff
       - vr-camera-perspective-tour
       - vr-camera-locomotion-journey
+      - vr-player-comfort-playtest
       - accessibility-rescue-camera-captions
       - ide-accessibility-parity
       - ide-performance-parity
