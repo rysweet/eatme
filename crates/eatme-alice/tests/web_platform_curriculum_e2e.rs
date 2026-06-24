@@ -182,34 +182,90 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
 
     for step in steps {
         let r = match step {
-            Step::Health => {
-                match client.get(&format!("{base}/api/health")).call() {
-                    Ok(resp) => match resp.into_json::<HealthResponse>() {
-                        Ok(h) => StepResult { name: "health".into(), ok: matches!(h.status.as_str(), "ok" | "running"), msg: "ok".into() },
-                        Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
+            Step::Health => match client.get(&format!("{base}/api/health")).call() {
+                Ok(resp) => match resp.into_json::<HealthResponse>() {
+                    Ok(h) => StepResult {
+                        name: "health".into(),
+                        ok: matches!(h.status.as_str(), "ok" | "running"),
+                        msg: "ok".into(),
                     },
-                    Err(e) => StepResult { name: "health".into(), ok: false, msg: e.to_string() },
-                }
-            }
+                    Err(e) => StepResult {
+                        name: "health".into(),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
+                },
+                Err(e) => StepResult {
+                    name: "health".into(),
+                    ok: false,
+                    msg: e.to_string(),
+                },
+            },
             Step::Launch { template } => {
-                match post_json(client, &format!("{base}/api/launch"), ureq::json!({ "template": template })) {
+                match post_json(
+                    client,
+                    &format!("{base}/api/launch"),
+                    ureq::json!({ "template": template }),
+                ) {
                     Ok(resp) => match resp.into_json::<LaunchResponse>() {
-                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: matches!(r.status.as_str(), "ok" | "launched"), msg: format!("objects={}", r.scene_object_count) } },
-                        Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
+                        Ok(r) => {
+                            last_count = r.scene_object_count;
+                            StepResult {
+                                name: format!("launch({template})"),
+                                ok: matches!(r.status.as_str(), "ok" | "launched"),
+                                msg: format!("objects={}", r.scene_object_count),
+                            }
+                        }
+                        Err(e) => StepResult {
+                            name: format!("launch({template})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: format!("launch({template})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
-            Step::AddObject { class_name, instance_name } => {
-                match post_json(client, &format!("{base}/api/scene/add-object"), ureq::json!({ "className": class_name, "name": instance_name })) {
+            Step::AddObject {
+                class_name,
+                instance_name,
+            } => {
+                match post_json(
+                    client,
+                    &format!("{base}/api/scene/add-object"),
+                    ureq::json!({ "className": class_name, "name": instance_name }),
+                ) {
                     Ok(resp) => match resp.into_json::<AddObjectResponse>() {
-                        Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: matches!(r.status.as_str(), "ok" | "added"), msg: format!("after={}", r.scene_field_count_after) } },
-                        Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
+                        Ok(r) => {
+                            last_count = r.scene_field_count_after;
+                            StepResult {
+                                name: format!("add({class_name})"),
+                                ok: matches!(r.status.as_str(), "ok" | "added"),
+                                msg: format!("after={}", r.scene_field_count_after),
+                            }
+                        }
+                        Err(e) => StepResult {
+                            name: format!("add({class_name})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: format!("add({class_name})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
-            Step::TransformObject { object_name, position, orientation, size } => {
+            Step::TransformObject {
+                object_name,
+                position,
+                orientation,
+                size,
+            } => {
                 let body = ureq::json!({
                     "objectName": object_name,
                     "position": { "x": position.0, "y": position.1, "z": position.2 },
@@ -220,45 +276,105 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
                         Ok(r) => StepResult {
                             name: format!("transform({object_name})"),
-                            ok: matches!(r.status.as_str(), "ok" | "transformed") && r.object_name == *object_name,
+                            ok: matches!(r.status.as_str(), "ok" | "transformed")
+                                && r.object_name == *object_name,
                             msg: r.status,
                         },
-                        Err(e) => StepResult { name: format!("transform({object_name})"), ok: false, msg: e.to_string() },
+                        Err(e) => StepResult {
+                            name: format!("transform({object_name})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: format!("transform({object_name})"), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: format!("transform({object_name})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
-            Step::EditProcedure { class_name, method_name, statements } => {
-                match post_json(client, &format!("{base}/api/code/edit-procedure"), ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
+            Step::EditProcedure {
+                class_name,
+                method_name,
+                statements,
+            } => {
+                match post_json(
+                    client,
+                    &format!("{base}/api/code/edit-procedure"),
+                    ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) }),
+                ) {
                     Ok(resp) => match resp.into_json::<EditProcedureResponse>() {
-                        Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: matches!(r.status.as_str(), "ok" | "proved"), msg: "ok".into() },
-                        Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
+                        Ok(r) => StepResult {
+                            name: format!("edit({class_name}.{method_name})"),
+                            ok: matches!(r.status.as_str(), "ok" | "proved"),
+                            msg: "ok".into(),
+                        },
+                        Err(e) => StepResult {
+                            name: format!("edit({class_name}.{method_name})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: format!("edit({class_name}.{method_name})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::RunWorld => {
                 match post_json(client, &format!("{base}/api/world/run"), ureq::json!({})) {
                     Ok(resp) => match resp.into_json::<RunWorldResponse>() {
-                        Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: matches!(r.status.as_str(), "ok" | "completed"), msg: format!("objects={}", r.scene_object_count) } },
-                        Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
+                        Ok(r) => {
+                            last_count = r.scene_object_count;
+                            StepResult {
+                                name: "run".into(),
+                                ok: matches!(r.status.as_str(), "ok" | "completed"),
+                                msg: format!("objects={}", r.scene_object_count),
+                            }
+                        }
+                        Err(e) => StepResult {
+                            name: "run".into(),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: "run".into(),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::Save { path } => {
-                match post_json(client, &format!("{base}/api/project/save"), ureq::json!({ "targetPath": path })) {
+                match post_json(
+                    client,
+                    &format!("{base}/api/project/save"),
+                    ureq::json!({ "targetPath": path }),
+                ) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
                         Ok(r) => {
                             if matches!(r.status.as_str(), "ok" | "saved") {
                                 saved_count = Some(last_count);
                                 saved_path = Some(path.clone());
                             }
-                            StepResult { name: format!("save({path})"), ok: matches!(r.status.as_str(), "ok" | "saved"), msg: "ok".into() }
+                            StepResult {
+                                name: format!("save({path})"),
+                                ok: matches!(r.status.as_str(), "ok" | "saved"),
+                                msg: "ok".into(),
+                            }
+                        }
+                        Err(e) => StepResult {
+                            name: format!("save({path})"),
+                            ok: false,
+                            msg: e.to_string(),
                         },
-                        Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
                     },
-                    Err(e) => StepResult { name: format!("save({path})"), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: format!("save({path})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::Load { path } => {
@@ -278,59 +394,104 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 ok: !phase.is_empty() && !artifact.is_empty(),
                 msg: artifact.clone(),
             },
-            Step::RegisterEvent { event_type, handler_name } => {
-                let mut payload = serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
+            Step::RegisterEvent {
+                event_type,
+                handler_name,
+            } => {
+                let mut payload =
+                    serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
                 if event_type == "keyPress" || event_type == "keyPressed" {
                     payload["key"] = serde_json::json!("SPACE");
                 }
                 match post_json(client, &format!("{base}/api/events/register"), payload) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
-                        Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
-                        Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
+                        Ok(r) => StepResult {
+                            name: format!("register({event_type})"),
+                            ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(),
+                            msg: "ok".into(),
+                        },
+                        Err(e) => StepResult {
+                            name: format!("register({event_type})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
-                }
-            }
-            Step::ExpectError { name, endpoint, body, expected_status, expected_message } => {
-                match post_json(client, &format!("{base}{endpoint}"), body.clone()) {
-                    Ok(resp) => StepResult {
-                        name: name.clone(),
+                    Err(e) => StepResult {
+                        name: format!("register({event_type})"),
                         ok: false,
-                        msg: format!("expected status {expected_status}, got {}", resp.status()),
+                        msg: e.to_string(),
                     },
-                    Err(ureq::Error::Status(code, resp)) => {
-                        let message = resp
-                            .into_json::<Value>()
-                            .ok()
-                            .and_then(|value| value.get("error").and_then(Value::as_str).map(str::to_string))
-                            .unwrap_or_default();
-                        StepResult {
-                            name: name.clone(),
-                            ok: code == *expected_status && message.contains(expected_message),
-                            msg: format!("status={code} message={message}"),
-                        }
-                    }
-                    Err(e) => StepResult { name: name.clone(), ok: false, msg: e.to_string() },
                 }
             }
+            Step::ExpectError {
+                name,
+                endpoint,
+                body,
+                expected_status,
+                expected_message,
+            } => match post_json(client, &format!("{base}{endpoint}"), body.clone()) {
+                Ok(resp) => StepResult {
+                    name: name.clone(),
+                    ok: false,
+                    msg: format!("expected status {expected_status}, got {}", resp.status()),
+                },
+                Err(ureq::Error::Status(code, resp)) => {
+                    let message = resp
+                        .into_json::<Value>()
+                        .ok()
+                        .and_then(|value| {
+                            value
+                                .get("error")
+                                .and_then(Value::as_str)
+                                .map(str::to_string)
+                        })
+                        .unwrap_or_default();
+                    StepResult {
+                        name: name.clone(),
+                        ok: code == *expected_status && message.contains(expected_message),
+                        msg: format!("status={code} message={message}"),
+                    }
+                }
+                Err(e) => StepResult {
+                    name: name.clone(),
+                    ok: false,
+                    msg: e.to_string(),
+                },
+            },
             Step::CameraComfortEvidence => {
                 let token = local_api_token();
                 match client
                     .get(&format!("{base}/api/vr/camera-comfort"))
                     .set("X-Alice-Local-Api-Token", &token)
-                    .call() {
+                    .call()
+                {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                    == Some("alice.camera-vr-comfort-evidence/v1")
-                                && value.get("desktopCameraAvailable").and_then(Value::as_bool) == Some(true)
-                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
-                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
-                            StepResult { name: "camera-comfort-evidence".into(), ok, msg: value.to_string() }
+                                == Some("alice.camera-vr-comfort-evidence/v1")
+                                && value.get("desktopCameraAvailable").and_then(Value::as_bool)
+                                    == Some(true)
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool)
+                                    == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool)
+                                    == Some(false);
+                            StepResult {
+                                name: "camera-comfort-evidence".into(),
+                                ok,
+                                msg: value.to_string(),
+                            }
                         }
-                        Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                        Err(e) => StepResult {
+                            name: "camera-comfort-evidence".into(),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: "camera-comfort-evidence".into(),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::AccessibilityCaptionEvidence => {
@@ -338,7 +499,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 match client
                     .get(&format!("{base}/api/accessibility/rescue-camera-captions"))
                     .set("X-Alice-Local-Api-Token", &token)
-                    .call() {
+                    .call()
+                {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let caption_ids: Vec<_> = value
@@ -352,19 +514,45 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 })
                                 .unwrap_or_default();
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                    == Some("alice.accessibility-rescue-camera-captions/v1")
-                                && value.get("cameraCaption").and_then(Value::as_str).unwrap_or_default().contains("Camera")
-                                && value.get("objectCaption").and_then(Value::as_str).unwrap_or_default().contains("captionGuide")
-                                && value.get("keyboardReviewAvailable").and_then(Value::as_bool) == Some(true)
-                                && value.get("highContrastReviewAvailable").and_then(Value::as_bool) == Some(true)
+                                == Some("alice.accessibility-rescue-camera-captions/v1")
+                                && value
+                                    .get("cameraCaption")
+                                    .and_then(Value::as_str)
+                                    .unwrap_or_default()
+                                    .contains("Camera")
+                                && value
+                                    .get("objectCaption")
+                                    .and_then(Value::as_str)
+                                    .unwrap_or_default()
+                                    .contains("captionGuide")
+                                && value
+                                    .get("keyboardReviewAvailable")
+                                    .and_then(Value::as_bool)
+                                    == Some(true)
+                                && value
+                                    .get("highContrastReviewAvailable")
+                                    .and_then(Value::as_bool)
+                                    == Some(true)
                                 && caption_ids.contains(&"aria-live-status")
                                 && caption_ids.contains(&"camera-caption")
                                 && caption_ids.contains(&"scene-object-caption");
-                            StepResult { name: "accessibility-caption-evidence".into(), ok, msg: value.to_string() }
+                            StepResult {
+                                name: "accessibility-caption-evidence".into(),
+                                ok,
+                                msg: value.to_string(),
+                            }
                         }
-                        Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                        Err(e) => StepResult {
+                            name: "accessibility-caption-evidence".into(),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: "accessibility-caption-evidence".into(), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: "accessibility-caption-evidence".into(),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::GalleryWalkRubricEvidence => {
@@ -372,7 +560,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 match client
                     .get(&format!("{base}/api/review/gallery-walk-rubric"))
                     .set("X-Alice-Local-Api-Token", &token)
-                    .call() {
+                    .call()
+                {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let rubric_ids: Vec<_> = value
@@ -381,38 +570,72 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 .map(|criteria| {
                                     criteria
                                         .iter()
-                                        .filter_map(|criterion| criterion.get("id").and_then(Value::as_str))
+                                        .filter_map(|criterion| {
+                                            criterion.get("id").and_then(Value::as_str)
+                                        })
                                         .collect()
                                 })
                                 .unwrap_or_default();
                             let has_review_prompt = value
                                 .get("galleryItems")
                                 .and_then(Value::as_array)
-                                .map(|items| items.iter().any(|item| {
-                                    item.get("title").and_then(Value::as_str) == Some("reviewCheckpoint")
-                                        && item.get("reviewPrompt").and_then(Value::as_str).unwrap_or_default().contains("reviewCheckpoint")
-                                }))
+                                .map(|items| {
+                                    items.iter().any(|item| {
+                                        item.get("title").and_then(Value::as_str)
+                                            == Some("reviewCheckpoint")
+                                            && item
+                                                .get("reviewPrompt")
+                                                .and_then(Value::as_str)
+                                                .unwrap_or_default()
+                                                .contains("reviewCheckpoint")
+                                    })
+                                })
                                 .unwrap_or(false);
                             let ok = value.get("schema_version").and_then(Value::as_str)
-                                    == Some("alice.gallery-walk-rubric-evidence/v1")
-                                && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
-                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(true)
-                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(false)
-                                && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
+                                == Some("alice.gallery-walk-rubric-evidence/v1")
+                                && value
+                                    .get("reviewWorkflowSupported")
+                                    .and_then(Value::as_bool)
+                                    == Some(true)
+                                && value
+                                    .get("rubricRecordingSupported")
+                                    .and_then(Value::as_bool)
+                                    == Some(true)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool)
+                                    == Some(false)
+                                && value
+                                    .get("galleryItemCount")
+                                    .and_then(Value::as_u64)
+                                    .unwrap_or_default()
+                                    >= 1
                                 && has_review_prompt
                                 && rubric_ids.contains(&"visible-world")
                                 && rubric_ids.contains(&"camera-framing")
                                 && rubric_ids.contains(&"accessibility-captions");
-                            StepResult { name: "gallery-walk-rubric-evidence".into(), ok, msg: value.to_string() }
+                            StepResult {
+                                name: "gallery-walk-rubric-evidence".into(),
+                                ok,
+                                msg: value.to_string(),
+                            }
                         }
-                        Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
+                        Err(e) => StepResult {
+                            name: "gallery-walk-rubric-evidence".into(),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
                     },
-                    Err(e) => StepResult { name: "gallery-walk-rubric-evidence".into(), ok: false, msg: e.to_string() },
+                    Err(e) => StepResult {
+                        name: "gallery-walk-rubric-evidence".into(),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
-            Step::AssertMinObjects { min } => {
-                StepResult { name: format!("assert(>={min})"), ok: last_count >= *min, msg: format!("actual={last_count}") }
-            }
+            Step::AssertMinObjects { min } => StepResult {
+                name: format!("assert(>={min})"),
+                ok: last_count >= *min,
+                msg: format!("actual={last_count}"),
+            },
         };
         results.push(r);
     }

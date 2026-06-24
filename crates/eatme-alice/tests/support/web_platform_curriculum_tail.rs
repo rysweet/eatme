@@ -139,12 +139,18 @@ fn full_student_journey_covers_student_build_run_and_save_flow() {
 #[test]
 fn building_a_scene_first_world_covers_adjust_run_and_save_flow() {
     let (_, steps) = building_a_scene_first_world();
-    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "bunny")));
-    assert!(steps.iter().any(|step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "bunny")));
-    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
     assert!(steps.iter().any(
-        |step| matches!(step, Step::Save { path } if path == BUILDING_A_SCENE_SAVE_PATH)
+        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "bunny")
     ));
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "bunny")
+    ));
+    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::Save { path } if path == BUILDING_A_SCENE_SAVE_PATH))
+    );
 }
 
 #[test]

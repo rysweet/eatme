@@ -424,9 +424,14 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 orientation,
                 size,
             } => {
-                let result = post_transform(client, base, object_name, *position, *orientation, *size);
+                let result =
+                    post_transform(client, base, object_name, *position, *orientation, *size);
                 if result.ok {
-                    persisted_snippets.extend(transform_export_snippets(*position, *orientation, *size));
+                    persisted_snippets.extend(transform_export_snippets(
+                        *position,
+                        *orientation,
+                        *size,
+                    ));
                 }
                 result
             }
@@ -535,8 +540,7 @@ fn post_launch_project(
         client,
         &format!("{base}/api/launch"),
         ureq::json!({ "project": path }),
-    )
-    {
+    ) {
         Ok(resp) => match resp.into_json::<LaunchResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -571,8 +575,7 @@ fn post_add_object(
         client,
         url,
         ureq::json!({ "className": class_name, "name": instance_name }),
-    )
-    {
+    ) {
         Ok(resp) => match resp.into_json::<AddObjectResponse>() {
             Ok(body) => {
                 *last_count = body.scene_field_count_after;
@@ -641,8 +644,7 @@ fn post_edit(client: &ureq::Agent, base: &str, method_name: &str, edit_spec: &st
 }
 
 fn post_run_world(client: &ureq::Agent, base: &str, last_count: &mut usize) -> StepResult {
-    match post_json(client, &format!("{base}/api/world/run"), ureq::json!({}))
-    {
+    match post_json(client, &format!("{base}/api/world/run"), ureq::json!({})) {
         Ok(resp) => match resp.into_json::<RunWorldResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -663,8 +665,7 @@ fn post_save(client: &ureq::Agent, base: &str, path: &str) -> StepResult {
         client,
         &format!("{base}/api/project/save"),
         ureq::json!({ "targetPath": path }),
-    )
-    {
+    ) {
         Ok(resp) => match resp.into_json::<StatusResponse>() {
             Ok(body) => StepResult {
                 name: format!("save({path})"),
@@ -689,8 +690,7 @@ fn post_reopen(
         client,
         &format!("{base}/api/project/reopen"),
         ureq::json!({ "project": path }),
-    )
-    {
+    ) {
         Ok(resp) => match resp.into_json::<LaunchResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
