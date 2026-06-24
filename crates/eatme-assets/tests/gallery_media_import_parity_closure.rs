@@ -233,11 +233,16 @@ fn coverage_inventory_matches_bounded_gallery_media_boundaries() {
             "{scenario} coverage inventory must carry the current LookingGlass boundary; row was:\n{row}"
         );
     }
-    assert!(
-        read_text("docs/tutorials/gallery-media-import-parity-walkthrough.md")
-            .contains("covered model/texture import closure path"),
-        "gallery/media walkthrough must describe model/texture import as covered once LookingGlass main evidence exists"
-    );
+    let walkthrough = read_text("docs/tutorials/gallery-media-import-parity-walkthrough.md");
+    for required in [
+        "covered model/texture import, native audio",
+        "camera, export, and share evidence paths",
+    ] {
+        assert!(
+            walkthrough.contains(required),
+            "gallery/media walkthrough must describe the currently covered media evidence paths"
+        );
+    }
     assert!(
         !inventory.contains("finished artifact package"),
         "coverage inventory must not overclaim finished artifact package support"
