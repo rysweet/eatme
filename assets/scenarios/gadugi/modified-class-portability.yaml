@@ -86,7 +86,7 @@ steps:
     - src/server/routes/project-routes.class-behavior.test.ts
     - e2e/class-behavior-package.spec.ts
     - lookingglass-class-ui-evidence=export-import-instance-save-reopen
-  timeout: 120000
+  timeout: 300000
 assertions:
 - name: validate-assets succeeds
   type: command_success

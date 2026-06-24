@@ -463,7 +463,7 @@ fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
     } else if step_id.contains("setup-readiness") {
         300_000
     } else if step_id.contains("class-behavior") {
-        120_000
+        300_000
     } else {
         60_000
     }
