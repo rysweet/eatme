@@ -37,6 +37,17 @@ fn http_client() -> ureq::Agent {
         .build()
 }
 
+fn local_api_token() -> String {
+    env::var("ALICE_LOCAL_API_TOKEN").unwrap_or_else(|_| "gadugi-local-api-token".into())
+}
+
+fn post_json(client: &ureq::Agent, url: &str, body: Value) -> Result<ureq::Response, ureq::Error> {
+    client
+        .post(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
+        .send_json(body)
+}
+
 // ── Response types ──────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -58,6 +69,13 @@ struct AddObjectResponse {
     status: String,
     #[serde(rename = "sceneFieldCountAfter")]
     scene_field_count_after: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct TransformObjectResponse {
+    status: String,
+    #[serde(rename = "objectName")]
+    object_name: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,6 +123,12 @@ enum Step {
     AddObject {
         class_name: String,
         instance_name: String,
+    },
+    TransformObject {
+        object_name: String,
+        position: (f64, f64, f64),
+        orientation: (f64, f64, f64, f64),
+        size: (f64, f64, f64),
     },
     EditProcedure {
         class_name: String,
@@ -168,7 +192,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::Launch { template } => {
-                match client.post(&format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
+                match post_json(client, &format!("{base}/api/launch"), ureq::json!({ "template": template })) {
                     Ok(resp) => match resp.into_json::<LaunchResponse>() {
                         Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: matches!(r.status.as_str(), "ok" | "launched"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
@@ -177,7 +201,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::AddObject { class_name, instance_name } => {
-                match client.post(&format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "className": class_name, "name": instance_name })) {
+                match post_json(client, &format!("{base}/api/scene/add-object"), ureq::json!({ "className": class_name, "name": instance_name })) {
                     Ok(resp) => match resp.into_json::<AddObjectResponse>() {
                         Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: matches!(r.status.as_str(), "ok" | "added"), msg: format!("after={}", r.scene_field_count_after) } },
                         Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
@@ -185,8 +209,27 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                 }
             }
+            Step::TransformObject { object_name, position, orientation, size } => {
+                let body = ureq::json!({
+                    "objectName": object_name,
+                    "position": { "x": position.0, "y": position.1, "z": position.2 },
+                    "orientation": { "x": orientation.0, "y": orientation.1, "z": orientation.2, "w": orientation.3 },
+                    "size": { "width": size.0, "height": size.1, "depth": size.2 },
+                });
+                match post_json(client, &format!("{base}/api/scene/transform-object"), body) {
+                    Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
+                        Ok(r) => StepResult {
+                            name: format!("transform({object_name})"),
+                            ok: matches!(r.status.as_str(), "ok" | "transformed") && r.object_name == *object_name,
+                            msg: r.status,
+                        },
+                        Err(e) => StepResult { name: format!("transform({object_name})"), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: format!("transform({object_name})"), ok: false, msg: e.to_string() },
+                }
+            }
             Step::EditProcedure { class_name, method_name, statements } => {
-                match client.post(&format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
+                match post_json(client, &format!("{base}/api/code/edit-procedure"), ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
                     Ok(resp) => match resp.into_json::<EditProcedureResponse>() {
                         Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: matches!(r.status.as_str(), "ok" | "proved"), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
@@ -195,7 +238,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::RunWorld => {
-                match client.post(&format!("{base}/api/world/run")).send_json(ureq::json!({})) {
+                match post_json(client, &format!("{base}/api/world/run"), ureq::json!({})) {
                     Ok(resp) => match resp.into_json::<RunWorldResponse>() {
                         Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: matches!(r.status.as_str(), "ok" | "completed"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
@@ -204,7 +247,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::Save { path } => {
-                match client.post(&format!("{base}/api/project/save")).send_json(ureq::json!({ "targetPath": path })) {
+                match post_json(client, &format!("{base}/api/project/save"), ureq::json!({ "targetPath": path })) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
                         Ok(r) => {
                             if matches!(r.status.as_str(), "ok" | "saved") {
@@ -240,7 +283,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 if event_type == "keyPress" || event_type == "keyPressed" {
                     payload["key"] = serde_json::json!("SPACE");
                 }
-                match client.post(&format!("{base}/api/events/register")).send_json(payload) {
+                match post_json(client, &format!("{base}/api/events/register"), payload) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
                         Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
@@ -249,7 +292,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::ExpectError { name, endpoint, body, expected_status, expected_message } => {
-                match client.post(&format!("{base}{endpoint}")).send_json(body.clone()) {
+                match post_json(client, &format!("{base}{endpoint}"), body.clone()) {
                     Ok(resp) => StepResult {
                         name: name.clone(),
                         ok: false,
@@ -271,7 +314,11 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::CameraComfortEvidence => {
-                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                let token = local_api_token();
+                match client
+                    .get(&format!("{base}/api/vr/camera-comfort"))
+                    .set("X-Alice-Local-Api-Token", &token)
+                    .call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let ok = value.get("schema_version").and_then(Value::as_str)
@@ -287,7 +334,11 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::AccessibilityCaptionEvidence => {
-                match client.get(&format!("{base}/api/accessibility/rescue-camera-captions")).call() {
+                let token = local_api_token();
+                match client
+                    .get(&format!("{base}/api/accessibility/rescue-camera-captions"))
+                    .set("X-Alice-Local-Api-Token", &token)
+                    .call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let caption_ids: Vec<_> = value
@@ -317,7 +368,11 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::GalleryWalkRubricEvidence => {
-                match client.get(&format!("{base}/api/review/gallery-walk-rubric")).call() {
+                let token = local_api_token();
+                match client
+                    .get(&format!("{base}/api/review/gallery-walk-rubric"))
+                    .set("X-Alice-Local-Api-Token", &token)
+                    .call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let rubric_ids: Vec<_> = value
@@ -397,6 +452,33 @@ fn hello_world() -> (&'static str, Vec<Step>) {
             Step::Save {
                 path: HELLO_WORLD_SAVE_PATH.into(),
             },
+        ],
+    )
+}
+
+fn building_a_scene_first_world() -> (&'static str, Vec<Step>) {
+    (
+        "building-a-scene-first-world",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "bunny".into(),
+            },
+            Step::TransformObject {
+                object_name: "bunny".into(),
+                position: (1.5, 0.0, -2.0),
+                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
+                size: (1.25, 1.25, 1.25),
+            },
+            Step::RunWorld,
+            Step::Save {
+                path: BUILDING_A_SCENE_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 3 },
         ],
     )
 }
@@ -777,6 +859,8 @@ fn audio() -> (&'static str, Vec<Step>) {
 }
 
 const HELLO_WORLD_SAVE_PATH: &str = "target/test-work/web-platform/hello-world-save.a3p";
+const BUILDING_A_SCENE_SAVE_PATH: &str =
+    "target/test-work/web-platform/building-a-scene-first-world.a3p";
 const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-reload.a3p";
 const FULL_STUDENT_JOURNEY_SAVE_PATH: &str =
     "target/test-work/web-platform/full-student-journey.a3p";
@@ -1415,6 +1499,7 @@ fn error_recovery() -> (&'static str, Vec<Step>) {
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
         hello_world(),
+        building_a_scene_first_world(),
         procedures(),
         parameters(),
         inheritance_oop(),

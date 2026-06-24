@@ -60,6 +60,7 @@ fn full_curriculum_breadth_covered() {
     let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
     for required in [
         "hello-world",
+        "building-a-scene-first-world",
         "procedures",
         "parameters",
         "inheritance-oop",
@@ -133,6 +134,17 @@ fn full_student_journey_covers_student_build_run_and_save_flow() {
             |step| matches!(step, Step::Save { path } if path == FULL_STUDENT_JOURNEY_SAVE_PATH)
         )
     );
+}
+
+#[test]
+fn building_a_scene_first_world_covers_adjust_run_and_save_flow() {
+    let (_, steps) = building_a_scene_first_world();
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "bunny")));
+    assert!(steps.iter().any(|step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "bunny")));
+    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::Save { path } if path == BUILDING_A_SCENE_SAVE_PATH)
+    ));
 }
 
 #[test]
@@ -213,6 +225,19 @@ fn live_hello_world() {
     let c = http_client();
     let b = web_base_url();
     for r in execute(&b, &c, &hello_world().1) {
+        assert!(r.ok, "{}: {}", r.name, r.msg);
+    }
+}
+
+#[test]
+fn live_building_a_scene_first_world() {
+    if !web_platform_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+        return;
+    }
+    let c = http_client();
+    let b = web_base_url();
+    for r in execute(&b, &c, &building_a_scene_first_world().1) {
         assert!(r.ok, "{}: {}", r.name, r.msg);
     }
 }
