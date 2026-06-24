@@ -47,6 +47,12 @@ fn vr_camera_locomotion_records_bounded_comfort_evidence() {
     assert!(
         steps
             .iter()
+            .any(|step| matches!(step, Step::BrowserWebXRLocomotionEvidence)),
+        "VR camera journey should exercise observable browser WebXR locomotion"
+    );
+    assert!(
+        steps
+            .iter()
             .any(|step| matches!(step, Step::CameraComfortEvidence)),
         "VR camera journey should prove web camera comfort evidence"
     );
