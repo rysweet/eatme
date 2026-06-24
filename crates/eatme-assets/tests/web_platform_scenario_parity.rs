@@ -192,9 +192,9 @@ fn desktop_scenarios_report_web_parity_and_core_curriculum_has_equivalents() {
         .collect::<BTreeSet<_>>();
 
     assert_eq!(
-        51,
+        52,
         web_capable_ids.len(),
-        "expected 51 web-capable desktop scenarios, found {:?}",
+        "expected 52 web-capable desktop scenarios, found {:?}",
         web_capable_ids
     );
     assert!(

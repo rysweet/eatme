@@ -8,7 +8,8 @@ config:
   retries: 0
   parallel: false
 environment:
-  requires: []
+  requires:
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
@@ -41,6 +42,20 @@ steps:
     - '"passed": true'
     - '"id": "workshop-facilitator-live-studio"'
   timeout: 60000
+- name: Verify Lookingglass Live Studio Runtime
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-workshop-facilitator-live-studio}"
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/runtime-parity-evidence.test.ts test/server.test.ts
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - test/runtime-parity-evidence.test.ts
+    - test/server.test.ts
+  timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test
@@ -52,6 +67,7 @@ steps:
       Student prompt cards ask for one visible behavior, one help signal, one peer feedback exchange, one revision behavior, and one reflection.
       Real Alice action evidence notes ask students to add or adjust one visible behavior in Alice, run it, record the observed result, and revise one small choice.
       Instructor-facing acceptance probes check the facilitation plan, student prompt cards, checkpoint board, revision-reflection log, and showcase notes.
+      LookingGlass /api/workshops/live-studio/start creates a synchronized facilitator session, /participants updates the participant roster revision, /handoff creates a live workshop handoff packet, and /api/review/runtime-parity reports liveStudioSupported true.
       Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence without taking ownership of learner artifacts.
       Output states the scenario is not full Alice user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
     asset: assets/scenarios/eatme/workshop-facilitator-live-studio.yaml
@@ -77,6 +93,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: verify-lookingglass-live-studio-runtime succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass Live Studio Runtime
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent

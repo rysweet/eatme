@@ -50,7 +50,8 @@ For teacher-community sharing coverage, use
 `assets/scenarios/eatme/teacher-community-sharing-loop.yaml` and its generated
 Gadugi adapter. The scenario connects the teacher-community curator persona to a
 teacher-facing share card, classroom handoff note, and remix feedback prompt
-without claiming a deployed community platform.
+with local LookingGlass community platform evidence and without claiming an
+external cloud community deployment.
 
 ## QA-team outside-in test shape
 

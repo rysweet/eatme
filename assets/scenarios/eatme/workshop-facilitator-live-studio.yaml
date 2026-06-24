@@ -23,6 +23,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 agentic_flow:
   focus: facilitating-live-studio-workshops
   instructor_goal: Prepare a two-hour Alice live-studio workshop plan with a setup checklist, timing plan, observation points, intervention cues, checkpoint artifacts, share-out support, instructor-facing acceptance probes, student prompt cards, student-owned Alice action evidence, help signals, peer feedback, revision behavior, reflection, and share-out artifacts.
@@ -67,6 +68,7 @@ acceptance_probes:
 - Student prompt cards ask for one visible behavior, one help signal, one peer feedback exchange, one revision behavior, and one reflection.
 - Real Alice action evidence notes ask students to add or adjust one visible behavior in Alice, run it, record the observed result, and revise one small choice.
 - Instructor-facing acceptance probes check the facilitation plan, student prompt cards, checkpoint board, revision-reflection log, and showcase notes.
+- LookingGlass /api/workshops/live-studio/start creates a synchronized facilitator session, /participants updates the participant roster revision, /handoff creates a live workshop handoff packet, and /api/review/runtime-parity reports liveStudioSupported true.
 - Output explicitly connects workshop-facilitator and student personas to reviewable scenario evidence without taking ownership of learner artifacts.
 - Output states the scenario is not full Alice user interface automation, not creative assessment, not learner-world grading, and not complete Alice coverage.
 rubric:
@@ -101,6 +103,13 @@ steps:
   evidence:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
+- id: verify-lookingglass-live-studio-runtime
+  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/runtime-parity-evidence.test.ts test/server.test.ts
+  evidence:
+  - /api/workshops/live-studio/start returns alice.live-workshop-studio/v1
+  - participant orchestration increments the server-authoritative sync revision
+  - handoff creates a live workshop handoff packet for the next facilitator
+  - /api/review/runtime-parity reports liveStudioSupported true with handoffReady evidence
 timeouts:
   agentic_seconds: 900
 artifacts:
@@ -116,4 +125,4 @@ artifacts:
   real_alice_action_evidence_notes: agentic://student/real-alice-action-evidence-notes
   instructor_acceptance_probe_notes: agentic://instructor/acceptance-probe-notes
   showcase_notes: agentic://instructor/showcase-notes
-unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full Alice user interface automation, creative assessment, learner-world grading, or complete Alice coverage. LookingGlass /api/review/gallery-walk-rubric evidence supports bounded gallery review only and must not be counted as synchronized facilitator live-studio support.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full Alice user interface automation, creative assessment, learner-world grading, or complete Alice coverage. LookingGlass live-studio evidence is limited to the local synchronized facilitator session, participant roster orchestration, and handoff packet; it must not be described as complete Alice workshop automation.

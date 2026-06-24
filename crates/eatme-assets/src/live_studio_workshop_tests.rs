@@ -27,6 +27,10 @@ const REQUIRED_CONTRACT_TEXT: &[&str] = &[
     "not creative assessment",
     "not learner-world grading",
     "not complete Alice coverage",
+    "/api/workshops/live-studio/start",
+    "participant roster revision",
+    "handoff packet",
+    "liveStudioSupported true",
 ];
 const REQUIRED_OUTPUTS: &[&str] = &[
     "facilitation_plan",

@@ -565,13 +565,15 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario workshop-facilitator-live-studio --run-id parity-workshop-facilitator-live-studio --runs-dir runs --timeout 1800 --json
       expected_behavior: "Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts."
     looking_glass:
-      status: not_supported
-      source_status: "Not supported"
-      reason: "LookingGlass now has bounded web gallery/rubric review evidence, but no synchronized facilitator live studio, participant orchestration, or live workshop handoff runtime exists."
+      status: covered
+      source_status: "Covered: local LookingGlass live-studio runtime records synchronized facilitator session, participant orchestration, and handoff evidence"
+      reason: "LookingGlass exposes local live workshop studio routes for server-authoritative facilitator snapshots, participant roster orchestration, handoff packets, and runtime-parity liveStudioSupported evidence."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/runtime-parity-evidence.test.ts test/server.test.ts
+      expected_behavior: "LookingGlass starts a synchronized facilitator live studio, updates participant orchestration, creates a handoff packet, and reports liveStudioSupported runtime evidence."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass unsupported status remains explicit until implementation exists
+        - LookingGlass command passes when local live studio support is claimed
         - behavior evidence names user-visible result, not implementation details
   - scenario: vr-camera-perspective-tour
     area: "Camera"
@@ -939,9 +941,9 @@ rows:
     looking_glass:
       status: covered
       source_status: "Covered for web gallery review and rubric recording evidence"
-      reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and explicit live-studio unsupported evidence."
+      reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and local live-studio support evidence."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
-      expected_behavior: "Class reviews web project items in a gallery walk and uses rubric evidence to record feedback while live studio remains unsupported."
+      expected_behavior: "Class reviews web project items in a gallery walk and uses rubric evidence to record feedback with local live-studio support evidence."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -956,16 +958,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario teacher-community-sharing-loop --run-id parity-teacher-community-sharing-loop --runs-dir runs --timeout 1800 --json
       expected_behavior: "Teacher packages a reusable classroom resource and checks community-sharing metadata."
     looking_glass:
-      status: partial
-      source_status: "Partial: package/share metadata evidence is covered; missing deployed community platform evidence"
-      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence; missing evidence includes a deployed community platform."
+      status: covered
+      source_status: "Covered: package/share metadata and local LookingGlass community platform evidence are recorded without claiming external cloud deployment"
+      reason: "LookingGlass web packages carry teacher community-sharing metadata in share.json and validation evidence, and /api/community/shares records validated teacher-share packages in the alice-web-local-community platform store."
       command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export.test.ts test/server.test.ts
-      expected_behavior: "Teacher community-sharing metadata is packaged, validated, and regenerated as share artifacts."
+      expected_behavior: "Teacher community-sharing metadata is packaged, validated, regenerated as share artifacts, and recorded in local community platform evidence."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when package/share metadata support is claimed
-        - Community platform deployment remains explicitly out of scope
+        - LookingGlass command passes when package/share metadata and local community platform support are claimed
+        - External cloud community deployment remains explicitly out of scope
         - behavior evidence names user-visible result, not implementation details
   - scenario: neighborhood-data-story
     area: "Data storytelling"
@@ -1105,7 +1107,7 @@ closure_families:
       - behavior package import
       - behavior persistence after import
   - scenario: teacher-community-sharing-loop
-    role: row-specific LookingGlass teacher share metadata closure
+    role: row-specific LookingGlass teacher share metadata and community platform closure
     closure_tests:
       - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-export.test.ts test/server.test.ts
     scenario_bindings:
@@ -1113,4 +1115,17 @@ closure_families:
     evidence_assertions:
       - alice-web.teacher-share/v1
       - teacher-share-metadata
+      - community-platform-recorded
       - sha256
+  - scenario: workshop-facilitator-live-studio
+    role: row-specific LookingGlass live workshop studio closure
+    closure_tests:
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/runtime-parity-evidence.test.ts test/server.test.ts
+    scenario_bindings:
+      - workshop-facilitator-live-studio
+      - classroom-gallery-walk-and-rubric
+    evidence_assertions:
+      - alice.live-workshop-studio/v1
+      - server-authoritative-snapshot
+      - liveStudioSupported true
+      - handoffReady
