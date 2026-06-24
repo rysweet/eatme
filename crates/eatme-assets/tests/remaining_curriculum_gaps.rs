@@ -112,8 +112,9 @@ fn vr_camera_lookingglass_wording_is_bounded_to_api_evidence() {
     let overstated_vr_claim = format!("{}{}", "VR-style camera movement ", "journey");
 
     assert!(
-        combined.contains("bounded browser camera comfort API evidence"),
-        "LookingGlass VR camera wording should be bounded to API evidence"
+        combined.contains("bounded browser WebXR locomotion API evidence")
+            && combined.contains("true headset/native VR remains explicitly unsupported"),
+        "LookingGlass VR camera wording should be bounded to browser API evidence"
     );
     assert!(
         !combined.contains(&overstated_browser_claim) && !combined.contains(&overstated_vr_claim),
