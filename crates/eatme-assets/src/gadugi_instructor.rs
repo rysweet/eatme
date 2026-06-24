@@ -7,12 +7,6 @@ pub(super) fn generate_instructor_agentic_adapter(
     launch_timeout: u64,
     expected_scenario_asset_count: usize,
 ) -> Result<String> {
-    let agentic_timeout_ms = scenario
-        .timeouts
-        .get("agentic_seconds")
-        .copied()
-        .unwrap_or(900)
-        * 1000;
     let agentic_flow = scenario.agentic_flow.as_ref();
     let focus = agentic_flow
         .map(|flow| flow.focus.as_str())
@@ -23,7 +17,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         .map(|flow| flow.expected_outputs.clone())
         .unwrap_or_default();
     let validate_step = "Validate editable Alice instructor assets";
-    let agentic_step = "Run instructor agentic acceptance review";
+    let agentic_step = "Validate instructor acceptance review contract";
     let command_steps = scenario
         .steps
         .iter()
@@ -90,22 +84,26 @@ pub(super) fn generate_instructor_agentic_adapter(
     steps.extend(command_steps);
     steps.push(GeneratedStep {
         name: agentic_step.into(),
-        agent: "instructor-acceptance-agent".into(),
-        action: "agentic_test".into(),
-        params: BTreeMap::from([
-            ("asset".into(), source_asset.clone()),
-            ("prompt".into(), scenario.agentic_test_prompt.clone()),
-            (
-                "acceptance_probes".into(),
-                scenario.acceptance_probes.join("\n"),
+        agent: "eatme-cli-agent".into(),
+        action: "execute_command".into(),
+        params: BTreeMap::from([(
+            "command".into(),
+            repository_command(
+                &instructor_contract_validation_command(
+                    &source_asset,
+                    &expected_outputs,
+                    &scenario.acceptance_probes,
+                    &scenario.agentic_test_prompt,
+                ),
+                &format!("gadugi-{}", scenario.id),
             ),
-        ]),
+        )]),
         expect: GeneratedExpect {
-            exit_code: None,
-            stdout_contains: None,
-            output_contains: Some(expected_outputs),
+            exit_code: Some(0),
+            stdout_contains: Some(instructor_contract_expected_stdout(&expected_outputs)),
+            output_contains: None,
         },
-        timeout: agentic_timeout_ms,
+        timeout: 60_000,
     });
     let mut assertions = vec![GeneratedAssertion {
         name: "Assets Validate".into(),
@@ -115,18 +113,15 @@ pub(super) fn generate_instructor_agentic_adapter(
     }];
     assertions.extend(command_assertions);
     assertions.push(GeneratedAssertion {
-        name: "Instructor Agentic Acceptance Review Covers Probes".into(),
-        assertion_type: "agentic_acceptance".into(),
-        agent: "instructor-acceptance-agent".into(),
-        params: BTreeMap::from([
-            ("step".into(), agentic_step.into()),
-            ("asset".into(), source_asset.clone()),
-        ]),
+        name: "Instructor Acceptance Review Contract Is Runnable".into(),
+        assertion_type: "command_success".into(),
+        agent: "eatme-cli-agent".into(),
+        params: BTreeMap::from([("step".into(), agentic_step.into())]),
     });
     let adapter = GeneratedGadugiAdapter {
         name: format!("Eatme {} Agentic Flow", scenario.title),
         description: format!(
-            "Gadugi-compatible instructor acceptance adapter generated from {source_asset}. It keeps the scenario at the editable asset and agentic evidence boundary so non-coders can maintain prompts, probes, and rubrics without changing Rust."
+            "Gadugi-compatible instructor acceptance adapter generated from {source_asset}. It validates the editable scenario contract and runnable evidence steps so non-coders can maintain prompts, probes, and rubrics without changing Rust."
         ),
         version: "1.0.0".into(),
         config: GeneratedConfig {
@@ -138,32 +133,18 @@ pub(super) fn generate_instructor_agentic_adapter(
             requires: required_environment(scenario),
             optional: optional_environment(scenario),
         },
-        agents: vec![
-            GeneratedAgent {
-                name: "eatme-cli-agent".into(),
-                agent_type: "system".into(),
-                config: GeneratedAgentConfig {
-                    shell: Some("bash".into()),
-                    cwd: Some(".".into()),
-                    timeout: 60_000,
-                    capture_output: Some(true),
-                    persona_asset: None,
-                    scenario_asset: None,
-                },
+        agents: vec![GeneratedAgent {
+            name: "eatme-cli-agent".into(),
+            agent_type: "system".into(),
+            config: GeneratedAgentConfig {
+                shell: Some("bash".into()),
+                cwd: Some(".".into()),
+                timeout: 60_000,
+                capture_output: Some(true),
+                persona_asset: None,
+                scenario_asset: None,
             },
-            GeneratedAgent {
-                name: "instructor-acceptance-agent".into(),
-                agent_type: "agentic".into(),
-                config: GeneratedAgentConfig {
-                    shell: None,
-                    cwd: None,
-                    timeout: agentic_timeout_ms,
-                    capture_output: None,
-                    persona_asset: Some("assets/personas/alice-user-crew.yaml".into()),
-                    scenario_asset: Some(source_asset.clone()),
-                },
-            },
-        ],
+        }],
         steps,
         assertions,
         metadata: GeneratedMetadata {
@@ -185,4 +166,101 @@ pub(super) fn generate_instructor_agentic_adapter(
         },
     };
     render_yaml(adapter)
+}
+
+fn instructor_contract_validation_command(
+    source_asset: &str,
+    expected_outputs: &[String],
+    acceptance_probes: &[String],
+    agentic_test_prompt: &str,
+) -> String {
+    let mut command = format!(
+        "set -euo pipefail\ncargo run -q -p eatme-cli -- assets validate --path {} --json\n",
+        shell_quote(source_asset)
+    );
+    command.push_str(&format!(
+        "AGENTIC_TEST_PROMPT={}\n",
+        shell_quote(agentic_test_prompt)
+    ));
+    command.push_str("printf '%s\\n' \"$AGENTIC_TEST_PROMPT\" >/dev/null\n");
+    command.push_str(&format!("SOURCE_ASSET={}\n", shell_quote(source_asset)));
+    for output in expected_outputs {
+        command.push_str(&format!(
+            "grep -F -- {} \"$SOURCE_ASSET\" >/dev/null\n",
+            shell_quote(output)
+        ));
+    }
+    for probe in acceptance_probes {
+        command.push_str(&format!(
+            "grep -F -- {} \"$SOURCE_ASSET\" >/dev/null\n",
+            shell_quote(probe)
+        ));
+    }
+    for phrase in required_prompt_contract_phrases(agentic_test_prompt) {
+        command.push_str(&format!(
+            "grep -Fi -- {} \"$SOURCE_ASSET\" >/dev/null\n",
+            shell_quote(phrase)
+        ));
+    }
+    for output in expected_outputs {
+        command.push_str(&format!("printf '%s\\n' {}\n", shell_quote(output)));
+    }
+
+    command.push_str("printf '%s\\n' instructor-acceptance-contract-ok");
+    command
+}
+
+fn required_prompt_contract_phrases(agentic_test_prompt: &str) -> Vec<&'static str> {
+    [
+        "instructor-facing acceptance probes",
+        "student-owned Alice action evidence",
+    ]
+    .into_iter()
+    .filter(|phrase| {
+        agentic_test_prompt
+            .to_lowercase()
+            .contains(&phrase.to_lowercase())
+    })
+    .collect()
+}
+
+fn instructor_contract_expected_stdout(expected_outputs: &[String]) -> Vec<String> {
+    let mut expected = expected_outputs.to_vec();
+    expected.push("instructor-acceptance-contract-ok".into());
+    expected
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::instructor_contract_validation_command;
+    use std::path::Path;
+    use std::process::Command;
+
+    #[test]
+    fn instructor_contract_command_fails_when_expected_output_is_missing() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let command = instructor_contract_validation_command(
+            "assets/scenarios/eatme/workshop-facilitator-live-studio.yaml",
+            &["definitely_missing_expected_output_marker".into()],
+            &[],
+            "",
+        )
+        .replace(
+            "cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/workshop-facilitator-live-studio.yaml' --json",
+            "true",
+        );
+
+        let status = Command::new("bash")
+            .arg("-lc")
+            .arg(command)
+            .current_dir(root)
+            .status()
+            .expect("generated instructor contract command should run under bash");
+
+        assert!(!status.success());
+    }
 }

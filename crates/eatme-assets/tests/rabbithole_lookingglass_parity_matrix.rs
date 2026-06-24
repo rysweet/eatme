@@ -302,6 +302,7 @@ fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tes
             "alice-2-migration-bridge".to_string(),
             "modified-class-portability".to_string(),
             "teacher-community-sharing-loop".to_string(),
+            "workshop-facilitator-live-studio".to_string(),
         ])
     );
 
@@ -384,6 +385,7 @@ fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tes
         "alice-2-migration-bridge",
         "modified-class-portability",
         "teacher-community-sharing-loop",
+        "workshop-facilitator-live-studio",
     ] {
         let family = family_by_id
             .get(direct_family)

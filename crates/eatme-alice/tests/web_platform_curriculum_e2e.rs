@@ -23,6 +23,14 @@ fn web_base_url() -> String {
     normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
 }
 
+fn local_api_token() -> String {
+    env::var("ALICE_LOCAL_API_TOKEN")
+        .ok()
+        .map(|token| token.trim().to_string())
+        .filter(|token| !token.is_empty())
+        .unwrap_or_else(|| "gadugi-local-api-token".into())
+}
+
 fn normalize_web_base_url(raw_url: Option<String>) -> String {
     raw_url
         .map(|url| url.trim().to_string())
@@ -35,6 +43,18 @@ fn http_client() -> ureq::Agent {
         .timeout_connect(Duration::from_secs(5))
         .timeout(Duration::from_secs(30))
         .build()
+}
+
+fn authed_post(client: &ureq::Agent, url: &str) -> ureq::Request {
+    client
+        .post(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
+}
+
+fn authed_get(client: &ureq::Agent, url: &str) -> ureq::Request {
+    client
+        .get(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
 }
 
 // ── Response types ──────────────────────────────────────────────────
@@ -166,7 +186,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::Launch { template } => {
-                match client.post(&format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
+                match authed_post(client, &format!("{base}/api/launch")).send_json(ureq::json!({ "template": template })) {
                     Ok(resp) => match resp.into_json::<LaunchResponse>() {
                         Ok(r) => { last_count = r.scene_object_count; StepResult { name: format!("launch({template})"), ok: matches!(r.status.as_str(), "ok" | "launched"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: format!("launch({template})"), ok: false, msg: e.to_string() },
@@ -175,7 +195,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::AddObject { class_name, instance_name } => {
-                match client.post(&format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "className": class_name, "name": instance_name })) {
+                match authed_post(client, &format!("{base}/api/scene/add-object")).send_json(ureq::json!({ "className": class_name, "name": instance_name })) {
                     Ok(resp) => match resp.into_json::<AddObjectResponse>() {
                         Ok(r) => { last_count = r.scene_field_count_after; StepResult { name: format!("add({class_name})"), ok: matches!(r.status.as_str(), "ok" | "added"), msg: format!("after={}", r.scene_field_count_after) } },
                         Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
@@ -184,7 +204,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::EditProcedure { class_name, method_name, statements } => {
-                match client.post(&format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
+                match authed_post(client, &format!("{base}/api/code/edit-procedure")).send_json(ureq::json!({ "procedureSelector": format!("scene.{method_name}"), "editSpec": build_edit_spec(class_name, method_name, statements) })) {
                     Ok(resp) => match resp.into_json::<EditProcedureResponse>() {
                         Ok(r) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: matches!(r.status.as_str(), "ok" | "proved"), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("edit({class_name}.{method_name})"), ok: false, msg: e.to_string() },
@@ -193,7 +213,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::RunWorld => {
-                match client.post(&format!("{base}/api/world/run")).send_json(ureq::json!({})) {
+                match authed_post(client, &format!("{base}/api/world/run")).send_json(ureq::json!({})) {
                     Ok(resp) => match resp.into_json::<RunWorldResponse>() {
                         Ok(r) => { last_count = r.scene_object_count; StepResult { name: "run".into(), ok: matches!(r.status.as_str(), "ok" | "completed"), msg: format!("objects={}", r.scene_object_count) } },
                         Err(e) => StepResult { name: "run".into(), ok: false, msg: e.to_string() },
@@ -202,7 +222,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::Save { path } => {
-                match client.post(&format!("{base}/api/project/save")).send_json(ureq::json!({ "targetPath": path })) {
+                match authed_post(client, &format!("{base}/api/project/save")).send_json(ureq::json!({ "targetPath": path })) {
                     Ok(resp) => match resp.into_json::<SaveResponse>() {
                         Ok(r) => {
                             if matches!(r.status.as_str(), "ok" | "saved") {
@@ -229,7 +249,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::DesignProcessEvidence => {
-                match client.post(&format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
+                match authed_post(client, &format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let phases: Vec<_> = value
@@ -292,7 +312,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 if event_type == "keyPress" || event_type == "keyPressed" {
                     payload["key"] = serde_json::json!("SPACE");
                 }
-                match client.post(&format!("{base}/api/events/register")).send_json(payload) {
+                match authed_post(client, &format!("{base}/api/events/register")).send_json(payload) {
                     Ok(resp) => match resp.into_json::<EventResponse>() {
                         Ok(r) => StepResult { name: format!("register({event_type})"), ok: r.status.as_deref() == Some("ok") || r.registration_id.is_some(), msg: "ok".into() },
                         Err(e) => StepResult { name: format!("register({event_type})"), ok: false, msg: e.to_string() },
@@ -301,7 +321,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::ExpectError { name, endpoint, body, expected_status, expected_message } => {
-                match client.post(&format!("{base}{endpoint}")).send_json(body.clone()) {
+                match authed_post(client, &format!("{base}{endpoint}")).send_json(body.clone()) {
                     Ok(resp) => StepResult {
                         name: name.clone(),
                         ok: false,
@@ -323,7 +343,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::CameraComfortEvidence => {
-                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let ok = value.get("schema_version").and_then(Value::as_str)
@@ -339,7 +359,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::VrNativeBoundaryEvidence => {
-                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let browser_session = value
@@ -352,20 +372,47 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                                 .and_then(|session| session.get("locomotionMode"))
                                 .and_then(Value::as_str)
                                 .unwrap_or_default();
-                            let ok = browser_session.is_some()
-                                && playtest.is_some()
-                                && matches!(
-                                    locomotion_mode,
-                                    "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
-                                )
-                                && playtest
-                                    .and_then(|boundary| boundary.get("truePlayerComfortPlaytestSupported"))
-                                    .and_then(Value::as_bool)
-                                    == Some(false)
-                                && playtest
-                                    .and_then(|boundary| boundary.get("revisionLoopEvidence"))
-                                    .and_then(Value::as_str)
-                                    == Some("not-observed")
+                            let evidence_codes: Vec<_> = value
+                                .get("evidenceCodes")
+                                .and_then(Value::as_array)
+                                .map(|items| items.iter().filter_map(Value::as_str).collect())
+                                .unwrap_or_default();
+                            let comfort_checks = value.get("comfortChecks").and_then(Value::as_object);
+                            let browser_status = value
+                                .get("browserWebXrStatus")
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let browser_boundary_ok = browser_session
+                                .map(|_| {
+                                    matches!(
+                                        locomotion_mode,
+                                        "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
+                                    )
+                                })
+                                .unwrap_or(false);
+                            let playtest_boundary_ok = playtest
+                                .map(|boundary| {
+                                    boundary
+                                        .get("truePlayerComfortPlaytestSupported")
+                                        .and_then(Value::as_bool)
+                                        == Some(false)
+                                        && boundary
+                                            .get("revisionLoopEvidence")
+                                            .and_then(Value::as_str)
+                                            == Some("not-observed")
+                                })
+                                .unwrap_or(false);
+                            let comfort_boundary_ok = comfort_checks
+                                .map(|checks| {
+                                    checks.get("noForcedHeadset").and_then(Value::as_bool) == Some(true)
+                                        && checks.get("stableHorizon").and_then(Value::as_bool) == Some(true)
+                                })
+                                .unwrap_or(false);
+                            let ok = browser_boundary_ok
+                                && playtest_boundary_ok
+                                && comfort_boundary_ok
+                                && matches!(browser_status, "available" | "unavailable" | "unknown")
+                                && evidence_codes.contains(&"true-vr-unsupported")
                                 && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
                                 && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
                             StepResult { name: "vr-native-boundary-evidence".into(), ok, msg: value.to_string() }
@@ -376,7 +423,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::AccessibilityCaptionEvidence => {
-                match client.get(&format!("{base}/api/accessibility/rescue-camera-captions")).call() {
+                match authed_get(client, &format!("{base}/api/accessibility/rescue-camera-captions")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let caption_ids: Vec<_> = value
@@ -406,7 +453,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::GalleryWalkRubricEvidence => {
-                match client.get(&format!("{base}/api/review/gallery-walk-rubric")).call() {
+                match authed_get(client, &format!("{base}/api/review/gallery-walk-rubric")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let rubric_ids: Vec<_> = value
@@ -430,8 +477,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                             let ok = value.get("schema_version").and_then(Value::as_str)
                                     == Some("alice.gallery-walk-rubric-evidence/v1")
                                 && value.get("reviewWorkflowSupported").and_then(Value::as_bool) == Some(true)
-                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(true)
-                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("rubricRecordingSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("liveStudioSupported").and_then(Value::as_bool) == Some(true)
                                 && value.get("galleryItemCount").and_then(Value::as_u64).unwrap_or_default() >= 1
                                 && has_review_prompt
                                 && rubric_ids.contains(&"visible-world")

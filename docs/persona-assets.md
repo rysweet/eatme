@@ -50,7 +50,8 @@ For teacher-community sharing coverage, use
 `assets/scenarios/eatme/teacher-community-sharing-loop.yaml` and its generated
 Gadugi adapter. The scenario connects the teacher-community curator persona to a
 teacher-facing share card, classroom handoff note, and remix feedback prompt
-without claiming a deployed community platform.
+with local LookingGlass community platform evidence and without claiming an
+external cloud community deployment.
 
 ## QA-team outside-in test shape
 
@@ -247,8 +248,10 @@ The persona crew also defines these additional outside-in coverage areas:
 
 Each committed asset exposes `resource_basis`, `agentic_test_prompt`,
 `acceptance_criteria`, `acceptance_probes`, `rubric`, `avoid`, and expected
-agentic outputs as YAML. The paired gadugi adapters run asset validation and an
-`agentic_test` step instead of owning Alice desktop runtime details.
+agentic outputs as YAML. The paired Gadugi adapters run asset validation and
+runnable `execute_command` contract checks for the editable prompt/probe/output
+evidence instead of using unsupported `agentic_test` actions or owning Alice
+desktop runtime details.
 
 ## Creative scenario roster
 

@@ -156,7 +156,7 @@ Alice.org HowTo coverage.
 | Narrative | `mythic-choice-event-tree` | Student builds a branching story with event choices and checks that each choice reaches the expected scene result. | Covered | Covered |
 | Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Covered: bounded LookingGlass REST evidence records plan, build, playtest, revise, and review phases |
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
-| Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
+| Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Covered: local LookingGlass live-studio runtime records synchronized facilitator session, participant orchestration, and handoff evidence |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |
 | VR | `vr-camera-locomotion-journey` | Student records VR camera comfort planning and checks bounded movement-comfort evidence. | Covered | Partial: bounded browser camera comfort API evidence is covered; missing headset/native VR locomotion evidence |
 | VR | `vr-player-comfort-playtest` | Student uses VR/player comfort guidance to collect observed notes before making playtest or revision claims. | Covered | Partial: bounded browser WebXR/player comfort boundary evidence is covered; missing true headset player comfort sessions and revision-loop evidence |
@@ -176,8 +176,8 @@ Alice.org HowTo coverage.
 | Instructor review | `instructor-student-outcomes-rubric` | Instructor reviews student outcomes against a rubric and records concept, process, creativity, and reflection evidence. | Covered | Covered |
 | Student review | `student-reflection-artifact-review` | Student reviews a saved artifact, explains expected versus actual behavior, and records revision notes. | Covered | Covered |
 | Sharing | `student-artifact-package-share-evidence` | Student packages project, screenshot, notes, and share evidence for review. | Covered | Covered |
-| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered for web gallery review and rubric recording evidence |
-| Sharing | `teacher-community-sharing-loop` | Teacher packages a reusable classroom resource and checks community-sharing metadata. | Covered | Partial: package/share metadata evidence is covered; missing deployed community platform evidence |
+| Sharing | `classroom-gallery-walk-and-rubric` | Class reviews projects in a gallery walk and uses a rubric to record feedback. | Covered | Covered for web gallery review, rubric criteria, and live studio support evidence; rubric recording remains unsupported |
+| Sharing | `teacher-community-sharing-loop` | Teacher packages a reusable classroom resource and checks community-sharing metadata. | Covered | Covered: package/share metadata and local LookingGlass community platform evidence are recorded without claiming external cloud deployment |
 | Data storytelling | `neighborhood-data-story` | Student turns local data into an Alice story and verifies that values drive scene behavior. | Covered | Covered |
 
 ## Adding or updating coverage

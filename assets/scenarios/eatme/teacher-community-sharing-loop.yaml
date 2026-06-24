@@ -10,7 +10,7 @@ resource_basis:
 - name: Alice.org Alice 3 resource categories
   url: https://www.alice.org/resources/alice-3/
   use: Use lessons, exercises, projects, how-tos, curriculums, and classroom resources as remixable activity sources.
-purpose: Prepare a teacher-community share card and classroom handoff note for one Alice learning activity so another teacher can understand the audience, setup, timing, student evidence, attribution, classroom constraints, and remix feedback prompts. This editable scenario supports responsible sharing of teacher-facing activity notes; it is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+purpose: Prepare a teacher-community share card and classroom handoff note for one Alice learning activity so another teacher can understand the audience, setup, timing, student evidence, attribution, classroom constraints, remix feedback prompts, and local LookingGlass community platform publication evidence. This editable scenario supports responsible sharing of teacher-facing activity notes; it is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not an external cloud community platform.
 personas:
   instructors:
   - teacher-community-curator
@@ -26,7 +26,7 @@ adapter:
   - lookingglass
 agentic_flow:
   focus: teacher-community-sharing-loop
-  instructor_goal: Package one Alice learning activity for teacher community sharing with a share card, classroom handoff note, attribution, editable scenario and persona links, setup constraints, student evidence, and remix feedback prompts.
+  instructor_goal: Package one Alice learning activity for teacher community sharing with a share card, classroom handoff note, attribution, editable scenario and persona links, setup constraints, student evidence, remix feedback prompts, and LookingGlass local community publication evidence.
   prompt_source: assets/scenarios/eatme/teacher-community-sharing-loop.yaml#agentic_test_prompt
   non_coder_editable:
   - resource_basis
@@ -40,14 +40,14 @@ agentic_flow:
   - teacher_community_share_card
   - classroom_handoff_note
   - remix_feedback_prompt
-agentic_test_prompt: Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, and remix feedback prompt grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, and two feedback questions for future remix. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
+agentic_test_prompt: Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, remix feedback prompt, and LookingGlass local community publication evidence grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, two feedback questions for future remix, and the /api/community/shares evidence boundary. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not an external cloud community platform.
 acceptance_criteria:
 - given: a teacher wants to share an Alice activity with another classroom
   when: the agent prepares the teacher-community share card
   then: the output names the audience, prerequisites, timing, classroom constraints, attribution, editable scenario and persona links, and student evidence
 - given: another teacher needs to run or adapt the activity later
   when: the classroom handoff note is reviewed
-  then: the note separates setup assumptions, learner-facing evidence, accessibility considerations, and adaptation choices without claiming a deployed platform
+  then: the note separates setup assumptions, learner-facing evidence, accessibility considerations, adaptation choices, and local community publication evidence without claiming an external cloud platform
 - given: teachers exchange feedback after using the activity
   when: the remix feedback prompt is applied
   then: the feedback asks for implementation notes, learner evidence, and suggested revisions rather than popularity ranking or automated scoring
@@ -56,9 +56,10 @@ acceptance_probes:
 - Classroom handoff note tells the next teacher what to prepare, what learners produce, what support signals to watch, and what can be adapted.
 - Remix feedback prompt asks for classroom fit, learner evidence, accessibility notes, and one suggested revision.
 - Output keeps the sharing artifact teacher-facing and editable without requiring Rust changes or hidden implementation details.
-- Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed community platform.
-- LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming a deployed community platform.
+- Output states the scenario is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not an external cloud community platform.
+- LookingGlass package evidence writes alice-web.teacher-share/v1 metadata to share.json and validates teacher-share-metadata without claiming an external cloud community platform.
 - LookingGlass /api/project/export/web-package and /api/project/share preserve teacher-share metadata in the package/share artifacts.
+- LookingGlass /api/community/shares validates a web package and records alice-web-local-community publication evidence with community-platform-recorded and teacher-share-metadata evidence.
 rubric:
 - criterion: Share card usefulness
   evidence:
@@ -76,7 +77,7 @@ avoid:
 - Exact user interface coordinates, menu paths, or private implementation details.
 - Treating shared materials as final publication with no classroom adaptation notes.
 - Popularity ranking, automated creative scoring, learner-world grading, or complete Alice coverage claims.
-- Claims that a teacher community platform has been deployed.
+- Claims that an external cloud teacher community platform has been deployed.
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
@@ -94,10 +95,11 @@ steps:
   - share.json contains alice-web.teacher-share/v1 metadata
   - validation evidence includes teacher-share-metadata
   - generated share artifacts keep package filename, size, and sha256 linkage
+  - /api/community/shares records alice-web-local-community evidence for a validated teacher share package
 timeouts:
   agentic_seconds: 900
 artifacts:
   teacher_community_share_card: agentic://instructor/teacher-community-share-card
   classroom_handoff_note: agentic://instructor/classroom-handoff-note
   remix_feedback_prompt: agentic://instructor/remix-feedback-prompt
-unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full UI automation, creative assessment, learner-world grading, complete Alice coverage, or a deployed community platform.
+unsupported_policy: If the agent cannot read this editable YAML, the persona crew asset, or the cited Alice.org resource basis, fail visibly and report the missing evidence. Do not replace instructor judgment with brittle user interface assertions. Do not claim this scenario is full UI automation, creative assessment, learner-world grading, complete Alice coverage, or an external cloud community platform.

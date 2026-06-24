@@ -409,6 +409,7 @@ pub(crate) struct GadugiStepExpect {
     pub(crate) exit_code: Option<i64>,
     #[serde(default)]
     pub(crate) stdout_contains: Vec<String>,
+    #[allow(dead_code)]
     #[serde(default)]
     pub(crate) output_contains: Vec<String>,
 }
