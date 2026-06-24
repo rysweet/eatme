@@ -45,6 +45,8 @@ enum Commands {
 enum AssetsCommand {
     Validate(AssetsValidateArgs),
     GenerateGadugi(AssetsGenerateGadugiArgs),
+    #[command(alias = "instructor-evidence")]
+    InstructorAgenticEvidence(InstructorEvidenceArgs),
     GradingReport(AssetsGradingReportArgs),
 }
 
@@ -112,6 +114,14 @@ struct AssetsGenerateGadugiArgs {
     root: PathBuf,
     #[arg(long)]
     check: bool,
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Args)]
+struct InstructorEvidenceArgs {
+    #[arg(long)]
+    path: PathBuf,
     #[arg(long)]
     json: bool,
 }
@@ -265,6 +275,12 @@ fn main() -> Result<()> {
             if !report.passed {
                 bail!("gadugi adapter generation check failed");
             }
+        }
+        Commands::Assets {
+            command: AssetsCommand::InstructorAgenticEvidence(args),
+        } => {
+            let report = eatme_assets::render_instructor_agentic_evidence(&args.path)?;
+            print_result(args.json, &report)?;
         }
         Commands::Assets {
             command: AssetsCommand::GradingReport(args),

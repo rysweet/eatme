@@ -16,6 +16,11 @@ pub(super) fn generate_instructor_agentic_adapter(
     let expected_outputs = agentic_flow
         .map(|flow| flow.expected_outputs.clone())
         .unwrap_or_default();
+    let evidence_command = scenario
+        .steps
+        .iter()
+        .find(|step| step.id == "agentic-instructor-review")
+        .and_then(instructor_evidence_command);
     let validate_step = "Validate editable Alice instructor assets";
     let agentic_step = "Validate instructor acceptance review contract";
     let command_steps = scenario
@@ -23,6 +28,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         .iter()
         .filter(|step| {
             step.id != "validate-assets"
+                && step.id != "agentic-instructor-review"
                 && !step
                     .command
                     .trim_start()
@@ -43,6 +49,7 @@ pub(super) fn generate_instructor_agentic_adapter(
         .iter()
         .filter(|step| {
             step.id != "validate-assets"
+                && step.id != "agentic-instructor-review"
                 && !step
                     .command
                     .trim_start()
@@ -94,6 +101,7 @@ pub(super) fn generate_instructor_agentic_adapter(
                     &expected_outputs,
                     &scenario.acceptance_probes,
                     &scenario.agentic_test_prompt,
+                    evidence_command,
                 ),
                 &format!("gadugi-{}", scenario.id),
             ),
@@ -173,11 +181,30 @@ fn instructor_contract_validation_command(
     expected_outputs: &[String],
     acceptance_probes: &[String],
     agentic_test_prompt: &str,
+    evidence_command: Option<&str>,
 ) -> String {
     let mut command = format!(
         "set -euo pipefail\ncargo run -q -p eatme-cli -- assets validate --path {} --json\n",
         shell_quote(source_asset)
     );
+    if let Some(evidence_command) = evidence_command {
+        command.push_str(&format!(
+            "EVIDENCE_JSON=$({})\nprintf '%s\\n' \"$EVIDENCE_JSON\"\n",
+            evidence_command.trim()
+        ));
+        command.push_str(&format!(
+            "printf '%s\\n' \"$EVIDENCE_JSON\" | grep -F -- {} >/dev/null\n",
+            shell_quote("\"status\": \"covered\"")
+        ));
+        for output in expected_outputs {
+            command.push_str(&format!(
+                "printf '%s\\n' \"$EVIDENCE_JSON\" | grep -F -- {} >/dev/null\n",
+                shell_quote(&format!("\"{output}\": {{"))
+            ));
+        }
+        command.push_str("printf '%s\\n' instructor-acceptance-contract-ok");
+        return command;
+    }
     command.push_str(&format!(
         "AGENTIC_TEST_PROMPT={}\n",
         shell_quote(agentic_test_prompt)
@@ -208,6 +235,13 @@ fn instructor_contract_validation_command(
 
     command.push_str("printf '%s\\n' instructor-acceptance-contract-ok");
     command
+}
+
+fn instructor_evidence_command(step: &EatmeScenarioStep) -> Option<&str> {
+    let command = step.command.trim();
+    command
+        .contains("cargo run -q -p eatme-cli -- assets instructor-agentic-evidence ")
+        .then_some(command)
 }
 
 fn required_prompt_contract_phrases(agentic_test_prompt: &str) -> Vec<&'static str> {
@@ -248,6 +282,7 @@ mod tests {
             &["definitely_missing_expected_output_marker".into()],
             &[],
             "",
+            None,
         )
         .replace(
             "cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/workshop-facilitator-live-studio.yaml' --json",

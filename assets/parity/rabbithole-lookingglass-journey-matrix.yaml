@@ -49,10 +49,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor prepares lab machines, confirms Alice can create a starter world, and saves setup evidence."
     rabbit_hole:
-      status: partial
-      source_status: "Partial: editable scenario asset validates; missing instructor agentic checklist/fallback/student-note output evidence"
-      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
-      expected_behavior: "Instructor classroom setup asset validates; real Alice readiness remains an input and agentic checklist/fallback/student-note output is not claimed by this command."
+      status: covered
+      source_status: "Covered: editable scenario validates and runnable instructor agentic checklist/fallback/student-note output evidence is emitted without claiming desktop launch success"
+      command: cargo run -q -p eatme-cli -- assets instructor-agentic-evidence --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
+      expected_behavior: "Instructor classroom setup evidence emits setup_checklist, fallback_plan, and student_setup_note outputs while desktop Alice readiness remains an input and desktop launch success is not claimed."
     looking_glass:
       status: covered
       source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
@@ -61,7 +61,7 @@ rows:
       expected_behavior: "Instructor verifies LookingGlass health/config, setup preflight, template availability, web project creation, and a classroom readiness handoff while desktop-only boundaries remain explicit."
     closure:
       required:
-        - RabbitHole editable scenario asset validates; missing agentic checklist/fallback/student-note output remains explicitly partial
+        - RabbitHole instructor agentic evidence command emits checklist, fallback, and student-note output without claiming desktop launch success
         - LookingGlass command passes for the instructor-classroom-setup-readiness web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: instructor-student-launch-evidence-handoff

@@ -135,11 +135,17 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
         }
         let setup_readiness_instructor = matches!(
             scenario.as_str(),
-            "setup-preflight-ready-to-create"
-                | "instructor-classroom-setup-readiness"
-                | "instructor-student-launch-evidence-handoff"
+            "setup-preflight-ready-to-create" | "instructor-student-launch-evidence-handoff"
         );
-        if setup_readiness_instructor && scenario_kind == "instructor_agentic_flow" {
+        if scenario == "instructor-classroom-setup-readiness" {
+            if rabbit_hole_status != "covered"
+                || !rabbit_hole_command.contains("assets instructor-agentic-evidence --path")
+            {
+                failures.push(format!(
+                    "{scenario}: classroom setup RabbitHole closure must run instructor agentic evidence output"
+                ));
+            }
+        } else if setup_readiness_instructor && scenario_kind == "instructor_agentic_flow" {
             if rabbit_hole_status != "partial"
                 || !rabbit_hole_command.contains("assets validate --path")
             {
