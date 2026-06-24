@@ -85,6 +85,49 @@ struct TransformObjectResponse {
     status: String,
     #[serde(rename = "objectName")]
     object_name: String,
+    position: Vector3Response,
+    orientation: OrientationResponse,
+    size: SizeResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct Vector3Response {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct OrientationResponse {
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct SizeResponse {
+    width: f64,
+    height: f64,
+    depth: f64,
+}
+
+impl Vector3Response {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z) == expected
+    }
+}
+
+impl OrientationResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z, self.w) == expected
+    }
+}
+
+impl SizeResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.width, self.height, self.depth) == expected
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -233,8 +276,14 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         Ok(r) => StepResult {
                             name: format!("transform({object_name})"),
                             ok: matches!(r.status.as_str(), "ok" | "transformed")
-                                && r.object_name == *object_name,
-                            msg: r.status,
+                                && r.object_name == *object_name
+                                && r.position.matches_tuple(*position)
+                                && r.orientation.matches_tuple(*orientation)
+                                && r.size.matches_tuple(*size),
+                            msg: format!(
+                                "status={} object={} position={:?} orientation={:?} size={:?}",
+                                r.status, r.object_name, r.position, r.orientation, r.size
+                            ),
                         },
                         Err(e) => StepResult {
                             name: format!("transform({object_name})"),
@@ -1839,52 +1888,6 @@ fn concurrency_uses_do_together() {
 }
 
 #[test]
-fn arrays_uses_each_in_array() {
-    let (_, steps) = arrays();
-    assert!(steps.iter().any(|s| match s {
-        Step::EditProcedure { statements, .. } =>
-            statements.iter().any(|st| st.kind == "eachInArrayTogether"),
-        _ => false,
-    }));
-}
-
-#[test]
-fn camera_uses_camera_methods() {
-    let (_, steps) = camera_viewpoint();
-    assert!(steps.iter().any(|s| {
-        match s {
-            Step::EditProcedure { statements, .. } => statements
-                .iter()
-                .any(|st| st.method.as_deref().unwrap_or("").starts_with("camera.")),
-            _ => false,
-        }
-    }));
-}
-
-#[test]
-fn vr_camera_locomotion_records_bounded_comfort_evidence() {
-    let (_, steps) = vr_camera_locomotion_journey();
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::CameraComfortEvidence)),
-        "VR camera journey should prove web camera comfort evidence"
-    );
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
-        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
-    );
-    assert!(
-        !steps
-            .iter()
-            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
-        "VR camera journey must not claim unrelated review tooling"
-    );
-}
-
-#[test]
 fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
     let (_, steps) = vr_player_comfort_playtest();
     assert!(
@@ -1928,34 +1931,9 @@ fn live_vr_player_comfort_exercises_vr_boundary_api() {
 }
 
 #[test]
-fn accessibility_rescue_camera_captions_records_caption_evidence() {
-    let (_, steps) = accessibility_rescue_camera_captions();
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
-        "accessibility rescue scenario should prove browser caption evidence"
-    );
-    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
-}
-
-#[test]
 fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
     let (name, steps) = accessibility_rescue_camera_captions();
     assert_live_scenario(name, steps);
-}
-
-#[test]
-fn audio_uses_play_audio() {
-    let (_, steps) = audio();
-    assert!(steps.iter().any(|s| {
-        match s {
-            Step::EditProcedure { statements, .. } => statements
-                .iter()
-                .any(|st| st.method.as_deref().unwrap_or("").contains("playAudio")),
-            _ => false,
-        }
-    }));
 }
 
 #[path = "support/web_platform_curriculum_tail.rs"]

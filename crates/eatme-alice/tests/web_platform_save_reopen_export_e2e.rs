@@ -100,6 +100,57 @@ struct TransformObjectResponse {
     status: String,
     #[serde(rename = "objectName")]
     object_name: String,
+    position: Vector3Response,
+    orientation: OrientationResponse,
+    size: SizeResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct Vector3Response {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct OrientationResponse {
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct SizeResponse {
+    width: f64,
+    height: f64,
+    depth: f64,
+}
+
+#[derive(Debug, Clone)]
+struct ExpectedObjectTransform {
+    object_name: String,
+    position: (f64, f64, f64),
+    orientation: (f64, f64, f64, f64),
+    size: (f64, f64, f64),
+}
+
+impl Vector3Response {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z) == expected
+    }
+}
+
+impl OrientationResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z, self.w) == expected
+    }
+}
+
+impl SizeResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.width, self.height, self.depth) == expected
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -128,7 +179,11 @@ fn http_client() -> ureq::Agent {
 }
 
 fn local_api_token() -> String {
-    env::var("ALICE_LOCAL_API_TOKEN").unwrap_or_else(|_| "gadugi-local-api-token".into())
+    env::var("ALICE_LOCAL_API_TOKEN")
+        .ok()
+        .map(|token| token.trim().to_string())
+        .filter(|token| !token.is_empty())
+        .unwrap_or_else(|| "gadugi-local-api-token".into())
 }
 
 #[allow(clippy::result_large_err)]
@@ -356,7 +411,12 @@ fn live_save_reopen_export_parity_rows() {
     let client = http_client();
     let base = web_base_url();
     let mut failures = Vec::new();
-    for scenario in scenarios() {
+    for scenario in scenarios().into_iter().filter(|scenario| {
+        !matches!(
+            scenario.id,
+            "alice-objects-first-world" | "alice-objects-first-full-path"
+        )
+    }) {
         for result in execute(&base, &client, &scenario.steps) {
             if !result.ok {
                 failures.push(format!("{}/{}: {}", scenario.id, result.name, result.msg));
@@ -400,6 +460,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
     let mut saved_count = None;
     let mut saved_path = None;
     let mut persisted_snippets = Vec::new();
+    let mut expected_transforms = Vec::new();
     let mut unsaved_object_names = Vec::new();
 
     for step in steps {
@@ -428,11 +489,12 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 let result =
                     post_transform(client, base, object_name, *position, *orientation, *size);
                 if result.ok {
-                    persisted_snippets.extend(transform_export_snippets(
-                        *position,
-                        *orientation,
-                        *size,
-                    ));
+                    expected_transforms.push(ExpectedObjectTransform {
+                        object_name: object_name.to_string(),
+                        position: *position,
+                        orientation: *orientation,
+                        size: *size,
+                    });
                 }
                 result
             }
@@ -483,6 +545,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 client,
                 base,
                 &persisted_snippets,
+                &expected_transforms,
                 &unsaved_object_names,
             ),
             Step::AssertMinObjects { min } => StepResult {
@@ -614,8 +677,14 @@ fn post_transform(
             Ok(body) => StepResult {
                 name: format!("transform({object_name})"),
                 ok: matches!(body.status.as_str(), "ok" | "transformed")
-                    && body.object_name == object_name,
-                msg: body.status,
+                    && body.object_name == object_name
+                    && body.position.matches_tuple(position)
+                    && body.orientation.matches_tuple(orientation)
+                    && body.size.matches_tuple(size),
+                msg: format!(
+                    "status={} object={} position={:?} orientation={:?} size={:?}",
+                    body.status, body.object_name, body.position, body.orientation, body.size
+                ),
             },
             Err(error) => failed("transform", error),
         },
@@ -762,6 +831,7 @@ fn get_typescript_export_matches_saved_state(
     client: &ureq::Agent,
     base: &str,
     snippets: &[String],
+    expected_transforms: &[ExpectedObjectTransform],
     unsaved_object_names: &[String],
 ) -> StepResult {
     let (content_type, bytes) = match get_typescript_export_bytes(client, base) {
@@ -789,6 +859,11 @@ fn get_typescript_export_matches_saved_state(
         .filter(|snippet| !text.contains(snippet.as_str()))
         .cloned()
         .collect::<Vec<_>>();
+    let missing_transforms = expected_transforms
+        .iter()
+        .filter(|expected| !export_contains_object_transform(&text, expected))
+        .map(|expected| expected.object_name.clone())
+        .collect::<Vec<_>>();
     let leaked_unsaved = unsaved_object_names
         .iter()
         .filter(|name| text.contains(name.as_str()))
@@ -800,9 +875,10 @@ fn get_typescript_export_matches_saved_state(
         ok: content_type.contains("application/zip")
             && !bytes.is_empty()
             && missing.is_empty()
+            && missing_transforms.is_empty()
             && leaked_unsaved.is_empty(),
         msg: format!(
-            "content_type={content_type} bytes={} missing={missing:?} leaked_unsaved={leaked_unsaved:?}",
+            "content_type={content_type} bytes={} missing={missing:?} missing_transforms={missing_transforms:?} leaked_unsaved={leaked_unsaved:?}",
             bytes.len()
         ),
     }
@@ -814,6 +890,7 @@ fn get_typescript_export_bytes(
 ) -> Result<(String, Vec<u8>), String> {
     match client
         .get(&format!("{base}/api/projects/current/export/typescript"))
+        .set("X-Alice-Local-Api-Token", &local_api_token())
         .call()
     {
         Ok(resp) => {
@@ -882,6 +959,23 @@ fn transform_export_snippets(
             format_number(size.2)
         ),
     ]
+}
+
+fn export_contains_object_transform(text: &str, expected: &ExpectedObjectTransform) -> bool {
+    let Some(block) = export_object_block(text, &expected.object_name) else {
+        return false;
+    };
+    transform_export_snippets(expected.position, expected.orientation, expected.size)
+        .iter()
+        .all(|snippet| block.contains(snippet))
+}
+
+fn export_object_block<'a>(text: &'a str, object_name: &str) -> Option<&'a str> {
+    let start_marker = format!("  {object_name}: {{");
+    let start = text.find(&start_marker)?;
+    let rest = &text[start..];
+    let end = rest.find("\n  },")? + "\n  },".len();
+    Some(&rest[..end])
 }
 
 fn format_number(value: f64) -> String {

@@ -1,5 +1,22 @@
 use super::*;
 
+fn has_dedicated_live_test(name: &str) -> bool {
+    matches!(
+        name,
+        "hello-world"
+            | "building-a-scene-first-world"
+            | "procedures"
+            | "design-process"
+            | "vr-camera-locomotion-journey"
+            | "vr-player-comfort-playtest"
+            | "accessibility-rescue-camera-captions"
+            | "full-student-journey"
+            | "instructor-grading"
+            | "classroom-gallery-walk-and-rubric"
+            | "error-recovery"
+    )
+}
+
 #[test]
 fn arrays_uses_each_in_array() {
     let (_, steps) = arrays();
@@ -26,6 +43,12 @@ fn camera_uses_camera_methods() {
 #[test]
 fn vr_camera_locomotion_records_bounded_comfort_evidence() {
     let (_, steps) = vr_camera_locomotion_journey();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
+    );
     assert!(
         steps
             .iter()
@@ -623,7 +646,10 @@ fn live_all_curriculum() {
     let c = http_client();
     let b = web_base_url();
     let mut fails = Vec::new();
-    for (name, steps) in all_scenarios() {
+    for (name, steps) in all_scenarios()
+        .into_iter()
+        .filter(|(name, _)| !has_dedicated_live_test(name))
+    {
         for r in execute(&b, &c, &steps) {
             if !r.ok {
                 fails.push(format!("{name}/{}: {}", r.name, r.msg));

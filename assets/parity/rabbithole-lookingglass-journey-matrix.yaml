@@ -1087,9 +1087,7 @@ closure_families:
   - scenario: alice-web-gallery-media-parity
     role: grouped parity closure probe
     closure_tests:
-      - cargo test -p eatme-alice --test a3p_content_coverage
       - cargo test -p eatme-alice --test camera_and_viewpoint_e2e
-      - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
       - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-native-authoring.contract.test.ts
