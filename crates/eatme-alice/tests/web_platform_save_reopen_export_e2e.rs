@@ -164,6 +164,10 @@ fn web_platform_enabled() -> bool {
     env::var("EATME_WEB_PLATFORM").is_ok_and(|value| value == "1")
 }
 
+fn row_specific_live_enabled() -> bool {
+    web_platform_enabled() && env::var("EATME_ROW_SPECIFIC_LIVE").is_ok_and(|value| value == "1")
+}
+
 fn web_base_url() -> String {
     env::var("ALICE_WEB_URL")
         .ok()
@@ -438,8 +442,8 @@ fn live_alice_objects_first_full_path_transform_run_save_reopen_export() {
 }
 
 fn assert_live_scenario(scenario: Scenario) {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
 

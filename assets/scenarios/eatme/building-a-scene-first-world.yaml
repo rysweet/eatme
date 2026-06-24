@@ -74,7 +74,7 @@ steps:
   - screenshot exists and is non-empty
   - log exists and is non-empty
 - id: lookingglass-transform-run-save
-  command: EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -q -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
+  command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -q -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
   evidence:
   - live_building_a_scene_first_world executes the building-a-scene-first-world scenario
   - transform-object response matches sceneHero position, orientation, and size

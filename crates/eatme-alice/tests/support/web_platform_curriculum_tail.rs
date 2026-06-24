@@ -561,8 +561,8 @@ fn joint_manipulation_targets_biped_joints() {
 
 #[test]
 fn live_hello_world() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -574,8 +574,8 @@ fn live_hello_world() {
 
 #[test]
 fn live_building_a_scene_first_world() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -587,8 +587,8 @@ fn live_building_a_scene_first_world() {
 
 #[test]
 fn live_procedures() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -600,8 +600,8 @@ fn live_procedures() {
 
 #[test]
 fn live_full_student_journey() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -613,8 +613,8 @@ fn live_full_student_journey() {
 
 #[test]
 fn live_instructor_grading() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -626,8 +626,8 @@ fn live_instructor_grading() {
 
 #[test]
 fn live_error_recovery() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();

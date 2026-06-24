@@ -77,7 +77,7 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-building-a-scene-first-world}"
       set -e
-      EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -q -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
+      EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -q -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
       printf "%s\n" "cargo-test-ok=web_platform_curriculum_e2e"
   expect:
     exit_code: 0

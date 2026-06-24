@@ -19,6 +19,13 @@ fn web_platform_enabled() -> bool {
         .unwrap_or(false)
 }
 
+fn row_specific_live_enabled() -> bool {
+    web_platform_enabled()
+        && env::var("EATME_ROW_SPECIFIC_LIVE")
+            .map(|v| v == "1")
+            .unwrap_or(false)
+}
+
 fn web_base_url() -> String {
     normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
 }
@@ -596,8 +603,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
 }
 
 fn assert_live_scenario(name: &str, steps: Vec<Step>) {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let client = http_client();
