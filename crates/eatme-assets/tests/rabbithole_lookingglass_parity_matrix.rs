@@ -135,9 +135,7 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
         }
         let setup_readiness_instructor = matches!(
             scenario.as_str(),
-            "setup-preflight-ready-to-create"
-                | "instructor-classroom-setup-readiness"
-                | "instructor-student-launch-evidence-handoff"
+            "instructor-classroom-setup-readiness" | "instructor-student-launch-evidence-handoff"
         );
         if setup_readiness_instructor && scenario_kind == "instructor_agentic_flow" {
             if rabbit_hole_status != "partial"
@@ -145,6 +143,16 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
             {
                 failures.push(format!(
                     "{scenario}: instructor RabbitHole closure must be partial and validate the editable scenario asset"
+                ));
+            }
+        } else if scenario == "setup-preflight-ready-to-create"
+            && scenario_kind == "instructor_agentic_flow"
+        {
+            if rabbit_hole_status != "covered"
+                || !rabbit_hole_command.contains("assets agentic-acceptance --path")
+            {
+                failures.push(format!(
+                    "{scenario}: instructor RabbitHole closure must run the agentic acceptance output command"
                 ));
             }
         } else if !rabbit_hole_command.contains("EATME_REAL_ALICE=1")

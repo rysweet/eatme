@@ -311,6 +311,7 @@ fn every_web_scenario_has_health_launch_action_and_verification_structure() {
                         .as_deref()
                         .is_some_and(|command| {
                             command.contains("agentic instructor acceptance review")
+                                || command.contains("assets agentic-acceptance")
                         })
                 }));
         let has_action = steps.iter().any(|step| {

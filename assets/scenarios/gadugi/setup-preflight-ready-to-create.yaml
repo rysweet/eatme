@@ -54,6 +54,23 @@ steps:
     - cargo-test-ok=web_platform_setup_readiness_e2e
     - 'test result: ok'
   timeout: 300000
+- name: Agentic Instructor Review
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-setup-preflight-ready-to-create}"
+      cargo run -q -p eatme-cli -- assets agentic-acceptance --path assets/scenarios/eatme/setup-preflight-ready-to-create.yaml --json
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - '"passed": true'
+    - '"scenario_id": "setup-preflight-ready-to-create"'
+    - setup_readiness_checklist
+    - student_self_check_card
+    - fallback_path_guide
+  timeout: 60000
 - name: Validate instructor acceptance review contract
   agent: eatme-cli-agent
   action: execute_command
@@ -99,6 +116,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Lookingglass Setup Readiness
+- name: agentic-instructor-review succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Agentic Instructor Review
 - name: Instructor Acceptance Review Contract Is Runnable
   type: command_success
   agent: eatme-cli-agent
