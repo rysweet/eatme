@@ -131,6 +131,7 @@ fn local_api_token() -> String {
     env::var("ALICE_LOCAL_API_TOKEN").unwrap_or_else(|_| "gadugi-local-api-token".into())
 }
 
+#[allow(clippy::result_large_err)]
 fn post_json(client: &ureq::Agent, url: &str, body: Value) -> Result<ureq::Response, ureq::Error> {
     client
         .post(url)
