@@ -65,6 +65,32 @@ fn vr_camera_locomotion_records_bounded_comfort_evidence() {
 }
 
 #[test]
+fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
+    let (_, steps) = vr_player_comfort_playtest();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR player comfort should use the bounded camera/WebXR evidence endpoint"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::BrowserWebXRLocomotionEvidence)),
+        "VR player comfort should exercise observable browser WebXR locomotion without claiming headset playtest"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR player comfort must require explicit unsupported headset/revision-loop boundaries"
+    );
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "playerTester")
+    ));
+}
+
+#[test]
 fn accessibility_rescue_camera_captions_records_caption_evidence() {
     let (_, steps) = accessibility_rescue_camera_captions();
     assert!(
@@ -76,6 +102,37 @@ fn accessibility_rescue_camera_captions_records_caption_evidence() {
     assert!(steps.iter().any(
         |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")
     ));
+}
+
+#[test]
+fn blank_alice_web_url_uses_default_base_url() {
+    assert_eq!(normalize_web_base_url(None), "http://localhost:3099");
+    assert_eq!(
+        normalize_web_base_url(Some("   \n\t  ".into())),
+        "http://localhost:3099"
+    );
+    assert_eq!(
+        normalize_web_base_url(Some(" http://127.0.0.1:4000/ ".into())),
+        "http://127.0.0.1:4000/"
+    );
+}
+
+#[test]
+fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
+    let (name, steps) = vr_camera_locomotion_journey();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn live_vr_player_comfort_exercises_vr_boundary_api() {
+    let (name, steps) = vr_player_comfort_playtest();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
+    let (name, steps) = accessibility_rescue_camera_captions();
+    assert_live_scenario(name, steps);
 }
 
 #[test]
