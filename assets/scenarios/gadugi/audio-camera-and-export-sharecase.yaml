@@ -51,8 +51,8 @@ steps:
       grep -F -- 'student_sharecase_card' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'accessibility_aware_sharing_plan' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'LookingGlass export/share evidence is limited to LookingGlass:test/project-export-share-fallback.contract.test.ts and does not claim native Web Share success.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'LookingGlass audio evidence remains bounded metadata/playback-bridge evidence and does not claim native audio playback.' "$SOURCE_ASSET" >/dev/null
+      grep -F -- 'LookingGlass native Web Share capability evidence is covered by LookingGlass:test/project-export-native-web-share.contract.test.ts while browser-download fallback evidence remains covered.' "$SOURCE_ASSET" >/dev/null
+      grep -F -- 'LookingGlass native audio evidence is covered by LookingGlass:test/project-audio-native-authoring.contract.test.ts with Web Audio output and full audio authoring evidence.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Camera-and-audio polish guide prompts the student to choose one camera marker or audio cue and write one sentence explaining why they chose it.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Camera-and-audio polish guide includes a caption or text-label step that makes the cue meaningful for viewers who cannot rely solely on sound or visual detail.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Student sharecase card names the artifact or screenshot reference and describes the one cue the student added.' "$SOURCE_ASSET" >/dev/null

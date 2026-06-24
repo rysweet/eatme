@@ -285,13 +285,13 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
     let expectations = [
         (
             "assets/scenarios/eatme/alice-2-migration-bridge.yaml",
-            "Verify Lookingglass Bounded Alice2 Guidance",
+            "Verify Lookingglass Scoped Alice2 Conversion",
             vec!["test/project-migration.test.ts"],
         ),
         (
             "assets/scenarios/eatme/modified-class-portability.yaml",
             "Verify Lookingglass Class Behavior Package",
-            vec!["class-behavior-package.persistence.test.ts"],
+            vec!["lookingglass-class-ui-evidence=export-import-instance-save-reopen"],
         ),
         (
             "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",

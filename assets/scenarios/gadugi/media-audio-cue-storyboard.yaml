@@ -52,7 +52,7 @@ steps:
       grep -F -- 'accessibility_fallback_note' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'revision_reflection_prompt' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'LookingGlass bounded metadata/playback-bridge evidence is limited to LookingGlass:test/project-audio-bounded-evidence.contract.test.ts and does not claim native audio playback.' "$SOURCE_ASSET" >/dev/null
+      grep -F -- 'LookingGlass native audio evidence is covered by LookingGlass:test/project-audio-native-authoring.contract.test.ts with Web Audio output and full audio authoring evidence.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Media cue storyboard includes one sound, timing, camera, or caption cue plus intended audience meaning.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Student prediction prompt asks for expected visible or audible behavior before running and observed evidence afterward.' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'Accessibility fallback note names a caption, visual cue, peer narration, or non-audio fallback.' "$SOURCE_ASSET" >/dev/null

@@ -98,12 +98,15 @@ The shared launch-smoke path records the scenario manifest; class export/import
 proof remains an explicit evidence contract for follow-on automation or agentic
 review.
 
-The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight contract:
-real headset or Alice Player VR execution is optional, but availability must be
-recorded. If real VR is unavailable, evidence must state
+The `vr-camera-locomotion-journey` scenario adds an explicit VR preflight
+contract: real headset or Alice Player VR execution is optional, but availability
+must be recorded. If real VR is unavailable, evidence must state
 `real_vr_available=false` and include the desktop launch manifest plus
-camera-marker/viewpoint and locomotion-comfort artifacts. This keeps VR claims
-outside-in and evidence-based instead of silently skipping unavailable hardware.
+camera-marker/viewpoint and locomotion-comfort artifacts. LookingGlass may add
+bounded browser WebXR session and locomotion evidence through
+`/api/vr/camera-comfort`, but that evidence still records true headset/native VR
+and true player comfort playtesting as unsupported unless observed headset
+sessions and revision loops exist.
 
 The expanded instructor/student outside-in scenarios use the same rule. Real Alice
 execution remains manual or locally gated with `EATME_REAL_ALICE=1`. A passing

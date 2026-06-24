@@ -15,6 +15,7 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system
@@ -53,14 +54,14 @@ steps:
     - required_evidence=keep-adapt-retire,current-artifact,student-reflection
     - required_evidence=
   timeout: 60000
-- name: Verify Lookingglass Bounded Alice2 Guidance
+- name: Verify Lookingglass Scoped Alice2 Conversion
   agent: eatme-cli-agent
   action: execute_command
   params:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-alice-2-migration-bridge}"
-      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/project-migration.test.ts
+      cd "${LOOKINGGLASS_HOME:?}" && bash -lc 'alice_web_url="${ALICE_WEB_URL:-http://localhost:3099}"; EATME_WEB_PLATFORM=1 ALICE_WEB_URL="$alice_web_url" npm test -- test/project-migration.test.ts'
   expect:
     exit_code: 0
     stdout_contains:
@@ -94,11 +95,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Record Migration Bridge
-- name: verify-lookingglass-bounded-alice2-guidance succeeds
+- name: verify-lookingglass-scoped-alice2-conversion succeeds
   type: command_success
   agent: eatme-cli-agent
   params:
-    step: Verify Lookingglass Bounded Alice2 Guidance
+    step: Verify Lookingglass Scoped Alice2 Conversion
 - name: launch-smoke succeeds
   type: command_success
   agent: eatme-cli-agent

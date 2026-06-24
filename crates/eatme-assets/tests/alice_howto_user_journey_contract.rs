@@ -304,6 +304,7 @@ fn lookingglass_supported_rows_have_web_targets_and_validation_steps() {
         if !text.contains("--target lookingglass")
             && !text.contains("alice_web_url")
             && !text.contains("/api/")
+            && !text.contains("npx playwright test")
         {
             failures.push(format!(
                 "{}: LookingGlass-covered row must define a web validation command or API assertion",
