@@ -130,6 +130,7 @@ fn vr_player_comfort_playtest_declared_files_are_written_and_checked() {
     assert!(
         yaml.contains("vr_player_preflight_record")
             && yaml.contains("comfort_playtest_guidance_template")
+            && yaml.contains("lookingglass_player_comfort_session_evidence")
             && yaml.contains("runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt")
             && yaml.contains(
                 "runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-guidance-template.md"
@@ -142,8 +143,10 @@ fn vr_player_comfort_playtest_declared_files_are_written_and_checked() {
             && yaml.contains("grep -Eq \"real_vr_available=(true|false)\"")
             && yaml.contains("template=\"$run_dir/comfort-playtest-guidance-template.md\"")
             && yaml.contains("> \"$template\"")
-            && yaml.contains("test -s \"$template\""),
-        "vr player comfort commands should write and check the declared preflight and template files"
+            && yaml.contains("test -s \"$template\"")
+            && yaml.contains("/api/vr/player-comfort-session")
+            && yaml.contains("observed-before-after-revision"),
+        "vr player comfort commands should write/check declared files and require submitted player session revision-loop evidence"
     );
     assert!(
         yaml.contains("guidance only")
