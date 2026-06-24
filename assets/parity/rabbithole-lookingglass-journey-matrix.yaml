@@ -528,15 +528,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario design-process-story-or-game --run-id parity-design-process-story-or-game --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
     looking_glass:
-      status: partial
-      source_status: "Partial: launch/add/run evidence is covered; missing full design-process playtest and revision evidence"
-      reason: "LookingGlass curriculum evidence covers bounded launch/add/run API behavior; full design-process playtest observations and revision-loop evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student can exercise bounded browser project actions; full design-process playtest and revision behavior are not claimed by this row."
+      status: covered
+      source_status: "Covered: bounded LookingGlass REST evidence records plan, build, playtest, revise, and review phases"
+      reason: "LookingGlass now records a bounded design-process evidence artifact after a live launch/add/edit/run, a revision edit, and a second run. The evidence names unsupported creative assessment and desktop UI boundaries instead of claiming full Alice coverage."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
+      expected_behavior: "Student plans a story-or-game prototype, builds a visible browser project, playtests it, revises it, runs it again, and records review evidence through /api/design-process/story-or-game/evidence; creative assessment, learner-world grading, desktop UI automation, and complete Alice coverage are not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass design_process command passes against a supported ALICE_WEB_URL
+        - LookingGlass evidence response includes plan, build, playtest, revise, and review phases with at least two playtest runs
         - behavior evidence names user-visible result, not implementation details
   - scenario: hour-of-code-studio-kickoff
     area: "Hour of Code"
@@ -993,6 +994,7 @@ closure_families:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1

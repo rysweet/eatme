@@ -154,7 +154,7 @@ Alice.org HowTo coverage.
 | Debugging | `lost-robot-debug-museum` | Student follows a broken-world debugging path, fixes the behavior, reruns, and records the correction. | Covered | Covered |
 | Games | `game-score-timer-win-lose-loop` | Student builds a score, timer, and win/lose loop, runs the game, and verifies state transitions. | Covered | Covered |
 | Narrative | `mythic-choice-event-tree` | Student builds a branching story with event choices and checks that each choice reaches the expected scene result. | Covered | Covered |
-| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Partial: launch/add/run evidence is covered; missing full design-process playtest and revision evidence |
+| Design process | `design-process-story-or-game` | Student plans, builds, playtests, revises, and records a story or game artifact. | Covered | Covered: bounded LookingGlass REST evidence records plan, build, playtest, revise, and review phases |
 | Hour of Code | `hour-of-code-studio-kickoff` | Student follows an Hour of Code starter path, creates a simple world, runs it, and saves evidence. | Covered | Covered |
 | Hour of Code | `workshop-facilitator-live-studio` | Facilitator runs a live studio workshop, checks participant handoff material, and records review prompts. | Covered | Not supported |
 | Camera | `vr-camera-perspective-tour` | Student changes camera perspective, runs the world, and checks the expected viewpoint result. | Covered | Covered |

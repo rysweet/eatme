@@ -118,10 +118,7 @@ enum Step {
     Load {
         path: String,
     },
-    DesignCheckpoint {
-        phase: String,
-        artifact: String,
-    },
+    DesignProcessEvidence,
     RegisterEvent {
         event_type: String,
         handler_name: String,
@@ -230,11 +227,65 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     msg: format!("restored_objects={restored_count}"),
                 }
             }
-            Step::DesignCheckpoint { phase, artifact } => StepResult {
-                name: format!("design({phase})"),
-                ok: !phase.is_empty() && !artifact.is_empty(),
-                msg: artifact.clone(),
-            },
+            Step::DesignProcessEvidence => {
+                match client.post(&format!("{base}/api/design-process/story-or-game/evidence")).send_json(design_process_evidence_payload()) {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let phases: Vec<_> = value
+                                .get("phases")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let authored_objects: Vec<_> = value
+                                .pointer("/journeyEvidence/build/authoredObjectNames")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let does_not_claim: Vec<_> = value
+                                .get("doesNotClaim")
+                                .and_then(Value::as_array)
+                                .map(|items| {
+                                    items
+                                        .iter()
+                                        .filter_map(Value::as_str)
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let run_count = value
+                                .pointer("/journeyEvidence/playtest/runCount")
+                                .and_then(Value::as_u64)
+                                .unwrap_or_default();
+                            let revision_note = value
+                                .pointer("/journeyEvidence/revise/revisionNote")
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let ok = value.get("schema_version").and_then(Value::as_str)
+                                    == Some("lookingglass.design-process-story-or-game-evidence/v1")
+                                && value.get("status").and_then(Value::as_str) == Some("evidence-recorded")
+                                && ["plan", "build", "playtest", "revise", "review"]
+                                    .iter()
+                                    .all(|phase| phases.contains(phase))
+                                && authored_objects.contains(&"prototypeHero")
+                                && run_count >= 2
+                                && revision_note.contains("second narration line")
+                                && does_not_claim.contains(&"automated creative assessment");
+                            StepResult { name: "design-process-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "design-process-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "design-process-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
             Step::RegisterEvent { event_type, handler_name } => {
                 let mut payload = serde_json::json!({ "eventType": event_type, "handlerName": handler_name });
                 if event_type == "keyPress" || event_type == "keyPressed" {
@@ -1019,14 +1070,6 @@ fn design_process() -> (&'static str, Vec<Step>) {
         "design-process",
         vec![
             Step::Health,
-            Step::DesignCheckpoint {
-                phase: "plan".into(),
-                artifact: "story-vs-game brief".into(),
-            },
-            Step::DesignCheckpoint {
-                phase: "sketch".into(),
-                artifact: "scene-sketch card".into(),
-            },
             Step::Launch {
                 template: "blank".into(),
             },
@@ -1044,14 +1087,17 @@ fn design_process() -> (&'static str, Vec<Step>) {
                 }],
             },
             Step::RunWorld,
-            Step::DesignCheckpoint {
-                phase: "playtest".into(),
-                artifact: "first-playthrough notes".into(),
+            Step::EditProcedure {
+                class_name: "Scene".into(),
+                method_name: "myFirstMethod".into(),
+                statements: vec![StatementSpec {
+                    kind: "methodCall".into(),
+                    method: Some("prototypeHero.say".into()),
+                    args: vec!["\"Revision: show win feedback\"".into()],
+                }],
             },
-            Step::DesignCheckpoint {
-                phase: "revise".into(),
-                artifact: "design-to-code bridge card".into(),
-            },
+            Step::RunWorld,
+            Step::DesignProcessEvidence,
         ],
     )
 }
@@ -1478,6 +1524,42 @@ fn build_edit_spec(class_name: &str, method_name: &str, statements: &[StatementS
     format!("append-comment:{class_name}.{method_name}: {summary}")
 }
 
+fn design_process_evidence_payload() -> Value {
+    serde_json::json!({
+        "scenario": "design-process-story-or-game",
+        "mode": "game",
+        "designBrief": "Game: guide the hero from goal setup to win feedback.",
+        "sceneSketches": [
+            {
+                "name": "setup-state",
+                "character": "prototypeHero",
+                "action": "explains the win goal"
+            },
+            {
+                "name": "win-state",
+                "character": "prototypeHero",
+                "action": "reports the successful revision"
+            }
+        ],
+        "bridgeMappings": [
+            {
+                "scene": "setup-state",
+                "aliceConcept": "myFirstMethod",
+                "controls": "prototypeHero goal narration"
+            },
+            {
+                "scene": "win-state",
+                "aliceConcept": "conditional",
+                "controls": "revised win feedback"
+            }
+        ],
+        "playtestObservation": "First playtest showed the goal, but the win feedback was missing.",
+        "revisionNote": "Added a second narration line after playtest so the player sees the win feedback.",
+        "reviewNote": "Review confirms plan, build, playtest, revise, and review evidence are present.",
+        "accessibilityChoice": "Use narrated text instead of extra characters."
+    })
+}
+
 // ── Tier 1: Offline structural tests (always run) ───────────────────
 
 #[test]
@@ -1836,40 +1918,53 @@ fn say_think_uses_speech_and_thought_bubbles() {
 #[test]
 fn design_process_tracks_plan_build_playtest_and_revision() {
     let (_, steps) = design_process();
-    let phases: Vec<_> = steps
-        .iter()
-        .filter_map(|step| match step {
-            Step::DesignCheckpoint { phase, .. } => Some(phase.as_str()),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(phases, vec!["plan", "sketch", "playtest", "revise"]);
-
-    let artifacts: Vec<_> = steps
-        .iter()
-        .filter_map(|step| match step {
-            Step::DesignCheckpoint { artifact, .. } => Some(artifact.as_str()),
-            _ => None,
-        })
-        .collect();
-    assert!(artifacts.contains(&"story-vs-game brief"));
-    assert!(artifacts.contains(&"scene-sketch card"));
-    assert!(artifacts.contains(&"design-to-code bridge card"));
-
-    let run_index = steps
+    let first_run_index = steps
         .iter()
         .position(|step| matches!(step, Step::RunWorld))
         .expect("design process should run the prototype");
-    let playtest_index = steps
+    let revision_index = steps
         .iter()
-        .position(
-            |step| matches!(step, Step::DesignCheckpoint { phase, .. } if phase == "playtest"),
-        )
-        .expect("design process should include playtesting");
-    assert!(
-        run_index < playtest_index,
-        "playtest follows the runnable thin slice"
+        .position(|step| {
+            matches!(step, Step::EditProcedure { statements, .. } if statements
+                .iter()
+                .any(|statement| statement
+                    .args
+                    .iter()
+                    .any(|arg| arg.contains("Revision: show win feedback"))))
+        })
+        .expect("design process should revise after playtest");
+    let evidence_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::DesignProcessEvidence))
+        .expect("design process should record evidence through the LookingGlass API");
+    let run_count = steps
+        .iter()
+        .filter(|step| matches!(step, Step::RunWorld))
+        .count();
+
+    assert_eq!(
+        run_count, 2,
+        "revision loop should run before and after revise"
     );
+    assert!(
+        first_run_index < revision_index && revision_index < evidence_index,
+        "evidence follows playtest and revision"
+    );
+
+    let payload = design_process_evidence_payload();
+    let phases = ["plan", "build", "playtest", "revise", "review"];
+    for phase in phases {
+        assert!(
+            payload.to_string().contains(phase),
+            "design-process payload should cover {phase}"
+        );
+    }
+}
+
+#[test]
+fn live_design_process_records_playtest_revision_and_review_evidence() {
+    let (name, steps) = design_process();
+    assert_live_scenario(name, steps);
 }
 
 #[test]
