@@ -359,7 +359,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 }
             }
             Step::VrNativeBoundaryEvidence => {
-                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                match authed_get(client, &format!("{base}/api/vr/camera-comfort")).call() {
                     Ok(resp) => match resp.into_json::<Value>() {
                         Ok(value) => {
                             let browser_session = value
