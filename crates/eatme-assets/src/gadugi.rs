@@ -460,7 +460,7 @@ fn step_title(id: &str) -> String {
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
     if step_id.contains("launch") || step_id.contains("howto") || step_id.contains("full-path") {
         launch_timeout * 1000
-    } else if step_id.contains("setup-readiness") {
+    } else if step_id.contains("setup-readiness") || step_id.contains("class-behavior") {
         300_000
     } else {
         60_000
@@ -522,7 +522,16 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
         return expected;
     }
     if command.contains("npm test --") {
-        expected.extend(test_command_targets(command));
+        if command.contains("npx playwright test") {
+            expected.extend(printf_evidence_markers(command));
+        } else {
+            expected.extend(test_command_targets(command));
+        }
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("npx playwright test") {
+        expected.extend(printf_evidence_markers(command));
         expected.dedup();
         return expected;
     }
@@ -587,6 +596,7 @@ fn test_command_targets(command: &str) -> Vec<String> {
         .filter_map(|part| {
             let trimmed = part.trim_matches('\'').trim_matches('"').trim_matches(';');
             (trimmed.ends_with(".test.ts")
+                || trimmed.ends_with(".spec.ts")
                 || trimmed.ends_with("_e2e")
                 || trimmed.ends_with("_coverage")
                 || trimmed.ends_with("_integration")
@@ -618,6 +628,7 @@ fn printf_evidence_markers(command: &str) -> Vec<String> {
         "save_reopen_export_readiness_gaps=",
         "real_vr_available=",
         "required_evidence=",
+        "lookingglass-class-ui-evidence=export-import-instance-save-reopen",
         "wrote=",
         "a3p-save-load-parity-gaps.md",
         "gallery-media-parity-gaps.md",

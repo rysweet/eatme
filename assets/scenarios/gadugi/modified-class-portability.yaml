@@ -15,6 +15,7 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system
@@ -76,14 +77,12 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
-      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
   expect:
     exit_code: 0
     stdout_contains:
-    - test/entity-type-registry.test.ts
-    - src/project-io/class-behavior-package.persistence.test.ts
-    - src/server/routes/project-routes.class-behavior.test.ts
-  timeout: 60000
+    - lookingglass-class-ui-evidence=export-import-instance-save-reopen
+  timeout: 300000
 assertions:
 - name: validate-assets succeeds
   type: command_success

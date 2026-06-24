@@ -291,7 +291,7 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
         (
             "assets/scenarios/eatme/modified-class-portability.yaml",
             "Verify Lookingglass Class Behavior Package",
-            vec!["class-behavior-package.persistence.test.ts"],
+            vec!["lookingglass-class-ui-evidence=export-import-instance-save-reopen"],
         ),
         (
             "assets/scenarios/eatme/teacher-community-sharing-loop.yaml",
