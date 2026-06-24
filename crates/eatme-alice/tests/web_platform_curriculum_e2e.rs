@@ -282,7 +282,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                     Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
                         Ok(r) => StepResult {
                             name: format!("transform({object_name})"),
-                            ok: matches!(r.status.as_str(), "ok" | "transformed")
+                            ok: r.status == "transformed"
                                 && r.object_name == *object_name
                                 && r.position.matches_tuple(*position)
                                 && r.orientation.matches_tuple(*orientation)

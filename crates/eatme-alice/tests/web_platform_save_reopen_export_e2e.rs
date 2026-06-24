@@ -680,7 +680,7 @@ fn post_transform(
         Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
             Ok(body) => StepResult {
                 name: format!("transform({object_name})"),
-                ok: matches!(body.status.as_str(), "ok" | "transformed")
+                ok: body.status == "transformed"
                     && body.object_name == object_name
                     && body.position.matches_tuple(position)
                     && body.orientation.matches_tuple(orientation)
