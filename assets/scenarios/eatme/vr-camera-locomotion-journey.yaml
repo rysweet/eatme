@@ -100,13 +100,15 @@ steps:
   - manifest assertions all pass
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
-- id: lookingglass-camera-comfort-evidence
+- id: lookingglass-webxr-locomotion-evidence
   command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
   evidence:
   - web_platform_curriculum_e2e includes vr-camera-locomotion-journey
   - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1
+  - /api/vr/webxr-locomotion-evidence returns schema_version alice.browser-webxr-locomotion-evidence/v1 with status observed
   - response records desktopCameraAvailable=true and trueHeadsetVrSupported=false
-  - response records browserWebXrSession locomotionMode and playerComfortPlaytest truePlayerComfortPlaytestSupported=false
+  - response records browserWebXrSession locomotionObserved=true, locomotionResult=movement, and locomotionEvidenceSource=browser-webxr-locomotion-api
+  - response records browserWebXrSession headsetSessionObserved=false and nativeVrObserved=false
   - evidence remains bounded to browser WebXR/camera comfort and does not claim native headset VR or true player comfort playtesting
 - id: record-agentic-review-guidance
   command: bash -lc 'set -e; run_dir="runs/vr-camera-locomotion-journey/${RUN_ID}"; mkdir -p "$run_dir"; printf "%s\n" "review_guidance=Use the persona prompt assets to inspect the Alice session and learner artifact." "hardware_boundary=Do not require real VR hardware unless record-vr-preflight reports real_vr_available=true." "claim_boundary=This file is review guidance only. It does not validate learner viewpoint, camera marker, locomotion comfort, or desktop fallback evidence." > "$run_dir/agentic-review-guidance.txt"; test -s "$run_dir/agentic-review-guidance.txt"; grep -q "review guidance only" "$run_dir/agentic-review-guidance.txt"; printf "%s\n" "wrote=$run_dir/agentic-review-guidance.txt"'
@@ -121,7 +123,7 @@ agentic_follow_on:
   - creative-ownership-card
   deterministic_gate: Run this scenario and record VR availability before asking instructor/student agents to judge camera perspective, locomotion comfort, viewpoint orientation, or VR-readiness evidence.
 acceptance_probes:
-- LookingGlass validation uses ALICE_WEB_URL and /api/vr/camera-comfort responses when the bounded browser WebXR session/locomotion evidence workflow is supported.
+- LookingGlass validation uses ALICE_WEB_URL, /api/vr/webxr-locomotion-evidence, and /api/vr/camera-comfort responses when the bounded browser WebXR session/locomotion evidence workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900
@@ -133,5 +135,6 @@ artifacts:
   vr_preflight: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-preflight.txt
   fallback_evidence: runs/vr-camera-locomotion-journey/${RUN_ID}/vr-fallback-evidence.md
   agentic_review_guidance: runs/vr-camera-locomotion-journey/${RUN_ID}/agentic-review-guidance.txt
+  lookingglass_webxr_locomotion: api://lookingglass/api/vr/webxr-locomotion-evidence
   lookingglass_camera_comfort: api://lookingglass/api/vr/camera-comfort
 unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, do not fail the desktop scenario; record real_vr_available=false and treat persona review guidance as follow-on guidance only until a reviewer supplies actual camera-marker, viewpoint, locomotion-comfort, and desktop fallback evidence. LookingGlass evidence is bounded to browser WebXR session/locomotion and camera comfort; it must keep true headset/native VR and true player comfort playtesting unsupported unless observed headset sessions and revision-loop evidence exist.

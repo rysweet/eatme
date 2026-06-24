@@ -85,7 +85,7 @@ steps:
     - '"startup_window_or_screenshot": {'
     - '"passed": true'
   timeout: 900000
-- name: Lookingglass Camera Comfort Evidence
+- name: Lookingglass Webxr Locomotion Evidence
   agent: eatme-cli-agent
   action: execute_command
   params:
@@ -136,11 +136,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Launch Smoke
-- name: lookingglass-camera-comfort-evidence succeeds
+- name: lookingglass-webxr-locomotion-evidence succeeds
   type: command_success
   agent: eatme-cli-agent
   params:
-    step: Lookingglass Camera Comfort Evidence
+    step: Lookingglass Webxr Locomotion Evidence
 - name: record-agentic-review-guidance succeeds
   type: command_success
   agent: eatme-cli-agent

@@ -603,15 +603,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario vr-camera-locomotion-journey --run-id parity-vr-camera-locomotion-journey --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student records VR camera comfort planning and checks bounded movement-comfort evidence."
     looking_glass:
-      status: partial
-      source_status: "Partial: bounded browser camera comfort API evidence is covered; missing headset/native VR locomotion evidence"
-      reason: "LookingGlass proves browser camera comfort API evidence through /api/vr/camera-comfort; headset/native VR locomotion evidence is missing."
+      status: covered
+      source_status: "Covered: bounded browser WebXR locomotion API evidence and camera comfort evidence are covered; true headset/native VR remains explicitly unsupported"
+      reason: "LookingGlass records observable browser WebXR locomotion evidence through /api/vr/webxr-locomotion-evidence, carries it into /api/vr/camera-comfort, and keeps headset/native VR support false unless a real headset/native session is observed."
       command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
-      expected_behavior: "LookingGlass records bounded browser camera comfort API evidence while true headset/native VR remains explicitly unsupported."
+      expected_behavior: "LookingGlass records bounded browser WebXR locomotion and camera comfort API evidence while true headset/native VR remains explicitly unsupported."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
         - LookingGlass command passes when web support is claimed
+        - LookingGlass response records locomotionObserved=true from browser-webxr-locomotion-api without claiming headset/native VR
         - behavior evidence names user-visible result, not implementation details
   - scenario: vr-player-comfort-playtest
     area: "VR"
