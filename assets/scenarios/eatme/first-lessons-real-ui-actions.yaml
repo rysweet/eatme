@@ -149,6 +149,12 @@ steps:
       - manifest assertions include ui_action_artifact_captured
       - manifest failure_category is a UI action blocker until actions are automated
       - ui-action-contract.json exists and is non-empty
+  - id: verify-lookingglass-first-lesson-browser-ui
+    command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npx playwright test e2e/first-lessons-real-ui-actions.spec.ts && printf "%s\n" "lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen"
+    evidence:
+      - Playwright runs e2e/first-lessons-real-ui-actions.spec.ts against LookingGlass
+      - browser UI clicks create, adjust, edit, run, capture evidence, save, and reopen controls
+      - first-lessons-real-ui-actions-evidence.json records observed browser UI values, not prose-only labels
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#building-a-scene-first-world
   deterministic_gate: >-
