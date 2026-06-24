@@ -3,17 +3,12 @@ use super::*;
 fn has_dedicated_live_test(name: &str) -> bool {
     matches!(
         name,
-        "hello-world"
-            | "building-a-scene-first-world"
-            | "procedures"
+        "building-a-scene-first-world"
             | "design-process"
             | "vr-camera-locomotion-journey"
             | "vr-player-comfort-playtest"
             | "accessibility-rescue-camera-captions"
-            | "full-student-journey"
-            | "instructor-grading"
             | "classroom-gallery-walk-and-rubric"
-            | "error-recovery"
     )
 }
 
