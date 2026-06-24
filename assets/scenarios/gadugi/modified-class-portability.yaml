@@ -76,13 +76,14 @@ steps:
     command: |-
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-modified-class-portability}"
-      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts
   expect:
     exit_code: 0
     stdout_contains:
     - test/entity-type-registry.test.ts
     - src/project-io/class-behavior-package.persistence.test.ts
     - src/server/routes/project-routes.class-behavior.test.ts
+    - e2e/class-behavior-package.spec.ts
   timeout: 60000
 assertions:
 - name: validate-assets succeeds

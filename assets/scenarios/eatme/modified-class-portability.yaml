@@ -71,10 +71,10 @@ acceptance_criteria:
   when: the gadugi adapter runs commands for this scenario
   then: gadugi invokes eatme CLI and inspects portability evidence without owning Alice runtime details
 acceptance_probes:
-- LookingGlass support is bounded to parsed AliceProject.types class-behavior packages, not full desktop modified-class UI parity.
-- LookingGlass evidence command shows the entity type registry, class behavior package import, and save/read persistence tests passing.
-- LookingGlass /api/projects/current/classes/:typeName/behavior and class import evidence remains bounded to parsed AliceProject.types behavior packages.
-- Imported class behavior package evidence includes package validation, type import, and behavior persistence after import into another project.
+- Desktop Alice portability remains gated by EATME_REAL_ALICE=1 and must provide manifest/log/window/screenshot artifacts before desktop parity is claimed.
+- LookingGlass evidence includes a browser UI journey that saves/exports a modified class behavior, imports it into a different project, saves the destination project, reopens it, and verifies the behavior text remains visible.
+- LookingGlass unit evidence still covers entity type registry, class behavior package import, API import, and save/read persistence below the UI journey.
+- Imported class behavior package evidence includes package validation, type import, UI-visible behavior text, and behavior persistence after import into another project.
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
@@ -96,11 +96,12 @@ steps:
   - acceptance criteria require behavior persistence after import into another project
   - instructor/student prompts ask for before-export and after-import comparison
 - id: verify-lookingglass-class-behavior-package
-  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+  command: cd "${LOOKINGGLASS_HOME:?}" && npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts
   evidence:
   - class behavior package export identifies the modified class type
-  - import evidence shows the class available in a different AliceProject
-  - save/read evidence shows the imported behavior survives project persistence
+  - browser UI evidence shows the modified class behavior exported from one project and imported into a different Alice project
+  - browser UI save/reopen evidence shows the imported method behavior text remains visible after project persistence
+  - unit save/read evidence shows the imported behavior survives project persistence below the UI journey
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#modified-class-portability
   personality_assets:

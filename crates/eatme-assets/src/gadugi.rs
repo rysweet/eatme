@@ -587,6 +587,7 @@ fn test_command_targets(command: &str) -> Vec<String> {
         .filter_map(|part| {
             let trimmed = part.trim_matches('\'').trim_matches('"').trim_matches(';');
             (trimmed.ends_with(".test.ts")
+                || trimmed.ends_with(".spec.ts")
                 || trimmed.ends_with("_e2e")
                 || trimmed.ends_with("_coverage")
                 || trimmed.ends_with("_integration")
