@@ -285,7 +285,7 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
     let expectations = [
         (
             "assets/scenarios/eatme/alice-2-migration-bridge.yaml",
-            "Verify Lookingglass Bounded Alice2 Guidance",
+            "Verify Lookingglass Scoped Alice2 Conversion",
             vec!["test/project-migration.test.ts"],
         ),
         (
