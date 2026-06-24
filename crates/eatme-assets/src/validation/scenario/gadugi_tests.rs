@@ -235,7 +235,8 @@ fn gadugi_agentic_steps_require_editable_asset_contract() {
         report
             .errors
             .iter()
-            .any(|error| error.contains("acceptance_probes")),
+            .any(|error| error
+                .contains("Run instructor review.action agentic_test is not supported")),
         "{:?}",
         report.errors
     );

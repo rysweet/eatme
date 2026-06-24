@@ -50,8 +50,10 @@ pub(super) fn validate_gadugi_scenario(
             }
         }
         if step.action == "agentic_test" {
-            validate_gadugi_agentic_step(&step.name, &step.params, &mut errors);
-            validate_agentic_expect(&step.name, step.expect.as_ref(), &mut errors);
+            errors.push(format!(
+                "{}.action agentic_test is not supported by gadugi-test run; generate a runnable execute_command contract step instead",
+                step.name
+            ));
         }
         if step.timeout == 0 {
             errors.push(format!("{}.timeout must be greater than zero", step.name));
@@ -198,21 +200,6 @@ fn validate_execute_expect(
     }
 }
 
-fn validate_agentic_expect(
-    step_name: &str,
-    expect: Option<&crate::schema::GadugiStepExpect>,
-    errors: &mut Vec<String>,
-) {
-    match expect {
-        Some(expect) => require_list(
-            &expect.output_contains,
-            &format!("{step_name}.expect.output_contains"),
-            errors,
-        ),
-        None => errors.push(format!("{step_name}.expect must be defined")),
-    }
-}
-
 fn validate_no_hardcoded_repo_path(field: &str, value: &str, errors: &mut Vec<String>) {
     if value.contains("/home/") {
         errors.push(format!(
@@ -287,19 +274,6 @@ fn validate_gadugi_real_evidence_expectation(
         errors.push(format!(
             "{step_name}: gadugi launch-smoke step must assert manifest real_alice_execution_evidence"
         ));
-    }
-}
-
-fn validate_gadugi_agentic_step(
-    step_name: &str,
-    params: &BTreeMap<String, Value>,
-    errors: &mut Vec<String>,
-) {
-    for key in ["asset", "prompt", "acceptance_probes"] {
-        match string_param(params, key) {
-            Some(value) => require_nonempty(value, &format!("{step_name}.params.{key}"), errors),
-            None => errors.push(format!("{step_name}.params.{key} must be defined")),
-        }
     }
 }
 

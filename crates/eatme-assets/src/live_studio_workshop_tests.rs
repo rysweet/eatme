@@ -141,9 +141,9 @@ fn instructor_generator_uses_acceptance_review_wording_for_agentic_flow_adapters
         &normalized,
         &[
             "instructor acceptance adapter",
-            "Run instructor agentic acceptance review",
-            "instructor-acceptance-agent",
-            "Instructor Agentic Acceptance Review Covers Probes",
+            "Validate instructor acceptance review contract",
+            "instructor-acceptance-contract-ok",
+            "Instructor Acceptance Review Contract Is Runnable",
         ],
     );
 }

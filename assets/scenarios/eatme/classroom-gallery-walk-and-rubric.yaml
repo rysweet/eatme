@@ -97,7 +97,7 @@ steps:
   evidence:
   - web_platform_curriculum_e2e includes classroom-gallery-walk-and-rubric
   - /api/review/gallery-walk-rubric returns schema_version alice.gallery-walk-rubric-evidence/v1
-  - response records reviewWorkflowSupported=true and rubricRecordingSupported=true
+  - response records reviewWorkflowSupported=true and rubricRecordingSupported=false, matching the current LookingGlass runtime contract
   - response records liveStudioSupported=true so gallery review evidence stays aligned with the live workshop support API
 timeouts:
   agentic_seconds: 900
