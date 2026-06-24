@@ -43,6 +43,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-lesson-materials-remix}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-lesson-materials-remix.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing lesson materials. Produce a one-page teacher plan, student handout, and exit ticket for an Alice lesson grounded in the listed resources and this instructor-lesson-materials-remix scenario. Include setup assumptions, concept vocabulary, predicted visible world changes, run/revise checkpoints, an instructor review/remix note, and a reflection question. Keep language editable and classroom-facing. Do not claim automated creative grading or learner-world assessment.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/instructor-lesson-materials-remix.yaml'
       grep -F -- 'teacher_plan' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'student_handout' "$SOURCE_ASSET" >/dev/null

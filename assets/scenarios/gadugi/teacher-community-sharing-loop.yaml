@@ -58,6 +58,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-teacher-community-sharing-loop}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/teacher-community-sharing-loop.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing teacher-community sharing materials for one Alice learning activity. Produce a teacher-community share card, classroom handoff note, remix feedback prompt, and LookingGlass local community publication evidence grounded in the listed resources and this teacher-community-sharing-loop scenario. Include audience, prerequisites, timing, setup constraints, editable scenario and persona links, attribution, student evidence, accessibility notes, what to hand to the next classroom teacher, two feedback questions for future remix, and the /api/community/shares evidence boundary. Keep language editable and teacher-facing. State explicitly that this is not full UI automation, not creative assessment, not learner-world grading, not complete Alice coverage, and not an external cloud community platform.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/teacher-community-sharing-loop.yaml'
       grep -F -- 'teacher_community_share_card' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'classroom_handoff_note' "$SOURCE_ASSET" >/dev/null

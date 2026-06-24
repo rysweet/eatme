@@ -43,6 +43,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-media-audio-cue-storyboard}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/media-audio-cue-storyboard.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing a student media/audio mission for Alice. Produce a media cue storyboard, student prediction prompt, accessibility fallback note, and revision reflection prompt grounded in the listed resources and this media-audio-cue-storyboard scenario. Require one sound, timing, camera, or caption cue; the intended audience meaning; a prediction before running; the visible or audible result after running; one student-owned revision; and a fallback when audio, captioning, or classroom hardware is unavailable. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed media pipeline.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/media-audio-cue-storyboard.yaml'
       grep -F -- 'media_cue_storyboard' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'student_prediction_prompt' "$SOURCE_ASSET" >/dev/null

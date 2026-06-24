@@ -60,6 +60,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-classroom-gallery-walk-and-rubric}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing an Alice classroom gallery walk. Produce a gallery walk rubric, peer feedback card, creator response prompt, revision checkpoint note, and instructor boundary note grounded in the listed resources and this classroom-gallery-walk-and-rubric scenario. Require feedback to name one observed artifact behavior, one programming concept or design choice, one respectful question, one accessibility or audience note when relevant, and one student-owned revision. The rubric must work for stories, games, simulations, media scenes, or starter projects without forcing one project template. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, not complete Alice coverage, and not a deployed sharing service.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/classroom-gallery-walk-and-rubric.yaml'
       grep -F -- 'gallery_walk_rubric' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'peer_feedback_card' "$SOURCE_ASSET" >/dev/null

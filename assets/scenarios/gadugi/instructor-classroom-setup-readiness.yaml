@@ -62,6 +62,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-classroom-setup-readiness}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing classroom setup. Produce a readiness checklist, student-facing setup note, and fallback plan. Include device/graphics constraints from Alice resources, offline/resource alternatives, what evidence confirms readiness, and what to do when launch fails. Keep the plan non-coder editable.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml'
       grep -F -- 'setup_checklist' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'fallback_plan' "$SOURCE_ASSET" >/dev/null

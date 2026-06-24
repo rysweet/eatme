@@ -43,6 +43,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-instructor-alice-concept-map}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-alice-concept-map.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent building a concept map. Given an Alice lesson idea, produce a concept ladder from visible world behavior to Alice vocabulary to transferable computer science vocabulary. Include misconception checks, one prediction question, one debugging question, and one transfer prompt. Prefer agent reasoning over code assertions.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/instructor-alice-concept-map.yaml'
       grep -F -- 'concept_map' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'misconception_checks' "$SOURCE_ASSET" >/dev/null

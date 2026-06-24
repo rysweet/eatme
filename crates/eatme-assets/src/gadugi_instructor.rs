@@ -178,6 +178,11 @@ fn instructor_contract_validation_command(
         "cargo run -q -p eatme-cli -- assets validate --path {} --json\n",
         shell_quote(source_asset)
     );
+    command.push_str(&format!(
+        "AGENTIC_TEST_PROMPT={}\n",
+        shell_quote(agentic_test_prompt)
+    ));
+    command.push_str("printf '%s\\n' \"$AGENTIC_TEST_PROMPT\" >/dev/null\n");
     command.push_str(&format!("SOURCE_ASSET={}\n", shell_quote(source_asset)));
     for output in expected_outputs {
         command.push_str(&format!(

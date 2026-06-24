@@ -43,6 +43,8 @@ steps:
       cd "${EATME_REPO:-.}"
       export RUN_ID="${RUN_ID:-gadugi-time-travel-recipe-sequencing}"
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/time-travel-recipe-sequencing.yaml' --json
+      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing a time-travel recipe sequencing Alice lesson. Produce a lesson brief, student activity sheet, and step-sequence frame grounded in the listed resources and this time-travel-recipe-sequencing scenario. The lesson brief must show a short motivating example of three named procedure calls running in order, explain why top-to-bottom sequence matters, and include a step-swap exercise that asks students to predict how swapping two calls changes the visible outcome. The student activity sheet must prompt the student to name at least three recipe steps, write the steps in a deliberate order, record a written prediction of what the scene will look like after each step, run the sequence, then swap two steps and record what changed. The step-sequence frame must name each step as a procedure call without referencing specific Alice assets or character models. State explicitly that this is not full user interface automation, not automated creative assessment, not learner-world grading, and not complete Alice coverage.'
+      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
       SOURCE_ASSET='assets/scenarios/eatme/time-travel-recipe-sequencing.yaml'
       grep -F -- 'lesson_brief' "$SOURCE_ASSET" >/dev/null
       grep -F -- 'student_activity_sheet' "$SOURCE_ASSET" >/dev/null
