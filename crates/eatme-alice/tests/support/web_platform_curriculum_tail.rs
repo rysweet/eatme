@@ -1,5 +1,259 @@
 use super::*;
 
+fn has_dedicated_live_test(name: &str) -> bool {
+    matches!(
+        name,
+        "building-a-scene-first-world"
+            | "design-process"
+            | "vr-camera-locomotion-journey"
+            | "vr-player-comfort-playtest"
+            | "accessibility-rescue-camera-captions"
+            | "classroom-gallery-walk-and-rubric"
+    )
+}
+
+#[test]
+fn arrays_uses_each_in_array() {
+    let (_, steps) = arrays();
+    assert!(steps.iter().any(|s| match s {
+        Step::EditProcedure { statements, .. } =>
+            statements.iter().any(|st| st.kind == "eachInArrayTogether"),
+        _ => false,
+    }));
+}
+
+#[test]
+fn camera_uses_camera_methods() {
+    let (_, steps) = camera_viewpoint();
+    assert!(steps.iter().any(|s| {
+        match s {
+            Step::EditProcedure { statements, .. } => statements
+                .iter()
+                .any(|st| st.method.as_deref().unwrap_or("").starts_with("camera.")),
+            _ => false,
+        }
+    }));
+}
+
+#[test]
+fn vr_camera_locomotion_records_bounded_comfort_evidence() {
+    let (_, steps) = vr_camera_locomotion_journey();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR camera journey should prove web camera comfort evidence"
+    );
+    assert!(
+        !steps
+            .iter()
+            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
+        "VR camera journey must not claim unrelated review tooling"
+    );
+}
+
+#[test]
+fn accessibility_rescue_camera_captions_records_caption_evidence() {
+    let (_, steps) = accessibility_rescue_camera_captions();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
+        "accessibility rescue scenario should prove browser caption evidence"
+    );
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")
+    ));
+}
+
+#[test]
+fn audio_uses_play_audio() {
+    let (_, steps) = audio();
+    assert!(steps.iter().any(|s| {
+        match s {
+            Step::EditProcedure { statements, .. } => statements
+                .iter()
+                .any(|st| st.method.as_deref().unwrap_or("").contains("playAudio")),
+            _ => false,
+        }
+    }));
+}
+
+#[test]
+fn parameters_creates_parameterized_method_and_call() {
+    let (_, steps) = parameters();
+    let move_hero = edit_statements(&steps, "moveHero");
+    let signature = move_hero
+        .iter()
+        .find(|statement| statement.kind == "parameterDeclaration")
+        .expect("moveHero should declare a parameter");
+    assert_eq!(
+        signature.args,
+        vec!["distance".to_string(), "DecimalNumber".to_string()]
+    );
+
+    let body_call = move_hero
+        .iter()
+        .find(|statement| statement.method.as_deref() == Some("hero.walk"))
+        .expect("moveHero should use the parameter in a walk call");
+    assert_eq!(body_call.args, vec!["distance".to_string()]);
+
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("moveHero") && statement.args == vec!["2.0".to_string()]
+    }));
+}
+
+#[test]
+fn inheritance_oop_declares_custom_biped_type() {
+    let (_, steps) = inheritance_oop();
+    let setup = edit_statements(&steps, "myFirstMethod");
+
+    let user_type = setup
+        .iter()
+        .find(|statement| statement.kind == "userTypeDeclaration")
+        .expect("inheritance scenario should declare a user type");
+    assert_eq!(
+        user_type.args,
+        vec!["PetLeader".to_string(), "Biped".to_string()]
+    );
+
+    let custom_method = setup
+        .iter()
+        .find(|statement| statement.kind == "defineCustomMethod")
+        .expect("inheritance scenario should define a custom method");
+    assert_eq!(custom_method.method.as_deref(), Some("PetLeader.leadDance"));
+
+    let instance = setup
+        .iter()
+        .find(|statement| statement.kind == "instantiateUserType")
+        .expect("inheritance scenario should instantiate the custom type");
+    assert_eq!(
+        instance.args,
+        vec!["PetLeader".to_string(), "petLeader".to_string()]
+    );
+}
+
+#[test]
+fn comments_adds_meaningful_comment_text() {
+    let (_, steps) = comments();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+
+    let comment = entrypoint
+        .iter()
+        .find(|statement| statement.kind == "comment")
+        .expect("comments scenario should add a comment");
+    assert_eq!(comment.args.len(), 1);
+    assert_eq!(
+        comment.args[0],
+        "Explain why the player score changes after collecting the gem"
+    );
+
+    let narration = entrypoint
+        .iter()
+        .find(|statement| statement.method.as_deref() == Some("narrator.say"))
+        .expect("comments scenario should keep executable behavior alongside the comment");
+    assert_eq!(
+        narration.args,
+        vec!["\"Collect the gem to score!\"".to_string()]
+    );
+}
+
+#[test]
+fn project_io_saves_then_reloads_before_verify() {
+    let (_, steps) = project_io();
+
+    let save_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::Save { path } if path == PROJECT_IO_SAVE_PATH))
+        .expect("project_io should save the project");
+    let load_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::Load { path } if path == PROJECT_IO_SAVE_PATH))
+        .expect("project_io should reload the saved project");
+    let verify_index = steps
+        .iter()
+        .position(|step| matches!(step, Step::AssertMinObjects { min } if *min == 1))
+        .expect("project_io should verify the reloaded project");
+
+    assert!(save_index < load_index, "save must happen before reload");
+    assert!(
+        load_index < verify_index,
+        "reload must happen before verify"
+    );
+    assert!(
+        steps.iter().any(|step| {
+            matches!(
+                step,
+                Step::EditProcedure { method_name, .. } if method_name == "myFirstMethod"
+            )
+        }),
+        "project_io should include content to persist"
+    );
+}
+
+#[test]
+fn game_narrative_tracks_score_and_win_state() {
+    let (_, steps) = game_narrative();
+    assert!(steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::RegisterEvent { event_type, handler_name }
+                if event_type == "keyPress" && handler_name == "onSpacePressed"
+        )
+    }));
+
+    let handler = edit_statements(&steps, "onSpacePressed");
+    let score_declaration = handler
+        .iter()
+        .find(|statement| statement.kind == "localDeclaration")
+        .expect("game narrative should declare a score variable");
+    assert_eq!(
+        score_declaration.args,
+        vec!["score".to_string(), "0".to_string()]
+    );
+
+    let score_update = handler
+        .iter()
+        .find(|statement| statement.kind == "assignment")
+        .expect("game narrative should update the score");
+    assert_eq!(
+        score_update.args,
+        vec!["score".to_string(), "score + 1".to_string()]
+    );
+
+    let win_check = handler
+        .iter()
+        .find(|statement| statement.kind == "ifElse")
+        .expect("game narrative should define a win condition");
+    assert_eq!(win_check.args, vec!["score >= 3".to_string()]);
+
+    assert!(handler.iter().any(|statement| {
+        statement.method.as_deref() == Some("player.say")
+            && statement.args == vec!["\"You win!\"".to_string()]
+    }));
+}
+
+#[test]
+fn say_think_uses_speech_and_thought_bubbles() {
+    let (_, steps) = say_think();
+    let entrypoint = edit_statements(&steps, "myFirstMethod");
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.say")
+            && statement.args == vec!["\"Welcome to the bubble lab\"".to_string()]
+    }));
+    assert!(entrypoint.iter().any(|statement| {
+        statement.method.as_deref() == Some("speaker.think")
+            && statement.args == vec!["\"I should keep this plan quiet\"".to_string()]
+    }));
+}
+
 #[test]
 fn scene_transition_declares_two_scenes_and_switches_between_them() {
     let (_, steps) = scene_transition();
@@ -60,6 +314,7 @@ fn full_curriculum_breadth_covered() {
     let names: Vec<_> = all_scenarios().iter().map(|(n, _)| *n).collect();
     for required in [
         "hello-world",
+        "building-a-scene-first-world",
         "procedures",
         "parameters",
         "inheritance-oop",
@@ -136,6 +391,23 @@ fn full_student_journey_covers_student_build_run_and_save_flow() {
 }
 
 #[test]
+fn building_a_scene_first_world_covers_adjust_run_and_save_flow() {
+    let (_, steps) = building_a_scene_first_world();
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "sceneHero")
+    ));
+    assert!(steps.iter().any(
+        |step| matches!(step, Step::TransformObject { object_name, .. } if object_name == "sceneHero")
+    ));
+    assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::Save { path } if path == BUILDING_A_SCENE_SAVE_PATH))
+    );
+}
+
+#[test]
 fn instructor_grading_round_trips_saved_project_structure() {
     let (_, steps) = instructor_grading();
     let save_index = steps
@@ -202,62 +474,6 @@ fn error_recovery_expects_failures_and_then_recovers() {
     );
     assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "resilientHero")));
     assert!(steps.iter().any(|step| matches!(step, Step::RunWorld)));
-}
-
-#[test]
-fn game_narrative_tracks_score_and_win_state() {
-    let (_, steps) = game_narrative();
-    assert!(steps.iter().any(|step| {
-        matches!(
-            step,
-            Step::RegisterEvent { event_type, handler_name }
-                if event_type == "keyPress" && handler_name == "onSpacePressed"
-        )
-    }));
-
-    let handler = edit_statements(&steps, "onSpacePressed");
-    let score_declaration = handler
-        .iter()
-        .find(|statement| statement.kind == "localDeclaration")
-        .expect("game narrative should declare a score variable");
-    assert_eq!(
-        score_declaration.args,
-        vec!["score".to_string(), "0".to_string()]
-    );
-
-    let score_update = handler
-        .iter()
-        .find(|statement| statement.kind == "assignment")
-        .expect("game narrative should update the score");
-    assert_eq!(
-        score_update.args,
-        vec!["score".to_string(), "score + 1".to_string()]
-    );
-
-    let win_check = handler
-        .iter()
-        .find(|statement| statement.kind == "ifElse")
-        .expect("game narrative should define a win condition");
-    assert_eq!(win_check.args, vec!["score >= 3".to_string()]);
-
-    assert!(handler.iter().any(|statement| {
-        statement.method.as_deref() == Some("player.say")
-            && statement.args == vec!["\"You win!\"".to_string()]
-    }));
-}
-
-#[test]
-fn say_think_uses_speech_and_thought_bubbles() {
-    let (_, steps) = say_think();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("speaker.say")
-            && statement.args == vec!["\"Welcome to the bubble lab\"".to_string()]
-    }));
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("speaker.think")
-            && statement.args == vec!["\"I should keep this plan quiet\"".to_string()]
-    }));
 }
 
 #[test]
@@ -340,8 +556,8 @@ fn joint_manipulation_targets_biped_joints() {
 
 #[test]
 fn live_hello_world() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -352,9 +568,22 @@ fn live_hello_world() {
 }
 
 #[test]
+fn live_building_a_scene_first_world() {
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
+        return;
+    }
+    let c = http_client();
+    let b = web_base_url();
+    for r in execute(&b, &c, &building_a_scene_first_world().1) {
+        assert!(r.ok, "{}: {}", r.name, r.msg);
+    }
+}
+
+#[test]
 fn live_procedures() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -366,8 +595,8 @@ fn live_procedures() {
 
 #[test]
 fn live_full_student_journey() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -379,8 +608,8 @@ fn live_full_student_journey() {
 
 #[test]
 fn live_instructor_grading() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -392,8 +621,8 @@ fn live_instructor_grading() {
 
 #[test]
 fn live_error_recovery() {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let c = http_client();
@@ -412,7 +641,10 @@ fn live_all_curriculum() {
     let c = http_client();
     let b = web_base_url();
     let mut fails = Vec::new();
-    for (name, steps) in all_scenarios() {
+    for (name, steps) in all_scenarios()
+        .into_iter()
+        .filter(|(name, _)| !has_dedicated_live_test(name))
+    {
         for r in execute(&b, &c, &steps) {
             if !r.ok {
                 fails.push(format!("{name}/{}: {}", r.name, r.msg));

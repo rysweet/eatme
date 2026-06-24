@@ -6,7 +6,7 @@ owner: eatme
 resource_basis:
 - name: Alice.org Building a Scene lesson family
   url: https://www.alice.org/resources/
-purpose: Prove that the lesson-specific startup-check scenario for Building a Scene First World launches through the same real Alice desktop harness as the baseline launch smoke, then captures manifest-level evidence for downstream adapters.
+purpose: Prove that Building a Scene First World has both real Alice desktop startup evidence and LookingGlass web evidence for launching a project, adding a visible object, applying a transform, running the world, and saving the project.
 launcher:
   command: alice run-howto
   scenario: building-a-scene-first-world
@@ -51,6 +51,9 @@ acceptance_criteria:
 - given: gadugi needs to exercise the scenario
   when: the gadugi adapter runs commands for this scenario
   then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+- given: LookingGlass web support is claimed for this first-scene journey
+  when: the web platform curriculum scenario runs against ALICE_WEB_URL
+  then: the scenario launches a browser project, adds sceneHero, verifies returned position/orientation/size transform values, runs the world, and saves the project
 steps:
 - id: validate-assets
   command: cargo run -q -p eatme-cli -- assets validate --json
@@ -70,8 +73,14 @@ steps:
   - manifest assertions include real_alice_execution_evidence passed=true
   - screenshot exists and is non-empty
   - log exists and is non-empty
+- id: lookingglass-transform-run-save
+  command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -q -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
+  evidence:
+  - live_building_a_scene_first_world executes the building-a-scene-first-world scenario
+  - transform-object response matches sceneHero position, orientation, and size
+  - run and save steps pass against the configured LookingGlass server
 acceptance_probes:
-- LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass validation uses ALICE_WEB_URL, X-Alice-Local-Api-Token, and /api/ responses when the web workflow is supported.
 timeouts:
   scenario_seconds: 1800
   launch_seconds: 900

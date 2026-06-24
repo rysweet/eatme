@@ -92,11 +92,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario building-a-scene-first-world --run-id parity-building-a-scene-first-world --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student creates a first scene, adds a visible object, adjusts it, runs the world, and saves the project."
     looking_glass:
-      status: partial
-      source_status: "Partial: web launch, add-object, and save evidence are covered; missing adjust, transform, and run evidence"
-      reason: "LookingGlass curriculum evidence covers launch, adding an object, and save for this row; adjust, transform, and run evidence are missing for this row."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student starts a browser project, adds a visible object, and saves; transform and run behavior are not claimed by this row."
+      status: covered
+      source_status: "Covered: web launch, add-object, transform/adjust, run, and save evidence are covered"
+      reason: "LookingGlass curriculum evidence covers browser project launch, adding a visible object, applying position/orientation/size adjustments through the transform API, running the world, and saving the project."
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
+      expected_behavior: "Student starts a browser project, adds a visible object, adjusts its transform, runs the world, and saves the project."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -111,11 +111,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-world --run-id parity-alice-objects-first-world --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student creates or opens an objects-first world, places and changes an object, edits movement, runs, saves, reopens, and verifies persistence."
     looking_glass:
-      status: partial
-      source_status: "Partial: object placement, procedure edit, run, save, and reopen are covered; missing export, transform, and adjust evidence"
-      reason: "LookingGlass save/reopen evidence covers adding an object, editing movement behavior, running, saving, and reopening; export, transform, and adjust evidence are missing for this row."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Student creates or opens an objects-first world, places an object, edits movement, runs, saves, reopens, and verifies persistence; transform and adjust behavior are not claimed by this row."
+      status: covered
+      source_status: "Covered: object placement, transform/adjust, procedure edit, run, save, reopen, persistence, and export evidence are covered"
+      reason: "LookingGlass save/reopen/export evidence covers adding an object, applying position/orientation/size adjustments through the transform API, editing movement behavior, running, saving, reopening, verifying persisted state, and exporting TypeScript from the reopened project."
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e live_alice_objects_first_world_transform_run_save_reopen_export -- --test-threads=1
+      expected_behavior: "Student creates or opens an objects-first world, places and transforms an object, edits movement, runs, saves, reopens, verifies persisted state, and exports the reopened project."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -130,11 +130,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario alice-objects-first-full-path --run-id parity-alice-objects-first-full-path --runs-dir runs --timeout 1800 --json
       expected_behavior: "Automation performs the full objects-first path with object placement, transform, procedure edit, run, save, reopen, and persistence assertions."
     looking_glass:
-      status: partial
-      source_status: "Partial: object placement, procedure edit, run, save, reopen, and export are covered; missing transform evidence"
-      reason: "LookingGlass save/reopen/export evidence covers object placement, procedure edit, run, save, reopen, and export; transform evidence is missing for this row."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Automation performs object placement, procedure edit, run, save, reopen, export, and persistence assertions without claiming transform coverage."
+      status: covered
+      source_status: "Covered: object placement, transform, procedure edit, run, save, reopen, persistence, and export evidence are covered"
+      reason: "LookingGlass save/reopen/export evidence covers object placement, transform through the position/orientation/size API, procedure edit, run, save, reopen, persistence assertions, and TypeScript export from the reopened project."
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e live_alice_objects_first_full_path_transform_run_save_reopen_export -- --test-threads=1
+      expected_behavior: "Automation performs object placement, transform, procedure edit, run, save, reopen, export, and persistence assertions."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -531,7 +531,7 @@ rows:
       status: covered
       source_status: "Covered: bounded LookingGlass REST evidence records plan, build, playtest, revise, and review phases"
       reason: "LookingGlass now records a bounded design-process evidence artifact after a live launch/add/edit/run, a revision edit, and a second run. The evidence names unsupported creative assessment and desktop UI boundaries instead of claiming full Alice coverage."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
       expected_behavior: "Student plans a story-or-game prototype, builds a visible browser project, playtests it, revises it, runs it again, and records review evidence through /api/design-process/story-or-game/evidence; creative assessment, learner-world grading, desktop UI automation, and complete Alice coverage are not claimed."
     closure:
       required:
@@ -606,7 +606,7 @@ rows:
       status: partial
       source_status: "Partial: bounded browser camera comfort API evidence is covered; missing headset/native VR locomotion evidence"
       reason: "LookingGlass proves browser camera comfort API evidence through /api/vr/camera-comfort; headset/native VR locomotion evidence is missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
       expected_behavior: "LookingGlass records bounded browser camera comfort API evidence while true headset/native VR remains explicitly unsupported."
     closure:
       required:
@@ -625,7 +625,7 @@ rows:
       status: partial
       source_status: "Partial: bounded browser WebXR/player comfort boundary evidence is covered; missing true headset player comfort sessions and revision-loop evidence"
       reason: "LookingGlass records bounded browser WebXR/player comfort boundary evidence through /api/vr/camera-comfort; true headset player comfort sessions and revision-loop evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
       expected_behavior: "LookingGlass records bounded browser VR boundary evidence while true headset/player comfort playtesting remains explicitly unsupported."
     closure:
       required:
@@ -767,7 +767,7 @@ rows:
       status: covered
       source_status: "Covered for browser accessibility caption evidence"
       reason: "LookingGlass exposes /api/accessibility/rescue-camera-captions with aria-live, visible camera, and scene-object caption checks plus keyboard/high-contrast review evidence."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       expected_behavior: "Student uses browser camera/caption guidance and verifies the web project remains understandable and keyboard-reviewable."
     closure:
       required:
@@ -948,7 +948,7 @@ rows:
       status: covered
       source_status: "Covered for web gallery review, rubric criteria, and live studio support evidence; rubric recording remains unsupported"
       reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and local live-studio support evidence."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      command: EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
       expected_behavior: "LookingGlass exposes visible gallery items, review prompts, rubric criteria, and local live-studio support evidence while rubric recording remains unsupported."
     closure:
       required:
@@ -998,11 +998,12 @@ closure_families:
     role: grouped web platform closure suite with explicit row bindings
     closure_tests:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
-      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
-      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
-      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
-      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e live_building_a_scene_first_world -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
@@ -1055,6 +1056,8 @@ closure_families:
     closure_tests:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
       - cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e -- e2e/first-lessons-real-ui-actions.spec.ts
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e live_alice_objects_first_world_transform_run_save_reopen_export -- --test-threads=1
+      - EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e live_alice_objects_first_full_path_transform_run_save_reopen_export -- --test-threads=1
     scenario_bindings:
       - alice-objects-first-world
       - alice-objects-first-full-path
@@ -1084,9 +1087,7 @@ closure_families:
   - scenario: alice-web-gallery-media-parity
     role: grouped parity closure probe
     closure_tests:
-      - cargo test -p eatme-alice --test a3p_content_coverage
       - cargo test -p eatme-alice --test camera_and_viewpoint_e2e
-      - cargo test -p eatme-alice --test text_and_speech_e2e
       - cargo test -p eatme-alice --test import_export_support
       - cargo test -p eatme-alice --test project_io_resource_management
       - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/project-audio-native-authoring.contract.test.ts

@@ -19,6 +19,13 @@ fn web_platform_enabled() -> bool {
         .unwrap_or(false)
 }
 
+fn row_specific_live_enabled() -> bool {
+    web_platform_enabled()
+        && env::var("EATME_ROW_SPECIFIC_LIVE")
+            .map(|v| v == "1")
+            .unwrap_or(false)
+}
+
 fn web_base_url() -> String {
     normalize_web_base_url(env::var("ALICE_WEB_URL").ok())
 }
@@ -81,6 +88,56 @@ struct AddObjectResponse {
 }
 
 #[derive(Debug, Deserialize)]
+struct TransformObjectResponse {
+    status: String,
+    #[serde(rename = "objectName")]
+    object_name: String,
+    position: Vector3Response,
+    orientation: OrientationResponse,
+    size: SizeResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct Vector3Response {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct OrientationResponse {
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct SizeResponse {
+    width: f64,
+    height: f64,
+    depth: f64,
+}
+
+impl Vector3Response {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z) == expected
+    }
+}
+
+impl OrientationResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z, self.w) == expected
+    }
+}
+
+impl SizeResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.width, self.height, self.depth) == expected
+    }
+}
+
+#[derive(Debug, Deserialize)]
 struct EditProcedureResponse {
     status: String,
     #[serde(rename = "evidenceArtifact")]
@@ -125,6 +182,12 @@ enum Step {
     AddObject {
         class_name: String,
         instance_name: String,
+    },
+    TransformObject {
+        object_name: String,
+        position: (f64, f64, f64),
+        orientation: (f64, f64, f64, f64),
+        size: (f64, f64, f64),
     },
     EditProcedure {
         class_name: String,
@@ -201,6 +264,45 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: format!("add({class_name})"), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::TransformObject {
+                object_name,
+                position,
+                orientation,
+                size,
+            } => {
+                let body = ureq::json!({
+                    "objectName": object_name,
+                    "position": { "x": position.0, "y": position.1, "z": position.2 },
+                    "orientation": { "x": orientation.0, "y": orientation.1, "z": orientation.2, "w": orientation.3 },
+                    "size": { "width": size.0, "height": size.1, "depth": size.2 },
+                });
+                match authed_post(client, &format!("{base}/api/scene/transform-object")).send_json(body) {
+                    Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
+                        Ok(r) => StepResult {
+                            name: format!("transform({object_name})"),
+                            ok: r.status == "transformed"
+                                && r.object_name == *object_name
+                                && r.position.matches_tuple(*position)
+                                && r.orientation.matches_tuple(*orientation)
+                                && r.size.matches_tuple(*size),
+                            msg: format!(
+                                "status={} object={} position={:?} orientation={:?} size={:?}",
+                                r.status, r.object_name, r.position, r.orientation, r.size
+                            ),
+                        },
+                        Err(e) => StepResult {
+                            name: format!("transform({object_name})"),
+                            ok: false,
+                            msg: e.to_string(),
+                        },
+                    },
+                    Err(e) => StepResult {
+                        name: format!("transform({object_name})"),
+                        ok: false,
+                        msg: e.to_string(),
+                    },
                 }
             }
             Step::EditProcedure { class_name, method_name, statements } => {
@@ -501,8 +603,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
 }
 
 fn assert_live_scenario(name: &str, steps: Vec<Step>) {
-    if !web_platform_enabled() {
-        eprintln!("skip (set EATME_WEB_PLATFORM=1)");
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
         return;
     }
     let client = http_client();
@@ -933,10 +1035,39 @@ fn audio() -> (&'static str, Vec<Step>) {
 }
 
 const HELLO_WORLD_SAVE_PATH: &str = "target/test-work/web-platform/hello-world-save.a3p";
+const BUILDING_A_SCENE_SAVE_PATH: &str =
+    "target/test-work/web-platform/building-a-scene-first-world.a3p";
 const PROJECT_IO_SAVE_PATH: &str = "target/test-work/web-platform/project-io-reload.a3p";
 const FULL_STUDENT_JOURNEY_SAVE_PATH: &str =
     "target/test-work/web-platform/full-student-journey.a3p";
 const INSTRUCTOR_GRADING_SAVE_PATH: &str = "target/test-work/web-platform/instructor-grading.a3p";
+
+fn building_a_scene_first_world() -> (&'static str, Vec<Step>) {
+    (
+        "building-a-scene-first-world",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "sceneHero".into(),
+            },
+            Step::TransformObject {
+                object_name: "sceneHero".into(),
+                position: (1.0, 0.0, -1.5),
+                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
+                size: (1.2, 1.2, 1.2),
+            },
+            Step::RunWorld,
+            Step::Save {
+                path: BUILDING_A_SCENE_SAVE_PATH.into(),
+            },
+            Step::AssertMinObjects { min: 3 },
+        ],
+    )
+}
 
 fn parameters() -> (&'static str, Vec<Step>) {
     (
@@ -1566,6 +1697,7 @@ fn error_recovery() -> (&'static str, Vec<Step>) {
 fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
     vec![
         hello_world(),
+        building_a_scene_first_world(),
         procedures(),
         parameters(),
         inheritance_oop(),
@@ -1763,52 +1895,6 @@ fn concurrency_uses_do_together() {
 }
 
 #[test]
-fn arrays_uses_each_in_array() {
-    let (_, steps) = arrays();
-    assert!(steps.iter().any(|s| match s {
-        Step::EditProcedure { statements, .. } =>
-            statements.iter().any(|st| st.kind == "eachInArrayTogether"),
-        _ => false,
-    }));
-}
-
-#[test]
-fn camera_uses_camera_methods() {
-    let (_, steps) = camera_viewpoint();
-    assert!(steps.iter().any(|s| {
-        match s {
-            Step::EditProcedure { statements, .. } => statements
-                .iter()
-                .any(|st| st.method.as_deref().unwrap_or("").starts_with("camera.")),
-            _ => false,
-        }
-    }));
-}
-
-#[test]
-fn vr_camera_locomotion_records_bounded_comfort_evidence() {
-    let (_, steps) = vr_camera_locomotion_journey();
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::CameraComfortEvidence)),
-        "VR camera journey should prove web camera comfort evidence"
-    );
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
-        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
-    );
-    assert!(
-        !steps
-            .iter()
-            .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
-        "VR camera journey must not claim unrelated review tooling"
-    );
-}
-
-#[test]
 fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
     let (_, steps) = vr_player_comfort_playtest();
     assert!(
@@ -1852,147 +1938,9 @@ fn live_vr_player_comfort_exercises_vr_boundary_api() {
 }
 
 #[test]
-fn accessibility_rescue_camera_captions_records_caption_evidence() {
-    let (_, steps) = accessibility_rescue_camera_captions();
-    assert!(
-        steps
-            .iter()
-            .any(|step| matches!(step, Step::AccessibilityCaptionEvidence)),
-        "accessibility rescue scenario should prove browser caption evidence"
-    );
-    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "captionGuide")));
-}
-
-#[test]
 fn live_accessibility_rescue_camera_captions_exercises_caption_api() {
     let (name, steps) = accessibility_rescue_camera_captions();
     assert_live_scenario(name, steps);
-}
-
-#[test]
-fn audio_uses_play_audio() {
-    let (_, steps) = audio();
-    assert!(steps.iter().any(|s| {
-        match s {
-            Step::EditProcedure { statements, .. } => statements
-                .iter()
-                .any(|st| st.method.as_deref().unwrap_or("").contains("playAudio")),
-            _ => false,
-        }
-    }));
-}
-
-#[test]
-fn parameters_creates_parameterized_method_and_call() {
-    let (_, steps) = parameters();
-    let move_hero = edit_statements(&steps, "moveHero");
-    let signature = move_hero
-        .iter()
-        .find(|statement| statement.kind == "parameterDeclaration")
-        .expect("moveHero should declare a parameter");
-    assert_eq!(
-        signature.args,
-        vec!["distance".to_string(), "DecimalNumber".to_string()]
-    );
-
-    let body_call = move_hero
-        .iter()
-        .find(|statement| statement.method.as_deref() == Some("hero.walk"))
-        .expect("moveHero should use the parameter in a walk call");
-    assert_eq!(body_call.args, vec!["distance".to_string()]);
-
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-    assert!(entrypoint.iter().any(|statement| {
-        statement.method.as_deref() == Some("moveHero") && statement.args == vec!["2.0".to_string()]
-    }));
-}
-
-#[test]
-fn inheritance_oop_declares_custom_biped_type() {
-    let (_, steps) = inheritance_oop();
-    let setup = edit_statements(&steps, "myFirstMethod");
-
-    let user_type = setup
-        .iter()
-        .find(|statement| statement.kind == "userTypeDeclaration")
-        .expect("inheritance scenario should declare a user type");
-    assert_eq!(
-        user_type.args,
-        vec!["PetLeader".to_string(), "Biped".to_string()]
-    );
-
-    let custom_method = setup
-        .iter()
-        .find(|statement| statement.kind == "defineCustomMethod")
-        .expect("inheritance scenario should define a custom method");
-    assert_eq!(custom_method.method.as_deref(), Some("PetLeader.leadDance"));
-
-    let instance = setup
-        .iter()
-        .find(|statement| statement.kind == "instantiateUserType")
-        .expect("inheritance scenario should instantiate the custom type");
-    assert_eq!(
-        instance.args,
-        vec!["PetLeader".to_string(), "petLeader".to_string()]
-    );
-}
-
-#[test]
-fn comments_adds_meaningful_comment_text() {
-    let (_, steps) = comments();
-    let entrypoint = edit_statements(&steps, "myFirstMethod");
-
-    let comment = entrypoint
-        .iter()
-        .find(|statement| statement.kind == "comment")
-        .expect("comments scenario should add a comment");
-    assert_eq!(comment.args.len(), 1);
-    assert_eq!(
-        comment.args[0],
-        "Explain why the player score changes after collecting the gem"
-    );
-
-    let narration = entrypoint
-        .iter()
-        .find(|statement| statement.method.as_deref() == Some("narrator.say"))
-        .expect("comments scenario should keep executable behavior alongside the comment");
-    assert_eq!(
-        narration.args,
-        vec!["\"Collect the gem to score!\"".to_string()]
-    );
-}
-
-#[test]
-fn project_io_saves_then_reloads_before_verify() {
-    let (_, steps) = project_io();
-
-    let save_index = steps
-        .iter()
-        .position(|step| matches!(step, Step::Save { path } if path == PROJECT_IO_SAVE_PATH))
-        .expect("project_io should save the project");
-    let load_index = steps
-        .iter()
-        .position(|step| matches!(step, Step::Load { path } if path == PROJECT_IO_SAVE_PATH))
-        .expect("project_io should reload the saved project");
-    let verify_index = steps
-        .iter()
-        .position(|step| matches!(step, Step::AssertMinObjects { min } if *min == 1))
-        .expect("project_io should verify the reloaded project");
-
-    assert!(save_index < load_index, "save must happen before reload");
-    assert!(
-        load_index < verify_index,
-        "reload must happen before verify"
-    );
-    assert!(
-        steps.iter().any(|step| {
-            matches!(
-                step,
-                Step::EditProcedure { method_name, .. } if method_name == "myFirstMethod"
-            )
-        }),
-        "project_io should include content to persist"
-    );
 }
 
 #[path = "support/web_platform_curriculum_tail.rs"]

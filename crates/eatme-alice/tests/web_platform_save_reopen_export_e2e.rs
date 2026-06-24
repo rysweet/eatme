@@ -5,6 +5,7 @@
 //! LookingGlass REST API with real save-to-path, reopen, and export calls.
 
 use serde::Deserialize;
+use serde_json::Value;
 use std::env;
 use std::io::Cursor;
 use std::io::Read;
@@ -32,6 +33,12 @@ enum Step {
     AddObject {
         class_name: &'static str,
         instance_name: &'static str,
+    },
+    TransformObject {
+        object_name: &'static str,
+        position: (f64, f64, f64),
+        orientation: (f64, f64, f64, f64),
+        size: (f64, f64, f64),
     },
     EditProcedure {
         method_name: &'static str,
@@ -89,6 +96,64 @@ struct AddObjectResponse {
 }
 
 #[derive(Debug, Deserialize)]
+struct TransformObjectResponse {
+    status: String,
+    #[serde(rename = "objectName")]
+    object_name: String,
+    position: Vector3Response,
+    orientation: OrientationResponse,
+    size: SizeResponse,
+}
+
+#[derive(Debug, Deserialize)]
+struct Vector3Response {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct OrientationResponse {
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct SizeResponse {
+    width: f64,
+    height: f64,
+    depth: f64,
+}
+
+#[derive(Debug, Clone)]
+struct ExpectedObjectTransform {
+    object_name: String,
+    position: (f64, f64, f64),
+    orientation: (f64, f64, f64, f64),
+    size: (f64, f64, f64),
+}
+
+impl Vector3Response {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z) == expected
+    }
+}
+
+impl OrientationResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64, f64)) -> bool {
+        (self.x, self.y, self.z, self.w) == expected
+    }
+}
+
+impl SizeResponse {
+    fn matches_tuple(&self, expected: (f64, f64, f64)) -> bool {
+        (self.width, self.height, self.depth) == expected
+    }
+}
+
+#[derive(Debug, Deserialize)]
 struct RunWorldResponse {
     status: String,
     #[serde(rename = "scene_object_count")]
@@ -97,6 +162,10 @@ struct RunWorldResponse {
 
 fn web_platform_enabled() -> bool {
     env::var("EATME_WEB_PLATFORM").is_ok_and(|value| value == "1")
+}
+
+fn row_specific_live_enabled() -> bool {
+    web_platform_enabled() && env::var("EATME_ROW_SPECIFIC_LIVE").is_ok_and(|value| value == "1")
 }
 
 fn web_base_url() -> String {
@@ -113,6 +182,22 @@ fn http_client() -> ureq::Agent {
         .build()
 }
 
+fn local_api_token() -> String {
+    env::var("ALICE_LOCAL_API_TOKEN")
+        .ok()
+        .map(|token| token.trim().to_string())
+        .filter(|token| !token.is_empty())
+        .unwrap_or_else(|| "gadugi-local-api-token".into())
+}
+
+#[allow(clippy::result_large_err)]
+fn post_json(client: &ureq::Agent, url: &str, body: Value) -> Result<ureq::Response, ureq::Error> {
+    client
+        .post(url)
+        .set("X-Alice-Local-Api-Token", &local_api_token())
+        .send_json(body)
+}
+
 fn alice_objects_first_world() -> Scenario {
     Scenario {
         id: "alice-objects-first-world",
@@ -122,6 +207,12 @@ fn alice_objects_first_world() -> Scenario {
             Step::AddObject {
                 class_name: "Biped",
                 instance_name: "bunny",
+            },
+            Step::TransformObject {
+                object_name: "bunny",
+                position: (1.5, 0.0, -2.0),
+                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
+                size: (1.25, 1.25, 1.25),
             },
             Step::EditProcedure {
                 method_name: "myFirstMethod",
@@ -139,6 +230,7 @@ fn alice_objects_first_world() -> Scenario {
                 path: OBJECTS_FIRST_WORLD_SAVE_PATH,
             },
             Step::AssertEditedProcedurePersisted,
+            Step::ExportTypeScript,
             Step::AssertMinObjects { min: 3 },
         ],
     }
@@ -153,6 +245,12 @@ fn alice_objects_first_full_path() -> Scenario {
             Step::AddObject {
                 class_name: "Biped",
                 instance_name: "bunny",
+            },
+            Step::TransformObject {
+                object_name: "bunny",
+                position: (1.5, 0.0, -2.0),
+                orientation: (0.0, 0.13052619222, 0.0, 0.991444861374),
+                size: (1.25, 1.25, 1.25),
             },
             Step::AddObject {
                 class_name: "Prop",
@@ -270,10 +368,20 @@ fn every_targeted_scenario_saves_reopens_and_verifies_after_reopen() {
 #[test]
 fn export_rows_export_only_after_reopen() {
     for scenario in [
+        alice_objects_first_world(),
         alice_objects_first_full_path(),
         starter_project_open_save_export_preflight(),
     ] {
         assert_order(&scenario, "reopen", "export");
+    }
+}
+
+#[test]
+fn objects_first_rows_transform_before_save_and_verify_transform_after_reopen() {
+    for scenario in [alice_objects_first_world(), alice_objects_first_full_path()] {
+        assert_order(&scenario, "transform", "save");
+        assert_order(&scenario, "reopen", "verify-edit");
+        assert_order(&scenario, "verify-edit", "export");
     }
 }
 
@@ -307,7 +415,12 @@ fn live_save_reopen_export_parity_rows() {
     let client = http_client();
     let base = web_base_url();
     let mut failures = Vec::new();
-    for scenario in scenarios() {
+    for scenario in scenarios().into_iter().filter(|scenario| {
+        !matches!(
+            scenario.id,
+            "alice-objects-first-world" | "alice-objects-first-full-path"
+        )
+    }) {
         for result in execute(&base, &client, &scenario.steps) {
             if !result.ok {
                 failures.push(format!("{}/{}: {}", scenario.id, result.name, result.msg));
@@ -318,12 +431,40 @@ fn live_save_reopen_export_parity_rows() {
     assert!(failures.is_empty(), "failures:\n{}", failures.join("\n"));
 }
 
+#[test]
+fn live_alice_objects_first_world_transform_run_save_reopen_export() {
+    assert_live_scenario(alice_objects_first_world());
+}
+
+#[test]
+fn live_alice_objects_first_full_path_transform_run_save_reopen_export() {
+    assert_live_scenario(alice_objects_first_full_path());
+}
+
+fn assert_live_scenario(scenario: Scenario) {
+    if !row_specific_live_enabled() {
+        eprintln!("skip (set EATME_WEB_PLATFORM=1 EATME_ROW_SPECIFIC_LIVE=1)");
+        return;
+    }
+
+    let client = http_client();
+    let base = web_base_url();
+    let failures = execute(&base, &client, &scenario.steps)
+        .into_iter()
+        .filter(|result| !result.ok)
+        .map(|result| format!("{}/{}: {}", scenario.id, result.name, result.msg))
+        .collect::<Vec<_>>();
+
+    assert!(failures.is_empty(), "failures:\n{}", failures.join("\n"));
+}
+
 fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> {
     let mut results = Vec::new();
     let mut last_count = 0;
     let mut saved_count = None;
     let mut saved_path = None;
-    let mut edited_snippets = Vec::new();
+    let mut persisted_snippets = Vec::new();
+    let mut expected_transforms = Vec::new();
     let mut unsaved_object_names = Vec::new();
 
     for step in steps {
@@ -343,6 +484,24 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 instance_name,
                 &mut last_count,
             ),
+            Step::TransformObject {
+                object_name,
+                position,
+                orientation,
+                size,
+            } => {
+                let result =
+                    post_transform(client, base, object_name, *position, *orientation, *size);
+                if result.ok {
+                    expected_transforms.push(ExpectedObjectTransform {
+                        object_name: object_name.to_string(),
+                        position: *position,
+                        orientation: *orientation,
+                        size: *size,
+                    });
+                }
+                result
+            }
             Step::AddUnsavedObject {
                 class_name,
                 instance_name,
@@ -365,7 +524,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             } => {
                 let result = post_edit(client, base, method_name, edit_spec);
                 if result.ok {
-                    edited_snippets.push(persisted_snippet_from_edit_spec(edit_spec));
+                    persisted_snippets.push(persisted_snippet_from_edit_spec(edit_spec));
                 }
                 result
             }
@@ -389,7 +548,8 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
             Step::ExportTypeScript => get_typescript_export_matches_saved_state(
                 client,
                 base,
-                &edited_snippets,
+                &persisted_snippets,
+                &expected_transforms,
                 &unsaved_object_names,
             ),
             Step::AssertMinObjects { min } => StepResult {
@@ -398,7 +558,7 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                 msg: format!("actual={last_count}"),
             },
             Step::AssertEditedProcedurePersisted => {
-                get_typescript_export_contains(client, base, &edited_snippets)
+                get_typescript_export_contains(client, base, &persisted_snippets)
             }
         };
         results.push(result);
@@ -422,7 +582,7 @@ fn get_status(client: &ureq::Agent, url: &str) -> StepResult {
 }
 
 fn post_launch(client: &ureq::Agent, url: &str, last_count: &mut usize) -> StepResult {
-    match client.post(url).send_json(ureq::json!({})) {
+    match post_json(client, url, ureq::json!({})) {
         Ok(resp) => match resp.into_json::<LaunchResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -444,10 +604,11 @@ fn post_launch_project(
     path: &str,
     last_count: &mut usize,
 ) -> StepResult {
-    match client
-        .post(&format!("{base}/api/launch"))
-        .send_json(ureq::json!({ "project": path }))
-    {
+    match post_json(
+        client,
+        &format!("{base}/api/launch"),
+        ureq::json!({ "project": path }),
+    ) {
         Ok(resp) => match resp.into_json::<LaunchResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -478,10 +639,11 @@ fn post_add_object(
     instance_name: &str,
     last_count: &mut usize,
 ) -> StepResult {
-    match client
-        .post(url)
-        .send_json(ureq::json!({ "className": class_name, "name": instance_name }))
-    {
+    match post_json(
+        client,
+        url,
+        ureq::json!({ "className": class_name, "name": instance_name }),
+    ) {
         Ok(resp) => match resp.into_json::<AddObjectResponse>() {
             Ok(body) => {
                 *last_count = body.scene_field_count_after;
@@ -497,13 +659,52 @@ fn post_add_object(
     }
 }
 
+fn post_transform(
+    client: &ureq::Agent,
+    base: &str,
+    object_name: &str,
+    position: (f64, f64, f64),
+    orientation: (f64, f64, f64, f64),
+    size: (f64, f64, f64),
+) -> StepResult {
+    match post_json(
+        client,
+        &format!("{base}/api/scene/transform-object"),
+        ureq::json!({
+            "objectName": object_name,
+            "position": { "x": position.0, "y": position.1, "z": position.2 },
+            "orientation": { "x": orientation.0, "y": orientation.1, "z": orientation.2, "w": orientation.3 },
+            "size": { "width": size.0, "height": size.1, "depth": size.2 },
+        }),
+    ) {
+        Ok(resp) => match resp.into_json::<TransformObjectResponse>() {
+            Ok(body) => StepResult {
+                name: format!("transform({object_name})"),
+                ok: body.status == "transformed"
+                    && body.object_name == object_name
+                    && body.position.matches_tuple(position)
+                    && body.orientation.matches_tuple(orientation)
+                    && body.size.matches_tuple(size),
+                msg: format!(
+                    "status={} object={} position={:?} orientation={:?} size={:?}",
+                    body.status, body.object_name, body.position, body.orientation, body.size
+                ),
+            },
+            Err(error) => failed("transform", error),
+        },
+        Err(error) => failed("transform", error),
+    }
+}
+
 fn post_edit(client: &ureq::Agent, base: &str, method_name: &str, edit_spec: &str) -> StepResult {
-    match client
-        .post(&format!("{base}/api/code/edit-procedure"))
-        .send_json(ureq::json!({
+    match post_json(
+        client,
+        &format!("{base}/api/code/edit-procedure"),
+        ureq::json!({
             "procedureSelector": format!("scene.{method_name}"),
             "editSpec": edit_spec,
-        })) {
+        }),
+    ) {
         Ok(resp) => match resp.into_json::<StatusResponse>() {
             Ok(body) => StepResult {
                 name: format!("edit({method_name})"),
@@ -517,10 +718,7 @@ fn post_edit(client: &ureq::Agent, base: &str, method_name: &str, edit_spec: &st
 }
 
 fn post_run_world(client: &ureq::Agent, base: &str, last_count: &mut usize) -> StepResult {
-    match client
-        .post(&format!("{base}/api/world/run"))
-        .send_json(ureq::json!({}))
-    {
+    match post_json(client, &format!("{base}/api/world/run"), ureq::json!({})) {
         Ok(resp) => match resp.into_json::<RunWorldResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -537,10 +735,11 @@ fn post_run_world(client: &ureq::Agent, base: &str, last_count: &mut usize) -> S
 }
 
 fn post_save(client: &ureq::Agent, base: &str, path: &str) -> StepResult {
-    match client
-        .post(&format!("{base}/api/project/save"))
-        .send_json(ureq::json!({ "targetPath": path }))
-    {
+    match post_json(
+        client,
+        &format!("{base}/api/project/save"),
+        ureq::json!({ "targetPath": path }),
+    ) {
         Ok(resp) => match resp.into_json::<StatusResponse>() {
             Ok(body) => StepResult {
                 name: format!("save({path})"),
@@ -561,10 +760,11 @@ fn post_reopen(
     expected_count: usize,
     last_count: &mut usize,
 ) -> StepResult {
-    match client
-        .post(&format!("{base}/api/project/reopen"))
-        .send_json(ureq::json!({ "project": path }))
-    {
+    match post_json(
+        client,
+        &format!("{base}/api/project/reopen"),
+        ureq::json!({ "project": path }),
+    ) {
         Ok(resp) => match resp.into_json::<LaunchResponse>() {
             Ok(body) => {
                 *last_count = body.scene_object_count;
@@ -635,6 +835,7 @@ fn get_typescript_export_matches_saved_state(
     client: &ureq::Agent,
     base: &str,
     snippets: &[String],
+    expected_transforms: &[ExpectedObjectTransform],
     unsaved_object_names: &[String],
 ) -> StepResult {
     let (content_type, bytes) = match get_typescript_export_bytes(client, base) {
@@ -662,6 +863,11 @@ fn get_typescript_export_matches_saved_state(
         .filter(|snippet| !text.contains(snippet.as_str()))
         .cloned()
         .collect::<Vec<_>>();
+    let missing_transforms = expected_transforms
+        .iter()
+        .filter(|expected| !export_contains_object_transform(&text, expected))
+        .map(|expected| expected.object_name.clone())
+        .collect::<Vec<_>>();
     let leaked_unsaved = unsaved_object_names
         .iter()
         .filter(|name| text.contains(name.as_str()))
@@ -673,9 +879,10 @@ fn get_typescript_export_matches_saved_state(
         ok: content_type.contains("application/zip")
             && !bytes.is_empty()
             && missing.is_empty()
+            && missing_transforms.is_empty()
             && leaked_unsaved.is_empty(),
         msg: format!(
-            "content_type={content_type} bytes={} missing={missing:?} leaked_unsaved={leaked_unsaved:?}",
+            "content_type={content_type} bytes={} missing={missing:?} missing_transforms={missing_transforms:?} leaked_unsaved={leaked_unsaved:?}",
             bytes.len()
         ),
     }
@@ -687,6 +894,7 @@ fn get_typescript_export_bytes(
 ) -> Result<(String, Vec<u8>), String> {
     match client
         .get(&format!("{base}/api/projects/current/export/typescript"))
+        .set("X-Alice-Local-Api-Token", &local_api_token())
         .call()
     {
         Ok(resp) => {
@@ -727,6 +935,59 @@ fn persisted_snippet_from_edit_spec(edit_spec: &str) -> String {
             .unwrap_or(edit_spec),
     );
     format!("scene.call(\"this\", \"{}\"", method_name)
+}
+
+fn transform_export_snippets(
+    position: (f64, f64, f64),
+    orientation: (f64, f64, f64, f64),
+    size: (f64, f64, f64),
+) -> Vec<String> {
+    vec![
+        format!(
+            "position: {{ x: {}, y: {}, z: {} }}",
+            format_number(position.0),
+            format_number(position.1),
+            format_number(position.2)
+        ),
+        format!(
+            "orientation: {{ x: {}, y: {}, z: {}, w: {} }}",
+            format_number(orientation.0),
+            format_number(orientation.1),
+            format_number(orientation.2),
+            format_number(orientation.3)
+        ),
+        format!(
+            "size: {{ width: {}, height: {}, depth: {} }}",
+            format_number(size.0),
+            format_number(size.1),
+            format_number(size.2)
+        ),
+    ]
+}
+
+fn export_contains_object_transform(text: &str, expected: &ExpectedObjectTransform) -> bool {
+    let Some(block) = export_object_block(text, &expected.object_name) else {
+        return false;
+    };
+    transform_export_snippets(expected.position, expected.orientation, expected.size)
+        .iter()
+        .all(|snippet| block.contains(snippet))
+}
+
+fn export_object_block<'a>(text: &'a str, object_name: &str) -> Option<&'a str> {
+    let start_marker = format!("  {object_name}: {{");
+    let start = text.find(&start_marker)?;
+    let rest = &text[start..];
+    let end = rest.find("\n  },")? + "\n  },".len();
+    Some(&rest[..end])
+}
+
+fn format_number(value: f64) -> String {
+    if value.fract() == 0.0 {
+        format!("{value:.0}")
+    } else {
+        value.to_string()
+    }
 }
 
 fn edit_spec_identifier(value: &str) -> String {
@@ -796,6 +1057,7 @@ fn step_matches(step: &Step, label: &str) -> bool {
     matches!(
         (step, label),
         (Step::AddObject { .. }, "add-object")
+            | (Step::TransformObject { .. }, "transform")
             | (Step::EditProcedure { .. }, "edit")
             | (Step::RunWorld, "run")
             | (Step::Save { .. }, "save")
