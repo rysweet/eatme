@@ -737,15 +737,15 @@ rows:
       expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
     looking_glass:
       status: partial
-      source_status: "Partial: parsed class-behavior package evidence is covered; missing full desktop UI class portability evidence"
-      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; missing evidence includes full desktop UI class portability."
-      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
-      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
+      source_status: "Partial: browser UI class behavior export/import/save/reopen evidence is covered; missing desktop Alice UI class portability evidence"
+      reason: "LookingGlass can export a modified class behavior package, import it into a different browser project, create an imported class instance, save/reopen, and show the behavior in UI evidence; missing evidence includes desktop Alice UI class portability."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
+      expected_behavior: "Modified class behavior package evidence survives browser export, import into another project, imported class instance creation, save, and reopen."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
         - LookingGlass command passes when web class portability support is claimed
-        - Supported scope remains bounded to parsed AliceProject.types behavior packages
+        - Supported scope remains bounded to browser UI class behavior package export/import/save/reopen evidence
         - behavior evidence names user-visible result, not implementation details
   - scenario: accessibility-rescue-camera-captions
     area: "Accessibility"
@@ -1097,13 +1097,14 @@ closure_families:
   - scenario: modified-class-portability
     role: row-specific LookingGlass class behavior package closure
     closure_tests:
-      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
     scenario_bindings:
       - modified-class-portability
     evidence_assertions:
       - class-behavior-package.persistence
       - behavior package import
       - behavior persistence after import
+      - browser UI export/import/save/reopen
   - scenario: teacher-community-sharing-loop
     role: row-specific LookingGlass teacher share metadata closure
     closure_tests:

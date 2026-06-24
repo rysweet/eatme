@@ -294,6 +294,7 @@ fn generated_lookingglass_verification_steps_assert_test_stdout_only() {
             vec![
                 "class-behavior-package.persistence.test.ts",
                 "e2e/class-behavior-package.spec.ts",
+                "lookingglass-class-ui-evidence=export-import-instance-save-reopen",
             ],
         ),
         (
