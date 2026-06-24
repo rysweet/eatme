@@ -136,6 +136,38 @@ fn generated_instructor_adapter_validates_the_source_asset_before_checking_id() 
 }
 
 #[test]
+fn generated_classroom_setup_adapter_runs_instructor_agentic_evidence() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = "assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml";
+    let generated = generate_gadugi_adapter_yaml(&root, &root.join(source)).unwrap();
+    let adapter = generated_adapter_value(&generated);
+    let evidence_step = adapter["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|step| step["name"] == "Validate instructor acceptance review contract")
+        .expect("instructor evidence step is generated");
+    let command = evidence_step["params"]["command"].as_str().unwrap();
+    let expected_stdout = evidence_step["expect"]["stdout_contains"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .filter_map(|value| value.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert!(
+        command.contains("assets instructor-agentic-evidence --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json"),
+        "{command}"
+    );
+    assert!(command.contains(r#""status": "covered""#), "{command}");
+    for output in ["setup_checklist", "fallback_plan", "student_setup_note"] {
+        assert!(command.contains(output), "{command}");
+        assert!(expected_stdout.contains(output), "{expected_stdout}");
+    }
+}
+
+#[test]
 fn generated_vr_adapters_declare_real_vr_switches_as_optional_environment() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = "assets/scenarios/eatme/vr-player-comfort-playtest.yaml";

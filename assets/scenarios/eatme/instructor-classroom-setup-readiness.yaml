@@ -82,10 +82,12 @@ steps:
   - LookingGlass /api/project/templates and /api/project/new prove classroom create-project readiness
   - LookingGlass /api/setup/evidence-handoff writes a classroom readiness handoff
 - id: agentic-instructor-review
-  command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml
+  command: cargo run -q -p eatme-cli -- assets instructor-agentic-evidence --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json
   evidence:
-  - agent output addresses every acceptance_probe
-  - agent output returns the expected_outputs listed in this YAML
+  - stdout JSON has status=covered
+  - stdout JSON includes setup_checklist output evidence
+  - stdout JSON includes fallback_plan output evidence
+  - stdout JSON includes student_setup_note output evidence
 timeouts:
   agentic_seconds: 900
 artifacts:

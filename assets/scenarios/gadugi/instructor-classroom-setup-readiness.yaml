@@ -63,18 +63,12 @@ steps:
       export RUN_ID="${RUN_ID:-gadugi-instructor-classroom-setup-readiness}"
       set -euo pipefail
       cargo run -q -p eatme-cli -- assets validate --path 'assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml' --json
-      AGENTIC_TEST_PROMPT='Act as an instructor acceptance agent preparing classroom setup. Produce a readiness checklist, student-facing setup note, and fallback plan. Include device/graphics constraints from Alice resources, offline/resource alternatives, what evidence confirms readiness, and what to do when launch fails. Keep the plan non-coder editable.'
-      printf '%s\n' "$AGENTIC_TEST_PROMPT" >/dev/null
-      SOURCE_ASSET='assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml'
-      grep -F -- 'setup_checklist' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'fallback_plan' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'student_setup_note' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'Checklist distinguishes required readiness evidence from nice-to-have tools.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'Fallback plan preserves the lesson concept when Alice cannot launch on a device.' "$SOURCE_ASSET" >/dev/null
-      grep -F -- 'Student-facing note avoids blaming learners for graphics or install failures.' "$SOURCE_ASSET" >/dev/null
-      printf '%s\n' 'setup_checklist'
-      printf '%s\n' 'fallback_plan'
-      printf '%s\n' 'student_setup_note'
+      EVIDENCE_JSON=$(cargo run -q -p eatme-cli -- assets instructor-agentic-evidence --path assets/scenarios/eatme/instructor-classroom-setup-readiness.yaml --json)
+      printf '%s\n' "$EVIDENCE_JSON"
+      printf '%s\n' "$EVIDENCE_JSON" | grep -F -- '"status": "covered"' >/dev/null
+      printf '%s\n' "$EVIDENCE_JSON" | grep -F -- '"setup_checklist": {' >/dev/null
+      printf '%s\n' "$EVIDENCE_JSON" | grep -F -- '"fallback_plan": {' >/dev/null
+      printf '%s\n' "$EVIDENCE_JSON" | grep -F -- '"student_setup_note": {' >/dev/null
       printf '%s\n' instructor-acceptance-contract-ok
   expect:
     exit_code: 0
