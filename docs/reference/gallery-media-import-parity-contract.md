@@ -293,7 +293,7 @@ EatMe closure tests enforce the documentation boundary through:
 
 | Surface | Requirement |
 | --- | --- |
-| `assets/parity/rabbithole-lookingglass-journey-matrix.yaml` | `model-texture-import-checkpoint` is `covered` by LookingGlass main source/API evidence; audio rows stay `partial` unless native audio/full authoring evidence exists. |
+| `assets/parity/rabbithole-lookingglass-journey-matrix.yaml` | `model-texture-import-checkpoint`, `media-audio-cue-storyboard`, and `audio-camera-and-export-sharecase` are `covered` only when the named LookingGlass contract tests pass. |
 | `assets/scenarios/eatme/*.yaml` | Source scenarios name exact evidence, non-claims, and fallback behavior before generated mirrors are updated. |
 | `assets/scenarios/gadugi/*.yaml` | Generated mirrors remain in sync with source scenarios when checked in. |
 | `crates/eatme-assets/tests/*` | Matrix/scenario wording rejects broad audio, native share, and unsupported media claims. |
@@ -323,13 +323,13 @@ EatMe closure asserts these exact LookingGlass references for the covered
 | `LookingGlass:test/model-texture-camera-joint-export-workflow.contract.test.ts` | Public workflow API, resource export package, and share fallback behavior. |
 | `LookingGlass:test/imported-asset-project-io.test.ts` | Imported resource metadata and bytes round-trip through project IO. |
 
-These references support bounded partial audio/export rows without promoting
-them to covered:
+These references support the covered native audio/export/share rows:
 
-| Evidence reference | Bounded claim |
+| Evidence reference | Claim |
 | --- | --- |
-| `LookingGlass:test/project-audio-bounded-evidence.contract.test.ts` | Bounded metadata/playback-bridge evidence without native playback claims. |
-| `LookingGlass:test/project-export-share-fallback.contract.test.ts` | Export/download fallback without native Web Share success claims. |
+| `LookingGlass:test/project-audio-native-authoring.contract.test.ts` | Native Web Audio playback and audio authoring evidence. |
+| `LookingGlass:test/project-export-native-web-share.contract.test.ts` | Native Web Share success only after a real matching package file is shared. |
+| `LookingGlass:test/project-export-share-fallback.contract.test.ts` | Browser-download handling when native Web Share is unavailable or rejected. |
 
 ## Security contract
 
