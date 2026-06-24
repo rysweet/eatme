@@ -42,6 +42,7 @@ adapter:
   targets:
   - eatme-cli
   - gadugi-cli
+  - lookingglass
 smoke_ready:
   evidence:
   - manifest_assertions
@@ -51,6 +52,7 @@ smoke_ready:
   - vr_player_preflight_record
   - comfort_playtest_guidance_template
   - non_vr_fallback_evidence
+  - lookingglass_browser_webxr_boundary_evidence
 acceptance_criteria:
 - given: Alice launch smoke dependencies are available
   when: the vr-player-comfort-playtest scenario is launched through eatme
@@ -63,11 +65,12 @@ acceptance_criteria:
   then: the guidance template asks for comfort signal, confusion point, discoverability cue, and one revision or justified non-change without claiming those observations already happened
 - given: gadugi needs to exercise the scenario
   when: the generated adapter runs commands for this scenario
-  then: gadugi invokes eatme CLI and inspects manifest-level evidence only
+  then: gadugi invokes eatme CLI, inspects manifest-level evidence, and runs bounded LookingGlass /api/vr/camera-comfort evidence that keeps true player comfort playtesting unsupported without observed headset sessions and revision loops
 acceptance_probes:
 - Guidance template prompts for comfort, orientation, discoverability, and fallback access.
 - Follow-on creator evidence must link observed player feedback to a visible cue, rule, movement, or revision before any playtest claim is validated.
 - The scenario never requires every learner to use VR hardware.
+- LookingGlass browser WebXR evidence may materially advance capability evidence, but it must not satisfy true player comfort playtesting unless headset session observations and revision-loop evidence are present.
 rubric:
 - criterion: Player experience guidance
   evidence:
@@ -105,6 +108,13 @@ steps:
   - manifest assertions all pass
   - screenshot or window evidence exists and is non-empty
   - log exists and is non-empty
+- id: lookingglass-vr-boundary-evidence
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_player_comfort_exercises_vr_boundary_api --test-threads=1
+  evidence:
+  - web_platform_curriculum_e2e includes vr-player-comfort-playtest
+  - /api/vr/camera-comfort returns schema_version alice.camera-vr-comfort-evidence/v1
+  - response records browserWebXrSession and playerComfortPlaytest
+  - response keeps trueHeadsetVrSupported=false, nativeVrSupported=false, truePlayerComfortPlaytestSupported=false, and revisionLoopEvidence=not-observed
 agentic_follow_on:
   prompt_source: assets/personas/alice-user-crew.yaml#vr-player-comfort-playtest
   personality_assets:
@@ -115,6 +125,7 @@ agentic_follow_on:
   required_observables:
   - VR availability record
   - comfort playtest guidance template
+  - headset/player session observation before true VR playtest claims
   - creator revision or justified non-change
 timeouts:
   scenario_seconds: 1800
@@ -126,4 +137,5 @@ artifacts:
   window_list: runs/vr-player-comfort-playtest/${RUN_ID}/window-list.txt
   vr_preflight: runs/vr-player-comfort-playtest/${RUN_ID}/vr-player-preflight.txt
   comfort_playtest_guidance_template: runs/vr-player-comfort-playtest/${RUN_ID}/comfort-playtest-guidance-template.md
-unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require observed desktop fallback playtest evidence before making playtest claims. The generated comfort file is guidance/template material only until a reviewer records non-placeholder observations. LookingGlass currently provides bounded /api/vr/camera-comfort evidence for browser camera comfort only; it must not be counted as true VR player comfort playtesting.
+  lookingglass_vr_boundary: api://lookingglass/api/vr/camera-comfort
+unsupported_policy: If host graphics, DISPLAY, Java 21, Maven prerequisites, or the explicit EATME_REAL_ALICE=1 gate are missing, fail loudly. If real VR hardware or Alice Player VR execution is unavailable, record real_vr_available=false and require observed desktop fallback playtest evidence before making playtest claims. The generated comfort file is guidance/template material only until a reviewer records non-placeholder observations. LookingGlass provides bounded browser WebXR session/locomotion and camera comfort evidence; it must not be counted as true VR player comfort playtesting until headset/player sessions, player comfort notes, and revision-loop evidence are observed.
