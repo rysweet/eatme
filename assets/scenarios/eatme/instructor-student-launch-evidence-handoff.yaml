@@ -88,11 +88,12 @@ steps:
   - LookingGlass /api/setup/preflight names instructor-student-launch-evidence-handoff and desktop-only boundaries
   - LookingGlass /api/launch proves web launch readiness without claiming Java desktop launch evidence
   - LookingGlass /api/setup/evidence-handoff returns student next actions for visible-result evidence and the next revision or setup blocker
-- id: agentic-instructor-review
-  command: agentic instructor acceptance review using assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml
+- id: agentic-student-handoff-output
+  command: cargo run -q -p eatme-cli -- assets instructor-agentic-output --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
   evidence:
-  - agent output addresses every acceptance_probe
-  - agent output returns the expected_outputs listed in this YAML
+  - stdout JSON has passed=true
+  - stdout JSON includes real_alice_evidence_handoff_card, instructor_readiness_note, and student_action_prompt
+  - student_action_prompt asks for one Alice action, visible run result, and one next revision
 timeouts:
   agentic_seconds: 900
 artifacts:

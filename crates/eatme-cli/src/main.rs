@@ -46,6 +46,7 @@ enum AssetsCommand {
     Validate(AssetsValidateArgs),
     GenerateGadugi(AssetsGenerateGadugiArgs),
     GradingReport(AssetsGradingReportArgs),
+    InstructorAgenticOutput(AssetsInstructorAgenticOutputArgs),
 }
 
 #[derive(Subcommand)]
@@ -115,6 +116,15 @@ struct AssetsGenerateGadugiArgs {
     #[arg(long)]
     json: bool,
 }
+
+#[derive(Args)]
+struct AssetsInstructorAgenticOutputArgs {
+    #[arg(long)]
+    path: PathBuf,
+    #[arg(long)]
+    json: bool,
+}
+
 #[derive(Args)]
 struct AliceHomeArgs {
     #[arg(long, env = "ALICE_HOME")]
@@ -269,6 +279,15 @@ fn main() -> Result<()> {
         Commands::Assets {
             command: AssetsCommand::GradingReport(args),
         } => grading::run_grading_report(&args, &runner)?,
+        Commands::Assets {
+            command: AssetsCommand::InstructorAgenticOutput(args),
+        } => {
+            let report = eatme_assets::render_instructor_agentic_output(&args.path)?;
+            print_result(args.json, &report)?;
+            if !report.passed {
+                bail!("instructor agentic output evidence failed");
+            }
+        }
         Commands::Deps {
             command: DepsCommand::Check(args),
         } => print_result(args.json, &check_dependencies(&runner)?)?,

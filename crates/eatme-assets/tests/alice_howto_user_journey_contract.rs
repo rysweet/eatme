@@ -210,9 +210,7 @@ fn covered_howto_scenarios_walk_real_user_steps_not_readiness_only_paths() {
         let rabbit_hole = row.rabbit_hole.to_ascii_lowercase();
         let setup_readiness_instructor = matches!(
             row.scenario.as_str(),
-            "setup-preflight-ready-to-create"
-                | "instructor-classroom-setup-readiness"
-                | "instructor-student-launch-evidence-handoff"
+            "setup-preflight-ready-to-create" | "instructor-classroom-setup-readiness"
         );
         if setup_readiness_instructor && kind == "instructor_agentic_flow" {
             if !rabbit_hole.starts_with("partial:") || !rabbit_hole.contains("agentic") {
