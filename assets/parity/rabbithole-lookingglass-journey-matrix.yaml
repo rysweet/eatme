@@ -149,11 +149,11 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario first-lessons-real-ui-actions --run-id parity-first-lessons-real-ui-actions --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student completes first-lesson UI actions and records object, code-edit, run, and save proof."
     looking_glass:
-      status: partial
-      source_status: "Partial: web object, code-edit, run, save, and reopen proof is covered; missing desktop UI action completion evidence"
-      reason: "LookingGlass web REST evidence covers object, code-edit, run, save, and reopen proof; desktop UI action completion evidence is missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
-      expected_behavior: "Web REST evidence records object, code-edit, run, save, and reopen proof; desktop first-lesson UI action completion is not claimed."
+      status: covered
+      source_status: "Covered: browser UI action evidence covers object placement, code edit, run, visible evidence capture, save, and reopen; desktop Alice UI actions are not claimed"
+      reason: "LookingGlass Playwright evidence drives the browser controls for object placement, code edit, run, visible evidence capture, save, and reopen without using REST-only proof or claiming desktop Alice automation."
+      command: cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e -- e2e/first-lessons-real-ui-actions.spec.ts
+      expected_behavior: "Browser UI actions complete object placement, code edit, run, visible evidence capture, save, and reopen proof; desktop Alice first-lesson UI action completion is not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
@@ -528,15 +528,16 @@ rows:
       command: EATME_REAL_ALICE=1 cargo run -q -p eatme-cli -- alice run-howto --alice-home ${ALICE_HOME} --scenario design-process-story-or-game --run-id parity-design-process-story-or-game --runs-dir runs --timeout 1800 --json
       expected_behavior: "Student plans, builds, playtests, revises, and records a story or game artifact."
     looking_glass:
-      status: partial
-      source_status: "Partial: launch/add/run evidence is covered; missing full design-process playtest and revision evidence"
-      reason: "LookingGlass curriculum evidence covers bounded launch/add/run API behavior; full design-process playtest observations and revision-loop evidence are missing."
-      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- --test-threads=1
-      expected_behavior: "Student can exercise bounded browser project actions; full design-process playtest and revision behavior are not claimed by this row."
+      status: covered
+      source_status: "Covered: bounded LookingGlass REST evidence records plan, build, playtest, revise, and review phases"
+      reason: "LookingGlass now records a bounded design-process evidence artifact after a live launch/add/edit/run, a revision edit, and a second run. The evidence names unsupported creative assessment and desktop UI boundaries instead of claiming full Alice coverage."
+      command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
+      expected_behavior: "Student plans a story-or-game prototype, builds a visible browser project, playtests it, revises it, runs it again, and records review evidence through /api/design-process/story-or-game/evidence; creative assessment, learner-world grading, desktop UI automation, and complete Alice coverage are not claimed."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
-        - LookingGlass command passes when web support is claimed
+        - LookingGlass design_process command passes against a supported ALICE_WEB_URL
+        - LookingGlass evidence response includes plan, build, playtest, revise, and review phases with at least two playtest runs
         - behavior evidence names user-visible result, not implementation details
   - scenario: hour-of-code-studio-kickoff
     area: "Hour of Code"
@@ -737,15 +738,16 @@ rows:
       expected_behavior: "Student saves a modified class, imports it into another project, and checks that behavior travels with it."
     looking_glass:
       status: partial
-      source_status: "Partial: parsed class-behavior package evidence is covered; missing full desktop UI class portability evidence"
-      reason: "LookingGlass can export, validate, import, rename, save, and reopen reusable class behavior packages backed by AliceProject.types; missing evidence includes full desktop UI class portability."
-      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
-      expected_behavior: "Modified class behavior package evidence survives import into another project and save/read round trip."
+      source_status: "Partial: browser UI class behavior export/import/save/reopen evidence is covered via LookingGlass #266; missing desktop Alice UI class portability evidence"
+      reason: "LookingGlass evidence depends on rysweet/LookingGlass#266 until merged; it can export a modified class behavior package, import it into a different browser project, create an imported class instance, save/reopen, and show the behavior in UI evidence; missing evidence includes desktop Alice UI class portability."
+      command: cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
+      expected_behavior: "Modified class behavior package evidence survives browser export, import into another project, imported class instance creation, save, and reopen."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
         - LookingGlass command passes when web class portability support is claimed
-        - Supported scope remains bounded to parsed AliceProject.types behavior packages
+        - LookingGlass evidence depends on rysweet/LookingGlass#266 until that PR is merged
+        - Supported scope remains bounded to browser UI class behavior package export/import/save/reopen evidence
         - behavior evidence names user-visible result, not implementation details
   - scenario: accessibility-rescue-camera-captions
     area: "Accessibility"
@@ -993,6 +995,7 @@ closure_families:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_vr_camera_locomotion_exercises_camera_comfort_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_accessibility_rescue_camera_captions_exercises_caption_api --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
+      - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e design_process -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-preflight-ready-to-create ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=setup-support-lab-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
       - EATME_WEB_PLATFORM=1 ALICE_LOCAL_API_TOKEN=${ALICE_LOCAL_API_TOKEN:-gadugi-local-api-token} EATME_SETUP_READINESS_SCENARIO=instructor-classroom-setup-readiness ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_setup_readiness_e2e -- --test-threads=1
@@ -1043,6 +1046,7 @@ closure_families:
     role: row-specific LookingGlass save reopen export closure
     closure_tests:
       - EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_save_reopen_export_e2e -- --test-threads=1
+      - cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e -- e2e/first-lessons-real-ui-actions.spec.ts
     scenario_bindings:
       - alice-objects-first-world
       - alice-objects-first-full-path
@@ -1097,13 +1101,15 @@ closure_families:
   - scenario: modified-class-portability
     role: row-specific LookingGlass class behavior package closure
     closure_tests:
-      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts
+      - cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npm test -- test/entity-type-registry.test.ts src/project-io/class-behavior-package.persistence.test.ts src/server/routes/project-routes.class-behavior.test.ts && npx playwright test e2e/class-behavior-package.spec.ts && printf "%s\n" "lookingglass-class-ui-evidence=export-import-instance-save-reopen"
     scenario_bindings:
       - modified-class-portability
     evidence_assertions:
       - class-behavior-package.persistence
       - behavior package import
       - behavior persistence after import
+      - browser UI export/import/save/reopen
+      - depends on rysweet/LookingGlass#266 until merged
   - scenario: teacher-community-sharing-loop
     role: row-specific LookingGlass teacher share metadata closure
     closure_tests:

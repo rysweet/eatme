@@ -168,7 +168,8 @@ fn parity_matrix_rows_reference_existing_scenarios_and_explicit_closure_commands
                 && lookingglass_command.contains("ALICE_WEB_URL");
             let is_direct_lookingglass_command = lookingglass_command
                 .contains("cd \"${LOOKINGGLASS_HOME:?}\"")
-                && lookingglass_command.contains("npm test --");
+                && (lookingglass_command.contains("npm test --")
+                    || lookingglass_command.contains("npm run test:e2e --"));
             if !is_eatme_web_command && !is_direct_lookingglass_command {
                 failures.push(format!(
                     "{scenario}: LookingGlass closure command must be a web cargo command or direct LOOKINGGLASS_HOME npm command"
@@ -319,6 +320,7 @@ fn parity_matrix_closure_families_bind_supported_rows_to_named_scenarios_and_tes
                     || test.starts_with("EATME_WEB_PLATFORM=1 ")
                     || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 "#)
                     || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && npm test --"#)
+                    || test.starts_with(r#"cd "${LOOKINGGLASS_HOME:?}" && npm run test:e2e --"#)
             }),
             "{family_scenario}: closure tests must be runnable cargo/npm commands: {tests:?}"
         );
