@@ -57,6 +57,8 @@ acceptance_criteria:
   then: the extension prompts a comparison of plan to first playthrough without blocking learners who skip the extension
 acceptance_probes:
 - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+- LookingGlass validation records bounded plan, build, playtest, revise, and review evidence through /api/design-process/story-or-game/evidence when the web workflow is supported.
+- LookingGlass revision-loop evidence includes an initial playtest run and a second run after a revision.
 - Design-process guide opens with a story-vs-game framing that explains the sequence-versus-event-loop structural difference.
 - Student scene-sketch card prompts the student to choose story or game mode and state a reason.
 - Student scene-sketch card prompts at least two scenes or game states with characters and key actions named.
@@ -100,6 +102,12 @@ steps:
   evidence:
   - agent output addresses every acceptance_probe
   - agent output returns the expected_outputs listed in this YAML
+- id: lookingglass-design-process-evidence
+  command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e live_design_process_records_playtest_revision_and_review_evidence -- --test-threads=1
+  evidence:
+  - /api/design-process/story-or-game/evidence returns lookingglass.design-process-story-or-game-evidence/v1
+  - response phases include plan, build, playtest, revise, and review
+  - response playtest runCount is at least 2 after the revision run
 timeouts:
   agentic_seconds: 900
 artifacts:

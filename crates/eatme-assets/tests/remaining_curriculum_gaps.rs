@@ -62,7 +62,9 @@ fn class_portability_curriculum_contract_requires_export_import_and_behavior_per
         yaml.contains("export evidence")
             && yaml.contains("import evidence")
             && yaml.contains("behavior persistence after import")
-            && yaml.contains("different Alice project"),
+            && yaml.contains("different Alice project")
+            && yaml.contains("browser UI journey")
+            && yaml.contains("e2e/class-behavior-package.spec.ts"),
         "class portability contract should require export, import, and post-import behavior proof"
     );
     assert!(

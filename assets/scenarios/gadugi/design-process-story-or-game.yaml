@@ -12,6 +12,7 @@ environment:
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system
@@ -41,12 +42,30 @@ steps:
     - '"passed": true'
     - '"id": "design-process-story-or-game"'
   timeout: 60000
+- name: Lookingglass Design Process Evidence
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-design-process-story-or-game}"
+      set -e
+      EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e live_design_process_records_playtest_revision_and_review_evidence -- --test-threads=1
+      printf "%s\n" "cargo-test-ok=web_platform_curriculum_e2e"
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - cargo-test-ok=web_platform_curriculum_e2e
+    - 'test result: ok'
+  timeout: 60000
 - name: Run instructor agentic acceptance review
   agent: instructor-acceptance-agent
   action: agentic_test
   params:
     acceptance_probes: |-
       LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+      LookingGlass validation records bounded plan, build, playtest, revise, and review evidence through /api/design-process/story-or-game/evidence when the web workflow is supported.
+      LookingGlass revision-loop evidence includes an initial playtest run and a second run after a revision.
       Design-process guide opens with a story-vs-game framing that explains the sequence-versus-event-loop structural difference.
       Student scene-sketch card prompts the student to choose story or game mode and state a reason.
       Student scene-sketch card prompts at least two scenes or game states with characters and key actions named.
@@ -70,6 +89,11 @@ assertions:
   agent: eatme-cli-agent
   params:
     step: Validate editable Alice instructor assets
+- name: lookingglass-design-process-evidence succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Lookingglass Design Process Evidence
 - name: Instructor Agentic Acceptance Review Covers Probes
   type: agentic_acceptance
   agent: instructor-acceptance-agent

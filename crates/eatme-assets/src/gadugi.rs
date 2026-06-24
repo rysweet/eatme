@@ -273,7 +273,11 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     }
 
     if scenario.id == "vr-camera-locomotion-journey" {
-        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR preflight artifacts, and runs bounded LookingGlass camera comfort API evidence without claiming native headset VR support";
+        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR preflight artifacts, and runs bounded LookingGlass browser WebXR session/locomotion evidence without claiming native headset VR support or true player comfort playtesting";
+    }
+
+    if scenario.id == "vr-player-comfort-playtest" {
+        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR player preflight artifacts, and runs bounded LookingGlass browser WebXR boundary evidence while true player comfort playtesting remains unsupported without headset sessions and revision loops";
     }
 
     if scenario.kind == "alice_howto_user_journey" {
@@ -460,7 +464,7 @@ fn step_title(id: &str) -> String {
 fn step_timeout_ms(step_id: &str, launch_timeout: u64) -> u64 {
     if step_id.contains("launch") || step_id.contains("howto") || step_id.contains("full-path") {
         launch_timeout * 1000
-    } else if step_id.contains("setup-readiness") {
+    } else if step_id.contains("setup-readiness") || step_id.contains("class-behavior") {
         300_000
     } else {
         60_000
@@ -523,6 +527,13 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
     }
     if command.contains("npm test --") {
         expected.extend(test_command_targets(command));
+        expected.extend(printf_evidence_markers(command));
+        expected.dedup();
+        return expected;
+    }
+    if command.contains("npx playwright test") {
+        expected.extend(test_command_targets(command));
+        expected.extend(printf_evidence_markers(command));
         expected.dedup();
         return expected;
     }
@@ -587,6 +598,7 @@ fn test_command_targets(command: &str) -> Vec<String> {
         .filter_map(|part| {
             let trimmed = part.trim_matches('\'').trim_matches('"').trim_matches(';');
             (trimmed.ends_with(".test.ts")
+                || trimmed.ends_with(".spec.ts")
                 || trimmed.ends_with("_e2e")
                 || trimmed.ends_with("_coverage")
                 || trimmed.ends_with("_integration")
@@ -618,6 +630,8 @@ fn printf_evidence_markers(command: &str) -> Vec<String> {
         "save_reopen_export_readiness_gaps=",
         "real_vr_available=",
         "required_evidence=",
+        "lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen",
+        "lookingglass-class-ui-evidence=export-import-instance-save-reopen",
         "wrote=",
         "a3p-save-load-parity-gaps.md",
         "gallery-media-parity-gaps.md",

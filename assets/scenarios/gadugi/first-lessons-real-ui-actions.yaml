@@ -11,9 +11,11 @@ environment:
   requires:
   - ALICE_HOME
   - EATME_REAL_ALICE
+  - LOOKINGGLASS_HOME
   optional:
   - RUN_ID
   - EATME_REPO
+  - ALICE_WEB_URL
 agents:
 - name: eatme-cli-agent
   type: system
@@ -76,6 +78,20 @@ steps:
     - '"ui_action_artifact_captured": {'
     - '"ui_action_contract": {'
   timeout: 900000
+- name: Verify Lookingglass First Lesson Browser Ui
+  agent: eatme-cli-agent
+  action: execute_command
+  params:
+    command: |-
+      cd "${EATME_REPO:-.}"
+      export RUN_ID="${RUN_ID:-gadugi-first-lessons-real-ui-actions}"
+      cd "${LOOKINGGLASS_HOME:?}" && EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" npx playwright test e2e/first-lessons-real-ui-actions.spec.ts && printf "%s\n" "lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen"
+  expect:
+    exit_code: 0
+    stdout_contains:
+    - e2e/first-lessons-real-ui-actions.spec.ts
+    - lookingglass-first-lesson-ui-evidence=place-adjust-edit-run-evidence-save-reopen
+  timeout: 60000
 assertions:
 - name: validate-assets succeeds
   type: command_success
@@ -107,6 +123,11 @@ assertions:
       "ui_action_artifact_captured": {
       "ui_action_contract": {
     step: Launch Real Ui Action Contract
+- name: verify-lookingglass-first-lesson-browser-ui succeeds
+  type: command_success
+  agent: eatme-cli-agent
+  params:
+    step: Verify Lookingglass First Lesson Browser Ui
 metadata:
   source_eatme_asset: assets/scenarios/eatme/first-lessons-real-ui-actions.yaml
   generated_by: eatme-assets gadugi adapter generator
