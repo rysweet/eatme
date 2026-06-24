@@ -273,7 +273,11 @@ fn generated_evidence_scope(scenario: &EatmeScenarioAsset) -> &'static str {
     }
 
     if scenario.id == "vr-camera-locomotion-journey" {
-        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR preflight artifacts, and runs bounded LookingGlass camera comfort API evidence without claiming native headset VR support";
+        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR preflight artifacts, and runs bounded LookingGlass browser WebXR session/locomotion evidence without claiming native headset VR support or true player comfort playtesting";
+    }
+
+    if scenario.id == "vr-player-comfort-playtest" {
+        return "gadugi invokes eatme commands, checks manifest-level desktop evidence, records VR player preflight artifacts, and runs bounded LookingGlass browser WebXR boundary evidence while true player comfort playtesting remains unsupported without headset sessions and revision loops";
     }
 
     if scenario.kind == "alice_howto_user_journey" {

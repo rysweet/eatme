@@ -134,6 +134,7 @@ enum Step {
         expected_message: String,
     },
     CameraComfortEvidence,
+    VrNativeBoundaryEvidence,
     AccessibilityCaptionEvidence,
     GalleryWalkRubricEvidence,
     AssertMinObjects {
@@ -284,6 +285,43 @@ fn execute(base: &str, client: &ureq::Agent, steps: &[Step]) -> Vec<StepResult> 
                         Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
                     },
                     Err(e) => StepResult { name: "camera-comfort-evidence".into(), ok: false, msg: e.to_string() },
+                }
+            }
+            Step::VrNativeBoundaryEvidence => {
+                match client.get(&format!("{base}/api/vr/camera-comfort")).call() {
+                    Ok(resp) => match resp.into_json::<Value>() {
+                        Ok(value) => {
+                            let browser_session = value
+                                .get("browserWebXrSession")
+                                .and_then(Value::as_object);
+                            let playtest = value
+                                .get("playerComfortPlaytest")
+                                .and_then(Value::as_object);
+                            let locomotion_mode = browser_session
+                                .and_then(|session| session.get("locomotionMode"))
+                                .and_then(Value::as_str)
+                                .unwrap_or_default();
+                            let ok = browser_session.is_some()
+                                && playtest.is_some()
+                                && matches!(
+                                    locomotion_mode,
+                                    "combined" | "controller-smooth" | "click-move" | "point-click" | "disabled" | "unknown"
+                                )
+                                && playtest
+                                    .and_then(|boundary| boundary.get("truePlayerComfortPlaytestSupported"))
+                                    .and_then(Value::as_bool)
+                                    == Some(false)
+                                && playtest
+                                    .and_then(|boundary| boundary.get("revisionLoopEvidence"))
+                                    .and_then(Value::as_str)
+                                    == Some("not-observed")
+                                && value.get("trueHeadsetVrSupported").and_then(Value::as_bool) == Some(false)
+                                && value.get("nativeVrSupported").and_then(Value::as_bool) == Some(false);
+                            StepResult { name: "vr-native-boundary-evidence".into(), ok, msg: value.to_string() }
+                        }
+                        Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
+                    },
+                    Err(e) => StepResult { name: "vr-native-boundary-evidence".into(), ok: false, msg: e.to_string() },
                 }
             }
             Step::AccessibilityCaptionEvidence => {
@@ -716,6 +754,26 @@ fn vr_camera_locomotion_journey() -> (&'static str, Vec<Step>) {
                 instance_name: "comfortGuide".into(),
             },
             Step::CameraComfortEvidence,
+            Step::VrNativeBoundaryEvidence,
+            Step::RunWorld,
+        ],
+    )
+}
+
+fn vr_player_comfort_playtest() -> (&'static str, Vec<Step>) {
+    (
+        "vr-player-comfort-playtest",
+        vec![
+            Step::Health,
+            Step::Launch {
+                template: "blank".into(),
+            },
+            Step::AddObject {
+                class_name: "Biped".into(),
+                instance_name: "playerTester".into(),
+            },
+            Step::CameraComfortEvidence,
+            Step::VrNativeBoundaryEvidence,
             Step::RunWorld,
         ],
     )
@@ -1431,6 +1489,7 @@ fn all_scenarios() -> Vec<(&'static str, Vec<Step>)> {
         design_process(),
         camera_viewpoint(),
         vr_camera_locomotion_journey(),
+        vr_player_comfort_playtest(),
         accessibility_rescue_camera_captions(),
         audio(),
         vehicle_parenting(),
@@ -1607,11 +1666,35 @@ fn vr_camera_locomotion_records_bounded_comfort_evidence() {
         "VR camera journey should prove web camera comfort evidence"
     );
     assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR camera journey should record browser WebXR session/locomotion evidence boundaries"
+    );
+    assert!(
         !steps
             .iter()
             .any(|step| matches!(step, Step::GalleryWalkRubricEvidence)),
         "VR camera journey must not claim unrelated review tooling"
     );
+}
+
+#[test]
+fn vr_player_comfort_keeps_true_headset_playtest_unsupported_until_observed() {
+    let (_, steps) = vr_player_comfort_playtest();
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::CameraComfortEvidence)),
+        "VR player comfort should use the bounded camera/WebXR evidence endpoint"
+    );
+    assert!(
+        steps
+            .iter()
+            .any(|step| matches!(step, Step::VrNativeBoundaryEvidence)),
+        "VR player comfort must require explicit unsupported headset/revision-loop boundaries"
+    );
+    assert!(steps.iter().any(|step| matches!(step, Step::AddObject { instance_name, .. } if instance_name == "playerTester")));
 }
 
 #[test]
@@ -1630,6 +1713,12 @@ fn blank_alice_web_url_uses_default_base_url() {
 #[test]
 fn live_vr_camera_locomotion_exercises_camera_comfort_api() {
     let (name, steps) = vr_camera_locomotion_journey();
+    assert_live_scenario(name, steps);
+}
+
+#[test]
+fn live_vr_player_comfort_exercises_vr_boundary_api() {
+    let (name, steps) = vr_player_comfort_playtest();
     assert_live_scenario(name, steps);
 }
 
