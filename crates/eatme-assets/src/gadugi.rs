@@ -522,13 +522,15 @@ fn evidence_backed_expected_stdout(step: &EatmeScenarioStep) -> Vec<String> {
         return expected;
     }
     if command.contains("npm test --") {
-        expected.extend(test_command_targets(command));
-        expected.extend(printf_evidence_markers(command));
+        if command.contains("npx playwright test") {
+            expected.extend(printf_evidence_markers(command));
+        } else {
+            expected.extend(test_command_targets(command));
+        }
         expected.dedup();
         return expected;
     }
     if command.contains("npx playwright test") {
-        expected.extend(test_command_targets(command));
         expected.extend(printf_evidence_markers(command));
         expected.dedup();
         return expected;
