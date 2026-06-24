@@ -949,7 +949,7 @@ rows:
       source_status: "Covered for web gallery review, rubric criteria, and live studio support evidence; rubric recording remains unsupported"
       reason: "LookingGlass exposes /api/review/gallery-walk-rubric with visible gallery items, review prompts, rubric criteria, and local live-studio support evidence."
       command: EATME_WEB_PLATFORM=1 ALICE_WEB_URL="${ALICE_WEB_URL:-http://localhost:3099}" cargo test -p eatme-alice --test web_platform_curriculum_e2e -- live_classroom_gallery_walk_exercises_rubric_api --test-threads=1
-      expected_behavior: "Class reviews web project items in a gallery walk and uses rubric evidence to record feedback with local live-studio support evidence."
+      expected_behavior: "LookingGlass exposes visible gallery items, review prompts, rubric criteria, and local live-studio support evidence while rubric recording remains unsupported."
     closure:
       required:
         - RabbitHole command passes with real Alice evidence
