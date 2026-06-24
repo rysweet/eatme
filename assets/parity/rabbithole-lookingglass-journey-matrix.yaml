@@ -68,10 +68,10 @@ rows:
     area: "Setup and first use"
     journey: "Instructor hands students a verified launch package with expected next actions and evidence review notes."
     rabbit_hole:
-      status: partial
-      source_status: "Partial: editable scenario asset validates; missing instructor agentic student handoff output evidence"
-      command: cargo run -q -p eatme-cli -- assets validate --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
-      expected_behavior: "Instructor student-handoff asset validates; real Alice launch readiness remains an input and agentic student handoff output is not claimed by this command."
+      status: covered
+      source_status: "Covered"
+      command: cargo run -q -p eatme-cli -- assets instructor-agentic-output --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml --json
+      expected_behavior: "Instructor student-handoff output evidence names launch artifacts, separates environment readiness from learner behavior, and returns the student action prompt."
     looking_glass:
       status: covered
       source_status: "Covered: web setup/readiness API evidence is covered; desktop setup checks are not claimed"
@@ -80,7 +80,7 @@ rows:
       expected_behavior: "Instructor verifies LookingGlass health/config, runs web setup preflight and launch readiness, and creates a student-facing evidence handoff with expected next actions and explicit desktop-only boundaries."
     closure:
       required:
-        - RabbitHole editable scenario asset validates; missing agentic student handoff output remains explicitly partial
+        - RabbitHole instructor-agentic-output command passes for the instructor-student-launch-evidence-handoff student handoff path
         - LookingGlass command passes for the instructor-student-launch-evidence-handoff web readiness path
         - behavior evidence names user-visible result, not implementation details
   - scenario: building-a-scene-first-world

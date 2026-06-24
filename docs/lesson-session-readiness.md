@@ -986,10 +986,10 @@ Rerun the comparison/readiness sequence with `--execute` and
 
 ### Instructor asset flow: prepare the classroom handoff
 
-Validate the instructor/student handoff asset:
+Validate and render the instructor/student handoff output evidence:
 
 ```bash
-cargo run -q -p eatme-cli -- assets validate \
+cargo run -q -p eatme-cli -- assets instructor-agentic-output \
   --path assets/scenarios/eatme/instructor-student-launch-evidence-handoff.yaml \
   --json
 ```

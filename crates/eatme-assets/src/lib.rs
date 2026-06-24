@@ -51,6 +51,9 @@ pub(crate) mod grading_report_textbook_integration;
 pub(crate) mod grading_report_variables;
 #[cfg(test)]
 mod ide_performance_accessibility_tests;
+mod instructor_agentic_output;
+#[cfg(test)]
+mod instructor_agentic_output_tests;
 #[cfg(test)]
 mod live_studio_workshop_tests;
 #[cfg(test)]
@@ -102,6 +105,10 @@ pub use grading_report_textbook_integration::{
     TextbookIntegrationGradingInput, grade_textbook_integration,
 };
 pub use grading_report_variables::{VariablesGradingInput, grade_variables};
+pub use instructor_agentic_output::{
+    AcceptanceProbeResult, InstructorAgenticOutputReport, InstructorAgenticOutputSection,
+    render_instructor_agentic_output,
+};
 pub use quality_scoring::{score_event_quality, score_parameter_quality, score_variable_quality};
 pub use report::{
     AssetValidationReport, GadugiAdapterGenerationReport, ScenarioAssetValidationReport,

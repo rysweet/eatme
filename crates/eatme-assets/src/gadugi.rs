@@ -496,6 +496,17 @@ fn expected_stdout(
             expected_scenario_asset_count,
         ));
     }
+    if command.contains("assets instructor-agentic-output") {
+        let mut expected = vec![
+            "\"passed\": true".into(),
+            format!("\"id\": \"{}\"", scenario.id),
+        ];
+        if let Some(flow) = &scenario.agentic_flow {
+            expected.extend(flow.expected_outputs.clone());
+        }
+        expected.dedup();
+        return Ok(expected);
+    }
     if step_id.contains("dependencies") {
         return Ok(preflight_check_dependencies_patterns());
     }
