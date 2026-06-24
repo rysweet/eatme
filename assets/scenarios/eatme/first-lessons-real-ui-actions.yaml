@@ -108,7 +108,7 @@ acceptance_criteria:
     when: they inspect the manifest, Alice log, window list, startup screenshot, and ui-action-contract.json
     then: they treat the result as bounded original Alice versus RabbitHole / modernized Alice setup, launch, handoff, and classroom-support readiness evidence only, not full UI automation, not creative assessment, not learner-world grading, not complete end-to-end lesson execution, and not broad Alice compatibility
 acceptance_probes:
-  - LookingGlass validation uses ALICE_WEB_URL and /api/ responses when the web workflow is supported.
+  - LookingGlass validation uses Playwright browser UI actions for object placement, code editing, run, visible evidence capture, save, and reopen when the web workflow is supported; desktop Alice UI actions are not claimed for LookingGlass.
 steps:
   - id: validate-assets
     command: cargo run -q -p eatme-cli -- assets validate --json
